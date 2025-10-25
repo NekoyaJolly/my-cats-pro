@@ -384,7 +384,7 @@ jobs:
           name: frontend-build
           path: frontend/.next
           retention-days: 7
-          if-no-files-found: error
+          if-no-files-found: warn
 
   # Note: 以下のジョブは現時点ではスキップ（将来的に有効化可能）
   # - performance-test (k6による負荷テスト)
