@@ -200,7 +200,7 @@ export default function CarePage() {
         (category.tags || []).map((tag: TagView) => ({
           value: tag.id,
           label: tag.name,
-          category: category.name,
+          group: category.name, // Group by category for better organization
         }))
       )
       .filter((tag) => tag.value && tag.label); // Remove any invalid entries
