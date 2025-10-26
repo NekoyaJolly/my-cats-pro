@@ -50,7 +50,6 @@ import {
   type CreateBreedingNgRuleRequest,
   useGetPregnancyChecks,
   useCreatePregnancyCheck,
-  useUpdatePregnancyCheck,
   useDeletePregnancyCheck,
   type PregnancyCheck,
   type PregnancyStatus,
@@ -330,7 +329,6 @@ export default function BreedingPage() {
   const pregnancyChecksQuery = useGetPregnancyChecks();
   const { data: pregnancyChecksResponse } = pregnancyChecksQuery;
   const createPregnancyCheckMutation = useCreatePregnancyCheck();
-  const updatePregnancyCheckMutation = useUpdatePregnancyCheck();
   const deletePregnancyCheckMutation = useDeletePregnancyCheck();
 
   // Birth Plan hooks
