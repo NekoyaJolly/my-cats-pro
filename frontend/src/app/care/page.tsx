@@ -45,7 +45,6 @@ import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
 import {
   useGetTagCategories,
   type TagCategoryView,
-  type TagGroupView,
   type TagView,
 } from '@/lib/api/hooks/use-tags';
 
@@ -195,16 +194,16 @@ export default function CarePage() {
   const tagsQuery = useGetTagCategories();
   const allTags = useMemo(() => {
     if (!tagsQuery.data?.data) return [];
-    return tagsQuery.data.data.flatMap((category: TagCategoryView) =>
-      category.groups?.flatMap((group: TagGroupView) =>
-        group.tags?.map((tag: TagView) => ({
+    // Use category.tags directly (already computed by useGetTagCategories)
+    return tagsQuery.data.data
+      .flatMap((category: TagCategoryView) => 
+        (category.tags || []).map((tag: TagView) => ({
           value: tag.id,
           label: tag.name,
-          group: group.name,
           category: category.name,
-        })) ?? []
-      ) ?? []
-    );
+        }))
+      )
+      .filter((tag) => tag.value && tag.label); // Remove any invalid entries
   }, [tagsQuery.data?.data]);
 
   // 絞り込まれた猫を計算
