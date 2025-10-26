@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Title,
@@ -29,8 +29,10 @@ import {
   IconDeviceFloppy,
   IconCalendar,
 } from '@tabler/icons-react';
-import TagSelector, { TagDisplay } from '../../components/TagSelector';
-import { type TagCategoryView } from '@/lib/api/hooks/use-tags';
+import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care';
+import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
+import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
+import TagSelector, { TagDisplay } from '@/components/TagSelector';
 
 // サンプルデータ型定義
 interface Kitten {
@@ -52,356 +54,10 @@ interface MotherCat {
   monthsOld: number;
 }
 
-const sampleTagCategories: TagCategoryView[] = [
-  {
-    id: '1',
-    key: 'body-size',
-    name: '体型・サイズ',
-    description: '猫の体型や大きさに関するタグ',
-    color: '#3498db',
-    displayOrder: 1,
-    scopes: ['cat'],
-    isActive: true,
-    groups: [
-      {
-        id: 'g1',
-        categoryId: '1',
-        name: '体型分類',
-        description: '体格の分類',
-        displayOrder: 1,
-        isActive: true,
-        tags: [
-          {
-            id: 't1',
-            groupId: 'g1',
-            categoryId: '1',
-            name: '大型',
-            color: '#3498db',
-            displayOrder: 1,
-            allowsManual: true,
-            allowsAutomation: false,
-            description: '大きめの体格',
-            metadata: null,
-            isActive: true,
-            usageCount: 12,
-          },
-          {
-            id: 't2',
-            groupId: 'g1',
-            categoryId: '1',
-            name: '中型',
-            color: '#3498db',
-            displayOrder: 2,
-            allowsManual: true,
-            allowsAutomation: false,
-            description: '標準的な体格',
-            metadata: null,
-            isActive: true,
-            usageCount: 8,
-          },
-          {
-            id: 't3',
-            groupId: 'g1',
-            categoryId: '1',
-            name: '小型',
-            color: '#3498db',
-            displayOrder: 3,
-            allowsManual: true,
-            allowsAutomation: false,
-            description: '小柄な体格',
-            metadata: null,
-            isActive: true,
-            usageCount: 5,
-          },
-        ],
-      },
-    ],
-    tags: [
-      {
-        id: 't1',
-        groupId: 'g1',
-        categoryId: '1',
-        name: '大型',
-        color: '#3498db',
-        displayOrder: 1,
-        allowsManual: true,
-        allowsAutomation: false,
-        description: '大きめの体格',
-        metadata: null,
-        isActive: true,
-        usageCount: 12,
-      },
-      {
-        id: 't2',
-        groupId: 'g1',
-        categoryId: '1',
-        name: '中型',
-        color: '#3498db',
-        displayOrder: 2,
-        allowsManual: true,
-        allowsAutomation: false,
-        description: '標準的な体格',
-        metadata: null,
-        isActive: true,
-        usageCount: 8,
-      },
-      {
-        id: 't3',
-        groupId: 'g1',
-        categoryId: '1',
-        name: '小型',
-        color: '#3498db',
-        displayOrder: 3,
-        allowsManual: true,
-        allowsAutomation: false,
-        description: '小柄な体格',
-        metadata: null,
-        isActive: true,
-        usageCount: 5,
-      },
-    ],
-  },
-  {
-    id: '2',
-    key: 'personality',
-    name: '性格・特徴',
-    description: '猫の性格や行動特徴に関するタグ',
-    color: '#e67e22',
-    displayOrder: 2,
-    scopes: ['cat'],
-    isActive: true,
-    groups: [
-      {
-        id: 'g2',
-        categoryId: '2',
-        name: '性格分類',
-        description: '性格に関する分類',
-        displayOrder: 1,
-        isActive: true,
-        tags: [
-          {
-            id: 't4',
-            groupId: 'g2',
-            categoryId: '2',
-            name: '人懐っこい',
-            color: '#e67e22',
-            displayOrder: 1,
-            allowsManual: true,
-            allowsAutomation: false,
-            description: '人に良く慣れる性格',
-            metadata: null,
-            isActive: true,
-            usageCount: 15,
-          },
-          {
-            id: 't5',
-            groupId: 'g2',
-            categoryId: '2',
-            name: '内気',
-            color: '#e67e22',
-            displayOrder: 2,
-            allowsManual: true,
-            allowsAutomation: false,
-            description: '慎重でおとなしい',
-            metadata: null,
-            isActive: true,
-            usageCount: 7,
-          },
-          {
-            id: 't6',
-            groupId: 'g2',
-            categoryId: '2',
-            name: '活発',
-            color: '#e67e22',
-            displayOrder: 3,
-            allowsManual: true,
-            allowsAutomation: false,
-            description: '走り回るほど元気',
-            metadata: null,
-            isActive: true,
-            usageCount: 10,
-          },
-        ],
-      },
-    ],
-    tags: [
-      {
-        id: 't4',
-        groupId: 'g2',
-        categoryId: '2',
-        name: '人懐っこい',
-        color: '#e67e22',
-        displayOrder: 1,
-        allowsManual: true,
-        allowsAutomation: false,
-        description: '人に良く慣れる性格',
-        metadata: null,
-        isActive: true,
-        usageCount: 15,
-      },
-      {
-        id: 't5',
-        groupId: 'g2',
-        categoryId: '2',
-        name: '内気',
-        color: '#e67e22',
-        displayOrder: 2,
-        allowsManual: true,
-        allowsAutomation: false,
-        description: '慎重でおとなしい',
-        metadata: null,
-        isActive: true,
-        usageCount: 7,
-      },
-      {
-        id: 't6',
-        groupId: 'g2',
-        categoryId: '2',
-        name: '活発',
-        color: '#e67e22',
-        displayOrder: 3,
-        allowsManual: true,
-        allowsAutomation: false,
-        description: '走り回るほど元気',
-        metadata: null,
-        isActive: true,
-        usageCount: 10,
-      },
-    ],
-  },
-  {
-    id: '3',
-    key: 'health',
-    name: '健康状態',
-    description: '健康や医療に関するタグ',
-    color: '#e74c3c',
-    displayOrder: 3,
-    scopes: ['cat'],
-    isActive: true,
-    groups: [
-      {
-        id: 'g3',
-        categoryId: '3',
-        name: '健康管理',
-        description: '健康状態に関する分類',
-        displayOrder: 1,
-        isActive: true,
-        tags: [
-          {
-            id: 't7',
-            groupId: 'g3',
-            categoryId: '3',
-            name: '要注意',
-            color: '#e74c3c',
-            displayOrder: 1,
-            allowsManual: true,
-            allowsAutomation: false,
-            description: '体調管理が必要',
-            metadata: null,
-            isActive: true,
-            usageCount: 3,
-          },
-          {
-            id: 't8',
-            groupId: 'g3',
-            categoryId: '3',
-            name: '健康',
-            color: '#2ecc71',
-            displayOrder: 2,
-            allowsManual: true,
-            allowsAutomation: false,
-            description: '健康状態良好',
-            metadata: null,
-            isActive: true,
-            usageCount: 20,
-          },
-        ],
-      },
-    ],
-    tags: [
-      {
-        id: 't7',
-        groupId: 'g3',
-        categoryId: '3',
-        name: '要注意',
-        color: '#e74c3c',
-        displayOrder: 1,
-        allowsManual: true,
-        allowsAutomation: false,
-        description: '体調管理が必要',
-        metadata: null,
-        isActive: true,
-        usageCount: 3,
-      },
-      {
-        id: 't8',
-        groupId: 'g3',
-        categoryId: '3',
-        name: '健康',
-        color: '#2ecc71',
-        displayOrder: 2,
-        allowsManual: true,
-        allowsAutomation: false,
-        description: '健康状態良好',
-        metadata: null,
-        isActive: true,
-        usageCount: 20,
-      },
-    ],
-  },
-];
 
-// サンプルデータ
-const sampleMotherCats: MotherCat[] = [
-  {
-    id: '1',
-    name: 'ミケ',
-    deliveryDate: '2024-06-01',
-    monthsOld: 2,
-    kittens: [
-      {
-        id: 'k1',
-        name: 'ミケ1号',
-        color: '三毛',
-        gender: 'メス',
-        weight: 450,
-        birthDate: '2024-06-01',
-        notes: '元気',
-        tags: ['t4', 't8'] // 人懐っこい、健康
-      },
-      {
-        id: 'k2',
-        name: 'ミケ2号',
-        color: '黒白',
-        gender: 'オス',
-        weight: 480,
-        birthDate: '2024-06-01',
-        notes: '',
-        tags: ['t6'] // 活発
-      },
-    ]
-  },
-  {
-    id: '2',
-    name: 'シロ',
-    deliveryDate: '2024-05-15',
-    monthsOld: 3,
-    kittens: [
-      {
-        id: 'k3',
-        name: 'シロ1号',
-        color: '白',
-        gender: 'メス',
-        weight: 520,
-        birthDate: '2024-05-15',
-        tags: ['t2', 't5'] // 中型、内気
-      },
-    ]
-  },
-];
 
 export default function KittensPage() {
-  const [motherCats, setMotherCats] = useState<MotherCat[]>(sampleMotherCats);
+  const [motherCats, setMotherCats] = useState<MotherCat[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [opened, { open, close }] = useDisclosure(false);
   
@@ -411,6 +67,68 @@ export default function KittensPage() {
   const [femaleCount, setFemaleCount] = useState<number>(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filterTags, setFilterTags] = useState<string[]>([]);
+
+  // API hooks
+  const catsQuery = useGetCats({});
+  const tagCategoriesQuery = useGetTagCategories();
+  const careSchedulesQuery = useGetCareSchedules({ limit: 100 } as any); // 子猫関連のケアスケジュールを取得
+
+  // 子猫かどうかを判定する関数（生後6ヶ月未満）
+  const isKitten = (birthDate: string): boolean => {
+    const birth = new Date(birthDate);
+    const now = new Date();
+    const monthsDiff = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+    return monthsDiff < 6;
+  };
+
+  // データを読み込む
+  useEffect(() => {
+    if (!catsQuery.data?.data) return;
+
+    const allCats = catsQuery.data.data;
+
+    // 子猫のみをフィルタリング
+    const kittens = allCats.filter((cat: Cat) => isKitten(cat.birthDate));
+
+    // 母猫ごとに子猫をグループ化
+    const motherMap = new Map<string, { mother: Cat; kittens: Cat[] }>();
+
+    kittens.forEach((kitten: Cat) => {
+      if (kitten.motherId) {
+        const motherId = kitten.motherId;
+        if (!motherMap.has(motherId)) {
+          // 母猫を取得（kitten.motherが設定されている場合はそれを使う）
+          const mother = kitten.mother || allCats.find((cat: Cat) => cat.id === motherId);
+          if (mother) {
+            motherMap.set(motherId, { mother, kittens: [] });
+          }
+        }
+        if (motherMap.has(motherId)) {
+          motherMap.get(motherId)!.kittens.push(kitten);
+        }
+      }
+    });
+
+    // MotherCat形式に変換
+    const motherCatsData: MotherCat[] = Array.from(motherMap.values()).map(({ mother, kittens }) => ({
+      id: mother.id,
+      name: mother.name,
+      kittens: kittens.map((kitten: Cat) => ({
+        id: kitten.id,
+        name: kitten.name,
+        color: kitten.coatColor?.name || '未確認',
+        gender: kitten.gender === 'MALE' ? 'オス' : 'メス',
+        weight: 350, // TODO: 体重データがAPIにないので仮の値
+        birthDate: kitten.birthDate,
+        notes: kitten.description || '',
+        tags: kitten.tags?.map((tag: { id: string }) => tag.id) || [],
+      })),
+      deliveryDate: kittens[0]?.birthDate || mother.birthDate, // 最初の子猫の生年月日を使用
+      monthsOld: Math.floor((new Date().getTime() - new Date(kittens[0]?.birthDate || mother.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 30)),
+    }));
+
+    setMotherCats(motherCatsData);
+  }, [catsQuery.data]);
 
   const toggleExpanded = (catId: string) => {
     const newExpanded = new Set(expandedCats);
@@ -518,7 +236,7 @@ export default function KittensPage() {
           onChange={setFilterTags}
           label="タグでフィルタ"
           placeholder="表示する子猫のタグを選択"
-          categories={sampleTagCategories}
+          categories={tagCategoriesQuery.data?.data || []}
         />
       </Card>
 
@@ -539,7 +257,7 @@ export default function KittensPage() {
             <Card padding="sm" bg="blue.0" radius="sm" mb="md">
               <Group gap="xs">
                 <Text size="sm" fw={500}>フィルタ適用中:</Text>
-                <TagDisplay tagIds={filterTags} size="xs" categories={sampleTagCategories} />
+                <TagDisplay tagIds={filterTags} size="xs" categories={tagCategoriesQuery.data?.data || []} />
                 <Button 
                   variant="subtle" 
                   size="xs" 
@@ -616,7 +334,7 @@ export default function KittensPage() {
                               <Text size="xs" c="dimmed">備考: {kitten.notes}</Text>
                             )}
                             {kitten.tags && kitten.tags.length > 0 && (
-                              <TagDisplay tagIds={kitten.tags} size="xs" categories={sampleTagCategories} />
+                              <TagDisplay tagIds={kitten.tags} size="xs" categories={tagCategoriesQuery.data?.data || []} />
                             )}
                           </Stack>
                         </Card>
@@ -640,33 +358,64 @@ export default function KittensPage() {
                 <Text size="sm" c="dimmed">{new Date().toLocaleDateString('ja-JP')}</Text>
               </Group>
               <Grid>
-                <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                  <Card padding="sm" radius="sm" withBorder bg="blue.0">
-                    <Group justify="space-between">
-                      <Text size="sm" fw={500}>ミルク</Text>
-                      <Badge size="xs" color="blue">3回</Badge>
-                    </Group>
-                    <Text size="xs" c="dimmed">ミケ1号、ミケ2号、シロ1号</Text>
-                  </Card>
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                  <Card padding="sm" radius="sm" withBorder bg="green.0">
-                    <Group justify="space-between">
-                      <Text size="sm" fw={500}>体重測定</Text>
-                      <Badge size="xs" color="green">2頭</Badge>
-                    </Group>
-                    <Text size="xs" c="dimmed">ミケ1号、シロ1号</Text>
-                  </Card>
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                  <Card padding="sm" radius="sm" withBorder bg="yellow.0">
-                    <Group justify="space-between">
-                      <Text size="sm" fw={500}>投薬</Text>
-                      <Badge size="xs" color="yellow">1頭</Badge>
-                    </Group>
-                    <Text size="xs" c="dimmed">ミケ2号</Text>
-                  </Card>
-                </Grid.Col>
+                {(() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  const todaySchedules = careSchedulesQuery.data?.data?.filter(
+                    (schedule: CareSchedule) => schedule.scheduleDate.startsWith(today)
+                  ) || [];
+
+                  // 子猫に関連するケアのみをフィルタリング
+                  const kittenSchedules = todaySchedules.filter((schedule: CareSchedule) => {
+                    if (!schedule.cat) return false;
+                    return motherCats.some(mother => 
+                      mother.kittens.some(kitten => kitten.id === schedule.cat!.id)
+                    );
+                  });
+
+                  // ケアタイプごとにグループ化
+                  const careGroups = kittenSchedules.reduce((acc, schedule) => {
+                    const type = schedule.careType || 'OTHER';
+                    if (!acc[type]) acc[type] = [];
+                    acc[type].push(schedule);
+                    return acc;
+                  }, {} as Record<string, CareSchedule[]>);
+
+                  return Object.entries(careGroups).map(([careType, schedules]) => (
+                    <Grid.Col key={careType} span={{ base: 12, sm: 6, md: 4 }}>
+                      <Card padding="sm" radius="sm" withBorder bg="blue.0">
+                        <Group justify="space-between">
+                          <Text size="sm" fw={500}>
+                            {careType === 'VACCINATION' ? 'ワクチン' :
+                             careType === 'HEALTH_CHECK' ? '健康診断' :
+                             careType === 'GROOMING' ? 'グルーミング' :
+                             careType === 'DENTAL_CARE' ? 'デンタルケア' :
+                             careType === 'MEDICATION' ? '投薬' :
+                             careType === 'SURGERY' ? '手術・処置' : 'その他'}
+                          </Text>
+                          <Badge size="xs" color="blue">{schedules.length}</Badge>
+                        </Group>
+                        <Text size="xs" c="dimmed">
+                          {schedules.map(s => s.cat?.name).filter(Boolean).join('、')}
+                        </Text>
+                      </Card>
+                    </Grid.Col>
+                  ));
+                })()}
+                {careSchedulesQuery.data?.data?.filter(
+                  (schedule: CareSchedule) => {
+                    const today = new Date().toISOString().split('T')[0];
+                    return schedule.scheduleDate.startsWith(today) && 
+                           motherCats.some(mother => 
+                             mother.kittens.some(kitten => kitten.id === schedule.cat!.id)
+                           );
+                  }
+                ).length === 0 && (
+                  <Grid.Col span={12}>
+                    <Card padding="sm" radius="sm" withBorder bg="gray.0">
+                      <Text size="sm" ta="center" c="dimmed">本日のケア予定はありません</Text>
+                    </Card>
+                  </Grid.Col>
+                )}
               </Grid>
             </Card>
 
@@ -849,12 +598,13 @@ export default function KittensPage() {
             placeholder="出産予定日の近い順"
             value={selectedMother}
             onChange={(value) => setSelectedMother(value || '')}
-            data={motherCats
-              .sort((a, b) => new Date(b.deliveryDate).getTime() - new Date(a.deliveryDate).getTime())
-              .map(cat => ({ 
+            data={catsQuery.data?.data
+              ?.filter((cat: Cat) => cat.gender === 'FEMALE' && cat.isInHouse)
+              .sort((a: Cat, b: Cat) => new Date(b.birthDate).getTime() - new Date(a.birthDate).getTime())
+              .map((cat: Cat) => ({ 
                 value: cat.id, 
-                label: `${cat.name} (${cat.deliveryDate} - ${cat.monthsOld}ヶ月)` 
-              }))}
+                label: `${cat.name} (${cat.birthDate} - ${Math.floor((new Date().getTime() - new Date(cat.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 30))}ヶ月)` 
+              })) || []}
           />
           <Group grow>
             <NumberInput
@@ -879,7 +629,7 @@ export default function KittensPage() {
             onChange={setSelectedTags}
             label="タグ"
             placeholder="子猫に適用するタグを選択"
-            categories={sampleTagCategories}
+            categories={tagCategoriesQuery.data?.data || []}
           />
           {selectedMother && (maleCount > 0 || femaleCount > 0) && (
             <Card padding="sm" bg="blue.0" radius="sm">
