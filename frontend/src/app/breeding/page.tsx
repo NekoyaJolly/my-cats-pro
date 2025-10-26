@@ -50,7 +50,6 @@ import {
   type CreateBreedingNgRuleRequest,
   useGetPregnancyChecks,
   useCreatePregnancyCheck,
-  useUpdatePregnancyCheck,
   useDeletePregnancyCheck,
   type PregnancyCheck,
   type PregnancyStatus,
@@ -330,7 +329,6 @@ export default function BreedingPage() {
   const pregnancyChecksQuery = useGetPregnancyChecks();
   const { data: pregnancyChecksResponse } = pregnancyChecksQuery;
   const createPregnancyCheckMutation = useCreatePregnancyCheck();
-  const updatePregnancyCheckMutation = useUpdatePregnancyCheck();
   const deletePregnancyCheckMutation = useDeletePregnancyCheck();
 
   // Birth Plan hooks
@@ -659,10 +657,7 @@ export default function BreedingPage() {
       });
     } else {
       // 非妊娠の場合：妊娠チェックを削除
-      updatePregnancyCheckMutation.mutate({
-        id: checkItem.id,
-        payload: { status: 'NEGATIVE' }
-      });
+      deletePregnancyCheckMutation.mutate(checkItem.id);
     }
   };
 
