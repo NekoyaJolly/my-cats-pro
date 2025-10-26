@@ -41,7 +41,7 @@ import {
   useCompleteCareSchedule,
   useGetCareSchedules,
 } from '@/lib/api/hooks/use-care';
-import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
+import { useGetCats } from '@/lib/api/hooks/use-cats';
 import {
   useGetTagCategories,
   type TagCategoryView,
@@ -90,35 +90,6 @@ function formatDate(value: string | null | undefined) {
   return dayjs(value).format('YYYY年MM月DD日');
 }
 
-function useCareScheduleStats(schedules: CareSchedule[] | undefined) {
-  return useMemo(() => {
-    if (!schedules || schedules.length === 0) {
-      return {
-        total: 0,
-        upcoming: 0,
-        completed: 0,
-        overdue: 0,
-      };
-    }
-
-    const today = dayjs().startOf('day');
-    const upcoming = schedules.filter((schedule) =>
-      ['PENDING', 'IN_PROGRESS'].includes(schedule.status) && dayjs(schedule.scheduleDate).isAfter(today.subtract(1, 'day')),
-    ).length;
-    const completed = schedules.filter((schedule) => schedule.status === 'COMPLETED').length;
-    const overdue = schedules.filter((schedule) =>
-      ['PENDING', 'IN_PROGRESS'].includes(schedule.status) && dayjs(schedule.scheduleDate).isBefore(today),
-    ).length;
-
-    return {
-      total: schedules.length,
-      upcoming,
-      completed,
-      overdue,
-    };
-  }, [schedules]);
-}
-
 interface CreateScheduleFormState {
   name: string;
   category: 'Male' | 'Female' | 'Kitten' | 'Adult' | null;
@@ -126,8 +97,8 @@ interface CreateScheduleFormState {
   selectedCatIds: string[];
   schedule: {
     type: 'daily' | 'weekly' | 'monthly' | 'period' | 'birthday' | 'single';
-    startDate?: Date | null;
-    endDate?: Date | null;
+    startDate?: string | null;
+    endDate?: string | null;
     daysOfWeek?: number[];
     dayOfMonth?: number;
     daysAfterBirth?: number;
@@ -182,14 +153,6 @@ export default function CarePage() {
   const completeScheduleMutation = useCompleteCareSchedule();
 
   const catsQuery = useGetCats({ limit: 100 });
-  const catsOptions = useMemo(() => {
-    return (
-      catsQuery.data?.data?.map((cat: Cat) => ({
-        value: cat.id,
-        label: cat.name,
-      })) ?? []
-    );
-  }, [catsQuery.data?.data]);
 
   const tagsQuery = useGetTagCategories();
   const allTags = useMemo(() => {
@@ -251,8 +214,6 @@ export default function CarePage() {
     page,
     limit: PAGE_LIMIT,
   };
-
-  const stats = useCareScheduleStats(schedules);
 
   // 登録されているケア名を取得
   const availableCareNames = useMemo(() => {
@@ -698,10 +659,10 @@ export default function CarePage() {
                 value={createForm.schedule.startDate}
                 onChange={(value) => setCreateForm((prev) => ({
                   ...prev,
-                  schedule: {
-                    ...prev.schedule!,
+                  schedule: prev.schedule ? {
+                    ...prev.schedule,
                     startDate: value
-                  }
+                  } : null
                 }))}
               />
               <DatePickerInput
@@ -709,10 +670,10 @@ export default function CarePage() {
                 value={createForm.schedule.endDate}
                 onChange={(value) => setCreateForm((prev) => ({
                   ...prev,
-                  schedule: {
-                    ...prev.schedule!,
+                  schedule: prev.schedule ? {
+                    ...prev.schedule,
                     endDate: value
-                  }
+                  } : null
                 }))}
               />
             </Group>
@@ -740,10 +701,10 @@ export default function CarePage() {
               value={createForm.schedule.startDate}
               onChange={(value) => setCreateForm((prev) => ({
                 ...prev,
-                schedule: {
-                  ...prev.schedule!,
+                schedule: prev.schedule ? {
+                  ...prev.schedule,
                   startDate: value
-                }
+                } : null
               }))}
             />
           )}
