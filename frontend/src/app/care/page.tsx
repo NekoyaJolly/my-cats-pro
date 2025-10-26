@@ -25,7 +25,7 @@ import {
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconCheck, IconPlus, IconRefresh } from '@tabler/icons-react';
+import { IconAlertCircle, IconCheck, IconPlus, IconRefresh, IconX } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 
 import {
@@ -126,6 +126,7 @@ interface CompleteScheduleFormState {
 export default function CarePage() {
   const [page, setPage] = useState(1);
   const [careTypeFilter, setCareTypeFilter] = useState<(typeof CARE_TYPE_FILTER_OPTIONS)[number]['value']>('ALL');
+  const [selectedCareNames, setSelectedCareNames] = useState<string[]>([]);
 
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const [completeModalOpened, { open: openCompleteModal, close: closeCompleteModal }] = useDisclosure(false);
@@ -180,6 +181,31 @@ export default function CarePage() {
   };
 
   const stats = useCareScheduleStats(schedules);
+
+  // 登録されているケア名を取得
+  const availableCareNames = useMemo(() => {
+    const allSchedules = scheduleQuery.data?.data ?? [];
+    const uniqueNames = new Set<string>();
+    allSchedules.forEach((schedule) => {
+      if (schedule.name) {
+        uniqueNames.add(schedule.name);
+      }
+    });
+    return Array.from(uniqueNames).sort();
+  }, [scheduleQuery.data?.data]);
+
+  // 選択されたケア名ごとの統計を計算
+  const selectedCareStats = useMemo(() => {
+    const allSchedules = scheduleQuery.data?.data ?? [];
+    return selectedCareNames.map((careName) => {
+      const relatedSchedules = allSchedules.filter((schedule) => schedule.name === careName);
+      const uniqueCats = new Set(relatedSchedules.map((schedule) => schedule.cat?.id).filter(Boolean));
+      return {
+        name: careName,
+        catCount: uniqueCats.size,
+      };
+    });
+  }, [selectedCareNames, scheduleQuery.data?.data]);
 
   const handleRefresh = () => {
     void scheduleQuery.refetch();
@@ -264,14 +290,9 @@ export default function CarePage() {
   return (
     <Container size="lg" pb="xl">
       <Group justify="space-between" align="center" mb="lg">
-        <div>
-          <Title order={2} mb={4}>
-            ケアスケジュール管理
-          </Title>
-          <Text size="sm" c="dimmed">
-            ケア予定の確認、登録、完了処理を行います。
-          </Text>
-        </div>
+        <Title order={2}>
+          ケアスケジュール
+        </Title>
         <Group gap="xs">
           <ActionIcon variant="subtle" aria-label="refresh" onClick={handleRefresh} loading={scheduleQuery.isFetching}>
             <IconRefresh size={18} />
@@ -279,43 +300,52 @@ export default function CarePage() {
           <Button leftSection={<IconPlus size={16} />} onClick={openCreateModal}>
             ケア予定を追加
           </Button>
+          <Select
+            placeholder="カードを追加"
+            data={availableCareNames.map((name) => ({ value: name, label: name }))}
+            value={null}
+            onChange={(value) => {
+              if (value && !selectedCareNames.includes(value)) {
+                setSelectedCareNames((prev) => [...prev, value]);
+              }
+            }}
+            w={200}
+            leftSection={<IconPlus size={16} />}
+          />
         </Group>
       </Group>
 
-      <Group grow mb="lg">
-        <Card shadow="xs" padding="md" radius="md" withBorder>
-          <Text size="xs" c="dimmed" mb={4}>
-            合計
-          </Text>
-          <Text size="xl" fw={700}>
-            {stats.total}
-          </Text>
-        </Card>
-        <Card shadow="xs" padding="md" radius="md" withBorder>
-          <Text size="xs" c="dimmed" mb={4}>
-            近日予定
-          </Text>
-          <Text size="xl" fw={700}>
-            {stats.upcoming}
-          </Text>
-        </Card>
-        <Card shadow="xs" padding="md" radius="md" withBorder>
-          <Text size="xs" c="dimmed" mb={4}>
-            完了済み
-          </Text>
-          <Text size="xl" fw={700}>
-            {stats.completed}
-          </Text>
-        </Card>
-        <Card shadow="xs" padding="md" radius="md" withBorder color="red">
-          <Text size="xs" c="dimmed" mb={4}>
-            期限超過
-          </Text>
-          <Text size="xl" fw={700} c="red">
-            {stats.overdue}
-          </Text>
-        </Card>
-      </Group>
+      {/* 選択されたケア名のカード表示 */}
+      {selectedCareStats.length > 0 && (
+        <Group grow mb="lg">
+          {selectedCareStats.map((stat) => (
+            <Card key={stat.name} shadow="xs" padding="md" radius="md" withBorder>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="sm" c="dimmed" mb={4}>
+                    {stat.name}
+                  </Text>
+                  <Text size="xl" fw={700}>
+                    {stat.catCount}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    頭
+                  </Text>
+                </div>
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  onClick={() => {
+                    setSelectedCareNames((prev) => prev.filter((name) => name !== stat.name));
+                  }}
+                >
+                  <IconX size={16} />
+                </ActionIcon>
+              </Group>
+            </Card>
+          ))}
+        </Group>
+      )}
 
       <Card withBorder shadow="xs" radius="md">
         <LoadingOverlay visible={scheduleQuery.isFetching && !scheduleQuery.isLoading} zIndex={10} />
