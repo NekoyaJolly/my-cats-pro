@@ -491,7 +491,7 @@ export default function CarePage() {
             onChange={(event) =>
               setCreateForm((prev) => ({
                 ...prev,
-                name: event.currentTarget.value,
+                name: event.target.value,
               }))
             }
             required
@@ -534,7 +534,7 @@ export default function CarePage() {
             label="備考"
             placeholder="ケアの詳細やメモを入力（任意）"
             value={createForm.description}
-            onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.currentTarget.value }))}
+            onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
             minRows={3}
             autosize
           />
@@ -614,7 +614,7 @@ export default function CarePage() {
               label="メモ"
               placeholder="ケア内容の詳細、体調、次回の注意点など"
               value={completeForm.notes}
-              onChange={(event) => setCompleteForm((prev) => ({ ...prev, notes: event.currentTarget.value }))}
+              onChange={(event) => setCompleteForm((prev) => ({ ...prev, notes: event.target.value }))}
               autosize
               minRows={3}
             />
