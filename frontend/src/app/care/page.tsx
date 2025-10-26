@@ -14,7 +14,10 @@ import {
   LoadingOverlay,
   Modal,
   Pagination,
+  Radio,
+  RadioGroup,
   Select,
+  MultiSelect,
   Skeleton,
   Stack,
   TextInput,
@@ -22,6 +25,8 @@ import {
   Text,
   Textarea,
   Title,
+  Checkbox,
+  Accordion,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
@@ -37,6 +42,12 @@ import {
   useGetCareSchedules,
 } from '@/lib/api/hooks/use-care';
 import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
+import {
+  useGetTagCategories,
+  type TagCategoryView,
+  type TagGroupView,
+  type TagView,
+} from '@/lib/api/hooks/use-tags';
 
 const CARE_TYPE_LABELS: Record<CareType, string> = {
   VACCINATION: 'ワクチン',
@@ -111,9 +122,17 @@ function useCareScheduleStats(schedules: CareSchedule[] | undefined) {
 
 interface CreateScheduleFormState {
   name: string;
-  catId: string;
-  careType: CareType | null;
-  scheduledDate: Date | null;
+  category: 'Male' | 'Female' | 'Kitten' | 'Adult' | null;
+  tags: string[];
+  selectedCatIds: string[];
+  schedule: {
+    type: 'daily' | 'weekly' | 'monthly' | 'period' | 'birthday' | 'single';
+    startDate?: Date | null;
+    endDate?: Date | null;
+    daysOfWeek?: number[];
+    dayOfMonth?: number;
+    daysAfterBirth?: number;
+  } | null;
   description: string;
 }
 
@@ -133,9 +152,10 @@ export default function CarePage() {
 
   const [createForm, setCreateForm] = useState<CreateScheduleFormState>({
     name: '',
-    catId: '',
-    careType: null,
-    scheduledDate: null,
+    category: null,
+    tags: [],
+    selectedCatIds: [],
+    schedule: null,
     description: '',
   });
   const [createError, setCreateError] = useState<string | null>(null);
@@ -171,6 +191,59 @@ export default function CarePage() {
       })) ?? []
     );
   }, [catsQuery.data?.data]);
+
+  const tagsQuery = useGetTagCategories();
+  const allTags = useMemo(() => {
+    if (!tagsQuery.data?.data) return [];
+    return tagsQuery.data.data.flatMap((category: TagCategoryView) =>
+      category.groups?.flatMap((group: TagGroupView) =>
+        group.tags?.map((tag: TagView) => ({
+          value: tag.id,
+          label: tag.name,
+          group: group.name,
+          category: category.name,
+        })) ?? []
+      ) ?? []
+    );
+  }, [tagsQuery.data?.data]);
+
+  // 絞り込まれた猫を計算
+  const filteredCats = useMemo(() => {
+    if (!catsQuery.data?.data) return [];
+    let filtered = catsQuery.data.data;
+
+    // カテゴリで絞り込み
+    if (createForm.category) {
+      filtered = filtered.filter((cat) => {
+        if (createForm.category === 'Male') return cat.gender === 'MALE';
+        if (createForm.category === 'Female') return cat.gender === 'FEMALE';
+        if (createForm.category === 'Kitten') {
+          // 生後1年未満をKittenとする
+          const birthDate = dayjs(cat.birthDate);
+          const oneYearAgo = dayjs().subtract(1, 'year');
+          return birthDate.isAfter(oneYearAgo);
+        }
+        if (createForm.category === 'Adult') {
+          // 生後1年以上をAdultとする
+          const birthDate = dayjs(cat.birthDate);
+          const oneYearAgo = dayjs().subtract(1, 'year');
+          return birthDate.isBefore(oneYearAgo);
+        }
+        return true;
+      });
+    }
+
+    // タグで絞り込み
+    if (createForm.tags.length > 0) {
+      filtered = filtered.filter((cat) =>
+        createForm.tags.some((tagId) =>
+          cat.tags?.some((tag) => tag.id === tagId)
+        )
+      );
+    }
+
+    return filtered;
+  }, [catsQuery.data?.data, createForm.category, createForm.tags]);
 
   const schedules = scheduleQuery.data?.data ?? [];
   const meta = scheduleQuery.data?.meta ?? {
@@ -214,9 +287,10 @@ export default function CarePage() {
   const resetCreateForm = () => {
     setCreateForm({
       name: '',
-      catId: '',
-      careType: null,
-      scheduledDate: null,
+      category: null,
+      tags: [],
+      selectedCatIds: [],
+      schedule: null,
       description: '',
     });
     setCreateError(null);
@@ -226,24 +300,31 @@ export default function CarePage() {
     const trimmedName = createForm.name.trim();
     const trimmedDescription = createForm.description.trim();
 
-    if (!trimmedName || !createForm.catId || !createForm.careType || !createForm.scheduledDate) {
-      setCreateError('ケア名、猫、ケア種別、予定日は必須です。');
+    if (!trimmedName) {
+      setCreateError('ケア名は必須です。');
       return;
     }
 
+    // TODO: スケジュールバリデーションを追加
+
     setCreateError(null);
+    // TODO: 新しいAPIに合わせて送信処理を更新
+    // 仮に複数猫に対応したAPIを使用
+    const catIds = createForm.selectedCatIds.length > 0 ? createForm.selectedCatIds : filteredCats.map(cat => cat.id);
+    // 仮に最初の猫のみを使用
     addScheduleMutation.mutate(
       {
         name: trimmedName,
-        catId: createForm.catId,
-        careType: createForm.careType,
-        scheduledDate: dayjs(createForm.scheduledDate).toISOString(),
+        catId: catIds[0] || '', // 仮
+        careType: 'OTHER', // 仮
+        scheduledDate: createForm.schedule?.startDate ? dayjs(createForm.schedule.startDate).toISOString() : dayjs().toISOString(),
         description: trimmedDescription || undefined,
       },
       {
         onSuccess: () => {
           resetCreateForm();
           closeCreateModal();
+          void scheduleQuery.refetch();
         },
       },
     );
@@ -497,38 +578,176 @@ export default function CarePage() {
             required
           />
 
-          <Select
-            label="猫"
-            placeholder="ケア対象となる猫を選択"
-            data={catsOptions}
-            value={createForm.catId}
-            onChange={(value) => setCreateForm((prev) => ({ ...prev, catId: value ?? '' }))}
-            searchable
-            required
+          <RadioGroup
+            label="カテゴリ"
+            value={createForm.category}
+            onChange={(value) => setCreateForm((prev) => ({ ...prev, category: value as 'Male' | 'Female' | 'Kitten' | 'Adult' }))}
+          >
+            <Group mt="xs">
+              <Radio value="Male" label="Male" />
+              <Radio value="Female" label="Female" />
+              <Radio value="Kitten" label="Kitten" />
+              <Radio value="Adult" label="Adult" />
+            </Group>
+          </RadioGroup>
+
+          <MultiSelect
+            label="タグ"
+            placeholder="タグを選択（複数選択可能）"
+            data={allTags}
+            value={createForm.tags}
+            onChange={(value) => setCreateForm((prev) => ({ ...prev, tags: value }))}
           />
 
+          <Group justify="space-between" align="center">
+            <Text size="sm" fw={500}>対象猫</Text>
+            <Text size="sm" c="dimmed">{filteredCats.length}頭</Text>
+          </Group>
+
+          <Accordion>
+            <Accordion.Item value="select-cats">
+              <Accordion.Control>更に選択する</Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap="xs">
+                  {filteredCats.length === 0 ? (
+                    <Text size="sm" c="dimmed">絞り込まれた猫がありません</Text>
+                  ) : (
+                    filteredCats.map((cat) => (
+                      <Checkbox
+                        key={cat.id}
+                        label={`${cat.name} (${cat.gender})`}
+                        checked={createForm.selectedCatIds.includes(cat.id)}
+                        onChange={(event) => {
+                          const checked = event.currentTarget.checked;
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            selectedCatIds: checked
+                              ? [...prev.selectedCatIds, cat.id]
+                              : prev.selectedCatIds.filter((id) => id !== cat.id),
+                          }));
+                        }}
+                      />
+                    ))
+                  )}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+
           <Select
-            label="ケア種別"
-            placeholder="実施するケア種別を選択"
-            data={CARE_TYPE_FILTER_OPTIONS.filter((option) => option.value !== 'ALL')}
-            value={createForm.careType ?? null}
-            onChange={(value) => setCreateForm((prev) => ({ ...prev, careType: value as CareType | null }))}
-            required
+            label="スケジュールタイプ"
+            placeholder="スケジュールタイプを選択"
+            data={[
+              { value: 'daily', label: '毎日' },
+              { value: 'weekly', label: '毎週○曜日' },
+              { value: 'monthly', label: '毎月○日' },
+              { value: 'period', label: '○日〜○日（期間指定）' },
+              { value: 'birthday', label: '生後○日目' },
+              { value: 'single', label: '単日' },
+            ]}
+            value={createForm.schedule?.type || null}
+            onChange={(value) => setCreateForm((prev) => ({
+              ...prev,
+              schedule: value ? { type: value as any } : null
+            }))}
           />
 
-          <DatePickerInput
-            label="予定日"
-            placeholder="ケアの予定日を選択"
-            value={createForm.scheduledDate}
-            onChange={(value) =>
-              setCreateForm((prev) => ({
+          {createForm.schedule?.type === 'weekly' && (
+            <Select
+              label="曜日"
+              placeholder="曜日を選択"
+              data={[
+                { value: '0', label: '日曜日' },
+                { value: '1', label: '月曜日' },
+                { value: '2', label: '火曜日' },
+                { value: '3', label: '水曜日' },
+                { value: '4', label: '木曜日' },
+                { value: '5', label: '金曜日' },
+                { value: '6', label: '土曜日' },
+              ]}
+              value={createForm.schedule.daysOfWeek?.[0]?.toString() || null}
+              onChange={(value) => setCreateForm((prev) => ({
                 ...prev,
-                scheduledDate: value ? new Date(value) : null,
-              }))
-            }
-            required
-            minDate={new Date('2020-01-01')}
-          />
+                schedule: {
+                  ...prev.schedule!,
+                  daysOfWeek: value ? [parseInt(value)] : []
+                }
+              }))}
+            />
+          )}
+
+          {createForm.schedule?.type === 'monthly' && (
+            <Select
+              label="日付"
+              placeholder="日付を選択"
+              data={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: `${i + 1}日` }))}
+              value={createForm.schedule.dayOfMonth?.toString() || null}
+              onChange={(value) => setCreateForm((prev) => ({
+                ...prev,
+                schedule: {
+                  ...prev.schedule!,
+                  dayOfMonth: value ? parseInt(value) : undefined
+                }
+              }))}
+            />
+          )}
+
+          {createForm.schedule?.type === 'period' && (
+            <Group grow>
+              <DatePickerInput
+                label="開始日"
+                value={createForm.schedule.startDate}
+                onChange={(value) => setCreateForm((prev) => ({
+                  ...prev,
+                  schedule: {
+                    ...prev.schedule!,
+                    startDate: value
+                  }
+                }))}
+              />
+              <DatePickerInput
+                label="終了日"
+                value={createForm.schedule.endDate}
+                onChange={(value) => setCreateForm((prev) => ({
+                  ...prev,
+                  schedule: {
+                    ...prev.schedule!,
+                    endDate: value
+                  }
+                }))}
+              />
+            </Group>
+          )}
+
+          {createForm.schedule?.type === 'birthday' && (
+            <TextInput
+              label="生後日数"
+              placeholder="例: 21"
+              type="number"
+              value={createForm.schedule.daysAfterBirth?.toString() || ''}
+              onChange={(event) => setCreateForm((prev) => ({
+                ...prev,
+                schedule: {
+                  ...prev.schedule!,
+                  daysAfterBirth: parseInt(event.target.value) || undefined
+                }
+              }))}
+            />
+          )}
+
+          {createForm.schedule?.type === 'single' && (
+            <DatePickerInput
+              label="日付"
+              value={createForm.schedule.startDate}
+              onChange={(value) => setCreateForm((prev) => ({
+                ...prev,
+                schedule: {
+                  ...prev.schedule!,
+                  startDate: value
+                }
+              }))}
+            />
+          )}
 
           <Textarea
             label="備考"
