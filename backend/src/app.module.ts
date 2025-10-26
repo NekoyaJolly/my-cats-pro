@@ -52,7 +52,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
   imports: [
     LoggerModule.forRoot({
       pinoHttp: {
-        level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+        level: 'debug',
         transport: process.env.NODE_ENV === 'production' ? undefined : {
           target: 'pino-pretty',
           options: { colorize: true, singleLine: true },

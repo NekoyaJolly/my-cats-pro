@@ -63,23 +63,10 @@ export class BreedingController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @Patch(":id")
-  @ApiOperation({ summary: "交配記録の更新" })
-  @ApiResponse({ status: HttpStatus.OK })
-  @ApiParam({ name: "id" })
-  update(@Param("id") id: string, @Body() dto: UpdateBreedingDto) {
-    return this.breedingService.update(id, dto);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Delete(":id")
-  @ApiOperation({ summary: "交配記録の削除" })
-  @ApiResponse({ status: HttpStatus.OK })
-  @ApiParam({ name: "id" })
-  remove(@Param("id") id: string) {
-    return this.breedingService.remove(id);
-  }
+  // NOTE: parameterized routes for the main breeding resource are defined
+  // later in the file so that static subpaths (e.g. "pregnancy-checks",
+  // "birth-plans") are registered first. This prevents Express from
+  // matching those static paths as an ":id" and returning 404.
 
   @Get("ng-rules")
   @ApiOperation({ summary: "NGペアルール一覧の取得" })
@@ -118,6 +105,13 @@ export class BreedingController {
   }
 
   // Pregnancy Check endpoints
+  @Get("test")
+  @ApiOperation({ summary: "テスト" })
+  @ApiResponse({ status: HttpStatus.OK })
+  test() {
+    return { message: "test" };
+  }
+
   @Get("pregnancy-checks")
   @ApiOperation({ summary: "妊娠チェック一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -196,4 +190,28 @@ export class BreedingController {
   removeBirthPlan(@Param("id") id: string) {
     return this.breedingService.removeBirthPlan(id);
   }
+
+  // Parameterized routes for the main breeding resource.
+  // These are intentionally placed after static subpaths such as
+  // "pregnancy-checks" and "birth-plans" so that Express does not
+  // interpret those paths as an ":id" and cause 404s.
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard)
+  // @Patch(":id")
+  // @ApiOperation({ summary: "交配記録の更新" })
+  // @ApiResponse({ status: HttpStatus.OK })
+  // @ApiParam({ name: "id" })
+  // update(@Param("id") id: string, @Body() dto: UpdateBreedingDto) {
+  //   return this.breedingService.update(id, dto);
+  // }
+
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard)
+  // @Delete(":id")
+  // @ApiOperation({ summary: "交配記録の削除" })
+  // @ApiResponse({ status: HttpStatus.OK })
+  // @ApiParam({ name: "id" })
+  // remove(@Param("id") id: string) {
+  //   return this.breedingService.remove(id);
+  // }
 }
