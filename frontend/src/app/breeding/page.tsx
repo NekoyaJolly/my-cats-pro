@@ -659,10 +659,7 @@ export default function BreedingPage() {
       });
     } else {
       // 非妊娠の場合：妊娠チェックを削除
-      updatePregnancyCheckMutation.mutate({
-        id: checkItem.id,
-        payload: { status: 'NEGATIVE' }
-      });
+      deletePregnancyCheckMutation.mutate(checkItem.id);
     }
   };
 
