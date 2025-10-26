@@ -523,6 +523,42 @@ export default function BreedingPage() {
     const male = activeMales.find((m: Cat) => m.id === selectedMale);
     
     if (female && male && selectedDate && selectedMale) {
+      // メス猫の重複チェック
+      const startDate = new Date(selectedDate);
+      const scheduleDates: string[] = [];
+      for (let i = 0; i < selectedDuration; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        scheduleDates.push(date.toISOString().split('T')[0]);
+      }
+      
+      // 他のオス猫のスケジュールで同じメス猫が同じ日付に入っているかチェック
+      const duplicateMales: string[] = [];
+      activeMales.forEach((otherMale: Cat) => {
+        if (otherMale.id === selectedMale) return; // 同じオスはスキップ
+        
+        scheduleDates.forEach(dateStr => {
+          const scheduleKey = `${otherMale.id}-${dateStr}`;
+          const schedule = breedingSchedule[scheduleKey];
+          if (schedule && schedule.femaleId === femaleId && !schedule.isHistory) {
+            if (!duplicateMales.includes(otherMale.name)) {
+              duplicateMales.push(otherMale.name);
+            }
+          }
+        });
+      });
+      
+      if (duplicateMales.length > 0) {
+        const confirmed = window.confirm(
+          `警告: ${female.name}は既に以下のオス猫のスケジュールに入っています：\n${duplicateMales.join(', ')}\n\n本当にこのメス猫を追加しますか？`
+        );
+        
+        if (!confirmed) {
+          closeModal();
+          return;
+        }
+      }
+      
       // NGペアチェック
       if (isNGPairing(selectedMale, femaleId)) {
         const ngRule = ngPairingRules.find((rule: NgPairingRule) => {
@@ -551,15 +587,6 @@ export default function BreedingPage() {
           closeModal();
           return;
         }
-      }
-      
-      // 交配期間の日付を計算
-      const startDate = new Date(selectedDate);
-      const scheduleDates: string[] = [];
-      for (let i = 0; i < selectedDuration; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        scheduleDates.push(date.toISOString().split('T')[0]);
       }
       
       // 各日付にスケジュールを追加
@@ -624,6 +651,11 @@ export default function BreedingPage() {
         expectedBirthDate: expectedDate.toISOString().split('T')[0],
         status: 'EXPECTED',
         notes: '妊娠確認による出産予定',
+      }, {
+        onSuccess: () => {
+          // 出産予定作成成功後、妊娠確認中から削除
+          deletePregnancyCheckMutation.mutate(checkItem.id);
+        }
       });
     } else {
       // 非妊娠の場合：妊娠チェックを削除
