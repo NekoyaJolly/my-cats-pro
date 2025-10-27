@@ -160,8 +160,7 @@ export default function CarePage() {
     
     // Helper to validate tag has required properties
     const isValidTag = (tag: TagView) => {
-      return tag.id && tag.name && 
-             typeof tag.id === 'string' && typeof tag.name === 'string' &&
+      return typeof tag.id === 'string' && typeof tag.name === 'string' &&
              tag.id.trim() !== '' && tag.name.trim() !== '';
     };
     
