@@ -157,16 +157,24 @@ export default function CarePage() {
   const tagsQuery = useGetTagCategories();
   const allTags = useMemo(() => {
     if (!tagsQuery.data?.data) return [];
+    
+    // Helper to validate tag has required properties
+    const isValidTag = (tag: TagView) => {
+      return typeof tag.id === 'string' && typeof tag.name === 'string' &&
+             tag.id.trim() !== '' && tag.name.trim() !== '';
+    };
+    
     // Use category.tags directly (already computed by useGetTagCategories)
     return tagsQuery.data.data
       .flatMap((category: TagCategoryView) => 
-        (category.tags || []).map((tag: TagView) => ({
-          value: tag.id,
-          label: tag.name,
-          group: category.name, // Group by category for better organization
-        }))
-      )
-      .filter((tag) => tag.value && tag.label); // Remove any invalid entries
+        (category.tags || [])
+          .filter(isValidTag)
+          .map((tag: TagView) => ({
+            value: tag.id,
+            label: tag.name,
+            group: category.name || 'その他', // Ensure group is always a string
+          }))
+      );
   }, [tagsQuery.data?.data]);
 
   // 絞り込まれた猫を計算

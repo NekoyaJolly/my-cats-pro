@@ -1519,7 +1519,7 @@ export default function BreedingPage() {
             <>
               <MultiSelect
                 label="禁止するオス猫"
-                data={maleCats.map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
+                data={maleCats.filter((cat: Cat) => cat.name).map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
                 value={newRule.maleNames}
                 onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, maleNames: value }))}
                 placeholder="禁止するオス猫を選択"
@@ -1527,7 +1527,7 @@ export default function BreedingPage() {
               />
               <MultiSelect
                 label="禁止するメス猫"
-                data={femaleCats.map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
+                data={femaleCats.filter((cat: Cat) => cat.name).map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
                 value={newRule.femaleNames}
                 onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, femaleNames: value }))}
                 placeholder="禁止するメス猫を選択"
