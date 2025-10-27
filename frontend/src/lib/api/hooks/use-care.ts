@@ -99,8 +99,8 @@ export function useAddCareSchedule() {
 
       return response.data as CareScheduleResponse;
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
       notifications.show({
         title: 'ケア予定を登録しました',
         message: 'ケアスケジュールを追加しました。',
@@ -132,8 +132,8 @@ export function useCompleteCareSchedule() {
         pathParams: { id } as ApiPathParams<'/care/schedules/{id}/complete', 'patch'>,
         body: payload,
       }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
       notifications.show({
         title: 'ケア予定を完了しました',
         message: '完了履歴に記録しました。',

@@ -113,24 +113,46 @@ export function useGetTagCategories(
   return useQuery({
     queryKey: tagCategoryKeys.list(filters),
     queryFn: async () => {
-      const response = (await apiClient.get('/tags', {
-        query: buildTagCategoryQuery(filters),
-      })) as TagCategoriesResponse;
+      try {
+        const response = (await apiClient.get('/tags', {
+          query: buildTagCategoryQuery(filters),
+        })) as TagCategoriesResponse;
 
-      if (!response.data) {
-        return response;
+        // Validate response.data is an array
+        if (!response.data || !Array.isArray(response.data)) {
+          return { ...response, data: [] } satisfies TagCategoriesResponse;
+        }
+
+        // Filter out null/undefined categories and safely process them
+        const data = response.data
+          .filter((category): category is TagCategoryView => category != null && typeof category === 'object')
+          .map((category) => {
+            // Safely handle groups - filter out nulls and ensure it's an array
+            const groups = Array.isArray(category.groups) 
+              ? category.groups.filter((group) => group != null && typeof group === 'object')
+              : [];
+            
+            // Flatten tags from all groups, filtering out nulls
+            const tags = groups.flatMap((group) => {
+              const groupTags = Array.isArray(group.tags) 
+                ? group.tags.filter((tag) => tag != null && typeof tag === 'object')
+                : [];
+              return groupTags;
+            });
+
+            return {
+              ...category,
+              groups,
+              tags,
+            };
+          });
+
+        return { ...response, data } satisfies TagCategoriesResponse;
+      } catch (error) {
+        // Return empty data on error to prevent crashes
+        console.error('Error fetching tag categories:', error);
+        return { success: false, data: [] } as TagCategoriesResponse;
       }
-
-      const data = response.data.map((category) => {
-        const groups = category.groups ?? [];
-        return {
-          ...category,
-          groups,
-          tags: groups.flatMap((group) => group.tags ?? []),
-        };
-      });
-
-      return { ...response, data } satisfies TagCategoriesResponse;
     },
     staleTime: 1000 * 60,
     ...options,

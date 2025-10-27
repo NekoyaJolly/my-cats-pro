@@ -156,25 +156,44 @@ export default function CarePage() {
 
   const tagsQuery = useGetTagCategories();
   const allTags = useMemo(() => {
-    if (!tagsQuery.data?.data) return [];
-    
-    // Helper to validate tag has required properties
-    const isValidTag = (tag: TagView) => {
-      return typeof tag.id === 'string' && typeof tag.name === 'string' &&
-             tag.id.trim() !== '' && tag.name.trim() !== '';
-    };
-    
-    // Use category.tags directly (already computed by useGetTagCategories)
-    return tagsQuery.data.data
-      .flatMap((category: TagCategoryView) => 
-        (category.tags || [])
-          .filter(isValidTag)
-          .map((tag: TagView) => ({
-            value: tag.id,
-            label: tag.name,
-            group: category.name || 'その他', // Ensure group is always a string
-          }))
-      );
+    try {
+      // Return empty array if data is not available or not an array
+      if (!tagsQuery.data?.data || !Array.isArray(tagsQuery.data.data)) {
+        return [];
+      }
+      
+      // Helper to validate tag has required properties
+      const isValidTag = (tag: unknown): tag is TagView => {
+        if (!tag || typeof tag !== 'object') return false;
+        const t = tag as TagView;
+        return typeof t.id === 'string' && typeof t.name === 'string' &&
+               t.id.trim() !== '' && t.name.trim() !== '';
+      };
+      
+      // Helper to validate category has required properties
+      const isValidCategory = (category: unknown): category is TagCategoryView => {
+        if (!category || typeof category !== 'object') return false;
+        const c = category as TagCategoryView;
+        return typeof c.name === 'string' && c.name.trim() !== '' && Array.isArray(c.tags);
+      };
+      
+      // Use category.tags directly (already computed by useGetTagCategories)
+      return tagsQuery.data.data
+        .filter(isValidCategory)
+        .flatMap((category: TagCategoryView) => 
+          (category.tags || [])
+            .filter(isValidTag)
+            .map((tag: TagView) => ({
+              value: tag.id,
+              label: tag.name,
+              group: category.name || 'その他', // Ensure group is always a string
+            }))
+        );
+    } catch (error) {
+      // Log error and return empty array to prevent crashes
+      console.error('Error computing allTags:', error);
+      return [];
+    }
   }, [tagsQuery.data?.data]);
 
   // 絞り込まれた猫を計算
@@ -289,10 +308,11 @@ export default function CarePage() {
         description: trimmedDescription || undefined,
       },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
           resetCreateForm();
           closeCreateModal();
-          void scheduleQuery.refetch();
+          // Wait for query invalidation and refetch to complete
+          await scheduleQuery.refetch();
         },
       },
     );
@@ -325,9 +345,11 @@ export default function CarePage() {
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
           closeCompleteModal();
           setTargetSchedule(null);
+          // Wait for query invalidation and refetch to complete
+          await scheduleQuery.refetch();
         },
       },
     );
