@@ -308,11 +308,9 @@ export default function CarePage() {
         description: trimmedDescription || undefined,
       },
       {
-        onSuccess: async () => {
+        onSuccess: () => {
           resetCreateForm();
           closeCreateModal();
-          // Wait for query invalidation and refetch to complete
-          await scheduleQuery.refetch();
         },
       },
     );
@@ -345,11 +343,9 @@ export default function CarePage() {
         },
       },
       {
-        onSuccess: async () => {
+        onSuccess: () => {
           closeCompleteModal();
           setTargetSchedule(null);
-          // Wait for query invalidation and refetch to complete
-          await scheduleQuery.refetch();
         },
       },
     );
