@@ -24,9 +24,39 @@ export type CareType =
 
 export type CareScheduleStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
+export type ReminderTimingType = 'ABSOLUTE' | 'RELATIVE';
+export type ReminderOffsetUnit = 'MINUTE' | 'HOUR' | 'DAY' | 'WEEK' | 'MONTH';
+export type ReminderRelativeTo = 'START_DATE' | 'END_DATE' | 'CUSTOM_DATE';
+export type ReminderChannel = 'IN_APP' | 'EMAIL' | 'SMS' | 'PUSH';
+export type ReminderRepeatFrequency = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+
 export interface CareScheduleCat {
   id: string;
   name: string;
+}
+
+export interface CareScheduleReminder {
+  id: string;
+  timingType: ReminderTimingType;
+  remindAt?: string | null;
+  offsetValue?: number | null;
+  offsetUnit?: ReminderOffsetUnit | null;
+  relativeTo?: ReminderRelativeTo | null;
+  channel: ReminderChannel;
+  repeatFrequency?: ReminderRepeatFrequency | null;
+  repeatInterval?: number | null;
+  repeatCount?: number | null;
+  repeatUntil?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+}
+
+export interface CareScheduleTag {
+  id: string;
+  slug: string;
+  label: string;
+  level: number;
+  parentId?: string | null;
 }
 
 export interface CareSchedule {
@@ -35,13 +65,20 @@ export interface CareSchedule {
   title: string;
   description: string | null;
   scheduleDate: string;
+  endDate?: string | null;
+  timezone?: string | null;
   scheduleType: 'CARE' | string;
   status: CareScheduleStatus;
   careType: CareType | null;
+  priority?: string;
+  recurrenceRule?: string | null;
   assignedTo: string;
+  cat: CareScheduleCat | null;
+  cats: CareScheduleCat[];
+  reminders?: CareScheduleReminder[];
+  tags?: CareScheduleTag[];
   createdAt: string;
   updatedAt: string;
-  cat: CareScheduleCat | null;
 }
 
 export interface CareScheduleMeta {
@@ -125,6 +162,65 @@ export function useAddCareSchedule() {
     onError: (error: Error) => {
       notifications.show({
         title: 'ケア予定の登録に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useUpdateCareSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CreateCareScheduleRequest;
+    }) =>
+      apiClient.patch('/care/schedules/{id}', {
+        pathParams: { id } as ApiPathParams<'/care/schedules/{id}', 'patch'>,
+        body: payload,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
+      notifications.show({
+        title: 'ケア予定を更新しました',
+        message: '予定が正常に更新されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'ケア予定の更新に失敗しました',
+        message: error.message ?? '入力内容をご確認ください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useDeleteCareSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete('/care/schedules/{id}', {
+        pathParams: { id } as ApiPathParams<'/care/schedules/{id}', 'delete'>,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
+      notifications.show({
+        title: 'ケア予定を削除しました',
+        message: '予定が正常に削除されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'ケア予定の削除に失敗しました',
         message: error.message ?? '時間をおいて再度お試しください。',
         color: 'red',
       });

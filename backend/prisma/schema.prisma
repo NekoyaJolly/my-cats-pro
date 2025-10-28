@@ -144,6 +144,7 @@ model Cat {
   femaleBreedingRecords BreedingRecord[]       @relation("FemaleBreeding")
   careRecords           CareRecord[]
   schedules             Schedule[]
+  scheduleCats          ScheduleCat[]
   tags                  CatTag[]
   medicalRecords        MedicalRecord[]
   tagHistory            TagAssignmentHistory[]
@@ -296,6 +297,7 @@ model Schedule {
   reminders      ScheduleReminder[]
   tags           ScheduleTag[]
   medicalRecords MedicalRecord[]
+  scheduleCats   ScheduleCat[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -368,6 +370,19 @@ model ScheduleTag {
 
   @@id([scheduleId, careTagId])
   @@map("schedule_tags")
+}
+
+model ScheduleCat {
+  scheduleId String @map("schedule_id")
+  catId      String @map("cat_id")
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  cat      Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([scheduleId, catId])
+  @@map("schedule_cats")
 }
 
 model MedicalRecord {

@@ -105,11 +105,13 @@ class ScheduleReminderDto {
 
 export class CreateCareScheduleDto {
   @ApiProperty({
-    description: "猫ID",
-    example: "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60",
+    description: "対象猫IDの配列",
+    example: ["e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60"],
+    type: [String],
   })
-  @IsUUID()
-  catId: string;
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  catIds: string[];
 
   @ApiProperty({ description: "ケア名", example: "年次健康診断" })
   @IsString()

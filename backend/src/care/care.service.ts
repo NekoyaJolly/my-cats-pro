@@ -35,6 +35,7 @@ import type {
 
 const scheduleListInclude = {
   cat: { select: { id: true, name: true } },
+  scheduleCats: { include: { cat: { select: { id: true, name: true } } } },
   reminders: true,
   tags: { include: { careTag: true } },
 } as const;
@@ -55,6 +56,10 @@ type ScheduleWithRelations = Prisma.ScheduleGetPayload<{
   include: typeof scheduleListInclude;
 }>;
 
+type ScheduleCatRelation = {
+  cat: { id: string; name: string };
+};
+
 type MedicalRecordWithRelations = Prisma.MedicalRecordGetPayload<{
   include: typeof medicalRecordInclude;
 }>;
@@ -65,6 +70,32 @@ type MedicalRecordCreateInput = Partial<CreateMedicalRecordDto> & {
   catId?: string;
   scheduleId?: string;
   visitDate?: string;
+};
+
+// Extended types for scheduleCats relation
+type ScheduleCreateWithCats = Omit<Prisma.ScheduleUncheckedCreateInput, 'scheduleCats'> & {
+  scheduleCats?: {
+    create?: Array<{
+      cat: {
+        connect: {
+          id: string;
+        };
+      };
+    }>;
+  };
+};
+
+type ScheduleUpdateWithCats = Omit<Prisma.ScheduleUncheckedUpdateInput, 'scheduleCats'> & {
+  scheduleCats?: {
+    deleteMany?: {};
+    create?: Array<{
+      cat: {
+        connect: {
+          id: string;
+        };
+      };
+    }>;
+  };
 };
 
 const toIsoString = (value?: Date | null): string | null =>
@@ -125,32 +156,44 @@ export class CareService {
       this.buildReminderCreateInput(reminder),
     );
 
+    // 最初の猫IDを旧catIdフィールドに設定（後方互換性のため）
+    const primaryCatId = dto.catIds?.[0];
+
+    const createData: ScheduleCreateWithCats = {
+      catId: primaryCatId,
+      name: dto.name,
+      title: dto.name,
+      description: dto.description,
+      scheduleType: ScheduleType.CARE,
+      scheduleDate: new Date(dto.scheduledDate),
+      endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+      timezone: dto.timezone,
+      careType: dto.careType ?? null,
+      status: ScheduleStatus.PENDING,
+      priority: dto.priority ?? Priority.MEDIUM,
+      recurrenceRule: dto.recurrenceRule,
+      assignedTo: assignedUserId,
+      reminders: reminderCreates.length
+        ? { create: reminderCreates }
+        : undefined,
+      tags: dto.careTagIds?.length
+        ? {
+            create: dto.careTagIds.map((careTagId) => ({
+              careTag: { connect: { id: careTagId } },
+            })),
+          }
+        : undefined,
+      scheduleCats: dto.catIds?.length
+        ? {
+            create: dto.catIds.map((catId) => ({
+              cat: { connect: { id: catId } },
+            })),
+          }
+        : undefined,
+    };
+
     const schedule = await this.prisma.schedule.create({
-      data: {
-        catId: dto.catId,
-        name: dto.name,
-        title: dto.name,
-        description: dto.description,
-        scheduleType: ScheduleType.CARE,
-        scheduleDate: new Date(dto.scheduledDate),
-        endDate: dto.endDate ? new Date(dto.endDate) : undefined,
-        timezone: dto.timezone,
-        careType: dto.careType ?? null,
-        status: ScheduleStatus.PENDING,
-        priority: dto.priority ?? Priority.MEDIUM,
-        recurrenceRule: dto.recurrenceRule,
-        assignedTo: assignedUserId,
-        reminders: reminderCreates.length
-          ? { create: reminderCreates }
-          : undefined,
-        tags: dto.careTagIds?.length
-          ? {
-              create: dto.careTagIds.map((careTagId) => ({
-                careTag: { connect: { id: careTagId } },
-              })),
-            }
-          : undefined,
-      },
+      data: createData as unknown as Prisma.ScheduleCreateInput,
       include: scheduleListInclude,
     });
 
@@ -291,6 +334,92 @@ export class CareService {
     };
   }
 
+  async updateSchedule(
+    id: string,
+    dto: CreateCareScheduleDto,
+    userId?: string,
+  ): Promise<CareScheduleResponse> {
+    const assignedUserId = await this.resolveUserId(userId);
+
+    const existing = await this.prisma.schedule.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException("Schedule not found");
+    }
+
+    const reminderCreates = (dto.reminders ?? []).map((reminder) =>
+      this.buildReminderCreateInput(reminder),
+    );
+
+    const primaryCatId = dto.catIds?.[0];
+
+    const updateData: ScheduleUpdateWithCats = {
+      catId: primaryCatId,
+      name: dto.name,
+      title: dto.name,
+      description: dto.description,
+      scheduleDate: new Date(dto.scheduledDate),
+      endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+      timezone: dto.timezone,
+      careType: dto.careType ?? null,
+      priority: dto.priority ?? Priority.MEDIUM,
+      recurrenceRule: dto.recurrenceRule,
+      assignedTo: assignedUserId,
+      reminders: {
+        deleteMany: {},
+        create: reminderCreates,
+      },
+      tags: {
+        deleteMany: {},
+        create: dto.careTagIds?.length
+          ? dto.careTagIds.map((careTagId) => ({
+              careTag: { connect: { id: careTagId } },
+            }))
+          : undefined,
+      },
+      scheduleCats: {
+        deleteMany: {},
+        create: dto.catIds?.length
+          ? dto.catIds.map((catId) => ({
+              cat: { connect: { id: catId } },
+            }))
+          : undefined,
+      },
+    };
+
+    const schedule = await this.prisma.schedule.update({
+      where: { id },
+      data: updateData as unknown as Prisma.ScheduleUpdateInput,
+      include: scheduleListInclude,
+    });
+
+    return {
+      success: true,
+      data: this.mapScheduleToResponse(schedule as ScheduleWithRelations),
+    };
+  }
+
+  async deleteSchedule(id: string): Promise<{ success: true; message: string }> {
+    const existing = await this.prisma.schedule.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException("Schedule not found");
+    }
+
+    await this.prisma.schedule.delete({
+      where: { id },
+    });
+
+    return {
+      success: true,
+      message: "Schedule deleted successfully",
+    };
+  }
+
   async addMedicalRecord(
     dto: CreateMedicalRecordDto,
     userId?: string,
@@ -386,6 +515,12 @@ export class CareService {
       recurrenceRule: schedule.recurrenceRule ?? null,
       assignedTo: schedule.assignedTo,
       cat: schedule.cat ? { id: schedule.cat.id, name: schedule.cat.name } : null,
+      cats: Array.isArray(schedule.scheduleCats)
+        ? (schedule.scheduleCats as ScheduleCatRelation[]).map((sc) => ({
+            id: sc.cat.id,
+            name: sc.cat.name,
+          }))
+        : [],
       reminders,
       tags,
       createdAt: toIsoString(schedule.createdAt)!,

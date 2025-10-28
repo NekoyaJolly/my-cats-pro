@@ -123,6 +123,9 @@ export class CareScheduleItemDto {
   @ApiProperty({ type: CareScheduleCatDto, nullable: true })
   cat!: CareScheduleCatDto | null;
 
+  @ApiProperty({ type: [CareScheduleCatDto], description: "対象猫の配列" })
+  cats!: CareScheduleCatDto[];
+
   @ApiProperty({ type: [CareScheduleReminderDto] })
   reminders!: CareScheduleReminderDto[];
 
@@ -209,6 +212,7 @@ export type CareScheduleData = {
   recurrenceRule: string | null;
   assignedTo: string;
   cat: { id: string; name: string } | null;
+  cats: { id: string; name: string }[];
   reminders: {
     id: string;
     timingType: ReminderTimingType;

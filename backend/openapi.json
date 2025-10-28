@@ -286,7 +286,7 @@
             }
           },
           {
-            "name": "colorId",
+            "name": "coatColorId",
             "required": false,
             "in": "query",
             "description": "毛色ID",
@@ -645,7 +645,7 @@
             }
           },
           {
-            "name": "colorId",
+            "name": "coatColorId",
             "required": false,
             "in": "query",
             "description": "毛色ID",
@@ -1442,19 +1442,19 @@
             }
           },
           {
-            "name": "motherId",
+            "name": "femaleId",
             "required": false,
             "in": "query",
-            "description": "母猫ID",
+            "description": "メス猫ID",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "fatherId",
+            "name": "maleId",
             "required": false,
             "in": "query",
-            "description": "父猫ID",
+            "description": "オス猫ID",
             "schema": {
               "type": "string"
             }
@@ -1538,72 +1538,6 @@
         ]
       }
     },
-    "/api/v1/breeding/{id}": {
-      "patch": {
-        "operationId": "BreedingController_update",
-        "summary": "交配記録の更新",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBreedingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Breeding"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "BreedingController_remove",
-        "summary": "交配記録の削除",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Breeding"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
     "/api/v1/breeding/ng-rules": {
       "get": {
         "operationId": "BreedingController_findNgRules",
@@ -1616,6 +1550,11 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "post": {
@@ -1688,6 +1627,329 @@
       "delete": {
         "operationId": "BreedingController_removeNgRule",
         "summary": "NGペアルールの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/test": {
+      "get": {
+        "operationId": "BreedingController_test",
+        "summary": "テスト",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ]
+      }
+    },
+    "/api/v1/breeding/pregnancy-checks": {
+      "get": {
+        "operationId": "BreedingController_findAllPregnancyChecks",
+        "summary": "妊娠チェック一覧の取得",
+        "parameters": [
+          {
+            "name": "motherId",
+            "required": false,
+            "in": "query",
+            "description": "母親の猫ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "妊娠状態",
+            "schema": {
+              "enum": [
+                "CONFIRMED",
+                "SUSPECTED",
+                "NEGATIVE",
+                "ABORTED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ]
+      },
+      "post": {
+        "operationId": "BreedingController_createPregnancyCheck",
+        "summary": "妊娠チェックの新規作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePregnancyCheckDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/pregnancy-checks/{id}": {
+      "patch": {
+        "operationId": "BreedingController_updatePregnancyCheck",
+        "summary": "妊娠チェックの更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePregnancyCheckDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BreedingController_removePregnancyCheck",
+        "summary": "妊娠チェックの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/birth-plans": {
+      "get": {
+        "operationId": "BreedingController_findAllBirthPlans",
+        "summary": "出産計画一覧の取得",
+        "parameters": [
+          {
+            "name": "motherId",
+            "required": false,
+            "in": "query",
+            "description": "母親の猫ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "出産状態",
+            "schema": {
+              "enum": [
+                "EXPECTED",
+                "BORN",
+                "ABORTED",
+                "STILLBORN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ]
+      },
+      "post": {
+        "operationId": "BreedingController_createBirthPlan",
+        "summary": "出産計画の新規作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBirthPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/birth-plans/{id}": {
+      "patch": {
+        "operationId": "BreedingController_updateBirthPlan",
+        "summary": "出産計画の更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBirthPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BreedingController_removeBirthPlan",
+        "summary": "出産計画の削除",
         "parameters": [
           {
             "name": "id",
@@ -1872,6 +2134,81 @@
                 }
               }
             }
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/care/schedules/{id}": {
+      "patch": {
+        "operationId": "CareController_updateSchedule",
+        "summary": "ケアスケジュールの更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "スケジュールID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCareScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareScheduleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "CareController_deleteSchedule",
+        "summary": "ケアスケジュールの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "スケジュールID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "削除成功"
           }
         },
         "tags": [
@@ -2522,40 +2859,19 @@
       "CreateCatDto": {
         "type": "object",
         "properties": {
-          "registrationId": {
-            "type": "string",
-            "description": "登録ID",
-            "example": "REG-ALPHA"
-          },
           "name": {
             "type": "string",
             "description": "猫の名前",
             "example": "Alpha"
           },
-          "breedId": {
-            "type": "string",
-            "description": "品種ID"
-          },
-          "colorId": {
-            "type": "string",
-            "description": "毛色ID"
-          },
-          "pattern": {
-            "type": "string",
-            "description": "パターン"
-          },
           "gender": {
             "type": "string",
-            "description": "性別 (マスター名称またはキー)",
+            "description": "性別",
             "enum": [
               "MALE",
               "FEMALE",
               "NEUTER",
-              "SPAY",
-              "1",
-              "2",
-              "3",
-              "4"
+              "SPAY"
             ],
             "example": "MALE"
           },
@@ -2564,13 +2880,29 @@
             "description": "生年月日",
             "example": "2024-05-01"
           },
-          "weight": {
-            "type": "number",
-            "description": "体重 (kg)"
-          },
-          "microchipId": {
+          "breedId": {
             "type": "string",
-            "description": "マイクロチップID"
+            "description": "品種ID"
+          },
+          "coatColorId": {
+            "type": "string",
+            "description": "毛色ID"
+          },
+          "microchipNumber": {
+            "type": "string",
+            "description": "マイクロチップ番号"
+          },
+          "registrationNumber": {
+            "type": "string",
+            "description": "登録番号"
+          },
+          "description": {
+            "type": "string",
+            "description": "説明・備考"
+          },
+          "isInHouse": {
+            "type": "boolean",
+            "description": "施設内に在舎しているか"
           },
           "fatherId": {
             "type": "string",
@@ -2580,17 +2912,15 @@
             "type": "string",
             "description": "母猫のID"
           },
-          "imageUrl": {
-            "type": "string",
-            "description": "写真URL"
-          },
-          "notes": {
-            "type": "string",
-            "description": "備考"
+          "tagIds": {
+            "description": "タグID配列",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
-          "registrationId",
           "name",
           "gender",
           "birthDate"
@@ -2675,7 +3005,7 @@
             "type": "string",
             "description": "品種ID"
           },
-          "colorId": {
+          "coatColorId": {
             "type": "string",
             "description": "毛色ID"
           },
@@ -2778,22 +3108,22 @@
       "CreateBreedingDto": {
         "type": "object",
         "properties": {
-          "motherId": {
+          "femaleId": {
             "type": "string",
-            "description": "母猫のID",
+            "description": "メス猫のID",
             "example": "11111111-1111-1111-1111-111111111111"
           },
-          "fatherId": {
+          "maleId": {
             "type": "string",
-            "description": "父猫のID",
+            "description": "オス猫のID",
             "example": "22222222-2222-2222-2222-222222222222"
           },
-          "matingDate": {
+          "breedingDate": {
             "type": "string",
             "description": "交配日",
             "example": "2025-08-01"
           },
-          "expectedBirthDate": {
+          "expectedDueDate": {
             "type": "string",
             "description": "出産予定日 (YYYY-MM-DD)",
             "example": "2025-10-01"
@@ -2805,14 +3135,10 @@
           }
         },
         "required": [
-          "motherId",
-          "fatherId",
-          "matingDate"
+          "femaleId",
+          "maleId",
+          "breedingDate"
         ]
-      },
-      "UpdateBreedingDto": {
-        "type": "object",
-        "properties": {}
       },
       "CreateBreedingNgRuleDto": {
         "type": "object",
@@ -2883,6 +3209,140 @@
       "UpdateBreedingNgRuleDto": {
         "type": "object",
         "properties": {}
+      },
+      "CreatePregnancyCheckDto": {
+        "type": "object",
+        "properties": {
+          "motherId": {
+            "type": "string",
+            "description": "妊娠チェック対象の猫ID"
+          },
+          "checkDate": {
+            "type": "string",
+            "description": "妊娠チェック日"
+          },
+          "status": {
+            "type": "string",
+            "description": "妊娠状態",
+            "enum": [
+              "CONFIRMED",
+              "SUSPECTED",
+              "NEGATIVE",
+              "ABORTED"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ"
+          }
+        },
+        "required": [
+          "motherId",
+          "checkDate",
+          "status"
+        ]
+      },
+      "UpdatePregnancyCheckDto": {
+        "type": "object",
+        "properties": {
+          "checkDate": {
+            "type": "string",
+            "description": "妊娠チェック日"
+          },
+          "status": {
+            "type": "string",
+            "description": "妊娠状態",
+            "enum": [
+              "CONFIRMED",
+              "SUSPECTED",
+              "NEGATIVE",
+              "ABORTED"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ"
+          }
+        }
+      },
+      "CreateBirthPlanDto": {
+        "type": "object",
+        "properties": {
+          "motherId": {
+            "type": "string",
+            "description": "出産予定の母親猫ID"
+          },
+          "expectedBirthDate": {
+            "type": "string",
+            "description": "出産予定日"
+          },
+          "actualBirthDate": {
+            "type": "string",
+            "description": "実際の出産日"
+          },
+          "status": {
+            "type": "string",
+            "description": "出産状態",
+            "enum": [
+              "EXPECTED",
+              "BORN",
+              "ABORTED",
+              "STILLBORN"
+            ]
+          },
+          "expectedKittens": {
+            "type": "number",
+            "description": "予想される子猫の数"
+          },
+          "actualKittens": {
+            "type": "number",
+            "description": "実際の子猫の数"
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ"
+          }
+        },
+        "required": [
+          "motherId",
+          "expectedBirthDate",
+          "status"
+        ]
+      },
+      "UpdateBirthPlanDto": {
+        "type": "object",
+        "properties": {
+          "expectedBirthDate": {
+            "type": "string",
+            "description": "出産予定日"
+          },
+          "actualBirthDate": {
+            "type": "string",
+            "description": "実際の出産日"
+          },
+          "status": {
+            "type": "string",
+            "description": "出産状態",
+            "enum": [
+              "EXPECTED",
+              "BORN",
+              "ABORTED",
+              "STILLBORN"
+            ]
+          },
+          "expectedKittens": {
+            "type": "number",
+            "description": "予想される子猫の数"
+          },
+          "actualKittens": {
+            "type": "number",
+            "description": "実際の子猫の数"
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ"
+          }
+        }
       },
       "CareScheduleCatDto": {
         "type": "object",
@@ -3117,6 +3577,13 @@
               }
             ]
           },
+          "cats": {
+            "description": "対象猫の配列",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CareScheduleCatDto"
+            }
+          },
           "reminders": {
             "type": "array",
             "items": {
@@ -3150,6 +3617,7 @@
           "priority",
           "assignedTo",
           "cat",
+          "cats",
           "reminders",
           "tags",
           "createdAt",
@@ -3302,10 +3770,15 @@
       "CreateCareScheduleDto": {
         "type": "object",
         "properties": {
-          "catId": {
-            "type": "string",
-            "description": "猫ID",
-            "example": "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60"
+          "catIds": {
+            "description": "対象猫IDの配列",
+            "example": [
+              "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "name": {
             "type": "string",
@@ -3377,7 +3850,7 @@
           }
         },
         "required": [
-          "catId",
+          "catIds",
           "name",
           "careType",
           "scheduledDate"
@@ -3464,6 +3937,11 @@
             "type": "string",
             "description": "カラーコード",
             "example": "#3B82F6"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "テキストカラーコード",
+            "example": "#FFFFFF"
           },
           "description": {
             "type": "string",
@@ -3556,6 +4034,11 @@
             "description": "カラーコード",
             "example": "#3B82F6"
           },
+          "textColor": {
+            "type": "string",
+            "description": "テキストカラーコード",
+            "example": "#FFFFFF"
+          },
           "description": {
             "type": "string",
             "description": "説明",
@@ -3621,6 +4104,11 @@
             "type": "string",
             "description": "カテゴリの代表カラー",
             "example": "#6366F1"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "カテゴリに使用するテキストカラー",
+            "example": "#111827"
           },
           "displayOrder": {
             "type": "number",
@@ -3698,6 +4186,11 @@
             "description": "カテゴリの代表カラー",
             "example": "#6366F1"
           },
+          "textColor": {
+            "type": "string",
+            "description": "カテゴリに使用するテキストカラー",
+            "example": "#111827"
+          },
           "displayOrder": {
             "type": "number",
             "description": "表示順"
@@ -3742,6 +4235,16 @@
             "type": "boolean",
             "description": "アクティブかどうか",
             "example": true
+          },
+          "color": {
+            "type": "string",
+            "description": "グループ表示用のカラー",
+            "example": "#3B82F6"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "グループタイトルのテキストカラー",
+            "example": "#111827"
           }
         },
         "required": [
@@ -3813,6 +4316,16 @@
             "type": "boolean",
             "description": "アクティブかどうか",
             "example": true
+          },
+          "color": {
+            "type": "string",
+            "description": "グループ表示用のカラー",
+            "example": "#3B82F6"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "グループタイトルのテキストカラー",
+            "example": "#111827"
           }
         }
       }

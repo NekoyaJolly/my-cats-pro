@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Param,
@@ -68,5 +69,29 @@ export class CareController {
     @GetUser() user?: RequestUser,
   ) {
     return this.careService.complete(id, dto, user?.userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("schedules/:id")
+  @ApiOperation({ summary: "ケアスケジュールの更新" })
+  @ApiResponse({ status: HttpStatus.OK, type: CareScheduleResponseDto })
+  @ApiParam({ name: "id", description: "スケジュールID" })
+  updateSchedule(
+    @Param("id") id: string,
+    @Body() dto: CreateCareScheduleDto,
+    @GetUser() user?: RequestUser,
+  ) {
+    return this.careService.updateSchedule(id, dto, user?.userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete("schedules/:id")
+  @ApiOperation({ summary: "ケアスケジュールの削除" })
+  @ApiResponse({ status: HttpStatus.OK, description: "削除成功" })
+  @ApiParam({ name: "id", description: "スケジュールID" })
+  deleteSchedule(@Param("id") id: string) {
+    return this.careService.deleteSchedule(id);
   }
 }

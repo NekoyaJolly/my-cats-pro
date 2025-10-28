@@ -461,24 +461,6 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/breeding/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** 交配記録の削除 */
-        delete: operations["BreedingController_remove"];
-        options?: never;
-        head?: never;
-        /** 交配記録の更新 */
-        patch: operations["BreedingController_update"];
-        trace?: never;
-    };
     "/api/v1/breeding/ng-rules": {
         parameters: {
             query?: never;
@@ -515,6 +497,95 @@ export type paths = {
         patch: operations["BreedingController_updateNgRule"];
         trace?: never;
     };
+    "/api/v1/breeding/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** テスト */
+        get: operations["BreedingController_test"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeding/pregnancy-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 妊娠チェック一覧の取得 */
+        get: operations["BreedingController_findAllPregnancyChecks"];
+        put?: never;
+        /** 妊娠チェックの新規作成 */
+        post: operations["BreedingController_createPregnancyCheck"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeding/pregnancy-checks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 妊娠チェックの削除 */
+        delete: operations["BreedingController_removePregnancyCheck"];
+        options?: never;
+        head?: never;
+        /** 妊娠チェックの更新 */
+        patch: operations["BreedingController_updatePregnancyCheck"];
+        trace?: never;
+    };
+    "/api/v1/breeding/birth-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 出産計画一覧の取得 */
+        get: operations["BreedingController_findAllBirthPlans"];
+        put?: never;
+        /** 出産計画の新規作成 */
+        post: operations["BreedingController_createBirthPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeding/birth-plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 出産計画の削除 */
+        delete: operations["BreedingController_removeBirthPlan"];
+        options?: never;
+        head?: never;
+        /** 出産計画の更新 */
+        patch: operations["BreedingController_updateBirthPlan"];
+        trace?: never;
+    };
     "/api/v1/care/schedules": {
         parameters: {
             query?: never;
@@ -548,6 +619,24 @@ export type paths = {
         head?: never;
         /** ケア完了処理（PATCH/PUT対応） */
         patch: operations["CareController_complete"];
+        trace?: never;
+    };
+    "/api/v1/care/schedules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** ケアスケジュールの削除 */
+        delete: operations["CareController_deleteSchedule"];
+        options?: never;
+        head?: never;
+        /** ケアスケジュールの更新 */
+        patch: operations["CareController_updateSchedule"];
         trace?: never;
     };
     "/api/v1/tags": {
@@ -814,44 +903,39 @@ export type components = {
         };
         CreateCatDto: {
             /**
-             * @description 登録ID
-             * @example REG-ALPHA
-             */
-            registrationId: string;
-            /**
              * @description 猫の名前
              * @example Alpha
              */
             name: string;
-            /** @description 品種ID */
-            breedId?: string;
-            /** @description 毛色ID */
-            colorId?: string;
-            /** @description パターン */
-            pattern?: string;
             /**
-             * @description 性別 (マスター名称またはキー)
+             * @description 性別
              * @example MALE
              * @enum {string}
              */
-            gender: "MALE" | "FEMALE" | "NEUTER" | "SPAY" | "1" | "2" | "3" | "4";
+            gender: "MALE" | "FEMALE" | "NEUTER" | "SPAY";
             /**
              * @description 生年月日
              * @example 2024-05-01
              */
             birthDate: string;
-            /** @description 体重 (kg) */
-            weight?: number;
-            /** @description マイクロチップID */
-            microchipId?: string;
+            /** @description 品種ID */
+            breedId?: string;
+            /** @description 毛色ID */
+            coatColorId?: string;
+            /** @description マイクロチップ番号 */
+            microchipNumber?: string;
+            /** @description 登録番号 */
+            registrationNumber?: string;
+            /** @description 説明・備考 */
+            description?: string;
+            /** @description 施設内に在舎しているか */
+            isInHouse?: boolean;
             /** @description 父猫のID */
             fatherId?: string;
             /** @description 母猫のID */
             motherId?: string;
-            /** @description 写真URL */
-            imageUrl?: string;
-            /** @description 備考 */
-            notes?: string;
+            /** @description タグID配列 */
+            tagIds?: string[];
         };
         UpdateCatDto: Record<string, never>;
         CreatePedigreeDto: {
@@ -892,7 +976,7 @@ export type components = {
             /** @description 品種ID */
             breedId?: string;
             /** @description 毛色ID */
-            colorId?: string;
+            coatColorId?: string;
             /** @description 血統書発行日 */
             pedigreeIssueDate?: string;
             /** @description 品種コード */
@@ -933,32 +1017,31 @@ export type components = {
         UpdateCoatColorDto: Record<string, never>;
         CreateBreedingDto: {
             /**
-             * @description 母猫のID
+             * @description メス猫のID
              * @example 11111111-1111-1111-1111-111111111111
              */
-            motherId: string;
+            femaleId: string;
             /**
-             * @description 父猫のID
+             * @description オス猫のID
              * @example 22222222-2222-2222-2222-222222222222
              */
-            fatherId: string;
+            maleId: string;
             /**
              * @description 交配日
              * @example 2025-08-01
              */
-            matingDate: string;
+            breedingDate: string;
             /**
              * @description 出産予定日 (YYYY-MM-DD)
              * @example 2025-10-01
              */
-            expectedBirthDate?: string;
+            expectedDueDate?: string;
             /**
              * @description メモ
              * @example 初回の交配。
              */
             notes?: string;
         };
-        UpdateBreedingDto: Record<string, never>;
         CreateBreedingNgRuleDto: {
             /**
              * @description ルール名
@@ -992,6 +1075,66 @@ export type components = {
             generationLimit?: number;
         };
         UpdateBreedingNgRuleDto: Record<string, never>;
+        CreatePregnancyCheckDto: {
+            /** @description 妊娠チェック対象の猫ID */
+            motherId: string;
+            /** @description 妊娠チェック日 */
+            checkDate: string;
+            /**
+             * @description 妊娠状態
+             * @enum {string}
+             */
+            status: "CONFIRMED" | "SUSPECTED" | "NEGATIVE" | "ABORTED";
+            /** @description メモ */
+            notes?: string;
+        };
+        UpdatePregnancyCheckDto: {
+            /** @description 妊娠チェック日 */
+            checkDate?: string;
+            /**
+             * @description 妊娠状態
+             * @enum {string}
+             */
+            status?: "CONFIRMED" | "SUSPECTED" | "NEGATIVE" | "ABORTED";
+            /** @description メモ */
+            notes?: string;
+        };
+        CreateBirthPlanDto: {
+            /** @description 出産予定の母親猫ID */
+            motherId: string;
+            /** @description 出産予定日 */
+            expectedBirthDate: string;
+            /** @description 実際の出産日 */
+            actualBirthDate?: string;
+            /**
+             * @description 出産状態
+             * @enum {string}
+             */
+            status: "EXPECTED" | "BORN" | "ABORTED" | "STILLBORN";
+            /** @description 予想される子猫の数 */
+            expectedKittens?: number;
+            /** @description 実際の子猫の数 */
+            actualKittens?: number;
+            /** @description メモ */
+            notes?: string;
+        };
+        UpdateBirthPlanDto: {
+            /** @description 出産予定日 */
+            expectedBirthDate?: string;
+            /** @description 実際の出産日 */
+            actualBirthDate?: string;
+            /**
+             * @description 出産状態
+             * @enum {string}
+             */
+            status?: "EXPECTED" | "BORN" | "ABORTED" | "STILLBORN";
+            /** @description 予想される子猫の数 */
+            expectedKittens?: number;
+            /** @description 実際の子猫の数 */
+            actualKittens?: number;
+            /** @description メモ */
+            notes?: string;
+        };
         CareScheduleCatDto: {
             /** @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60 */
             id: string;
@@ -1093,6 +1236,8 @@ export type components = {
             /** @example f3a2c1d7-1234-5678-90ab-cdef12345678 */
             assignedTo: string;
             cat: components["schemas"]["CareScheduleCatDto"] | null;
+            /** @description 対象猫の配列 */
+            cats: components["schemas"]["CareScheduleCatDto"][];
             reminders: components["schemas"]["CareScheduleReminderDto"][];
             tags: components["schemas"]["CareScheduleTagDto"][];
             /** @example 2025-08-01T00:00:00.000Z */
@@ -1177,10 +1322,12 @@ export type components = {
         };
         CreateCareScheduleDto: {
             /**
-             * @description 猫ID
-             * @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60
+             * @description 対象猫IDの配列
+             * @example [
+             *       "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60"
+             *     ]
              */
-            catId: string;
+            catIds: string[];
             /**
              * @description ケア名
              * @example 年次健康診断
@@ -1278,6 +1425,11 @@ export type components = {
              */
             color?: string;
             /**
+             * @description テキストカラーコード
+             * @example #FFFFFF
+             */
+            textColor?: string;
+            /**
              * @description 説明
              * @example 室内飼いタグ
              */
@@ -1342,6 +1494,11 @@ export type components = {
              */
             color?: string;
             /**
+             * @description テキストカラーコード
+             * @example #FFFFFF
+             */
+            textColor?: string;
+            /**
              * @description 説明
              * @example 室内飼いタグ
              */
@@ -1394,6 +1551,11 @@ export type components = {
              * @example #6366F1
              */
             color?: string;
+            /**
+             * @description カテゴリに使用するテキストカラー
+             * @example #111827
+             */
+            textColor?: string;
             /** @description 表示順 */
             displayOrder?: number;
             /** @description 利用するスコープ一覧 */
@@ -1437,6 +1599,11 @@ export type components = {
              * @example #6366F1
              */
             color?: string;
+            /**
+             * @description カテゴリに使用するテキストカラー
+             * @example #111827
+             */
+            textColor?: string;
             /** @description 表示順 */
             displayOrder?: number;
             /** @description 利用するスコープ一覧 */
@@ -1470,6 +1637,16 @@ export type components = {
              * @example true
              */
             isActive?: boolean;
+            /**
+             * @description グループ表示用のカラー
+             * @example #3B82F6
+             */
+            color?: string;
+            /**
+             * @description グループタイトルのテキストカラー
+             * @example #111827
+             */
+            textColor?: string;
         };
         TagGroupOrderItemDto: {
             /**
@@ -1514,6 +1691,16 @@ export type components = {
              * @example true
              */
             isActive?: boolean;
+            /**
+             * @description グループ表示用のカラー
+             * @example #3B82F6
+             */
+            color?: string;
+            /**
+             * @description グループタイトルのテキストカラー
+             * @example #111827
+             */
+            textColor?: string;
         };
     };
     responses: never;
@@ -1709,7 +1896,7 @@ export interface operations {
                 /** @description 品種ID */
                 breedId?: string;
                 /** @description 毛色ID */
-                colorId?: string;
+                coatColorId?: string;
                 /** @description 性別 */
                 gender?: "MALE" | "FEMALE" | "NEUTER" | "SPAY" | "1" | "2" | "3" | "4";
                 /** @description 最小年齢 */
@@ -1948,7 +2135,7 @@ export interface operations {
                 /** @description 品種ID */
                 breedId?: string;
                 /** @description 毛色ID */
-                colorId?: string;
+                coatColorId?: string;
                 /** @description 性別 (1: オス, 2: メス) */
                 gender?: string;
                 /** @description キャッテリー名 */
@@ -2624,10 +2811,10 @@ export interface operations {
             query?: {
                 page?: number;
                 limit?: number;
-                /** @description 母猫ID */
-                motherId?: string;
-                /** @description 父猫ID */
-                fatherId?: string;
+                /** @description メス猫ID */
+                femaleId?: string;
+                /** @description オス猫ID */
+                maleId?: string;
                 /** @description 開始日(YYYY-MM-DD) */
                 dateFrom?: string;
                 /** @description 終了日(YYYY-MM-DD) */
@@ -2663,48 +2850,6 @@ export interface operations {
         };
         responses: {
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    BreedingController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    BreedingController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateBreedingDto"];
-            };
-        };
-        responses: {
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2792,6 +2937,201 @@ export interface operations {
             };
         };
     };
+    BreedingController_test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_findAllPregnancyChecks: {
+        parameters: {
+            query?: {
+                /** @description 母親の猫ID */
+                motherId?: string;
+                /** @description 妊娠状態 */
+                status?: "CONFIRMED" | "SUSPECTED" | "NEGATIVE" | "ABORTED";
+                /** @description ページ番号 */
+                page?: number;
+                /** @description 1ページあたりの件数 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_createPregnancyCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePregnancyCheckDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_removePregnancyCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_updatePregnancyCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePregnancyCheckDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_findAllBirthPlans: {
+        parameters: {
+            query?: {
+                /** @description 母親の猫ID */
+                motherId?: string;
+                /** @description 出産状態 */
+                status?: "EXPECTED" | "BORN" | "ABORTED" | "STILLBORN";
+                /** @description ページ番号 */
+                page?: number;
+                /** @description 1ページあたりの件数 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_createBirthPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBirthPlanDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_removeBirthPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_updateBirthPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBirthPlanDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CareController_findSchedules: {
         parameters: {
             query?: {
@@ -2866,6 +3206,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CareCompleteResponseDto"];
+                };
+            };
+        };
+    };
+    CareController_deleteSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description スケジュールID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 削除成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CareController_updateSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description スケジュールID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCareScheduleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareScheduleResponseDto"];
                 };
             };
         };

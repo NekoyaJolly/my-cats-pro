@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-10-23T19:05:15.782Z
+// Prisma Schema - Last Updated: 2025-10-28T18:25:24.948Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -147,13 +147,12 @@ model Cat {
   femaleBreedingRecords BreedingRecord[]       @relation("FemaleBreeding")
   careRecords           CareRecord[]
   schedules             Schedule[]
+  scheduleCats          ScheduleCat[]
   tags                  CatTag[]
   medicalRecords        MedicalRecord[]
   tagHistory            TagAssignmentHistory[]
-  pregnancyChecksMale   PregnancyCheck[]       @relation("PregnancyCheckMale")
-  pregnancyChecksFemale PregnancyCheck[]       @relation("PregnancyCheckFemale")
-  birthPlansMale        BirthPlan[]            @relation("BirthPlanMale")
-  birthPlansFemale      BirthPlan[]            @relation("BirthPlanFemale")
+  pregnancyChecks PregnancyCheck[] @relation("PregnancyCheckMother")
+  birthPlans      BirthPlan[]    @relation("BirthPlanMother")
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
   @@index([breedId])
@@ -210,17 +209,12 @@ model BreedingNgRule {
 
 model PregnancyCheck {
   id              String            @id @default(uuid())
-  maleId          String            @map("male_id")
-  femaleId        String            @map("female_id")
-  maleName        String            @map("male_name")
-  femaleName      String            @map("female_name")
-  matingDate      DateTime          @map("mating_date")
+  motherId        String            @map("mother_id")
   checkDate       DateTime          @map("check_date")
-  status          PregnancyStatus   @default(PENDING)
+  status          PregnancyStatus   @default(SUSPECTED)
   notes           String?
 
-  male   Cat @relation("PregnancyCheckMale", fields: [maleId], references: [id])
-  female Cat @relation("PregnancyCheckFemale", fields: [femaleId], references: [id])
+  mother Cat @relation("PregnancyCheckMother", fields: [motherId], references: [id])
 
   recordedBy String @map("recorded_by")
   recorder   User   @relation(fields: [recordedBy], references: [id])
@@ -228,27 +222,22 @@ model PregnancyCheck {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@index([maleId])
-  @@index([femaleId])
+  @@index([motherId])
   @@index([checkDate])
   @@map("pregnancy_checks")
 }
 
 model BirthPlan {
   id              String         @id @default(uuid())
-  maleId          String         @map("male_id")
-  femaleId        String         @map("female_id")
-  maleName        String         @map("male_name")
-  femaleName      String         @map("female_name")
-  matingDate      DateTime       @map("mating_date")
-  expectedDate    DateTime       @map("expected_date")
-  actualDate      DateTime?      @map("actual_date")
+  motherId        String         @map("mother_id")
+  expectedBirthDate DateTime     @map("expected_birth_date")
+  actualBirthDate DateTime?      @map("actual_birth_date")
   status          BirthStatus    @default(EXPECTED)
-  numberOfKittens Int?           @map("number_of_kittens")
+  expectedKittens Int?           @map("expected_kittens")
+  actualKittens   Int?           @map("actual_kittens")
   notes           String?
 
-  male   Cat @relation("BirthPlanMale", fields: [maleId], references: [id])
-  female Cat @relation("BirthPlanFemale", fields: [femaleId], references: [id])
+  mother Cat @relation("BirthPlanMother", fields: [motherId], references: [id])
 
   recordedBy String @map("recorded_by")
   recorder   User   @relation(fields: [recordedBy], references: [id])
@@ -256,9 +245,8 @@ model BirthPlan {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@index([maleId])
-  @@index([femaleId])
-  @@index([expectedDate])
+  @@index([motherId])
+  @@index([expectedBirthDate])
   @@map("birth_plans")
 }
 
@@ -312,6 +300,7 @@ model Schedule {
   reminders      ScheduleReminder[]
   tags           ScheduleTag[]
   medicalRecords MedicalRecord[]
+  scheduleCats   ScheduleCat[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -384,6 +373,19 @@ model ScheduleTag {
 
   @@id([scheduleId, careTagId])
   @@map("schedule_tags")
+}
+
+model ScheduleCat {
+  scheduleId String @map("schedule_id")
+  catId      String @map("cat_id")
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  cat      Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([scheduleId, catId])
+  @@map("schedule_cats")
 }
 
 model MedicalRecord {
@@ -707,16 +709,17 @@ enum BreedingStatus {
 }
 
 enum PregnancyStatus {
-  PENDING
   CONFIRMED
+  SUSPECTED
   NEGATIVE
-  CANCELLED
+  ABORTED
 }
 
 enum BirthStatus {
   EXPECTED
-  COMPLETED
-  CANCELLED
+  BORN
+  ABORTED
+  STILLBORN
 }
 
 enum BreedingNgRuleType {
