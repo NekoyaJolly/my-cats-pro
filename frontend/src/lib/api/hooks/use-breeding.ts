@@ -229,60 +229,63 @@ export function useCreateBreedingRecord() {
   });
 }
 
-export function useUpdateBreedingRecord(
-  id: string,
-) {
-  const queryClient = useQueryClient();
+// Note: /breeding/{id} endpoints (PATCH, DELETE) are not available in current API
+// Use pregnancy-checks and birth-plans endpoints instead for post-breeding management
 
-  return useMutation({
-    mutationFn: (payload: UpdateBreedingRequest) =>
-      apiClient.patch('/breeding/{id}', {
-        pathParams: { id } as ApiPathParams<'/breeding/{id}', 'patch'>,
-        body: payload as ApiRequestBody<'/breeding/{id}', 'patch'>,
-      }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: breedingKeys.lists() });
-      notifications.show({
-        title: '交配記録を更新しました',
-        message: '最新の情報に更新されました。',
-        color: 'teal',
-      });
-    },
-    onError: (error: Error) => {
-      notifications.show({
-        title: '交配記録の更新に失敗しました',
-        message: error.message ?? '時間をおいて再度お試しください。',
-        color: 'red',
-      });
-    },
-  });
-}
+// export function useUpdateBreedingRecord(
+//   id: string,
+// ) {
+//   const queryClient = useQueryClient();
 
-export function useDeleteBreedingRecord() {
-  const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: (payload: UpdateBreedingRequest) =>
+//       apiClient.patch('/breeding/{id}', {
+//         pathParams: { id } as ApiPathParams<'/breeding/{id}', 'patch'>,
+//         body: payload as ApiRequestBody<'/breeding/{id}', 'patch'>,
+//       }),
+//     onSuccess: () => {
+//       void queryClient.invalidateQueries({ queryKey: breedingKeys.lists() });
+//       notifications.show({
+//         title: '交配記録を更新しました',
+//         message: '最新の情報に更新されました。',
+//         color: 'teal',
+//       });
+//     },
+//     onError: (error: Error) => {
+//       notifications.show({
+//         title: '交配記録の更新に失敗しました',
+//         message: error.message ?? '時間をおいて再度お試しください。',
+//         color: 'red',
+//       });
+//     },
+//   });
+// }
 
-  return useMutation({
-    mutationFn: (recordId: string) =>
-      apiClient.delete('/breeding/{id}', {
-        pathParams: { id: recordId } as ApiPathParams<'/breeding/{id}', 'delete'>,
-      }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: breedingKeys.lists() });
-      notifications.show({
-        title: '交配記録を削除しました',
-        message: 'リストから該当レコードを削除しました。',
-        color: 'teal',
-      });
-    },
-    onError: (error: Error) => {
-      notifications.show({
-        title: '交配記録の削除に失敗しました',
-        message: error.message ?? '時間をおいて再度お試しください。',
-        color: 'red',
-      });
-    },
-  });
-}
+// export function useDeleteBreedingRecord() {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: (recordId: string) =>
+//       apiClient.delete('/breeding/{id}', {
+//         pathParams: { id: recordId } as ApiPathParams<'/breeding/{id}', 'delete'>,
+//       }),
+//     onSuccess: () => {
+//       void queryClient.invalidateQueries({ queryKey: breedingKeys.lists() });
+//       notifications.show({
+//         title: '交配記録を削除しました',
+//         message: 'リストから該当レコードを削除しました。',
+//         color: 'teal',
+//       });
+//     },
+//     onError: (error: Error) => {
+//       notifications.show({
+//         title: '交配記録の削除に失敗しました',
+//         message: error.message ?? '時間をおいて再度お試しください。',
+//         color: 'red',
+//       });
+//     },
+//   });
+// }
 
 const NG_RULES_ENDPOINT = '/breeding/ng-rules';
 
