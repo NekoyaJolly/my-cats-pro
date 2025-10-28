@@ -111,7 +111,7 @@ model Gender {
 
 model Cat {
   id                 String   @id @default(uuid())
-  registrationId   String?  @unique @map("registration_number") // 登録番号
+  registrationNumber   String?  @unique @map("registration_number") // 登録番号
   name               String
   gender             String   // MALE, FEMALE, NEUTER, SPAY
   birthDate          DateTime @map("birth_date")

@@ -46,11 +46,10 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        registrationId: `REG-${Date.now()}`,
+        registrationNumber: `REG-${Date.now()}`,
         name: "E2E Kitty",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-        ownerId,
       })
       .expect(201);
     const catId =
@@ -66,7 +65,7 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/care/schedules")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        catId,
+        catIds: [catId],
         name: "年次健康診断",
         careType: "HEALTH_CHECK",
         scheduledDate: "2025-09-01",
@@ -133,11 +132,10 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        registrationId: `REG-${Date.now()}`,
+        registrationNumber: `REG-${Date.now()}`,
         name: "E2E Tag Cat",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-        ownerId,
       })
       .expect(201);
     const catId =
