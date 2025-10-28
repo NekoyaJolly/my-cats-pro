@@ -30,11 +30,10 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register & login
-    const reg = await request(server)
+    await request(server)
       .post("/api/v1/auth/register")
       .send({ email, password })
       .expect(201);
-    const ownerId = reg.body.data.id as string;
     const login = await request(server)
       .post("/api/v1/auth/login")
       .send({ email, password })
@@ -46,11 +45,10 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        registrationId: `REG-${Date.now()}`,
+        registrationNumber: `REG-${Date.now()}`,
         name: "E2E Kitty",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-        ownerId,
       })
       .expect(201);
     const catId =
@@ -66,7 +64,7 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/care/schedules")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        catId,
+        catIds: [catId],
         name: "年次健康診断",
         careType: "HEALTH_CHECK",
         scheduledDate: "2025-09-01",
@@ -89,11 +87,10 @@ describe("Care & Tags flows (e2e)", () => {
     const password = "Secret123!";
 
     // register & login
-    const reg = await request(server)
+    await request(server)
       .post("/api/v1/auth/register")
       .send({ email, password })
       .expect(201);
-    const ownerId = reg.body.data.id as string;
     const login = await request(server)
       .post("/api/v1/auth/login")
       .send({ email, password })
@@ -133,11 +130,10 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        registrationId: `REG-${Date.now()}`,
+        registrationNumber: `REG-${Date.now()}`,
         name: "E2E Tag Cat",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-        ownerId,
       })
       .expect(201);
     const catId =

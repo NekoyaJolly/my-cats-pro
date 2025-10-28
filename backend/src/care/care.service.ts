@@ -87,7 +87,7 @@ type ScheduleCreateWithCats = Omit<Prisma.ScheduleUncheckedCreateInput, 'schedul
 
 type ScheduleUpdateWithCats = Omit<Prisma.ScheduleUncheckedUpdateInput, 'scheduleCats'> & {
   scheduleCats?: {
-    deleteMany?: {};
+    deleteMany?: Record<string, never>;
     create?: Array<{
       cat: {
         connect: {

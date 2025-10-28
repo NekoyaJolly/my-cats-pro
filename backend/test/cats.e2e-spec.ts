@@ -7,12 +7,12 @@ import { AppModule } from '../src/app.module';
 import { createTestApp } from './utils/create-test-app';
 
 interface CatPayload {
-  registrationId: string;
+  registrationNumber: string;
   name: string;
   gender: 'MALE' | 'FEMALE';
   birthDate: string;
   weight?: number;
-  microchipId?: string;
+  microchipNumber?: string;
   notes?: string;
   breedId?: string;
   colorId?: string;
@@ -22,7 +22,7 @@ interface CatPayload {
 
 function buildCatPayload(overrides: Partial<CatPayload> = {}): CatPayload {
   return {
-    registrationId: `CAT-${randomUUID()}`,
+    registrationNumber: `CAT-${randomUUID()}`,
     name: 'Test Cat',
     gender: 'MALE',
     birthDate: '2024-01-01',
@@ -109,7 +109,7 @@ describe('Cats API (e2e)', () => {
 
       expect(res.body.success).toBe(true);
       expect(res.body.data).toMatchObject({
-        registrationId: catData.registrationId,
+        registrationNumber: catData.registrationNumber,
         name: catData.name,
         gender: catData.gender,
       });
@@ -165,18 +165,18 @@ describe('Cats API (e2e)', () => {
     });
 
     it('should handle unique registration number constraint', async () => {
-      const registrationId = `UNIQUE-${randomUUID()}`;
+      const registrationNumber = `UNIQUE-${randomUUID()}`;
 
       await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
-        .send(buildCatPayload({ registrationId }))
+        .send(buildCatPayload({ registrationNumber }))
         .expect(201);
 
       const duplicateRes = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
-        .send(buildCatPayload({ registrationId, name: 'Duplicate Cat' }))
+        .send(buildCatPayload({ registrationNumber, name: 'Duplicate Cat' }))
         .expect(409);
 
       expect(duplicateRes.body.success).toBe(false);
@@ -186,19 +186,19 @@ describe('Cats API (e2e)', () => {
 
     it('should handle unique microchip number constraint', async () => {
       const microchipNumber = `${randomUUID().replace(/-/g, '').substring(0, 15)}`;
-      const registrationId1 = `CAT-${randomUUID()}`;
-      const registrationId2 = `CAT-${randomUUID()}`;
+      const registrationNumber1 = `CAT-${randomUUID()}`;
+      const registrationNumber2 = `CAT-${randomUUID()}`;
 
       await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ ...buildCatPayload({ registrationId: registrationId1 }), microchipNumber })
+        .send({ ...buildCatPayload({ registrationNumber: registrationNumber1 }), microchipNumber })
         .expect(201);
 
       const duplicateRes = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ ...buildCatPayload({ registrationId: registrationId2, name: 'Duplicate Cat' }), microchipNumber })
+        .send({ ...buildCatPayload({ registrationNumber: registrationNumber2, name: 'Duplicate Cat' }), microchipNumber })
         .expect(409);
 
       expect(duplicateRes.body.success).toBe(false);

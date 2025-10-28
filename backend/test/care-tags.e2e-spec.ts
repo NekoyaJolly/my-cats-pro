@@ -41,7 +41,7 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        registrationId: `REG-${Date.now()}`,
+        registrationNumber: `REG-${Date.now()}`,
         name: "E2E Kitty",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
@@ -118,7 +118,7 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        registrationId: `REG-${Date.now()}`,
+        registrationNumber: `REG-${Date.now()}`,
         name: "E2E Care Cat",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
@@ -136,7 +136,7 @@ describe("Care & Tags flows (e2e)", () => {
       .post("/api/v1/care/schedules")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        catId,
+        catIds: [catId],
         name: "Annual Health Check",
         careType: "HEALTH_CHECK",
         scheduledDate: "2025-09-01",
