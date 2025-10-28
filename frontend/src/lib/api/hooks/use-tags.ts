@@ -114,7 +114,7 @@ export function useGetTagCategories(
     queryKey: tagCategoryKeys.list(filters),
     queryFn: async () => {
       try {
-        const response = (await apiClient.get('/tags', {
+        const response = (await apiClient.get('/tags/categories', {
           query: buildTagCategoryQuery(filters),
         })) as TagCategoriesResponse;
 

@@ -17,7 +17,6 @@ import {
   Radio,
   RadioGroup,
   Select,
-  MultiSelect,
   Skeleton,
   Stack,
   TextInput,
@@ -116,6 +115,7 @@ export default function CarePage() {
   const [page, setPage] = useState(1);
   const [careTypeFilter, setCareTypeFilter] = useState<(typeof CARE_TYPE_FILTER_OPTIONS)[number]['value']>('ALL');
   const [selectedCareNames, setSelectedCareNames] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const [completeModalOpened, { open: openCompleteModal, close: closeCompleteModal }] = useDisclosure(false);
@@ -186,7 +186,8 @@ export default function CarePage() {
             .map((tag: TagView) => ({
               value: tag.id,
               label: tag.name,
-              group: category.name || 'その他', // Ensure group is always a string
+              // Temporarily remove group to test
+              // group: category.name || 'その他',
             }))
         );
     } catch (error) {
@@ -280,6 +281,7 @@ export default function CarePage() {
       schedule: null,
       description: '',
     });
+    setSelectedTag(null);
     setCreateError(null);
   };
 
@@ -311,6 +313,7 @@ export default function CarePage() {
         onSuccess: () => {
           resetCreateForm();
           closeCreateModal();
+          void scheduleQuery.refetch();
         },
       },
     );
@@ -369,7 +372,7 @@ export default function CarePage() {
           </Button>
           <Select
             placeholder="カードを追加"
-            data={availableCareNames.map((name) => ({ value: name, label: name }))}
+            data={(availableCareNames || []).map((name) => ({ value: name, label: name }))}
             value={null}
             onChange={(value) => {
               if (value && !selectedCareNames.includes(value)) {
@@ -577,13 +580,62 @@ export default function CarePage() {
             </Group>
           </RadioGroup>
 
-          <MultiSelect
-            label="タグ"
-            placeholder="タグを選択（複数選択可能）"
-            data={allTags}
-            value={createForm.tags}
-            onChange={(value) => setCreateForm((prev) => ({ ...prev, tags: value }))}
-          />
+          <div>
+            <Group grow align="flex-end" gap="xs">
+              <Select
+                label="タグ"
+                placeholder="タグを選択"
+                data={allTags || []}
+                value={selectedTag}
+                onChange={(value) => setSelectedTag(value)}
+              />
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={() => {
+                  if (selectedTag && !(createForm.tags || []).includes(selectedTag)) {
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      tags: [...(prev.tags || []), selectedTag],
+                    }));
+                    setSelectedTag(null);
+                  }
+                }}
+                disabled={!selectedTag}
+                w="auto"
+              >
+                追加
+              </Button>
+            </Group>
+            {(createForm.tags || []).length > 0 && (
+              <Group mt="xs" gap="xs">
+                {(createForm.tags || []).map((tagId) => {
+                  const tag = allTags.find((t) => t.value === tagId);
+                  return (
+                    <Badge
+                      key={tagId}
+                      variant="light"
+                      rightSection={
+                        <ActionIcon
+                          size="xs"
+                          variant="transparent"
+                          onClick={() =>
+                            setCreateForm((prev) => ({
+                              ...prev,
+                              tags: (prev.tags || []).filter((id) => id !== tagId),
+                            }))
+                          }
+                        >
+                          <IconX size={12} />
+                        </ActionIcon>
+                      }
+                    >
+                      {tag?.label || tagId}
+                    </Badge>
+                  );
+                })}
+              </Group>
+            )}
+          </div>
 
           <Group justify="space-between" align="center">
             <Text size="sm" fw={500}>対象猫</Text>

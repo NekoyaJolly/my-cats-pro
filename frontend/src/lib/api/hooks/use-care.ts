@@ -72,14 +72,23 @@ export function useGetCareSchedules(
     queryFn: async () => {
       const response = await apiClient.get('/care/schedules', {
         query: params,
+        init: {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        },
       });
 
       if (!response.data) {
         throw new Error('ケアスケジュールのレスポンスが不正です');
       }
 
-      return response.data as CareScheduleListResponse;
+      return response as unknown as CareScheduleListResponse;
     },
+    staleTime: 0,
+    gcTime: 0,
     ...options,
   });
 }
@@ -100,7 +109,13 @@ export function useAddCareSchedule() {
       return response.data as CareScheduleResponse;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
+      void queryClient.invalidateQueries({ 
+        queryKey: careScheduleKeys.lists(),
+        refetchType: 'all' 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: careScheduleKeys.lists() 
+      });
       notifications.show({
         title: 'ケア予定を登録しました',
         message: 'ケアスケジュールを追加しました。',
