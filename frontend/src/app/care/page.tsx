@@ -380,7 +380,7 @@ export default function CarePage() {
     );
   };
 
-  const openCompleteScheduleModal = (schedule: CareSchedule) => {
+  const _openCompleteScheduleModal = (schedule: CareSchedule) => {
     setTargetSchedule(schedule);
     setCompleteForm({
       completedDate: new Date(),
