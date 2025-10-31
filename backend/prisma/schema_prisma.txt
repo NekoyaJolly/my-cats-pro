@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-10-28T18:25:24.948Z
+// Prisma Schema - Last Updated: 2025-10-31T08:18:25.940Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -114,7 +114,7 @@ model Gender {
 
 model Cat {
   id                 String   @id @default(uuid())
-  registrationId   String?  @unique @map("registration_number") // 登録番号
+  registrationNumber   String?  @unique @map("registration_number") // 登録番号
   name               String
   gender             String   // MALE, FEMALE, NEUTER, SPAY
   birthDate          DateTime @map("birth_date")

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -7,17 +5,17 @@ services:
     container_name: mycats_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: catmanagement
+      POSTGRES_USER: mycats
+      POSTGRES_PASSWORD: mycats_dev_password
+      POSTGRES_DB: mycats_development
       TZ: Asia/Tokyo
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d
+      - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U mycats -d mycats_development"]
       interval: 10s
       timeout: 5s
       retries: 5

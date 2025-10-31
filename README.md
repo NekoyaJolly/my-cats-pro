@@ -17,6 +17,7 @@
 - [📊 ビルド・デプロイ](#-ビルドデプロイ)
 - [🌐 デプロイオプション](#-デプロイオプション)
 - [🔍 トラブルシューティング](#-トラブルシューティング)
+- [🪟 Windows環境での開発](#-windows環境での開発)
 - [🎨 スタイルガイド（抜粋）](#-スタイルガイド抜粋)
 - [🧭 命名規則ガイドライン](#-命名規則ガイドライン)
 
@@ -183,23 +184,40 @@ curl http://localhost:3004/health
 
 ## 🚀 クイックスタート (最短手順)
 
-ローカルで「動かすだけ」を最短で行うための手順です。細かい選択肢や背景は後続セクションを参照してください。
+ローカルで「動かすだけ」を最短で行うための手順です。Docker Composeを使用してデータベースを起動し、安定した開発環境を構築します。
 
 ### 前提条件
 
 - **Node.js**: 20.x (推奨)
 - **pnpm**: 9.15.9 (推奨パッケージマネージャー)
-- **PostgreSQL**: 15以上
+- **Docker**: 最新版 (Docker Composeを含む)
 - **Git**: 最新版
 
-### 1. リポジトリのクローン
+### 方法1: セットアップスクリプトを使用（推奨）
+
+```bash
+# 1. リポジトリのクローン
+git clone https://github.com/NekoyaJolly/mycats.git
+cd mycats
+
+# 2. 自動セットアップスクリプトを実行
+# 環境変数ファイル、Docker Compose、依存関係、Prismaマイグレーション、シードデータを全て自動設定
+bash scripts/setup-dev-docker.sh
+
+# 3. 開発サーバーを起動
+bash scripts/start-all.sh
+```
+
+### 方法2: 手動セットアップ
+
+#### 1. リポジトリのクローン
 
 ```bash
 git clone https://github.com/NekoyaJolly/mycats.git
 cd mycats
 ```
 
-### 2. パッケージマネージャーのセットアップ
+#### 2. パッケージマネージャーのセットアップ
 
 ```bash
 # pnpmがインストールされていない場合
@@ -209,57 +227,109 @@ npm install -g pnpm@latest
 pnpm --version  # 9.x系が推奨
 ```
 
-### 3. 環境変数の設定
+#### 3. 環境変数の設定
 
-`backend/.env` を作成:
+`backend/.env` を作成 (.env.developmentをコピー可):
+
+```bash
+cp .env.development backend/.env
+```
+
+または手動で作成:
 
 ```env
 # --- Core ---
 PORT=3004
 NODE_ENV=development
-JWT_SECRET=dev-jwt-secret-change-me
 
-# --- Database ---
-DATABASE_URL="postgresql://postgres:postgres@localhost:55432/mycats?schema=public"
+# --- Database (Docker Compose) ---
+# ユーザー: mycats / パスワード: mycats_dev_password (docker-compose.ymlと一致)
+DATABASE_URL="postgresql://mycats:mycats_dev_password@localhost:5433/mycats_development?schema=public"
 
-# --- Admin Seed (初回作成/seedで利用) ---
+# --- JWT / Auth ---
+JWT_SECRET="development-jwt-secret-at-least-32-characters-long-for-security-please-change-in-production"
+JWT_EXPIRES_IN="15m"
+JWT_REFRESH_SECRET="development-refresh-secret-at-least-32-characters-long-please-change-in-production"
+JWT_REFRESH_EXPIRES_IN="7d"
+PASSWORD_MIN_LENGTH=8
+
+# --- Admin Seed ---
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=Passw0rd!
+ADMIN_FORCE_UPDATE=0
 
 # --- Optional Auth Bypass (開発のみ) ---
-# AUTH_DISABLED=1
+AUTH_DISABLED=0
 ```
 
-必要に応じて `frontend/.env.local` に以下を追加 (認証バイパス利用時のみ):
+`frontend/.env.local` を作成:
+
+```bash
+cp frontend/.env.example frontend/.env.local
+```
+
+または手動で作成:
 
 ```env
-NEXT_PUBLIC_AUTH_DISABLED=1
+NEXT_PUBLIC_API_URL=http://localhost:3004
+NEXT_PUBLIC_ENV=development
 ```
 
-> バイパスの詳細・リスクは後述「開発モード詳細 / 認証バイパス」を参照。
+> ⚠️ 認証バイパス (`AUTH_DISABLED=1`) の詳細・リスクは後述「開発モード詳細 / 認証バイパス」を参照。
 
-### 4. 依存関係・DBセットアップ & クリーン起動
-
-ルート直下で以下を実行 (自動で backend/front を順序付き起動):
+#### 4. Docker Compose でデータベースを起動
 
 ```bash
-# 依存関係
+# PostgreSQLコンテナを起動（ポート5433、データ永続化）
+docker-compose up -d postgres
+
+# ヘルスチェック（PostgreSQLが起動するまで待機）
+docker exec mycats_postgres pg_isready -U mycats -d mycats_development
+```
+
+#### 5. 依存関係のインストール
+
+```bash
+# プロジェクトルートで実行
 pnpm install
-
-# (初回) DBマイグレーション + シード
-pnpm run db:migrate
-pnpm run db:seed
-
-# クリーン起動 (ポート開放→前提チェック→バックエンド→フロント)
-pnpm run backend:dev:clean &
-pnpm --filter frontend run dev &
-wait
 ```
 
-あるいは単純にフル並列起動:
+#### 6. Prismaマイグレーション & シード
 
 ```bash
+# バックエンドディレクトリに移動
+cd backend
+
+# Prisma Clientを生成
+pnpm prisma:generate
+
+# マイグレーションを実行
+pnpm prisma:migrate
+
+# シードデータを投入
+pnpm run seed
+
+# プロジェクトルートに戻る
+cd ..
+```
+
+#### 7. 開発サーバーを起動
+
+```bash
+# バックエンドを起動（別ターミナル推奨）
+cd backend
+pnpm run start:dev
+
+# フロントエンドを起動（別ターミナル）
+cd frontend
 pnpm run dev
+```
+
+または並列起動スクリプトを使用:
+
+```bash
+# プロジェクトルートから実行
+bash scripts/start-all.sh
 ```
 
 ### 5. アプリケーションへのアクセス
@@ -267,7 +337,22 @@ pnpm run dev
 - **フロントエンド**: <http://localhost:3000>
 - **バックエンドAPI**: <http://localhost:3004>
 - **API Documentation**: <http://localhost:3004/api/docs>
-- **Prisma Studio**: `npm run db:studio`
+- **pgAdmin**: <http://localhost:5050> (Email: admin@example.com / Password: admin)
+- **Prisma Studio**: `cd backend && pnpm prisma:studio`
+
+### 6. データベース情報
+
+```bash
+# 接続情報
+Host: localhost
+Port: 5433
+Database: mycats_development
+User: mycats
+Password: mycats_dev_password
+
+# データは Docker volume に永続化されます
+# データを削除するには: docker-compose down -v
+```
 
 ## 🧪 開発モード詳細 / 認証バイパス
 
@@ -630,6 +715,50 @@ MIT License
 
 命名ルール、Glossary、適用プロセスは [`docs/naming-guidelines.md`](./docs/naming-guidelines.md) に集約しています。機能追加や既存コードの改修時には必ず参照し、PR テンプレートに従ってチェックを行ってください。
 
+## 🪟 Windows環境での開発
+
+このプロジェクトはWindows環境でも開発できます。Windows固有の設定やトラブルシューティングについては、**[WINDOWS_SETUP.md](./WINDOWS_SETUP.md)** を参照してください。
+
+### Windows環境での推奨セットアップ
+
+#### 方法1: WSL2使用（最も推奨）
+
+WSL2を使用すると、Mac/Linuxと同じ開発体験が得られます：
+
+```bash
+# WSL2 (Ubuntu) 内で実行
+bash scripts/setup-dev-docker.sh
+bash scripts/start-all.sh
+```
+
+#### 方法2: Windows標準環境
+
+Windowsバッチファイルを使用:
+
+```cmd
+REM コマンドプロンプトで実行
+scripts\setup-dev-docker.bat
+pnpm run dev
+```
+
+#### 方法3: Git Bash使用
+
+Git Bashでbashスクリプトを直接実行:
+
+```bash
+bash scripts/setup-dev-docker.sh
+bash scripts/start-all.sh
+```
+
+### Windows用ファイル
+
+- `scripts/setup-dev-docker.bat` - Windows用セットアップスクリプト
+- `scripts/start-all.bat` - Windows用起動スクリプト
+- `.gitattributes` - 改行コード自動変換設定
+- `WINDOWS_SETUP.md` - Windows環境詳細ガイド
+
+詳細な手順、トラブルシューティング、推奨設定については **[WINDOWS_SETUP.md](./WINDOWS_SETUP.md)** を参照してください。
+
 ## 🔗 関連ドキュメント
 
 ### 📚 技術ドキュメント
@@ -651,6 +780,8 @@ MIT License
 
 - **[Functional Blueprint](./docs/functional-blueprint.md)** - UI→API→DB の連携概要とコンポーネント一覧
 - **[安定版サーバーガイド](./STABLE_SERVER_GUIDE.md)** - 長時間稼働向けの起動・停止手順
+- **[トラブルシューティング](./TROUBLESHOOTING.md)** - よくある問題と解決方法
+- **[Windows環境セットアップ](./WINDOWS_SETUP.md)** - Windows環境での開発ガイド
 
 ## 🙋‍♂️ サポート
 
