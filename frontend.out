@@ -2,3 +2,121 @@
 > frontend@0.1.0 dev /Users/jolly_app/projects/mycats-pro/frontend
 > next dev -p 3000
 
+   ▲ Next.js 15.5.3
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.6:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+ ✓ Ready in 3.6s
+ ✓ Compiled /middleware in 336ms (159 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 5.4s (1690 modules)
+ GET / 200 in 6140ms
+ ○ Compiling /cats ...
+ ✓ Compiled /cats in 2.2s (1811 modules)
+ GET /cats 200 in 2429ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 847ms (1816 modules)
+ GET /manifest.json 404 in 1272ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 637ms (1919 modules)
+ GET /login 200 in 1301ms
+ GET / 200 in 45ms
+ GET /manifest.json 404 in 65ms
+ GET /cats 200 in 44ms
+ GET /manifest.json 404 in 503ms
+ ○ Compiling /cats/[id] ...
+ ✓ Compiled /cats/[id] in 3.3s (3061 modules)
+ GET /cats/2582bd52-05ab-4780-8c1b-b2f1ca960aab 200 in 4152ms
+ GET /manifest.json 404 in 948ms
+ ○ Compiling /cats/[id]/pedigree ...
+ ✓ Compiled /cats/[id]/pedigree in 1528ms (3085 modules)
+ GET /cats/2582bd52-05ab-4780-8c1b-b2f1ca960aab/pedigree 200 in 2412ms
+ GET /manifest.json 404 in 283ms
+ GET /manifest.json 404 in 53ms
+ ○ Compiling /cats/[id]/edit ...
+ ✓ Compiled /cats/[id]/edit in 1327ms (3111 modules)
+ GET /cats/2582bd52-05ab-4780-8c1b-b2f1ca960aab/edit 200 in 2155ms
+ GET /manifest.json 404 in 207ms
+ GET /cats/1 200 in 47ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1694ms (3075 modules)
+ GET /favicon.ico 200 in 2194ms
+ GET /manifest.json 404 in 2171ms
+ GET /cats 200 in 35ms
+ GET /manifest.json 404 in 64ms
+ GET /cats/b8a240b8-e33a-4395-a116-d57796b34b59 200 in 51ms
+ GET /manifest.json 404 in 56ms
+ GET /cats 200 in 31ms
+ GET /manifest.json 404 in 51ms
+ GET /cats/b8a240b8-e33a-4395-a116-d57796b34b59 200 in 139ms
+ GET /manifest.json 404 in 66ms
+ GET /cats 200 in 60ms
+ GET /manifest.json 404 in 200ms
+ ○ Compiling /breeding ...
+ ✓ Compiled /breeding in 5.5s (3147 modules)
+ GET /breeding 200 in 5737ms
+ GET /manifest.json 404 in 581ms
+ ○ Compiling /kittens ...
+ ✓ Compiled /kittens in 1452ms (3185 modules)
+ GET /kittens 200 in 1645ms
+ GET /manifest.json 404 in 294ms
+ ○ Compiling /care ...
+ ✓ Compiled /care in 2.1s (3496 modules)
+ GET /care 200 in 2447ms
+ GET /manifest.json 404 in 246ms
+ ○ Compiling /more ...
+ ✓ Compiled /more in 1114ms (3519 modules)
+ GET /more 200 in 1218ms
+ GET /manifest.json 404 in 187ms
+ ○ Compiling / ...
+ ✓ Compiled / in 552ms (1856 modules)
+ GET / 200 in 654ms
+ GET /manifest.json 404 in 161ms
+ GET /breeding 200 in 51ms
+ GET /manifest.json 404 in 63ms
+ GET /kittens 200 in 50ms
+ GET /manifest.json 404 in 61ms
+ GET /care 200 in 61ms
+ GET /manifest.json 404 in 56ms
+ ✓ Compiled in 2.7s (2914 modules)
+ ○ Compiling /cats/new ...
+ ✓ Compiled /cats/new in 3s (2966 modules)
+ GET /cats/new 200 in 3402ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.2s (3024 modules)
+ GET /manifest.json 404 in 3259ms
+ GET /login 200 in 3247ms
+ ○ Compiling / ...
+ ✓ Compiled / in 611ms (1329 modules)
+ GET / 200 in 761ms
+ GET /manifest.json 404 in 258ms
+ ○ Compiling /cats ...
+ ✓ Compiled /cats in 761ms (1339 modules)
+ GET /cats 200 in 994ms
+ GET /manifest.json 404 in 247ms
+ ○ Compiling /cats/[id] ...
+ ✓ Compiled /cats/[id] in 856ms (1901 modules)
+ GET /cats/2582bd52-05ab-4780-8c1b-b2f1ca960aab 200 in 1164ms
+ GET /manifest.json 404 in 181ms
+ ○ Compiling /cats/[id]/edit ...
+ ✓ Compiled /cats/[id]/edit in 1383ms (1825 modules)
+ GET /cats/2582bd52-05ab-4780-8c1b-b2f1ca960aab/edit 200 in 1605ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1699ms (3516 modules)
+ GET /manifest.json 404 in 2031ms
+ GET /cats/1 200 in 56ms
+ GET /manifest.json 404 in 57ms
+ GET /cats 200 in 36ms
+ GET /manifest.json 404 in 89ms
+ GET /cats/2582bd52-05ab-4780-8c1b-b2f1ca960aab 200 in 35ms
+ GET /manifest.json 404 in 64ms
+ ✓ Compiled in 3.1s (3504 modules)
+ ✓ Compiled in 4.3s (3504 modules)
+ ✓ Compiled in 1910ms (3504 modules)
+ ✓ Compiled in 3.5s (3504 modules)
+ ✓ Compiled in 4.9s (3504 modules)
+ ✓ Compiled in 3.2s (3504 modules)
