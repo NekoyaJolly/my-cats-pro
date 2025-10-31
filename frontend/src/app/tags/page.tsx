@@ -33,6 +33,7 @@ import {
   Loader,
   Modal,
   MultiSelect,
+  NumberInput,
   Select,
   Stack,
   Switch,
@@ -49,6 +50,7 @@ import {
   IconInfoCircle,
   IconPencil,
   IconPlus,
+  IconRobot,
   IconTag,
   IconTrash,
   IconWand,
@@ -80,6 +82,17 @@ import {
   type UpdateTagGroupRequest,
   type UpdateTagRequest,
 } from '@/lib/api/hooks/use-tags';
+import {
+  useGetAutomationRules,
+  useCreateAutomationRule,
+  useUpdateAutomationRule,
+  useDeleteAutomationRule,
+  type TagAutomationRule,
+  type CreateTagAutomationRuleRequest,
+  type UpdateTagAutomationRuleRequest,
+  type TagAutomationTriggerType,
+  type TagAutomationEventType,
+} from '@/lib/api/hooks/use-tag-automation';
 
 const PRESET_COLORS = [
   '#e74c3c',
@@ -131,6 +144,41 @@ type GroupFormValues = {
   textColor: string;
   isActive: boolean;
 };
+
+type AutomationRuleFormValues = {
+  key: string;
+  name: string;
+  description: string;
+  triggerType: TagAutomationTriggerType;
+  eventType: TagAutomationEventType | '';
+  scope: string;
+  priority: number;
+  isActive: boolean;
+};
+
+const TRIGGER_TYPE_OPTIONS = [
+  { value: 'EVENT', label: 'イベント駆動' },
+  { value: 'SCHEDULE', label: 'スケジュール' },
+  { value: 'MANUAL', label: '手動実行' },
+];
+
+const EVENT_TYPE_OPTIONS = [
+  { value: 'BREEDING_PLANNED', label: '交配予定' },
+  { value: 'BREEDING_CONFIRMED', label: '交配確認' },
+  { value: 'PREGNANCY_CONFIRMED', label: '妊娠確認' },
+  { value: 'KITTEN_REGISTERED', label: '子猫登録' },
+  { value: 'AGE_THRESHOLD', label: '年齢閾値' },
+  { value: 'CUSTOM', label: 'カスタム' },
+];
+
+// 自動化ルールで使用可能なスコープのデフォルトリスト
+const AUTOMATION_SCOPE_OPTIONS = [
+  { value: 'cats', label: '猫管理' },
+  { value: 'breeding', label: '交配管理' },
+  { value: 'health', label: '健康管理' },
+  { value: 'care', label: 'ケア記録' },
+  { value: 'pedigree', label: '血統管理' },
+];
 
 type AutomationMeta = {
   ruleName?: string;
@@ -894,6 +942,8 @@ export default function TagsPage() {
   const [categoryModalOpened, { open: openCategoryModal, close: closeCategoryModal }] = useDisclosure(false);
   const [groupModalOpened, { open: openGroupModal, close: closeGroupModal }] = useDisclosure(false);
   const [tagModalOpened, { open: openTagModal, close: closeTagModal }] = useDisclosure(false);
+  const [automationRuleModalOpened, { open: openAutomationRuleModal, close: closeAutomationRuleModal }] = useDisclosure(false);
+  const [editingAutomationRule, setEditingAutomationRule] = useState<TagAutomationRule | null>(null);
 
   const queryFilters = useMemo<TagCategoryFilters | undefined>(() => {
     const payload: TagCategoryFilters = {};
@@ -958,6 +1008,43 @@ export default function TagsPage() {
     },
   });
 
+  const automationRuleForm = useForm<AutomationRuleFormValues>({
+    initialValues: {
+      key: '',
+      name: '',
+      description: '',
+      triggerType: 'EVENT',
+      eventType: '',
+      scope: '',
+      priority: 10,
+      isActive: true,
+    },
+    validate: {
+      key: (value) => {
+        if (!value.trim()) return 'キーを入力してください';
+        // キーは英数字とハイフン、アンダースコアのみ
+        if (!/^[a-z0-9_-]+$/i.test(value)) {
+          return 'キーは英数字、ハイフン、アンダースコアのみ使用できます';
+        }
+        return null;
+      },
+      name: (value) => (value.trim().length ? null : 'ルール名を入力してください'),
+      triggerType: (value) => (value ? null : 'トリガータイプを選択してください'),
+      eventType: (value, values) => {
+        if (values.triggerType === 'EVENT' && !value) {
+          return 'イベントタイプを選択してください';
+        }
+        return null;
+      },
+      priority: (value) => {
+        if (value < 0 || value > 100) {
+          return '優先度は0-100の範囲で入力してください';
+        }
+        return null;
+      },
+    },
+  });
+
   const groupForm = useForm<GroupFormValues>({
     initialValues: {
       categoryId: '',
@@ -989,6 +1076,27 @@ export default function TagsPage() {
     () => availableScopes.map((scope) => ({ value: scope, label: scope })),
     [availableScopes],
   );
+
+  // 自動化ルール用のスコープオプション（既存スコープ + デフォルトスコープをマージ）
+  const automationScopeOptions = useMemo(() => {
+    const scopeMap = new Map<string, string>();
+    
+    // デフォルトスコープを追加
+    AUTOMATION_SCOPE_OPTIONS.forEach(option => {
+      scopeMap.set(option.value, option.label);
+    });
+    
+    // 既存のスコープを追加（既にある場合は上書きしない）
+    availableScopes.forEach(scope => {
+      if (!scopeMap.has(scope)) {
+        scopeMap.set(scope, scope);
+      }
+    });
+    
+    return Array.from(scopeMap.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'ja'));
+  }, [availableScopes]);
 
   const categoryOptions = useMemo(
     () => sortedCategories.map((category) => ({ value: category.id, label: category.name })),
@@ -1030,7 +1138,8 @@ export default function TagsPage() {
       return;
     }
 
-    if (!tagForm.values.groupId && tagGroupOptions.length === 1) {
+    // グループが未選択で、選択肢が1つ以上ある場合は最初のグループを自動選択
+    if (!tagForm.values.groupId && tagGroupOptions.length > 0) {
       tagForm.setFieldValue('groupId', tagGroupOptions[0].value);
     }
   }, [tagModalOpened, tagForm, tagGroupOptions]);
@@ -1047,6 +1156,14 @@ export default function TagsPage() {
   const updateTag = useUpdateTag();
   const deleteTag = useDeleteTag();
   const reorderTagsMutation = useReorderTags();
+
+  // 自動化ルール関連
+  const { data: automationRulesData, isLoading: isLoadingAutomationRules } = useGetAutomationRules();
+  const createAutomationRule = useCreateAutomationRule();
+  const updateAutomationRule = useUpdateAutomationRule();
+  const deleteAutomationRule = useDeleteAutomationRule();
+
+  const automationRules = useMemo(() => automationRulesData?.data ?? [], [automationRulesData]);
 
   const isCategorySubmitting = createCategory.isPending || updateCategory.isPending;
   const isGroupSubmitting = createGroup.isPending || updateGroup.isPending;
@@ -1102,8 +1219,10 @@ export default function TagsPage() {
 
   const handleOpenCreateGroup = (categoryId?: string) => {
     setEditingGroup(null);
+    // カテゴリIDが指定されていない場合、最初のカテゴリを選択
+    const selectedCategoryId = categoryId ?? (sortedCategories.length > 0 ? sortedCategories[0].id : '');
     groupForm.setValues({
-      categoryId: categoryId ?? '',
+      categoryId: selectedCategoryId,
       name: '',
       description: '',
       color: DEFAULT_GROUP_COLOR,
@@ -1182,10 +1301,21 @@ export default function TagsPage() {
 
   const handleOpenCreateTag = (categoryId?: string, groupId?: string) => {
     setEditingTag(null);
+    // カテゴリとグループが指定されていない場合、最初のものを選択
+    let selectedCategoryId = categoryId;
+    let selectedGroupId = groupId;
+    
+    if (!selectedCategoryId && sortedCategories.length > 0) {
+      selectedCategoryId = sortedCategories[0].id;
+      if (!selectedGroupId && sortedCategories[0].groups.length > 0) {
+        selectedGroupId = sortedCategories[0].groups[0].id;
+      }
+    }
+    
     tagForm.setValues({
       name: '',
-      categoryId: categoryId ?? '',
-      groupId: groupId ?? '',
+      categoryId: selectedCategoryId ?? '',
+      groupId: selectedGroupId ?? '',
       description: '',
       color: DEFAULT_TAG_COLOR,
       textColor: DEFAULT_TAG_TEXT_COLOR,
@@ -1253,6 +1383,58 @@ export default function TagsPage() {
         await createTag.mutateAsync(payload);
       }
       closeTagModal();
+    } catch {
+      // 通知はミューテーション側で実施
+    }
+  });
+
+  const handleOpenCreateAutomationRule = () => {
+    setEditingAutomationRule(null);
+    automationRuleForm.reset();
+    openAutomationRuleModal();
+  };
+
+  const handleEditAutomationRule = (rule: TagAutomationRule) => {
+    setEditingAutomationRule(rule);
+    automationRuleForm.setValues({
+      key: rule.key,
+      name: rule.name,
+      description: rule.description || '',
+      triggerType: rule.triggerType,
+      eventType: rule.eventType || '',
+      scope: rule.scope || '',
+      priority: rule.priority,
+      isActive: rule.isActive,
+    });
+    openAutomationRuleModal();
+  };
+
+  const handleSubmitAutomationRule = automationRuleForm.onSubmit(async (values) => {
+    const payload: CreateTagAutomationRuleRequest | UpdateTagAutomationRuleRequest = {
+      name: values.name,
+      description: values.description || undefined,
+      triggerType: values.triggerType,
+      eventType: values.eventType || undefined,
+      scope: values.scope || undefined,
+      priority: values.priority,
+      isActive: values.isActive,
+    };
+
+    if (!editingAutomationRule) {
+      // 新規作成の場合はkeyを含める
+      (payload as CreateTagAutomationRuleRequest).key = values.key;
+    }
+
+    try {
+      if (editingAutomationRule) {
+        await updateAutomationRule.mutateAsync({ 
+          id: editingAutomationRule.id, 
+          payload: payload as UpdateTagAutomationRuleRequest 
+        });
+      } else {
+        await createAutomationRule.mutateAsync(payload as CreateTagAutomationRuleRequest);
+      }
+      closeAutomationRuleModal();
     } catch {
       // 通知はミューテーション側で実施
     }
@@ -1392,6 +1574,9 @@ export default function TagsPage() {
           <Tabs.List>
             <Tabs.Tab value="categories">カテゴリ</Tabs.Tab>
             <Tabs.Tab value="tags">タグ一覧</Tabs.Tab>
+            <Tabs.Tab value="automation" leftSection={<IconRobot size={16} />}>
+              自動化ルール
+            </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="categories" pt="lg">
@@ -1507,6 +1692,136 @@ export default function TagsPage() {
                 ))}
               </Stack>
             )}
+          </Tabs.Panel>
+
+          <Tabs.Panel value="automation" pt="lg">
+            <Stack gap="md">
+              <Card withBorder padding="md" radius="md">
+                <Stack gap="md">
+                  <Group justify="space-between" align="center">
+                    <Text size="lg" fw={600}>
+                      自動化ルール
+                    </Text>
+                    <Button 
+                      leftSection={<IconPlus size={16} />} 
+                      size="sm" 
+                      onClick={handleOpenCreateAutomationRule}
+                      disabled={isAnyMutationPending || createAutomationRule.isPending}
+                    >
+                      ルール作成
+                    </Button>
+                  </Group>
+                  <Alert icon={<IconInfoCircle size={18} />} variant="light" color="blue">
+                    自動化ルールを設定すると、特定のイベント（交配登録、妊娠確認、子猫登録など）が発生したときに、条件に合致する猫へ自動的にタグを付与できます。
+                  </Alert>
+                </Stack>
+              </Card>
+
+              {isLoadingAutomationRules ? (
+                <Center py="xl">
+                  <Loader />
+                </Center>
+              ) : automationRules.length === 0 ? (
+                <Center py="xl">
+                  <Stack gap="sm" align="center">
+                    <IconRobot size={48} stroke={1.5} color="var(--mantine-color-gray-5)" />
+                    <Text c="dimmed" size="sm">
+                      自動化ルールが登録されていません
+                    </Text>
+                    <Text c="dimmed" size="xs">
+                      「ルール作成」ボタンから新しいルールを追加できます
+                    </Text>
+                  </Stack>
+                </Center>
+              ) : (
+                <Stack gap="sm">
+                  {automationRules.map((rule) => (
+                    <Card key={rule.id} withBorder radius="md" padding="md">
+                      <Group justify="space-between" align="flex-start">
+                        <Stack gap={4} style={{ flex: 1 }}>
+                          <Group gap="xs" align="center">
+                            <Text fw={500}>{rule.name}</Text>
+                            {!rule.isActive && (
+                              <Badge size="xs" color="gray" variant="outline">
+                                無効
+                              </Badge>
+                            )}
+                            <Badge size="xs" variant="light" color="blue">
+                              {rule.triggerType === 'EVENT' && 'イベント'}
+                              {rule.triggerType === 'SCHEDULE' && 'スケジュール'}
+                              {rule.triggerType === 'MANUAL' && '手動'}
+                            </Badge>
+                            {rule.eventType && (
+                              <Badge size="xs" variant="outline">
+                                {rule.eventType === 'BREEDING_PLANNED' && '交配予定'}
+                                {rule.eventType === 'BREEDING_CONFIRMED' && '交配確認'}
+                                {rule.eventType === 'PREGNANCY_CONFIRMED' && '妊娠確認'}
+                                {rule.eventType === 'KITTEN_REGISTERED' && '子猫登録'}
+                                {rule.eventType === 'AGE_THRESHOLD' && '年齢閾値'}
+                                {rule.eventType === 'CUSTOM' && 'カスタム'}
+                              </Badge>
+                            )}
+                          </Group>
+                          {rule.description && (
+                            <Text size="sm" c="dimmed">
+                              {rule.description}
+                            </Text>
+                          )}
+                          <Group gap="xs">
+                            <Badge size="xs" variant="outline">
+                              優先度: {rule.priority}
+                            </Badge>
+                            {rule.scope && (
+                              <Badge size="xs" variant="outline">
+                                スコープ: {rule.scope}
+                              </Badge>
+                            )}
+                            {rule._count && (
+                              <>
+                                {rule._count.runs !== undefined && (
+                                  <Badge size="xs" variant="outline">
+                                    実行回数: {rule._count.runs}
+                                  </Badge>
+                                )}
+                                {rule._count.assignmentHistory !== undefined && (
+                                  <Badge size="xs" variant="outline">
+                                    付与履歴: {rule._count.assignmentHistory}
+                                  </Badge>
+                                )}
+                              </>
+                            )}
+                          </Group>
+                        </Stack>
+                        <Group gap={6}>
+                          <Tooltip label="編集">
+                            <ActionIcon
+                              variant="light"
+                              color="blue"
+                              size="sm"
+                              onClick={() => handleEditAutomationRule(rule)}
+                              disabled={isAnyMutationPending || updateAutomationRule.isPending}
+                            >
+                              <IconPencil size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                          <Tooltip label="削除">
+                            <ActionIcon
+                              variant="light"
+                              color="red"
+                              size="sm"
+                              disabled={deleteAutomationRule.isPending}
+                              onClick={() => void deleteAutomationRule.mutate(rule.id)}
+                            >
+                              <IconTrash size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Group>
+                      </Group>
+                    </Card>
+                  ))}
+                </Stack>
+              )}
+            </Stack>
           </Tabs.Panel>
         </Tabs>
 
@@ -1837,6 +2152,104 @@ export default function TagsPage() {
                 </Button>
                 <Button type="submit" loading={isTagSubmitting}>
                   {editingTag ? '更新' : '作成'}
+                </Button>
+              </Group>
+            </Stack>
+          </Box>
+        </Modal>
+
+        <Modal
+          opened={automationRuleModalOpened}
+          onClose={() => {
+            closeAutomationRuleModal();
+            setEditingAutomationRule(null);
+            automationRuleForm.reset();
+          }}
+          title={editingAutomationRule ? '自動化ルールの編集' : '自動化ルールの作成'}
+          size="lg"
+        >
+          <Box component="form" onSubmit={handleSubmitAutomationRule}>
+            <Stack gap="md">
+              <TextInput
+                label="キー"
+                placeholder="例: breeding_planned_tag"
+                description="英数字、ハイフン、アンダースコアのみ使用可能"
+                required
+                disabled={!!editingAutomationRule}
+                {...automationRuleForm.getInputProps('key')}
+              />
+
+              <TextInput
+                label="ルール名"
+                placeholder="例: 交配予定時の自動タグ付与"
+                required
+                {...automationRuleForm.getInputProps('name')}
+              />
+
+              <TextInput
+                label="説明"
+                placeholder="このルールの動作を説明してください"
+                {...automationRuleForm.getInputProps('description')}
+              />
+
+              <Select
+                label="トリガータイプ"
+                placeholder="トリガータイプを選択"
+                data={TRIGGER_TYPE_OPTIONS}
+                required
+                {...automationRuleForm.getInputProps('triggerType')}
+              />
+
+              {automationRuleForm.values.triggerType === 'EVENT' && (
+                <Select
+                  label="イベントタイプ"
+                  placeholder="イベントタイプを選択"
+                  data={EVENT_TYPE_OPTIONS}
+                  required
+                  {...automationRuleForm.getInputProps('eventType')}
+                />
+              )}
+
+              <Select
+                label="スコープ"
+                placeholder="適用するスコープ（任意）"
+                description="このルールを適用するページ・機能を選択"
+                data={automationScopeOptions}
+                clearable
+                searchable
+                {...automationRuleForm.getInputProps('scope')}
+              />
+
+              <NumberInput
+                label="優先度"
+                description="0-100の範囲で設定。数値が大きいほど優先度が高くなります"
+                min={0}
+                max={100}
+                required
+                {...automationRuleForm.getInputProps('priority')}
+              />
+
+              <Switch
+                label="このルールを有効にする"
+                {...automationRuleForm.getInputProps('isActive', { type: 'checkbox' })}
+              />
+
+              <Group justify="flex-end" mt="md">
+                <Button
+                  variant="subtle"
+                  onClick={() => {
+                    closeAutomationRuleModal();
+                    setEditingAutomationRule(null);
+                    automationRuleForm.reset();
+                  }}
+                >
+                  キャンセル
+                </Button>
+                <Button 
+                  type="submit" 
+                  loading={createAutomationRule.isPending || updateAutomationRule.isPending}
+                >
+                  {editingAutomationRule ? '更新' : '作成'}
                 </Button>
               </Group>
             </Stack>

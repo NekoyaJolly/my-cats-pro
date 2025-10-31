@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 
 import { PrismaModule } from "../prisma/prisma.module";
 
+import { TagAutomationController } from "./tag-automation.controller";
+import { TagAutomationExecutionService } from "./tag-automation-execution.service";
 import { TagAutomationService } from "./tag-automation.service";
 import { TagCategoriesController } from "./tag-categories.controller";
 import { TagCategoriesService } from "./tag-categories.service";
@@ -12,8 +14,25 @@ import { TagsService } from "./tags.service";
 
 @Module({
   imports: [PrismaModule],
-  controllers: [TagsController, TagCategoriesController, TagGroupsController],
-  providers: [TagsService, TagCategoriesService, TagGroupsService, TagAutomationService],
-  exports: [TagsService, TagCategoriesService, TagGroupsService, TagAutomationService],
+  controllers: [
+    TagsController,
+    TagCategoriesController,
+    TagGroupsController,
+    TagAutomationController,
+  ],
+  providers: [
+    TagsService,
+    TagCategoriesService,
+    TagGroupsService,
+    TagAutomationService,
+    TagAutomationExecutionService,
+  ],
+  exports: [
+    TagsService,
+    TagCategoriesService,
+    TagGroupsService,
+    TagAutomationService,
+    TagAutomationExecutionService,
+  ],
 })
 export class TagsModule {}

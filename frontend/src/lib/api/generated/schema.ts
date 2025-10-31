@@ -831,6 +831,77 @@ export type paths = {
         patch: operations["TagGroupsController_update"];
         trace?: never;
     };
+    "/api/v1/tags/automation/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 自動化ルール一覧の取得 */
+        get: operations["TagAutomationController_findRules"];
+        put?: never;
+        /** 自動化ルールの作成 */
+        post: operations["TagAutomationController_createRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/automation/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 自動化ルール詳細の取得 */
+        get: operations["TagAutomationController_findRuleById"];
+        put?: never;
+        post?: never;
+        /** 自動化ルールの削除 */
+        delete: operations["TagAutomationController_deleteRule"];
+        options?: never;
+        head?: never;
+        /** 自動化ルールの更新 */
+        patch: operations["TagAutomationController_updateRule"];
+        trace?: never;
+    };
+    "/api/v1/tags/automation/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ルール実行履歴の取得 */
+        get: operations["TagAutomationController_findRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/automation/rules/{id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ルールを手動実行（テスト用） */
+        post: operations["TagAutomationController_executeRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -1701,6 +1772,96 @@ export type components = {
              * @example #111827
              */
             textColor?: string;
+        };
+        CreateTagAutomationRuleDto: {
+            /** @description ルールの一意なキー（自動生成可能） */
+            key?: string;
+            /** @description ルール名 */
+            name: string;
+            /** @description ルールの説明 */
+            description?: string;
+            /**
+             * @description トリガータイプ
+             * @example EVENT
+             * @enum {string}
+             */
+            triggerType: "EVENT" | "SCHEDULE" | "MANUAL";
+            /**
+             * @description イベントタイプ
+             * @example BREEDING_PLANNED
+             * @enum {string}
+             */
+            eventType: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "CUSTOM";
+            /**
+             * @description 適用範囲（スコープ）
+             * @example breeding
+             */
+            scope?: string;
+            /**
+             * @description ルールが有効かどうか
+             * @default true
+             */
+            isActive: boolean;
+            /**
+             * @description 優先度（-100から100、大きいほど優先）
+             * @default 0
+             */
+            priority: number;
+            /**
+             * @description ルール設定（JSON）
+             * @example {
+             *       "tagIds": [
+             *         "tag-id-1",
+             *         "tag-id-2"
+             *       ]
+             *     }
+             */
+            config?: Record<string, never>;
+        };
+        UpdateTagAutomationRuleDto: {
+            /** @description ルールの一意なキー（自動生成可能） */
+            key?: string;
+            /** @description ルール名 */
+            name?: string;
+            /** @description ルールの説明 */
+            description?: string;
+            /**
+             * @description トリガータイプ
+             * @example EVENT
+             * @enum {string}
+             */
+            triggerType?: "EVENT" | "SCHEDULE" | "MANUAL";
+            /**
+             * @description イベントタイプ
+             * @example BREEDING_PLANNED
+             * @enum {string}
+             */
+            eventType?: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "CUSTOM";
+            /**
+             * @description 適用範囲（スコープ）
+             * @example breeding
+             */
+            scope?: string;
+            /**
+             * @description ルールが有効かどうか
+             * @default true
+             */
+            isActive: boolean;
+            /**
+             * @description 優先度（-100から100、大きいほど優先）
+             * @default 0
+             */
+            priority: number;
+            /**
+             * @description ルール設定（JSON）
+             * @example {
+             *       "tagIds": [
+             *         "tag-id-1",
+             *         "tag-id-2"
+             *       ]
+             *     }
+             */
+            config?: Record<string, never>;
         };
     };
     responses: never;
@@ -3589,6 +3750,201 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagAutomationController_findRules: {
+        parameters: {
+            query?: {
+                /** @description アクティブなルールのみ取得 */
+                active?: boolean;
+                /** @description スコープでフィルタ */
+                scope?: string;
+                /** @description トリガータイプでフィルタ */
+                triggerType?: string;
+                /** @description イベントタイプでフィルタ */
+                eventType?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ルール一覧を返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagAutomationController_createRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagAutomationRuleDto"];
+            };
+        };
+        responses: {
+            /** @description ルールを作成しました */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 入力エラー */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagAutomationController_findRuleById: {
+        parameters: {
+            query?: {
+                /** @description 実行履歴を含める */
+                includeRuns?: boolean;
+                /** @description 付与履歴件数を含める */
+                includeHistoryCount?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description ルールID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ルール詳細を返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ルールが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagAutomationController_deleteRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ルールID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ルールを削除しました */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ルールが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagAutomationController_updateRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ルールID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTagAutomationRuleDto"];
+            };
+        };
+        responses: {
+            /** @description ルールを更新しました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ルールが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagAutomationController_findRuns: {
+        parameters: {
+            query?: {
+                /** @description ルールIDでフィルタ */
+                ruleId?: string;
+                /** @description ステータスでフィルタ (PENDING, COMPLETED, FAILED) */
+                status?: string;
+                /** @description 取得件数の上限 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 実行履歴一覧を返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagAutomationController_executeRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ルールID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ルール実行成功 */
             200: {
                 headers: {
                     [name: string]: unknown;
