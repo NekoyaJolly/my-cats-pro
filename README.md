@@ -271,9 +271,11 @@ cp frontend/.env.example frontend/.env.local
 または手動で作成:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3004
+NEXT_PUBLIC_API_URL=http://localhost:3004/api/v1
 NEXT_PUBLIC_ENV=development
 ```
+
+> ⚠️ **重要**: `NEXT_PUBLIC_API_URL`には必ず`/api/v1`を含めてください。バックエンドAPIのグローバルプレフィックスに一致させる必要があります。
 
 > ⚠️ 認証バイパス (`AUTH_DISABLED=1`) の詳細・リスクは後述「開発モード詳細 / 認証バイパス」を参照。
 
@@ -335,9 +337,9 @@ bash scripts/start-all.sh
 ### 5. アプリケーションへのアクセス
 
 - **フロントエンド**: <http://localhost:3000>
-- **バックエンドAPI**: <http://localhost:3004>
+- **バックエンドAPI**: <http://localhost:3004/api/v1>
 - **API Documentation**: <http://localhost:3004/api/docs>
-- **pgAdmin**: <http://localhost:5050> (Email: admin@example.com / Password: admin)
+- **pgAdmin**: <http://localhost:5050> (Email: `admin@example.com` / Password: `admin`)
 - **Prisma Studio**: `cd backend && pnpm prisma:studio`
 
 ### 6. データベース情報
