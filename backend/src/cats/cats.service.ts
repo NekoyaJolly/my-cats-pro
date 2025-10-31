@@ -4,8 +4,8 @@ import {
   BadRequestException,
   ConflictException,
 } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
 import { EventEmitter2 } from "@nestjs/event-emitter";
+import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";

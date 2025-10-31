@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
 import { EventEmitter2 } from "@nestjs/event-emitter";
+import { Cron, CronExpression } from "@nestjs/schedule";
 
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -106,7 +106,7 @@ export class AgeThresholdCheckerService {
    * ルールが発火すべきかを判定
    */
   private shouldTriggerRule(
-    rule: any,
+    rule: { config: unknown },
     ageInDays: number,
     ageInMonths: number,
     motherId: string | null,

@@ -9,7 +9,7 @@ import {
 } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
-import { TagAutomationService } from "./tag-automation.service";
+
 import {
   TAG_AUTOMATION_EVENTS,
   type TagAutomationEvent,
@@ -20,6 +20,7 @@ import {
   type AgeThresholdEvent,
   type CustomEvent,
 } from "./events/tag-automation.events";
+import { TagAutomationService } from "./tag-automation.service";
 
 interface RuleExecutionResult {
   ruleId: string;

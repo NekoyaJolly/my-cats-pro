@@ -4,8 +4,8 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { PrismaModule } from "../prisma/prisma.module";
 
 import { AgeThresholdCheckerService } from "./age-threshold-checker.service";
-import { TagAutomationController } from "./tag-automation.controller";
 import { TagAutomationExecutionService } from "./tag-automation-execution.service";
+import { TagAutomationController } from "./tag-automation.controller";
 import { TagAutomationService } from "./tag-automation.service";
 import { TagCategoriesController } from "./tag-categories.controller";
 import { TagCategoriesService } from "./tag-categories.service";
