@@ -20,6 +20,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { TagAutomationEventType, TagAutomationTriggerType } from "@prisma/client";
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
@@ -75,8 +76,8 @@ export class TagAutomationController {
     return this.tagAutomationService.findRules({
       isActive: activeFlag,
       scope: scope || undefined,
-      triggerTypes: triggerType ? [triggerType as any] : undefined,
-      eventTypes: eventType ? [eventType as any] : undefined,
+      triggerTypes: triggerType ? [triggerType as TagAutomationTriggerType] : undefined,
+      eventTypes: eventType ? [eventType as TagAutomationEventType] : undefined,
     });
   }
 

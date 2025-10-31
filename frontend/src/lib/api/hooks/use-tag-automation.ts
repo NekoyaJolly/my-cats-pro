@@ -132,7 +132,7 @@ export function useGetAutomationRules(
       try {
         const query = buildAutomationRuleQuery(filters);
         const response = await apiClient.get('/tags/automation/rules', {
-          query: query as any,
+          query: query as unknown as Record<string, never> | undefined,
         });
 
         // Validate response.data is an array
@@ -164,7 +164,7 @@ export function useGetAutomationRule(
           query: {
             includeRuns: 'true',
             includeHistoryCount: 'true',
-          } as any,
+          } as unknown as Record<string, never>,
         });
 
         return response as TagAutomationRuleResponse;
@@ -185,7 +185,7 @@ export function useCreateAutomationRule() {
   return useMutation({
     mutationFn: (payload: CreateTagAutomationRuleRequest) =>
       apiClient.post('/tags/automation/rules', {
-        body: payload as any,
+        body: payload as unknown as never,
         retryOnUnauthorized: false,
       }),
     onSuccess: () => {
@@ -211,7 +211,7 @@ export function useUpdateAutomationRule() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateTagAutomationRuleRequest }) =>
       apiClient.patch('/tags/automation/rules/{id}', {
         pathParams: { id },
-        body: payload as any,
+        body: payload as unknown as never,
         retryOnUnauthorized: false,
       }),
     onSuccess: () => {
@@ -269,7 +269,7 @@ export function useGetAutomationRuns(
         if (filters?.limit) query.limit = filters.limit.toString();
 
         const response = await apiClient.get('/tags/automation/runs', {
-          query: Object.keys(query).length > 0 ? (query as any) : undefined,
+          query: Object.keys(query).length > 0 ? (query as unknown as Record<string, never>) : undefined,
         });
 
         if (!response.data || !Array.isArray(response.data)) {
@@ -294,7 +294,7 @@ export function useExecuteAutomationRule() {
     mutationFn: ({ id, dryRun = false }: { id: string; dryRun?: boolean }) =>
       apiClient.post('/tags/automation/rules/{id}/execute', {
         pathParams: { id },
-        query: dryRun ? ({ dryRun: 'true' } as any) : undefined,
+        query: dryRun ? ({ dryRun: 'true' } as unknown as Record<string, never>) : undefined,
         retryOnUnauthorized: false,
       }),
     onSuccess: () => {

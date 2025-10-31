@@ -106,7 +106,7 @@ export class AgeThresholdCheckerService {
    * ルールが発火すべきかを判定
    */
   private shouldTriggerRule(
-    rule: any,
+    rule: { config: unknown },
     ageInDays: number,
     ageInMonths: number,
     motherId: string | null,
