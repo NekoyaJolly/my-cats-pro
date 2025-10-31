@@ -34,6 +34,7 @@ import {
   Modal,
   MultiSelect,
   NumberInput,
+  SegmentedControl,
   Select,
   Stack,
   Switch,
@@ -156,6 +157,18 @@ type AutomationRuleFormValues = {
   priority: number;
   isActive: boolean;
   tagIds: string[];
+  // 年齢閾値設定
+  ageThreshold?: {
+    type: 'kitten' | 'adult';
+    kitten?: {
+      minDays?: number;
+      maxDays?: number;
+    };
+    adult?: {
+      minMonths?: number;
+      maxMonths?: number;
+    };
+  };
 };
 
 const TRIGGER_TYPE_OPTIONS = [
@@ -1023,6 +1036,11 @@ export default function TagsPage() {
       priority: 10,
       isActive: true,
       tagIds: [],
+      ageThreshold: {
+        type: 'kitten',
+        kitten: {},
+        adult: {},
+      },
     },
     validate: {
       key: (value) => {
@@ -1439,11 +1457,36 @@ export default function TagsPage() {
   const handleEditAutomationRule = (rule: TagAutomationRule) => {
     setEditingAutomationRule(rule);
     
-    // configからtagIdsを取得
+    // configからtagIdsと年齢閾値設定を取得
     let tagIds: string[] = [];
+    let ageThreshold: AutomationRuleFormValues['ageThreshold'] = {
+      type: 'kitten',
+      kitten: {},
+      adult: {},
+    };
+
     if (rule.config && typeof rule.config === 'object') {
-      const config = rule.config as { tagIds?: string[] };
+      const config = rule.config as { 
+        tagIds?: string[]; 
+        kitten?: { minDays?: number; maxDays?: number };
+        adult?: { minMonths?: number; maxMonths?: number };
+      };
       tagIds = config.tagIds || [];
+      
+      // 年齢閾値の設定を読み込む
+      if (config.kitten) {
+        ageThreshold = {
+          type: 'kitten',
+          kitten: config.kitten,
+          adult: {},
+        };
+      } else if (config.adult) {
+        ageThreshold = {
+          type: 'adult',
+          kitten: {},
+          adult: config.adult,
+        };
+      }
     }
     
     automationRuleForm.setValues({
@@ -1456,6 +1499,7 @@ export default function TagsPage() {
       priority: rule.priority,
       isActive: rule.isActive,
       tagIds,
+      ageThreshold,
     });
     openAutomationRuleModal();
   };
@@ -1478,6 +1522,19 @@ export default function TagsPage() {
   };
 
   const handleSubmitAutomationRule = automationRuleForm.onSubmit(async (values) => {
+    const config: Record<string, unknown> = {
+      tagIds: values.tagIds,
+    };
+
+    // 年齢閾値の設定を追加
+    if (values.eventType === 'AGE_THRESHOLD' && values.ageThreshold) {
+      if (values.ageThreshold.type === 'kitten' && values.ageThreshold.kitten) {
+        config.kitten = values.ageThreshold.kitten;
+      } else if (values.ageThreshold.type === 'adult' && values.ageThreshold.adult) {
+        config.adult = values.ageThreshold.adult;
+      }
+    }
+
     const payload: CreateTagAutomationRuleRequest | UpdateTagAutomationRuleRequest = {
       name: values.name,
       description: values.description || undefined,
@@ -1486,9 +1543,7 @@ export default function TagsPage() {
       scope: values.scope || undefined,
       priority: values.priority,
       isActive: values.isActive,
-      config: {
-        tagIds: values.tagIds,
-      },
+      config,
     };
 
     if (!editingAutomationRule) {
@@ -2317,6 +2372,71 @@ export default function TagsPage() {
                 maxDropdownHeight={300}
                 {...automationRuleForm.getInputProps('tagIds')}
               />
+
+              {/* 年齢閾値の設定 */}
+              {automationRuleForm.values.eventType === 'AGE_THRESHOLD' && (
+                <Card withBorder padding="md" bg="gray.0">
+                  <Stack gap="md">
+                    <Text fw={500} size="sm">年齢閾値の設定</Text>
+                    
+                    <SegmentedControl
+                      data={[
+                        { value: 'kitten', label: '子猫用（日数）' },
+                        { value: 'adult', label: '成猫用（月数）' },
+                      ]}
+                      value={automationRuleForm.values.ageThreshold?.type || 'kitten'}
+                      onChange={(value) => {
+                        automationRuleForm.setFieldValue('ageThreshold.type', value as 'kitten' | 'adult');
+                      }}
+                    />
+
+                    {automationRuleForm.values.ageThreshold?.type === 'kitten' && (
+                      <Group grow>
+                        <NumberInput
+                          label="最小日数"
+                          placeholder="例: 60"
+                          description="生後◯日以上"
+                          min={0}
+                          {...automationRuleForm.getInputProps('ageThreshold.kitten.minDays')}
+                        />
+                        <NumberInput
+                          label="最大日数"
+                          placeholder="例: 90"
+                          description="生後◯日未満"
+                          min={0}
+                          {...automationRuleForm.getInputProps('ageThreshold.kitten.maxDays')}
+                        />
+                      </Group>
+                    )}
+
+                    {automationRuleForm.values.ageThreshold?.type === 'adult' && (
+                      <Group grow>
+                        <NumberInput
+                          label="最小月数"
+                          placeholder="例: 6"
+                          description="生後◯ヶ月以上"
+                          min={0}
+                          {...automationRuleForm.getInputProps('ageThreshold.adult.minMonths')}
+                        />
+                        <NumberInput
+                          label="最大月数"
+                          placeholder="例: 12"
+                          description="生後◯ヶ月未満"
+                          min={0}
+                          {...automationRuleForm.getInputProps('ageThreshold.adult.maxMonths')}
+                        />
+                      </Group>
+                    )}
+
+                    <Alert icon={<IconInfoCircle size={18} />} variant="light" color="blue">
+                      {automationRuleForm.values.ageThreshold?.type === 'kitten' 
+                        ? '子猫（母猫IDが設定されている猫）に対して、指定した日数の範囲でタグを自動付与します。'
+                        : '成猫に対して、指定した月数の範囲でタグを自動付与します。'
+                      }
+                    </Alert>
+                  </Stack>
+                </Card>
+              )}
 
               <NumberInput
                 label="優先度"

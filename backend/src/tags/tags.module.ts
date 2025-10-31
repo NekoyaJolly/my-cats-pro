@@ -1,7 +1,9 @@
 import { Module } from "@nestjs/common";
+import { ScheduleModule } from "@nestjs/schedule";
 
 import { PrismaModule } from "../prisma/prisma.module";
 
+import { AgeThresholdCheckerService } from "./age-threshold-checker.service";
 import { TagAutomationController } from "./tag-automation.controller";
 import { TagAutomationExecutionService } from "./tag-automation-execution.service";
 import { TagAutomationService } from "./tag-automation.service";
@@ -13,7 +15,7 @@ import { TagsController } from "./tags.controller";
 import { TagsService } from "./tags.service";
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ScheduleModule.forRoot()],
   controllers: [
     TagsController,
     TagCategoriesController,
@@ -26,6 +28,7 @@ import { TagsService } from "./tags.service";
     TagGroupsService,
     TagAutomationService,
     TagAutomationExecutionService,
+    AgeThresholdCheckerService,
   ],
   exports: [
     TagsService,
@@ -33,6 +36,7 @@ import { TagsService } from "./tags.service";
     TagGroupsService,
     TagAutomationService,
     TagAutomationExecutionService,
+    AgeThresholdCheckerService,
   ],
 })
 export class TagsModule {}

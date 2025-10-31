@@ -5,14 +5,19 @@ import {
   ConflictException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 import { PrismaService } from "../prisma/prisma.service";
+import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";
 
 import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 
 @Injectable()
 export class CatsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   async create(createCatDto: CreateCatDto) {
     const {
@@ -78,7 +83,7 @@ export class CatsService {
 
     try {
       // Create the cat
-      const cat = await this.prisma.cat.create({
+      let cat = await this.prisma.cat.create({
         data: {
           name,
           gender,
@@ -116,7 +121,7 @@ export class CatsService {
         });
 
         // Fetch the cat again with tags
-        return await this.prisma.cat.findUnique({
+        cat = await this.prisma.cat.findUnique({
           where: { id: cat.id },
           include: {
             breed: true,
@@ -129,6 +134,16 @@ export class CatsService {
               },
             },
           },
+        });
+      }
+
+      // 子猫登録イベントを発火（母猫または父猫が設定されている場合）
+      if (cat && (motherId || fatherId)) {
+        this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.KITTEN_REGISTERED, {
+          eventType: "KITTEN_REGISTERED" as const,
+          kittenId: cat.id,
+          motherId: motherId || undefined,
+          fatherId: fatherId || undefined,
         });
       }
 

@@ -53,6 +53,7 @@
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^10.0.2",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/schedule": "^6.0.1",
     "@nestjs/swagger": "^7.4.2",
     "@nestjs/throttler": "^5.0.1",
     "@prisma/client": "^6.14.0",
