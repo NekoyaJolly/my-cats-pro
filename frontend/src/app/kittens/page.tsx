@@ -121,7 +121,7 @@ export default function KittensPage() {
         weight: 350, // TODO: 体重データがAPIにないので仮の値
         birthDate: kitten.birthDate,
         notes: kitten.description || '',
-        tags: kitten.tags?.map((tag: { id: string }) => tag.id) || [],
+        tags: kitten.tags?.map((catTag) => catTag.tag.id) || [],
       })),
       deliveryDate: kittens[0]?.birthDate || mother.birthDate, // 最初の子猫の生年月日を使用
       monthsOld: Math.floor((new Date().getTime() - new Date(kittens[0]?.birthDate || mother.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 30)),

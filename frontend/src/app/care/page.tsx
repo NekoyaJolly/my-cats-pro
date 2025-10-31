@@ -285,7 +285,7 @@ export default function CarePage() {
     if (createForm.tags.length > 0) {
       filtered = filtered.filter((cat) =>
         createForm.tags.some((tagId) =>
-          cat.tags?.some((tag) => tag.id === tagId)
+          cat.tags?.some((catTag) => catTag.tag.id === tagId)
         )
       );
     }

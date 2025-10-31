@@ -290,6 +290,26 @@ export default function CatsPage() {
                     </Badge>
                     <Text size="sm">{cat.breed?.name || '未登録'}</Text>
                     <Text size="sm">{calculateAge(cat.birthDate)}</Text>
+                    {/* タグ表示 */}
+                    {cat.tags && cat.tags.length > 0 && (
+                      <Group gap={4}>
+                        {cat.tags.slice(0, 3).map((catTag) => (
+                          <Badge 
+                            key={catTag.tag.id} 
+                            size="xs" 
+                            variant="dot"
+                            color={catTag.tag.color || 'gray'}
+                          >
+                            {catTag.tag.name}
+                          </Badge>
+                        ))}
+                        {cat.tags.length > 3 && (
+                          <Badge size="xs" variant="outline" color="gray">
+                            +{cat.tags.length - 3}
+                          </Badge>
+                        )}
+                      </Group>
+                    )}
                   </Group>
                   <Button
                     variant="light"

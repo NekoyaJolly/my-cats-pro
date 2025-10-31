@@ -373,7 +373,7 @@ export default function BreedingPage() {
   
   const availableTags: string[] = [...new Set(
     (catsResponse?.data ?? [])
-      .flatMap((cat: Cat) => cat.tags?.map((tag) => tag.name).filter((name: string) => name) ?? [])
+      .flatMap((cat: Cat) => cat.tags?.map((catTag) => catTag.tag.name).filter((name: string) => name) ?? [])
       .filter((name: string) => name)
   )];
   
@@ -391,8 +391,8 @@ export default function BreedingPage() {
     
     if (!male || !female) return false;
     
-    const maleTags = male.tags?.map((t) => t.name) ?? [];
-    const femaleTags = female.tags?.map((t) => t.name) ?? [];
+    const maleTags = male.tags?.map((catTag) => catTag.tag.name) ?? [];
+    const femaleTags = female.tags?.map((catTag) => catTag.tag.name) ?? [];
     
     return ngPairingRules.some((rule: NgPairingRule) => {
       if (!rule.active) return false;
@@ -563,8 +563,8 @@ export default function BreedingPage() {
           if (!rule.active) return false;
           
           if (rule.type === 'TAG_COMBINATION' && rule.maleConditions && rule.femaleConditions) {
-            const maleTags = male.tags?.map((t: { id: string; name: string; color: string }) => t.name) ?? [];
-            const femaleTags = female.tags?.map((t: { id: string; name: string; color: string }) => t.name) ?? [];
+            const maleTags = male.tags?.map((catTag) => catTag.tag.name) ?? [];
+            const femaleTags = female.tags?.map((catTag) => catTag.tag.name) ?? [];
             const maleMatches = rule.maleConditions.some(condition => maleTags.includes(condition));
             const femaleMatches = rule.femaleConditions.some(condition => femaleTags.includes(condition));
             return maleMatches && femaleMatches;
@@ -1273,9 +1273,9 @@ export default function BreedingPage() {
                     </Group>
                     <Text size="sm" c="dimmed">{female.breed?.name ?? '不明'}</Text>
                     <Group gap="xs">
-                      {female.tags?.map((tag) => (
-                        <Badge key={tag.id} variant="outline" size="xs">
-                          {tag.name}
+                      {female.tags?.map((catTag) => (
+                        <Badge key={catTag.tag.id} variant="outline" size="xs">
+                          {catTag.tag.name}
                         </Badge>
                       )) ?? []}
                     </Group>
@@ -1324,9 +1324,9 @@ export default function BreedingPage() {
                   <Text fw={600}>{male.name}</Text>
                   <Text size="sm" c="dimmed">{male.breed?.name ?? '不明'}</Text>
                   <Group gap="xs">
-                    {male.tags?.map((tag, index) => (
-                      <Badge key={`${tag.id}-${index}`} variant="outline" size="xs">
-                        {tag.name}
+                    {male.tags?.map((catTag, index) => (
+                      <Badge key={`${catTag.tag.id}-${index}`} variant="outline" size="xs">
+                        {catTag.tag.name}
                       </Badge>
                     )) ?? []}
                   </Group>

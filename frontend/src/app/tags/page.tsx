@@ -87,6 +87,7 @@ import {
   useCreateAutomationRule,
   useUpdateAutomationRule,
   useDeleteAutomationRule,
+  useExecuteAutomationRule,
   type TagAutomationRule,
   type CreateTagAutomationRuleRequest,
   type UpdateTagAutomationRuleRequest,
@@ -154,6 +155,7 @@ type AutomationRuleFormValues = {
   scope: string;
   priority: number;
   isActive: boolean;
+  tagIds: string[];
 };
 
 const TRIGGER_TYPE_OPTIONS = [
@@ -944,6 +946,8 @@ export default function TagsPage() {
   const [tagModalOpened, { open: openTagModal, close: closeTagModal }] = useDisclosure(false);
   const [automationRuleModalOpened, { open: openAutomationRuleModal, close: closeAutomationRuleModal }] = useDisclosure(false);
   const [editingAutomationRule, setEditingAutomationRule] = useState<TagAutomationRule | null>(null);
+  const [executeRuleModalOpened, { open: openExecuteRuleModal, close: closeExecuteRuleModal }] = useDisclosure(false);
+  const [executingRule, setExecutingRule] = useState<TagAutomationRule | null>(null);
 
   const queryFilters = useMemo<TagCategoryFilters | undefined>(() => {
     const payload: TagCategoryFilters = {};
@@ -1018,6 +1022,7 @@ export default function TagsPage() {
       scope: '',
       priority: 10,
       isActive: true,
+      tagIds: [],
     },
     validate: {
       key: (value) => {
@@ -1039,6 +1044,12 @@ export default function TagsPage() {
       priority: (value) => {
         if (value < 0 || value > 100) {
           return '優先度は0-100の範囲で入力してください';
+        }
+        return null;
+      },
+      tagIds: (value) => {
+        if (!value || value.length === 0) {
+          return '少なくとも1つのタグを選択してください';
         }
         return null;
       },
@@ -1097,6 +1108,36 @@ export default function TagsPage() {
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label, 'ja'));
   }, [availableScopes]);
+
+  // 自動化ルールで使用可能なタグオプション（カテゴリ別にグループ化）
+  const automationTagOptions = useMemo(() => {
+    if (!sortedCategories || sortedCategories.length === 0) {
+      return [];
+    }
+    
+    const options: { value: string; label: string }[] = [];
+    
+    sortedCategories.forEach((category) => {
+      if (!category || !category.groups) return;
+      
+      const groups = Array.isArray(category.groups) ? category.groups : [];
+      groups.forEach((group) => {
+        if (!group) return;
+        
+        const tags = Array.isArray(group.tags) ? group.tags : [];
+        tags.forEach((tag) => {
+          if (tag && tag.allowsAutomation && tag.isActive) {
+            options.push({
+              value: tag.id,
+              label: `${category.name} > ${group.name} > ${tag.name}`,
+            });
+          }
+        });
+      });
+    });
+    
+    return options;
+  }, [sortedCategories]);
 
   const categoryOptions = useMemo(
     () => sortedCategories.map((category) => ({ value: category.id, label: category.name })),
@@ -1162,6 +1203,7 @@ export default function TagsPage() {
   const createAutomationRule = useCreateAutomationRule();
   const updateAutomationRule = useUpdateAutomationRule();
   const deleteAutomationRule = useDeleteAutomationRule();
+  const executeAutomationRule = useExecuteAutomationRule();
 
   const automationRules = useMemo(() => automationRulesData?.data ?? [], [automationRulesData]);
 
@@ -1396,6 +1438,14 @@ export default function TagsPage() {
 
   const handleEditAutomationRule = (rule: TagAutomationRule) => {
     setEditingAutomationRule(rule);
+    
+    // configからtagIdsを取得
+    let tagIds: string[] = [];
+    if (rule.config && typeof rule.config === 'object') {
+      const config = rule.config as { tagIds?: string[] };
+      tagIds = config.tagIds || [];
+    }
+    
     automationRuleForm.setValues({
       key: rule.key,
       name: rule.name,
@@ -1405,8 +1455,26 @@ export default function TagsPage() {
       scope: rule.scope || '',
       priority: rule.priority,
       isActive: rule.isActive,
+      tagIds,
     });
     openAutomationRuleModal();
+  };
+
+  const handleOpenExecuteRule = (rule: TagAutomationRule) => {
+    setExecutingRule(rule);
+    openExecuteRuleModal();
+  };
+
+  const handleExecuteRule = async () => {
+    if (!executingRule) return;
+    
+    try {
+      await executeAutomationRule.mutateAsync({ id: executingRule.id });
+      closeExecuteRuleModal();
+      setExecutingRule(null);
+    } catch {
+      // エラーハンドリングはミューテーション側で実施
+    }
   };
 
   const handleSubmitAutomationRule = automationRuleForm.onSubmit(async (values) => {
@@ -1418,6 +1486,9 @@ export default function TagsPage() {
       scope: values.scope || undefined,
       priority: values.priority,
       isActive: values.isActive,
+      config: {
+        tagIds: values.tagIds,
+      },
     };
 
     if (!editingAutomationRule) {
@@ -1776,6 +1847,11 @@ export default function TagsPage() {
                                 スコープ: {rule.scope}
                               </Badge>
                             )}
+                            {rule.config && typeof rule.config === 'object' && (rule.config as { tagIds?: string[] }).tagIds && (
+                              <Badge size="xs" variant="outline" color="teal">
+                                付与タグ: {(rule.config as { tagIds?: string[] }).tagIds!.length}個
+                              </Badge>
+                            )}
                             {rule._count && (
                               <>
                                 {rule._count.runs !== undefined && (
@@ -1793,6 +1869,17 @@ export default function TagsPage() {
                           </Group>
                         </Stack>
                         <Group gap={6}>
+                          <Tooltip label="テスト実行">
+                            <ActionIcon
+                              variant="light"
+                              color="green"
+                              size="sm"
+                              onClick={() => handleOpenExecuteRule(rule)}
+                              disabled={isAnyMutationPending}
+                            >
+                              <IconWand size={14} />
+                            </ActionIcon>
+                          </Tooltip>
                           <Tooltip label="編集">
                             <ActionIcon
                               variant="light"
@@ -2220,6 +2307,17 @@ export default function TagsPage() {
                 {...automationRuleForm.getInputProps('scope')}
               />
 
+              <MultiSelect
+                label="付与するタグ"
+                placeholder="イベント発生時に自動付与するタグを選択"
+                description="自動化が許可されているタグのみ選択できます"
+                data={automationTagOptions}
+                searchable
+                required
+                maxDropdownHeight={300}
+                {...automationRuleForm.getInputProps('tagIds')}
+              />
+
               <NumberInput
                 label="優先度"
                 description="0-100の範囲で設定。数値が大きいほど優先度が高くなります"
@@ -2254,6 +2352,96 @@ export default function TagsPage() {
               </Group>
             </Stack>
           </Box>
+        </Modal>
+
+        <Modal
+          opened={executeRuleModalOpened}
+          onClose={() => {
+            closeExecuteRuleModal();
+            setExecutingRule(null);
+          }}
+          title="自動化ルールのテスト実行"
+          size="md"
+        >
+          <Stack gap="md">
+            {executingRule && (
+              <>
+                <Alert icon={<IconInfoCircle size={18} />} variant="light" color="blue">
+                  このルールをテスト実行します。実際のデータに対してタグの付与が行われますのでご注意ください。
+                </Alert>
+
+                <Box>
+                  <Text size="sm" fw={500} mb={4}>
+                    ルール名
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    {executingRule.name}
+                  </Text>
+                </Box>
+
+                {executingRule.description && (
+                  <Box>
+                    <Text size="sm" fw={500} mb={4}>
+                      説明
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                      {executingRule.description}
+                    </Text>
+                  </Box>
+                )}
+
+                <Box>
+                  <Text size="sm" fw={500} mb={4}>
+                    イベントタイプ
+                  </Text>
+                  <Badge size="sm" variant="light">
+                    {executingRule.eventType === 'BREEDING_PLANNED' && '交配予定'}
+                    {executingRule.eventType === 'BREEDING_CONFIRMED' && '交配確認'}
+                    {executingRule.eventType === 'PREGNANCY_CONFIRMED' && '妊娠確認'}
+                    {executingRule.eventType === 'KITTEN_REGISTERED' && '子猫登録'}
+                    {executingRule.eventType === 'AGE_THRESHOLD' && '年齢閾値'}
+                    {executingRule.eventType === 'CUSTOM' && 'カスタム'}
+                  </Badge>
+                </Box>
+
+                {executingRule.config && typeof executingRule.config === 'object' && (executingRule.config as { tagIds?: string[] }).tagIds && (
+                  <Box>
+                    <Text size="sm" fw={500} mb={4}>
+                      付与するタグ
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                      {(executingRule.config as { tagIds?: string[] }).tagIds!.length}個のタグを付与
+                    </Text>
+                  </Box>
+                )}
+
+                <Alert icon={<IconInfoCircle size={18} />} variant="light" color="yellow">
+                  注意: テスト用のダミーデータでイベントを発行します。実際の猫データには影響しません。
+                </Alert>
+              </>
+            )}
+
+            <Group justify="flex-end" mt="md">
+              <Button
+                variant="subtle"
+                onClick={() => {
+                  closeExecuteRuleModal();
+                  setExecutingRule(null);
+                }}
+                disabled={executeAutomationRule.isPending}
+              >
+                キャンセル
+              </Button>
+              <Button
+                color="green"
+                onClick={handleExecuteRule}
+                loading={executeAutomationRule.isPending}
+                leftSection={<IconWand size={16} />}
+              >
+                実行
+              </Button>
+            </Group>
+          </Stack>
         </Modal>
       </Stack>
     </Container>

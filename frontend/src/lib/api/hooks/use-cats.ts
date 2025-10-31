@@ -33,7 +33,15 @@ export interface Cat {
   coatColor?: { id: string; name: string };
   father?: Cat;
   mother?: Cat;
-  tags?: Array<{ id: string; name: string; color: string }>;
+  tags?: Array<{ 
+    tag: { 
+      id: string; 
+      name: string; 
+      color: string;
+      category?: { name: string };
+      group?: { name: string };
+    } 
+  }>;
 }
 
 /**
