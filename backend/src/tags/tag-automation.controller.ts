@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -19,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { EventEmitter2 } from "@nestjs/event-emitter";
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
