@@ -39,6 +39,8 @@ import {
   IconSettings,
   IconTrash,
   IconEdit,
+  IconBabyCarriage,
+  IconRainbow,
 } from '@tabler/icons-react';
 
 import {
@@ -178,9 +180,15 @@ export default function BreedingPage() {
   const [maleModalOpened, { open: openMaleModal, close: closeMaleModal }] = useDisclosure(false);
   const [rulesModalOpened, { open: openRulesModal, close: closeRulesModal }] = useDisclosure(false);
   const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
+  const [birthInfoModalOpened, { open: openBirthInfoModal, close: closeBirthInfoModal }] = useDisclosure(false);
 
   // 交配チェック記録管理 - キー: "オスID-メスID-日付", 値: チェック回数
   const [matingChecks, setMatingChecks] = useState<{[key: string]: number}>({});
+
+  // 出産情報モーダルの状態
+  const [selectedBirthPlan, setSelectedBirthPlan] = useState<BirthPlan | null>(null);
+  const [birthCount, setBirthCount] = useState<number>(0);
+  const [deathCount, setDeathCount] = useState<number>(0);
 
   const [ngPairingRules, setNgPairingRules] = useState<NgPairingRule[]>(initialNgPairingRules);
   const [rulesError, setRulesError] = useState<string | null>(null);
@@ -463,7 +471,7 @@ export default function BreedingPage() {
   };
 
   // 交配結果処理
-  const handleMatingResult = (maleId: string, femaleId: string, femaleName: string, result: 'success' | 'failure') => {
+  const handleMatingResult = (maleId: string, femaleId: string, femaleName: string, matingDate: string, result: 'success' | 'failure') => {
     const male = activeMales.find((m: Cat) => m.id === maleId);
     
     if (result === 'success') {
@@ -473,6 +481,8 @@ export default function BreedingPage() {
       
       createPregnancyCheckMutation.mutate({
         motherId: femaleId,
+        fatherId: maleId,
+        matingDate: matingDate,
         checkDate: checkDate.toISOString().split('T')[0],
         status: 'SUSPECTED',
         notes: `${male?.name || ''}との交配による妊娠疑い`,
@@ -646,6 +656,8 @@ export default function BreedingPage() {
       
       createBirthPlanMutation.mutate({
         motherId: checkItem.motherId,
+        fatherId: checkItem.fatherId ?? undefined,
+        matingDate: checkItem.matingDate ?? undefined,
         expectedBirthDate: expectedDate.toISOString().split('T')[0],
         status: 'EXPECTED',
         notes: '妊娠確認による出産予定',
@@ -1069,7 +1081,7 @@ export default function BreedingPage() {
                                             size={isFullscreen ? "xs" : "sm"}
                                             variant="light"
                                             color="green"
-                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, 'success')}
+                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, schedule.date, 'success')}
                                             title="交配成功"
                                           >
                                             ○
@@ -1078,7 +1090,7 @@ export default function BreedingPage() {
                                             size={isFullscreen ? "xs" : "sm"}
                                             variant="light"
                                             color="red"
-                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, 'failure')}
+                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, schedule.date, 'failure')}
                                             title="交配失敗"
                                           >
                                             ×
@@ -1144,82 +1156,121 @@ export default function BreedingPage() {
           {/* 妊娠確認中タブ */}
           <Tabs.Panel value="pregnancy" pt="md">
             <Stack gap="sm">
-              {pregnancyChecksResponse?.data?.map((item: PregnancyCheck) => (
-                <Card key={item.id} shadow="sm" padding="md" radius="md" withBorder>
-                  <Flex justify="space-between" align="center">
-                    <Box style={{ flex: 1 }}>
-                      <Group gap="md" mb="xs">
-                        <Text fw={600} size="md">
-                          {item.mother?.name || '不明'} (妊娠確認)
+              {pregnancyChecksResponse?.data?.map((item: PregnancyCheck) => {
+                // 父猫の名前を取得（fatherIdから）
+                const fatherName = item.fatherId 
+                  ? catsResponse?.data?.find((cat: Cat) => cat.id === item.fatherId)?.name || '不明'
+                  : '不明';
+                
+                // 確認予定日を計算（交配確認日の27日後）
+                const scheduledCheckDate = item.matingDate 
+                  ? (() => {
+                      const date = new Date(item.matingDate);
+                      date.setDate(date.getDate() + 27);
+                      return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+                    })()
+                  : '不明';
+                
+                return (
+                  <Card key={item.id} shadow="sm" padding="sm" radius="md" withBorder>
+                    <Flex justify="space-between" align="center" wrap="nowrap">
+                      <Group gap="md" wrap="nowrap">
+                        <Text fw={600} size="sm">
+                          {item.mother?.name || '不明'} ({fatherName})
                         </Text>
-                        <Badge color="orange" size="sm">
-                          {item.status}
-                        </Badge>
+                        <Group gap={4} wrap="nowrap">
+                          <Text size="sm" c="dimmed">
+                            交配確認日: {item.matingDate ? new Date(item.matingDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '不明'}
+                          </Text>
+                          <Text size="sm" c="dimmed">
+                            確認予定日: {scheduledCheckDate}
+                          </Text>
+                        </Group>
                       </Group>
-                      <Group gap="md">
-                        <Text size="sm" c="dimmed">確認日: {item.checkDate}</Text>
-                        {item.notes && <Text size="sm" c="dimmed">備考: {item.notes}</Text>}
+                      <Group gap="xs" wrap="nowrap">
+                        <ActionIcon
+                          color="green"
+                          variant="light"
+                          size="md"
+                          onClick={() => handlePregnancyCheck(item, true)}
+                          title="妊娠確定"
+                        >
+                          ○
+                        </ActionIcon>
+                        <ActionIcon
+                          color="red"
+                          variant="light"
+                          size="md"
+                          onClick={() => handlePregnancyCheck(item, false)}
+                          title="非妊娠"
+                        >
+                          ×
+                        </ActionIcon>
                       </Group>
-                    </Box>
-                    <Group gap="xs">
-                      <Button
-                        leftSection={<IconCheck size={16} />}
-                        color="green"
-                        size="sm"
-                        onClick={() => handlePregnancyCheck(item, true)}
-                      >
-                        妊娠確定
-                      </Button>
-                      <Button
-                        leftSection={<IconX size={16} />}
-                        color="red"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePregnancyCheck(item, false)}
-                      >
-                        非妊娠
-                      </Button>
-                    </Group>
-                  </Flex>
-                </Card>
-              ))}
+                    </Flex>
+                  </Card>
+                );
+              })}
             </Stack>
           </Tabs.Panel>
 
           {/* 出産予定一覧タブ */}
           <Tabs.Panel value="birth" pt="md">
             <Stack gap="sm">
-              {birthPlansResponse?.data?.map((item: BirthPlan) => (
-                <Card key={item.id} shadow="sm" padding="md" radius="md" withBorder>
-                  <Flex justify="space-between" align="center">
-                    <Box style={{ flex: 1 }}>
-                      <Group gap="md" mb="xs">
-                        <Text fw={600} size="md">
-                          {item.mother?.name || '不明'} (出産予定)
+              {birthPlansResponse?.data?.map((item: BirthPlan) => {
+                // 父猫の名前を取得（fatherIdから）
+                const fatherName = item.fatherId 
+                  ? catsResponse?.data?.find((cat: Cat) => cat.id === item.fatherId)?.name || '不明'
+                  : '不明';
+                
+                return (
+                  <Card key={item.id} shadow="sm" padding="sm" radius="md" withBorder>
+                    <Flex justify="space-between" align="center" wrap="nowrap">
+                      <Group gap="md" wrap="nowrap">
+                        <Text fw={600} size="sm">
+                          {item.mother?.name || '不明'} ({fatherName})
                         </Text>
-                        <Badge color="green" size="sm">
-                          {item.status}
-                        </Badge>
+                        <Group gap={4} wrap="nowrap">
+                          <Text size="sm" c="dimmed">
+                            交配日: {item.matingDate ? new Date(item.matingDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '不明'}
+                          </Text>
+                          <Text size="sm" c="dimmed">
+                            出産予定日: {new Date(item.expectedBirthDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
+                          </Text>
+                        </Group>
                       </Group>
-                      <Group gap="md">
-                        <Text size="sm" c="dimmed">出産予定日: {item.expectedBirthDate}</Text>
-                        {item.actualBirthDate && <Text size="sm" c="dimmed">実際出産日: {item.actualBirthDate}</Text>}
-                        {item.expectedKittens && <Text size="sm" c="dimmed">予想子猫数: {item.expectedKittens}匹</Text>}
-                        {item.actualKittens && <Text size="sm" c="dimmed">実際子猫数: {item.actualKittens}匹</Text>}
+                      <Group gap="xs" wrap="nowrap">
+                        <ActionIcon
+                          color="green"
+                          variant="light"
+                          size="md"
+                          onClick={() => {
+                            setSelectedBirthPlan(item);
+                            setBirthCount(0);
+                            setDeathCount(0);
+                            openBirthInfoModal();
+                          }}
+                          title="出産確認"
+                        >
+                          ○
+                        </ActionIcon>
+                        <ActionIcon
+                          color="red"
+                          variant="light"
+                          size="md"
+                          onClick={() => {
+                            // 出産計画を削除して交配管理表に戻す
+                            deleteBirthPlanMutation.mutate(item.id);
+                          }}
+                          title="出産なし"
+                        >
+                          ×
+                        </ActionIcon>
                       </Group>
-                      {item.notes && (
-                        <Text size="sm" c="dimmed" mt="xs">備考: {item.notes}</Text>
-                      )}
-                    </Box>
-                    <Button
-                      variant="light"
-                      size="sm"
-                    >
-                      詳細
-                    </Button>
-                  </Flex>
-                </Card>
-              ))}
+                    </Flex>
+                  </Card>
+                );
+              })}
             </Stack>
           </Tabs.Panel>
         </Tabs>
@@ -1570,6 +1621,105 @@ export default function BreedingPage() {
               disabled={!isNewRuleValid() || createNgRuleMutation.isPending}
             >
               {createNgRuleMutation.isPending ? '作成中…' : 'ルール作成'}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* 出産情報入力モーダル */}
+      <Modal
+        opened={birthInfoModalOpened}
+        onClose={() => {
+          closeBirthInfoModal();
+          setSelectedBirthPlan(null);
+          setBirthCount(0);
+          setDeathCount(0);
+        }}
+        title="出産情報の入力"
+        size="md"
+      >
+        <Stack gap="md">
+          {/* 両親の名前 */}
+          <TextInput
+            label="両親"
+            value={selectedBirthPlan ? `${selectedBirthPlan.mother?.name || '不明'} (${
+              selectedBirthPlan.fatherId 
+                ? catsResponse?.data?.find((cat: Cat) => cat.id === selectedBirthPlan.fatherId)?.name || '不明'
+                : '不明'
+            })` : ''}
+            readOnly
+          />
+
+          {/* 出産頭数 */}
+          <Group gap="sm" align="flex-end">
+            <NumberInput
+              label="出産頭数"
+              value={birthCount}
+              onChange={(value: string | number) => setBirthCount(typeof value === 'number' ? value : 0)}
+              min={0}
+              style={{ flex: 1 }}
+            />
+            <ActionIcon
+              size="lg"
+              variant="light"
+              color="blue"
+              onClick={() => setBirthCount(prev => prev + 1)}
+              title="1頭追加"
+            >
+              <IconBabyCarriage size={20} />
+            </ActionIcon>
+          </Group>
+
+          {/* 死亡数 */}
+          <Group gap="sm" align="flex-end">
+            <NumberInput
+              label="死亡数"
+              value={deathCount}
+              onChange={(value: string | number) => setDeathCount(typeof value === 'number' ? value : 0)}
+              min={0}
+              style={{ flex: 1 }}
+            />
+            <ActionIcon
+              size="lg"
+              variant="light"
+              color="grape"
+              onClick={() => setDeathCount(prev => prev + 1)}
+              title="1頭追加"
+            >
+              <IconRainbow size={20} />
+            </ActionIcon>
+          </Group>
+
+          {/* アクションボタン */}
+          <Group justify="flex-end" gap="sm" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => {
+                // TODO: 子猫管理ページの子猫登録モーダルを開く
+                console.log('詳細登録:', {
+                  birthPlan: selectedBirthPlan,
+                  birthCount,
+                  deathCount,
+                });
+              }}
+            >
+              詳細登録
+            </Button>
+            <Button
+              onClick={() => {
+                // TODO: 情報を保存して子猫管理ページへデータを移す
+                console.log('登録:', {
+                  birthPlan: selectedBirthPlan,
+                  birthCount,
+                  deathCount,
+                });
+                closeBirthInfoModal();
+                setSelectedBirthPlan(null);
+                setBirthCount(0);
+                setDeathCount(0);
+              }}
+            >
+              登録
             </Button>
           </Group>
         </Stack>

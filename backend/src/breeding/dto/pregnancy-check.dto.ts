@@ -7,6 +7,16 @@ export class CreatePregnancyCheckDto {
   @IsUUID()
   motherId: string;
 
+  @ApiPropertyOptional({ description: "父猫のID" })
+  @IsOptional()
+  @IsUUID()
+  fatherId?: string;
+
+  @ApiPropertyOptional({ description: "交配日" })
+  @IsOptional()
+  @IsDateString()
+  matingDate?: string;
+
   @ApiProperty({ description: "妊娠チェック日" })
   @IsDateString()
   checkDate: string;
@@ -22,6 +32,16 @@ export class CreatePregnancyCheckDto {
 }
 
 export class UpdatePregnancyCheckDto {
+  @ApiPropertyOptional({ description: "父猫のID" })
+  @IsOptional()
+  @IsUUID()
+  fatherId?: string;
+
+  @ApiPropertyOptional({ description: "交配日" })
+  @IsOptional()
+  @IsDateString()
+  matingDate?: string;
+
   @ApiPropertyOptional({ description: "妊娠チェック日" })
   @IsOptional()
   @IsDateString()

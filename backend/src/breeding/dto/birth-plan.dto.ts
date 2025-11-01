@@ -7,6 +7,16 @@ export class CreateBirthPlanDto {
   @IsUUID()
   motherId: string;
 
+  @ApiPropertyOptional({ description: "父猫のID" })
+  @IsOptional()
+  @IsUUID()
+  fatherId?: string;
+
+  @ApiPropertyOptional({ description: "交配日" })
+  @IsOptional()
+  @IsDateString()
+  matingDate?: string;
+
   @ApiProperty({ description: "出産予定日" })
   @IsDateString()
   expectedBirthDate: string;
@@ -39,6 +49,16 @@ export class CreateBirthPlanDto {
 }
 
 export class UpdateBirthPlanDto {
+  @ApiPropertyOptional({ description: "父猫のID" })
+  @IsOptional()
+  @IsUUID()
+  fatherId?: string;
+
+  @ApiPropertyOptional({ description: "交配日" })
+  @IsOptional()
+  @IsDateString()
+  matingDate?: string;
+
   @ApiPropertyOptional({ description: "出産予定日" })
   @IsOptional()
   @IsDateString()

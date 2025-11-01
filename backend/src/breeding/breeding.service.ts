@@ -260,10 +260,25 @@ export class BreedingService {
       throw new BadRequestException("Mother must be a female cat");
     }
 
+    // Validate father if provided
+    if (dto.fatherId) {
+      const father = await this.prisma.cat.findUnique({
+        where: { id: dto.fatherId },
+        select: { id: true, gender: true }
+      });
+
+      if (!father) throw new NotFoundException("Father cat not found");
+      if (father.gender !== "MALE") {
+        throw new BadRequestException("Father must be a male cat");
+      }
+    }
+
     const firstUser = userId ? null : await this.prisma.user.findFirst();
     const result = await this.prisma.pregnancyCheck.create({
       data: {
         motherId: dto.motherId,
+        fatherId: dto.fatherId,
+        matingDate: dto.matingDate ? new Date(dto.matingDate) : null,
         checkDate: new Date(dto.checkDate),
         status: dto.status,
         notes: dto.notes,
@@ -278,9 +293,24 @@ export class BreedingService {
   }
 
   async updatePregnancyCheck(id: string, dto: UpdatePregnancyCheckDto): Promise<BreedingSuccessResponse> {
+    // Validate father if provided
+    if (dto.fatherId) {
+      const father = await this.prisma.cat.findUnique({
+        where: { id: dto.fatherId },
+        select: { id: true, gender: true }
+      });
+
+      if (!father) throw new NotFoundException("Father cat not found");
+      if (father.gender !== "MALE") {
+        throw new BadRequestException("Father must be a male cat");
+      }
+    }
+
     await this.prisma.pregnancyCheck.update({
       where: { id },
       data: {
+        fatherId: dto.fatherId,
+        matingDate: dto.matingDate ? new Date(dto.matingDate) : undefined,
         checkDate: dto.checkDate ? new Date(dto.checkDate) : undefined,
         status: dto.status,
         notes: dto.notes,
@@ -344,10 +374,25 @@ export class BreedingService {
       throw new BadRequestException("Mother must be a female cat");
     }
 
+    // Validate father if provided
+    if (dto.fatherId) {
+      const father = await this.prisma.cat.findUnique({
+        where: { id: dto.fatherId },
+        select: { id: true, gender: true }
+      });
+
+      if (!father) throw new NotFoundException("Father cat not found");
+      if (father.gender !== "MALE") {
+        throw new BadRequestException("Father must be a male cat");
+      }
+    }
+
     const firstUser = userId ? null : await this.prisma.user.findFirst();
     const result = await this.prisma.birthPlan.create({
       data: {
         motherId: dto.motherId,
+        fatherId: dto.fatherId,
+        matingDate: dto.matingDate ? new Date(dto.matingDate) : null,
         expectedBirthDate: new Date(dto.expectedBirthDate),
         actualBirthDate: dto.actualBirthDate ? new Date(dto.actualBirthDate) : undefined,
         status: dto.status,
@@ -365,9 +410,24 @@ export class BreedingService {
   }
 
   async updateBirthPlan(id: string, dto: UpdateBirthPlanDto): Promise<BreedingSuccessResponse> {
+    // Validate father if provided
+    if (dto.fatherId) {
+      const father = await this.prisma.cat.findUnique({
+        where: { id: dto.fatherId },
+        select: { id: true, gender: true }
+      });
+
+      if (!father) throw new NotFoundException("Father cat not found");
+      if (father.gender !== "MALE") {
+        throw new BadRequestException("Father must be a male cat");
+      }
+    }
+
     await this.prisma.birthPlan.update({
       where: { id },
       data: {
+        fatherId: dto.fatherId,
+        matingDate: dto.matingDate ? new Date(dto.matingDate) : undefined,
         expectedBirthDate: dto.expectedBirthDate ? new Date(dto.expectedBirthDate) : undefined,
         actualBirthDate: dto.actualBirthDate ? new Date(dto.actualBirthDate) : undefined,
         status: dto.status,

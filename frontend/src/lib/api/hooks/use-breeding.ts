@@ -118,12 +118,15 @@ export type PregnancyStatus = 'CONFIRMED' | 'SUSPECTED' | 'NEGATIVE' | 'ABORTED'
 export interface PregnancyCheck {
   id: string;
   motherId: string;
+  fatherId?: string | null;
+  matingDate?: string | null;
   checkDate: string;
   status: PregnancyStatus;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
   mother?: { id: string; name: string | null } | null;
+  father?: { id: string; name: string | null } | null;
 }
 
 export interface PregnancyCheckListResponse {
@@ -136,6 +139,8 @@ export interface PregnancyCheckListResponse {
 
 export type CreatePregnancyCheckRequest = {
   motherId: string;
+  fatherId?: string;
+  matingDate?: string;
   checkDate: string;
   status: PregnancyStatus;
   notes?: string;
@@ -151,6 +156,8 @@ export type BirthStatus = 'EXPECTED' | 'BORN' | 'ABORTED' | 'STILLBORN';
 export interface BirthPlan {
   id: string;
   motherId: string;
+  fatherId?: string | null;
+  matingDate?: string | null;
   expectedBirthDate: string;
   actualBirthDate?: string | null;
   status: BirthStatus;
@@ -160,6 +167,7 @@ export interface BirthPlan {
   createdAt: string;
   updatedAt: string;
   mother?: { id: string; name: string | null } | null;
+  father?: { id: string; name: string | null } | null;
 }
 
 export interface BirthPlanListResponse {
@@ -172,6 +180,8 @@ export interface BirthPlanListResponse {
 
 export type CreateBirthPlanRequest = {
   motherId: string;
+  fatherId?: string;
+  matingDate?: string;
   expectedBirthDate: string;
   actualBirthDate?: string;
   status: BirthStatus;
