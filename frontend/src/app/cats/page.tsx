@@ -22,6 +22,7 @@ import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconPlus, IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { useGetCats, useGetCatStatistics, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue } from '@mantine/hooks';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,6 +31,7 @@ export default function CatsPage() {
   const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setPageHeader } = usePageHeader();
 
   const queryParams = useMemo<GetCatsParams>(() => {
     const params: GetCatsParams = {};
@@ -83,6 +85,33 @@ export default function CatsPage() {
       window.history.replaceState({}, '', newUrl.toString());
     }
   }, [searchParams, refetch]);
+
+  // ページヘッダーを設定
+  useEffect(() => {
+    setPageHeader(
+      '在舎猫一覧',
+      <>
+        <Button
+          variant="light"
+          leftSection={<IconRefresh size={16} />}
+          onClick={() => refetch()}
+          loading={isRefetching}
+        >
+          更新
+        </Button>
+        <Button
+          leftSection={<IconPlus size={16} />}
+          onClick={() => router.push('/cats/new')}
+          variant="filled"
+        >
+          新規登録
+        </Button>
+      </>
+    );
+
+    // クリーンアップ
+    return () => setPageHeader(null);
+  }, [setPageHeader, refetch, isRefetching, router]);
 
   const apiCats = data?.data || [];
 
@@ -190,76 +219,50 @@ export default function CatsPage() {
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
-      {/* ヘッダー */}
-      <Box
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderBottom: '1px solid var(--border-subtle)',
-          padding: '1rem 0',
-          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
-        }}
-      >
-        <Container size="xl">
-          <Group justify="space-between" align="center">
-            <PageTitle withMarginBottom={false}>在舎猫一覧</PageTitle>
-            <Group gap="sm">
-              <Button
-                variant="light"
-                leftSection={<IconRefresh size={16} />}
-                onClick={() => refetch()}
-                loading={isRefetching}
-              >
-                更新
-              </Button>
-              <Button
-                leftSection={<IconPlus size={16} />}
-                onClick={() => router.push('/cats/new')}
-                variant="filled"
-              >
-                新規登録
-              </Button>
+      {/* メインコンテンツ */}
+      <Container size="lg" style={{ paddingTop: '1.5rem' }}>
+        {/* タブと検索バー・並び替えを同じ行に */}
+        <Box mb="lg">
+          <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+            {/* 左側: タブ */}
+            <Tabs 
+              value={activeTab} 
+              onChange={(value) => setActiveTab(value || 'cats')} 
+              style={{ flex: 1, minWidth: 'fit-content' }}
+            >
+              <Tabs.List>
+                <Tabs.Tab value="cats">Cats ({(statsData && (statsData as any).data?.total) ?? apiCats.length})</Tabs.Tab>
+                <Tabs.Tab value="male">Male ({(statsData && (statsData as any).data?.genderDistribution?.MALE) ?? apiCats.filter((c: Cat) => c.gender === 'MALE').length})</Tabs.Tab>
+                <Tabs.Tab value="female">Female ({(statsData && (statsData as any).data?.genderDistribution?.FEMALE) ?? apiCats.filter((c: Cat) => c.gender === 'FEMALE').length})</Tabs.Tab>
+                <Tabs.Tab value="kitten">Kitten ({kittenCount})</Tabs.Tab>
+                <Tabs.Tab value="raising">Raising ({raisingCount})</Tabs.Tab>
+              </Tabs.List>
+            </Tabs>
+
+            {/* 右側: 検索とソート */}
+            <Group gap="sm" wrap="nowrap" style={{ minWidth: 'fit-content' }}>
+              <TextInput
+                placeholder="検索..."
+                leftSection={<IconSearch size={16} />}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ width: 200 }}
+              />
+              <Select
+                placeholder="並び替え"
+                data={[
+                  { value: 'name', label: '名前順' },
+                  { value: 'age', label: '年齢順（新しい順）' },
+                  { value: 'breed', label: '品種順' },
+                  { value: 'gender', label: '性別順' }
+                ]}
+                value={sortBy}
+                onChange={(value) => setSortBy(value || 'name')}
+                style={{ width: 140 }}
+              />
             </Group>
           </Group>
-        </Container>
-      </Box>
-
-      {/* メインコンテンツ */}
-      <Container size="lg" style={{ paddingTop: '1rem' }}>
-        {/* 旧タイトル+ボタンはヘッダーへ移動済み */}
-        
-        {/* 検索バーと並び替え */}
-        <Group gap="md" mb="md">
-          <TextInput
-            placeholder="名前・品種・色柄で検索..."
-            leftSection={<IconSearch size={16} />}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ flex: 1, maxWidth: 300 }}
-          />
-          <Select
-            placeholder="並び替え"
-            data={[
-              { value: 'name', label: '名前順' },
-              { value: 'age', label: '年齢順（新しい順）' },
-              { value: 'breed', label: '品種順' },
-              { value: 'gender', label: '性別順' }
-            ]}
-            value={sortBy}
-            onChange={(value) => setSortBy(value || 'name')}
-            style={{ minWidth: 150 }}
-          />
-        </Group>
-
-        {/* タブ */}
-        <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'cats')} mb="md">
-          <Tabs.List>
-              <Tabs.Tab value="cats">Cats ({(statsData && (statsData as any).data?.total) ?? apiCats.length})</Tabs.Tab>
-              <Tabs.Tab value="male">Male ({(statsData && (statsData as any).data?.genderDistribution?.MALE) ?? apiCats.filter((c: Cat) => c.gender === 'MALE').length})</Tabs.Tab>
-              <Tabs.Tab value="female">Female ({(statsData && (statsData as any).data?.genderDistribution?.FEMALE) ?? apiCats.filter((c: Cat) => c.gender === 'FEMALE').length})</Tabs.Tab>
-              <Tabs.Tab value="kitten">Kitten ({kittenCount})</Tabs.Tab>
-              <Tabs.Tab value="raising">Raising ({raisingCount})</Tabs.Tab>
-            </Tabs.List>
-        </Tabs>
+        </Box>
 
         {/* エラー表示 */}
         {isError && (

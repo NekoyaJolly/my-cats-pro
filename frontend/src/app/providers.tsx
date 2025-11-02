@@ -4,6 +4,7 @@ import { MantineProvider, type MantineColorsTuple, type MantineThemeOverride } f
 import { useBootstrapAuth } from '@/lib/auth/useBootstrapAuth'
 import { QueryClientProvider } from '@/lib/api/query-client'
 import { Notifications } from '@mantine/notifications'
+import { PageHeaderProvider } from '@/lib/contexts/page-header-context'
 import '@mantine/notifications/styles.css'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -61,8 +62,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider>
       <MantineProvider defaultColorScheme="light" theme={theme}>
-        <Notifications position="top-right" zIndex={1000} />
-        {children}
+        <PageHeaderProvider>
+          <Notifications position="top-right" zIndex={1000} />
+          {children}
+        </PageHeaderProvider>
       </MantineProvider>
     </QueryClientProvider>
   )

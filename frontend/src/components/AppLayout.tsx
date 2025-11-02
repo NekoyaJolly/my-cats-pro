@@ -34,6 +34,7 @@ import {
 import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
 import { notifications } from '@mantine/notifications';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 const navigationItems = [
   {
@@ -72,7 +73,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-const bottomNavigationItems = [
+const navigationItems = [
   { label: 'ホーム', href: '/', icon: '🏠' },
   { label: '交配', href: '/breeding', icon: '🔗' },
   { label: '子猫', href: '/kittens', icon: '🐾' },
@@ -84,6 +85,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname() ?? '/';
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { pageTitle, pageActions } = usePageHeader();
   // 両方とも初期状態は閉じた状態に変更（遷移で自動的に閉じる仕様）
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure(false);
   const [desktopOpened, { toggle: toggleDesktop, close: closeDesktop }] = useDisclosure(false);
@@ -230,7 +232,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           justify="space-between"
           style={{ color: 'var(--text-primary)' }}
         >
-          <Group>
+          <Group gap="sm">
             <Burger
               opened={mobileOpened}
               onClick={toggleMobile}
@@ -243,80 +245,93 @@ export function AppLayout({ children }: AppLayoutProps) {
               visibleFrom="sm"
               size="sm"
             />
-            <Text fw={700} style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🐈</span> MyCats
-            </Text>
+            <Group gap={8}>
+              <Text fw={700} style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🐈</span> MyCats
+              </Text>
+              {pageTitle && (
+                <>
+                  <Text c="dimmed" size="lg">›</Text>
+                  <Text fw={600} size="md" style={{ color: 'var(--text-primary)' }}>
+                    {pageTitle}
+                  </Text>
+                </>
+              )}
+            </Group>
           </Group>
-          {isAuthenticated && user ? (
-            <Menu shadow="sm" width={220} position="bottom-end" withinPortal>
-              <Menu.Target>
-                <UnstyledButton
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.65rem',
-                    padding: '0.35rem 0.6rem',
-                    borderRadius: '999px',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--surface)',
-                    transition: 'background-color 120ms ease',
-                  }}
-                >
-                  <Avatar radius="xl" size={34} color="var(--accent)" variant="filled">
-                    {accountInitials}
-                  </Avatar>
-                  <Stack gap={2} style={{ minWidth: 0 }} hiddenFrom="xs">
-                    <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
-                      <IconUser size={16} style={{ color: 'var(--text-muted)' }} />
-                      <Text size="sm" fw={600} style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {accountLabel}
-                      </Text>
-                    </Group>
-                    <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
-                      {roleLabel && (
-                        <Badge size="xs" variant="light" color="indigo">
-                          {roleLabel}
-                        </Badge>
-                      )}
-                      <Text size="xs" c="dimmed" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {accountEmail}
-                      </Text>
-                    </Group>
-                  </Stack>
-                  <IconChevronDown size={16} style={{ color: 'var(--text-muted)' }} />
-                </UnstyledButton>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>サインイン中</Menu.Label>
-                <Box px="sm" py="xs">
-                  <Text fw={600} size="sm" style={{ color: 'var(--text-primary)' }}>
-                    {accountLabel}
-                  </Text>
-                  <Text size="xs" c="dimmed" mt={4}>
-                    {accountEmail}
-                  </Text>
-                  {roleLabel && (
-                    <Badge size="sm" mt="sm" variant="light" color="indigo">
-                      {roleLabel}
-                    </Badge>
-                  )}
-                </Box>
-                <Menu.Divider />
-                <Menu.Item
-                  onClick={handleLogout}
-                  leftSection={<IconLogout size={16} />}
-                  disabled={logoutLoading}
-                  color="red"
-                >
-                  ログアウト
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          ) : (
-            <Box style={{ width: 34, height: 34 }}>
-              {/* 認証状態が整う前のプレースホルダー */}
-            </Box>
-          )}
+          <Group gap="sm">
+            {pageActions && <Group gap="sm">{pageActions}</Group>}
+            {isAuthenticated && user ? (
+              <Menu shadow="sm" width={220} position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <UnstyledButton
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.65rem',
+                      padding: '0.35rem 0.6rem',
+                      borderRadius: '999px',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--surface)',
+                      transition: 'background-color 120ms ease',
+                    }}
+                  >
+                    <Avatar radius="xl" size={34} color="var(--accent)" variant="filled">
+                      {accountInitials}
+                    </Avatar>
+                    <Stack gap={2} style={{ minWidth: 0 }} hiddenFrom="xs">
+                      <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
+                        <IconUser size={16} style={{ color: 'var(--text-muted)' }} />
+                        <Text size="sm" fw={600} style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {accountLabel}
+                        </Text>
+                      </Group>
+                      <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+                        {roleLabel && (
+                          <Badge size="xs" variant="light" color="indigo">
+                            {roleLabel}
+                          </Badge>
+                        )}
+                        <Text size="xs" c="dimmed" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {accountEmail}
+                        </Text>
+                      </Group>
+                    </Stack>
+                    <IconChevronDown size={16} style={{ color: 'var(--text-muted)' }} />
+                  </UnstyledButton>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>サインイン中</Menu.Label>
+                  <Box px="sm" py="xs">
+                    <Text fw={600} size="sm" style={{ color: 'var(--text-primary)' }}>
+                      {accountLabel}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                      {accountEmail}
+                    </Text>
+                    {roleLabel && (
+                      <Badge size="sm" mt="sm" variant="light" color="indigo">
+                        {roleLabel}
+                      </Badge>
+                    )}
+                  </Box>
+                  <Menu.Divider />
+                  <Menu.Item
+                    onClick={handleLogout}
+                    leftSection={<IconLogout size={16} />}
+                    disabled={logoutLoading}
+                    color="red"
+                  >
+                    ログアウト
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            ) : (
+              <Box style={{ width: 34, height: 34 }}>
+                {/* 認証状態が整う前のプレースホルダー */}
+              </Box>
+            )}
+          </Group>
         </Group>
       </AppShell.Header>
 
