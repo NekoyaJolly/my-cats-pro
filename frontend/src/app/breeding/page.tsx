@@ -159,6 +159,8 @@ const calculateAgeInMonths = (birthDate: string): number => {
 };
 
 export default function BreedingPage() {
+  const { setPageHeader } = usePageHeader();
+  
   // hydration guard: 初回マウント時に localStorage から読み込むまで保存を抑制
   const hydratedRef = useRef(false);
   const mountCountRef = useRef(0);
@@ -215,6 +217,28 @@ export default function BreedingPage() {
 
   console.log(`BreedingPage component rendered (mount count: ${mountCountRef.current}) - breedingSchedule:`, breedingSchedule);
   console.log('BreedingPage component rendered - localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
+
+  // ページヘッダーを設定
+  useEffect(() => {
+    console.log('Setting page header for breeding page');
+    setPageHeader(
+      '繁殖管理',
+      <Group gap="sm">
+        <Button
+          variant="light"
+          leftSection={<IconSettings size={16} />}
+          size="sm"
+        >
+          NG設定
+        </Button>
+      </Group>
+    );
+
+    return () => {
+      console.log('Cleaning up page header for breeding page');
+      setPageHeader(null);
+    };
+  }, []); // 空の依存配列でマウント時のみ実行
 
   // localStorageからデータを読み込む
   useEffect(() => {
@@ -797,46 +821,6 @@ export default function BreedingPage() {
         overflow: isFullscreen ? 'hidden' : 'auto',
       }}
     >
-      {/* ヘッダー */}
-      <Box
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderBottom: '1px solid var(--border-subtle)',
-          padding: '1rem 0',
-          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
-        }}
-      >
-        <Container size="xl">
-          <Flex align="center" gap="md">
-            <ActionIcon
-              variant="subtle"
-              size="lg"
-              onClick={() => router.push('/')}
-            >
-              <IconArrowLeft size={20} />
-            </ActionIcon>
-            <PageTitle style={{ color: 'var(--text-primary)' }}>繁殖管理</PageTitle>
-            <Group gap="sm" ml="auto">
-              <Button
-                variant="light"
-                onClick={openRulesModal}
-                leftSection={<IconSettings size={16} />}
-                size="sm"
-              >
-                NG設定
-              </Button>
-              <ActionIcon
-                variant="light"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? 'フルスクリーン終了' : 'フルスクリーン'}
-              >
-                {isFullscreen ? <IconMinimize size={18} /> : <IconMaximize size={18} />}
-              </ActionIcon>
-            </Group>
-          </Flex>
-        </Container>
-      </Box>
-
       {/* メインコンテンツ */}
       <Container 
         size={isFullscreen ? "100%" : "xl"} 
@@ -846,10 +830,6 @@ export default function BreedingPage() {
           overflow: isFullscreen ? 'hidden' : 'visible',
         }}
       >
-        <PageTitle withMarginBottom={true} style={{ fontSize: 18 }}>
-          交配スケジュール管理
-        </PageTitle>
-
         {/* タブ */}
         <Tabs value={activeTab} onChange={(value: string | null) => setActiveTab(value || 'schedule')} mb="md">
           <Tabs.List>

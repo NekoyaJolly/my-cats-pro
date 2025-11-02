@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 interface PageHeaderContextType {
   pageTitle: string | null;
@@ -14,10 +14,10 @@ export function PageHeaderProvider({ children }: { children: ReactNode }) {
   const [pageTitle, setPageTitle] = useState<string | null>(null);
   const [pageActions, setPageActions] = useState<ReactNode | null>(null);
 
-  const setPageHeader = (title: string | null, actions?: ReactNode) => {
+  const setPageHeader = useCallback((title: string | null, actions?: ReactNode) => {
     setPageTitle(title);
     setPageActions(actions || null);
-  };
+  }, []);
 
   return (
     <PageHeaderContext.Provider value={{ pageTitle, pageActions, setPageHeader }}>

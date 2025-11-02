@@ -86,6 +86,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { pageTitle, pageActions } = usePageHeader();
+
+  // デバッグ用ログ
+  console.log('AppLayout pageTitle:', pageTitle);
+  console.log('AppLayout pageActions:', pageActions);
   // 両方とも初期状態は閉じた状態に変更（遷移で自動的に閉じる仕様）
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure(false);
   const [desktopOpened, { toggle: toggleDesktop, close: closeDesktop }] = useDisclosure(false);
