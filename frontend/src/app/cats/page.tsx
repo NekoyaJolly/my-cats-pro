@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -86,7 +86,7 @@ export default function CatsPage() {
     }
   }, [searchParams, refetch]);
 
-  // ページヘッダーを設定
+  // ページヘッダーを設定（マウント時のみ）
   useEffect(() => {
     setPageHeader(
       '在舎猫一覧',
@@ -111,7 +111,7 @@ export default function CatsPage() {
 
     // クリーンアップ
     return () => setPageHeader(null);
-  }, [setPageHeader, refetch, isRefetching, router]);
+  }, []); // 空の依存配列でマウント時のみ実行
 
   const apiCats = data?.data || [];
 

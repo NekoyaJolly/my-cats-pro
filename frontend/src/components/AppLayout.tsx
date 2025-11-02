@@ -73,7 +73,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-const navigationItems = [
+const bottomNavigationItems = [
   { label: 'ホーム', href: '/', icon: '🏠' },
   { label: '交配', href: '/breeding', icon: '🔗' },
   { label: '子猫', href: '/kittens', icon: '🐾' },

@@ -24,7 +24,7 @@ import {
   NumberInput,
   Radio,
 } from '@mantine/core';
-import { PageTitle } from '@/components/PageTitle';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { useDisclosure } from '@mantine/hooks';
 import { 
   IconPlus, 
@@ -328,7 +328,7 @@ export default function BreedingPage() {
     saveToStorage();
   }, [activeMales, defaultDuration, selectedYear, selectedMonth, breedingSchedule, matingChecks]);
 
-  const catsQuery = useGetCats({}, { enabled: true });
+  const catsQuery = useGetCats({ limit: 1000 }, { enabled: true });
   const { data: catsResponse } = catsQuery;
   const ngRulesQuery = useGetBreedingNgRules();
   const { data: ngRulesResponse, isLoading: isNgRulesLoading, isFetching: isNgRulesFetching, error: ngRulesError } = ngRulesQuery;
@@ -992,10 +992,17 @@ export default function BreedingPage() {
                           }}
                         >
                           <Flex align="center" gap={4} justify="center">
-                            <Text size={isFullscreen ? "xs" : "sm"} fw={dayOfWeek === 0 || dayOfWeek === 6 ? 600 : 400}>
+                            <Text 
+                              size={isFullscreen ? "xs" : "sm"} 
+                              fw={dayOfWeek === 0 || dayOfWeek === 6 ? 600 : 400}
+                              c={dayOfWeek === 0 ? 'red' : dayOfWeek === 6 ? 'blue' : undefined}
+                            >
                               {date}日
                             </Text>
-                            <Text size={isFullscreen ? "8px" : "xs"} c="dimmed">
+                            <Text 
+                              size={isFullscreen ? "8px" : "xs"} 
+                              c={dayOfWeek === 0 ? 'red' : dayOfWeek === 6 ? 'blue' : 'dimmed'}
+                            >
                               ({['日', '月', '火', '水', '木', '金', '土'][dayOfWeek]})
                             </Text>
                           </Flex>

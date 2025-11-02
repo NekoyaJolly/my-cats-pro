@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-10-31T08:18:25.940Z
+// Prisma Schema - Last Updated: 2025-11-02T17:47:49.064Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -210,6 +210,8 @@ model BreedingNgRule {
 model PregnancyCheck {
   id              String            @id @default(uuid())
   motherId        String            @map("mother_id")
+  fatherId        String?           @map("father_id")
+  matingDate      DateTime?         @map("mating_date")
   checkDate       DateTime          @map("check_date")
   status          PregnancyStatus   @default(SUSPECTED)
   notes           String?
@@ -223,6 +225,7 @@ model PregnancyCheck {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([motherId])
+  @@index([fatherId])
   @@index([checkDate])
   @@map("pregnancy_checks")
 }
@@ -230,6 +233,8 @@ model PregnancyCheck {
 model BirthPlan {
   id              String         @id @default(uuid())
   motherId        String         @map("mother_id")
+  fatherId        String?        @map("father_id")
+  matingDate      DateTime?      @map("mating_date")
   expectedBirthDate DateTime     @map("expected_birth_date")
   actualBirthDate DateTime?      @map("actual_birth_date")
   status          BirthStatus    @default(EXPECTED)
@@ -246,6 +251,7 @@ model BirthPlan {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([motherId])
+  @@index([fatherId])
   @@index([expectedBirthDate])
   @@map("birth_plans")
 }
