@@ -1,0 +1,49 @@
+/* ページヘッダーアクションボタンのレスポンシブスタイル */
+.page-actions-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* デスクトップ: 通常表示 (575px以上) */
+.page-actions-container button {
+  min-width: 60px;
+  max-width: 140px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+/* 小型モバイル: アイコンのみ表示 (575px未満) */
+@media (max-width: 574px) {
+  .page-actions-container button {
+    min-width: 36px;
+    max-width: 36px;
+    width: 36px !important;
+    height: 36px;
+    padding: 0.5rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ボタンのテキストを非表示 */
+  .page-actions-container button .mantine-Button-label {
+    display: none !important;
+  }
+
+  /* アイコンを中央配置 */
+  .page-actions-container button .mantine-Button-section {
+    margin: 0 !important;
+  }
+  
+  /* leftSection/rightSectionの調整 */
+  .page-actions-container button [data-position="left"],
+  .page-actions-container button [data-position="right"] {
+    margin: 0 !important;
+  }
+  
+  .page-actions-container button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
