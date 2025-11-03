@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-11-02T17:47:49.064Z
+// Prisma Schema - Last Updated: 2025-11-03T17:03:08.266Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,

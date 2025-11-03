@@ -92,7 +92,7 @@ export default function CatsPage() {
       '在舎猫一覧',
       <>
         <Button
-          variant="light"
+          variant="subtle"
           leftSection={<IconRefresh size={16} />}
           onClick={() => refetch()}
           loading={isRefetching}
@@ -100,9 +100,10 @@ export default function CatsPage() {
           更新
         </Button>
         <Button
+          variant="outline"
+          color="blue"
           leftSection={<IconPlus size={16} />}
           onClick={() => router.push('/cats/new')}
-          variant="filled"
         >
           新規登録
         </Button>

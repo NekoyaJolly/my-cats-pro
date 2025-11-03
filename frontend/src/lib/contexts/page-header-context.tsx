@@ -5,6 +5,8 @@ import { createContext, useContext, useState, ReactNode, useCallback } from 'rea
 interface PageHeaderContextType {
   pageTitle: string | null;
   pageActions: ReactNode | null;
+  setPageTitle: (title: string | null) => void;
+  setPageActions: (actions: ReactNode | null) => void;
   setPageHeader: (title: string | null, actions?: ReactNode) => void;
 }
 
@@ -20,7 +22,7 @@ export function PageHeaderProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <PageHeaderContext.Provider value={{ pageTitle, pageActions, setPageHeader }}>
+    <PageHeaderContext.Provider value={{ pageTitle, pageActions, setPageTitle, setPageActions, setPageHeader }}>
       {children}
     </PageHeaderContext.Provider>
   );

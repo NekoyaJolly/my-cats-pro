@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -11,18 +12,20 @@ import {
   Textarea,
   Select,
   Switch,
-  Flex,
   Alert,
   LoadingOverlay,
+  Tabs,
+  Title,
 } from '@mantine/core';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
+import { IconDeviceFloppy, IconPlus } from '@tabler/icons-react';
 import { z } from 'zod';
-import { PageTitle } from '@/components/PageTitle';
 import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
 import { useGetCoatColors } from '@/lib/api/hooks/use-coat-colors';
+import { ActionButton } from '@/components/ActionButton';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 import TagSelector from '@/components/TagSelector';
 
 const optionalString = z
@@ -52,6 +55,8 @@ type CatFormValues = z.infer<typeof catFormSchema>;
 
 export default function CatRegistrationPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<string | null>('register');
+  const { setPageHeader } = usePageHeader();
   const createCat = useCreateCat();
   const { data: breedsData } = useGetBreeds({ limit: 100 });
   const { data: coatColorsData } = useGetCoatColors({ limit: 100 });
@@ -103,44 +108,38 @@ export default function CatRegistrationPage() {
 
   const isSubmitting = createCat.isPending;
 
-  return (
-    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
-      <Box
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderBottom: '1px solid var(--border-subtle)',
-          padding: '1rem 0',
-          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
-        }}
+  // グローバルヘッダーにページタイトルとアクションボタンを設定
+  useEffect(() => {
+    setPageHeader(
+      '在舎猫登録',
+      <ActionButton
+        action="create"
+        onClick={handleSubmit(onSubmit)}
+        loading={isSubmitting}
       >
-        <Container size="xl">
-          <Flex justify="space-between" align="center">
-            <Button
-              variant="light"
-              leftSection={<IconArrowLeft size={16} />}
-              onClick={() => router.back()}
-            >
-              戻る
-            </Button>
-          </Flex>
-        </Container>
-      </Box>
+        登録する
+      </ActionButton>
+    );
 
-      <Container size="lg" style={{ paddingTop: '2rem', position: 'relative' }}>
-        <LoadingOverlay visible={isSubmitting} zIndex={1000} overlayProps={{ blur: 2 }} />
+    return () => {
+      setPageHeader(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSubmitting]);
 
-        <Stack gap="xl">
-          <Group justify="space-between">
-            <PageTitle>猫の新規登録</PageTitle>
-            <Button
-              leftSection={<IconDeviceFloppy size={16} />}
-              onClick={handleSubmit(onSubmit)}
-              loading={isSubmitting}
-            >
-              登録する
-            </Button>
-          </Group>
+  return (
+    <Container size="xl" style={{ paddingTop: '2rem', paddingBottom: '2rem', position: 'relative' }}>
+      <LoadingOverlay visible={isSubmitting} zIndex={1000} overlayProps={{ blur: 2 }} />
 
+      {/* タブコンポーネント */}
+      <Tabs value={activeTab} onChange={setActiveTab}>
+        <Tabs.List>
+          <Tabs.Tab value="register" leftSection={<IconPlus size={16} />}>
+            新規登録
+          </Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="register" pt="md">
           <Card shadow="sm" padding="lg" radius="md" withBorder>
             <form onSubmit={handleSubmit(onSubmit)}>
               <Stack gap="md">
@@ -321,20 +320,21 @@ export default function CatRegistrationPage() {
                   </Alert>
                 )}
 
-                <Group justify="flex-end" mt="sm">
-                  <Button
-                    type="submit"
-                    leftSection={<IconDeviceFloppy size={16} />}
+                {/* フォーム下部の登録ボタン */}
+                <Group justify="flex-end" mt="md">
+                  <ActionButton
+                    action="create"
+                    onClick={handleSubmit(onSubmit)}
                     loading={isSubmitting}
                   >
                     登録する
-                  </Button>
+                  </ActionButton>
                 </Group>
               </Stack>
             </form>
           </Card>
-        </Stack>
-      </Container>
-    </Box>
+        </Tabs.Panel>
+      </Tabs>
+    </Container>
   );
 }

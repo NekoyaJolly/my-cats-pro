@@ -226,7 +226,13 @@ export default function CarePage() {
       <>
         <Menu shadow="md" width={200}>
           <Menu.Target>
-            <Button leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={16} />} size="sm">
+            <Button 
+              variant="outline" 
+              color="blue" 
+              leftSection={<IconPlus size={16} />} 
+              rightSection={<IconChevronDown size={16} />} 
+              size="sm"
+            >
               ケアの登録
             </Button>
           </Menu.Target>
@@ -578,7 +584,12 @@ export default function CarePage() {
                 <Text size="sm" c="dimmed" ta="center">
                   ケア予定を追加して、ケアの履歴を管理しましょう。
                 </Text>
-                <Button leftSection={<IconPlus size={16} />} onClick={openCreateModal} variant="light">
+                <Button 
+                  variant="outline" 
+                  color="blue" 
+                  leftSection={<IconPlus size={16} />} 
+                  onClick={openCreateModal}
+                >
                   ケア予定を登録する
                 </Button>
               </Stack>
@@ -639,7 +650,7 @@ export default function CarePage() {
                         <Group gap="xs" justify="center">
                           <ActionIcon
                             variant="light"
-                            color="blue"
+                            color="gray"
                             size="sm"
                             onClick={() => {
                               setDetailSchedule(schedule as any);
@@ -786,7 +797,7 @@ export default function CarePage() {
             </Group>
 
             <Group justify="flex-end" mt="md">
-              <Button variant="default" onClick={closeDetailModal}>
+              <Button variant="subtle" color="gray" onClick={closeDetailModal}>
                 閉じる
               </Button>
             </Group>
@@ -1087,7 +1098,7 @@ export default function CarePage() {
             searchable
           />
           <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={closeAddCardModal}>
+            <Button variant="subtle" color="gray" onClick={closeAddCardModal}>
               キャンセル
             </Button>
           </Group>
@@ -1152,13 +1163,18 @@ export default function CarePage() {
             <Divider />
 
             <Group justify="flex-end">
-              <Button variant="subtle" onClick={() => {
-                closeCompleteModal();
-                setTargetSchedule(null);
-              }}>
+              <Button 
+                variant="subtle" 
+                color="gray" 
+                onClick={() => {
+                  closeCompleteModal();
+                  setTargetSchedule(null);
+                }}
+              >
                 キャンセル
               </Button>
               <Button
+                variant="filled"
                 onClick={handleCompleteSubmit}
                 loading={completeScheduleMutation.isPending}
                 color="teal"
@@ -1486,7 +1502,8 @@ export default function CarePage() {
 
             <Group justify="flex-end">
               <Button
-                variant="default"
+                variant="subtle"
+                color="gray"
                 onClick={() => {
                   closeDeleteModal();
                   setDeletingSchedule(null);
@@ -1495,6 +1512,7 @@ export default function CarePage() {
                 キャンセル
               </Button>
               <Button
+                variant="filled"
                 color="red"
                 onClick={handleConfirmDelete}
                 loading={deleteScheduleMutation.isPending}

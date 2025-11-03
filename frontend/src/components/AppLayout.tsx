@@ -15,6 +15,8 @@ import {
   Box,
   Stack,
   UnstyledButton,
+  Card,
+  Button,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -31,6 +33,7 @@ import {
   IconChevronDown,
   IconLogout,
   IconUser,
+  IconPalette,
 } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
@@ -67,6 +70,11 @@ const navigationItems = [
     label: '血統書データ',
     href: '/pedigrees',
     icon: IconCertificate,
+  },
+  {
+    label: 'デザインガイド',
+    href: '/demo/action-buttons',
+    icon: IconPalette,
   },
 ];
 
@@ -265,83 +273,49 @@ export function AppLayout({ children }: AppLayoutProps) {
               )}
             </Group>
           </Group>
-          <Group gap="sm" wrap="nowrap" style={{ flex: '0 0 auto' }}>
-            {pageActions && <div className="page-actions-container">{pageActions}</div>}
-            {isAuthenticated && user ? (
-              <Menu shadow="sm" width={220} position="bottom-end" withinPortal>
-                <Menu.Target>
-                  <UnstyledButton
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.65rem',
-                      padding: '0.35rem 0.6rem',
-                      borderRadius: '999px',
-                      border: '1px solid var(--border-subtle)',
-                      backgroundColor: 'var(--surface)',
-                      transition: 'background-color 120ms ease',
-                    }}
-                  >
-                    <Avatar radius="xl" size={34} color="var(--accent)" variant="filled">
-                      {accountInitials}
-                    </Avatar>
-                    <Stack gap={2} style={{ minWidth: 0 }} visibleFrom="xs">
-                      <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
-                        <IconUser size={16} style={{ color: 'var(--text-muted)' }} />
-                        <Text size="sm" fw={600} style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {accountLabel}
-                        </Text>
-                      </Group>
-                      <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
-                        {roleLabel && (
-                          <Badge size="xs" variant="light" color="indigo">
-                            {roleLabel}
-                          </Badge>
-                        )}
-                        <Text size="xs" c="dimmed" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {accountEmail}
-                        </Text>
-                      </Group>
-                    </Stack>
-                    <IconChevronDown size={16} style={{ color: 'var(--text-muted)' }} hiddenFrom="xs" />
-                  </UnstyledButton>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  <Menu.Label>サインイン中</Menu.Label>
-                  <Box px="sm" py="xs">
-                    <Text fw={600} size="sm" style={{ color: 'var(--text-primary)' }}>
-                      {accountLabel}
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={4}>
-                      {accountEmail}
-                    </Text>
-                    {roleLabel && (
-                      <Badge size="sm" mt="sm" variant="light" color="indigo">
-                        {roleLabel}
-                      </Badge>
-                    )}
-                  </Box>
-                  <Menu.Divider />
-                  <Menu.Item
-                    onClick={handleLogout}
-                    leftSection={<IconLogout size={16} />}
-                    disabled={logoutLoading}
-                    color="red"
-                  >
-                    ログアウト
-                  </Menu.Item>
-                </Menu.Dropdown>
-              </Menu>
-            ) : (
-              <Box style={{ width: 34, height: 34 }}>
-                {/* 認証状態が整う前のプレースホルダー */}
-              </Box>
-            )}
-          </Group>
+          {pageActions && <div className="page-actions-container">{pageActions}</div>}
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar p="md">
+        {/* ユーザー情報セクション（サイドバー最上部） */}
+        {isAuthenticated && user && (
+          <AppShell.Section mb="md">
+            <Card withBorder padding="sm" radius="md">
+              <Group gap="sm" wrap="nowrap">
+                <Avatar radius="xl" size={40} color="var(--accent)" variant="filled">
+                  {accountInitials}
+                </Avatar>
+                <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                  <Text size="sm" fw={600} lineClamp={1} style={{ color: 'var(--text-primary)' }}>
+                    {accountLabel}
+                  </Text>
+                  <Text size="xs" c="dimmed" lineClamp={1}>
+                    {accountEmail}
+                  </Text>
+                  {roleLabel && (
+                    <Badge size="xs" variant="light" color="indigo" style={{ width: 'fit-content' }}>
+                      {roleLabel}
+                    </Badge>
+                  )}
+                </Stack>
+              </Group>
+              <Button
+                variant="light"
+                color="red"
+                size="xs"
+                fullWidth
+                mt="sm"
+                leftSection={<IconLogout size={14} />}
+                onClick={handleLogout}
+                loading={logoutLoading}
+              >
+                ログアウト
+              </Button>
+            </Card>
+          </AppShell.Section>
+        )}
+
         <AppShell.Section grow component={ScrollArea}>
           {navigationItems.map((item) => {
             const Icon = item.icon;

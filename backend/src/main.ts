@@ -55,6 +55,8 @@ async function bootstrap() {
                 "http://localhost:3002",
                 "http://localhost:3003",
                 "http://localhost:3005",
+                "http://192.168.2.119:3000", // モバイル確認用（PCのIPアドレス）
+                /^http:\/\/192\.168\.\d+\.\d+:3000$/, // 同一ネットワーク内の全デバイス
               ],
         credentials: true,
       },
@@ -211,7 +213,7 @@ async function bootstrap() {
     }
 
   const port = process.env.PORT || 3004;
-    await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
     // Graceful shutdown
     const gracefulShutdown = (signal: string) => {

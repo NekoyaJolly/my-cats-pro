@@ -222,7 +222,7 @@ export default function BreedingPage() {
   useEffect(() => {
     console.log('Setting page header for breeding page');
     setPageHeader(
-      '繁殖管理',
+      'breeding',
       <Group gap="sm">
         <Button
           variant="light"
@@ -832,15 +832,15 @@ export default function BreedingPage() {
       >
         {/* タブ */}
         <Tabs value={activeTab} onChange={(value: string | null) => setActiveTab(value || 'schedule')} mb="md">
-          <Tabs.List>
-            <Tabs.Tab value="schedule" leftSection={<IconCalendar size={16} />}>
-              交配管理表
+          <Tabs.List style={{ gap: '4px', justifyContent: 'flex-start', flexWrap: 'nowrap', overflowX: 'auto' }}>
+            <Tabs.Tab value="schedule" leftSection={<IconCalendar size={16} />} style={{ whiteSpace: 'nowrap' }}>
+              交配管理
             </Tabs.Tab>
-            <Tabs.Tab value="pregnancy" leftSection={<IconHeart size={16} />}>
-              妊娠確認中 ({pregnancyChecksResponse?.data?.length || 0})
+            <Tabs.Tab value="pregnancy" leftSection={<IconHeart size={16} />} style={{ whiteSpace: 'nowrap' }}>
+              妊娠確認 ({pregnancyChecksResponse?.data?.length || 0})
             </Tabs.Tab>
-            <Tabs.Tab value="birth" leftSection={<IconPaw size={16} />}>
-              出産予定一覧 ({birthPlansResponse?.data?.length || 0})
+            <Tabs.Tab value="birth" leftSection={<IconPaw size={16} />} style={{ whiteSpace: 'nowrap' }}>
+              出産予定 ({birthPlansResponse?.data?.length || 0})
             </Tabs.Tab>
           </Tabs.List>
 
@@ -854,24 +854,35 @@ export default function BreedingPage() {
               mb="md"
               style={{ height: isFullscreen ? 'calc(100vh - 180px)' : 'auto' }}
             >
-              <Group gap="md" mb="md">
+              <Group gap="xs" mb="md" align="flex-end">
                 <Select
-                  label="年"
                   value={selectedYear.toString()}
                   onChange={(value: string | null) => setSelectedYear(parseInt(value || '2024'))}
-                  data={['2024', '2025', '2026'].map(year => ({ value: year, label: year + '年' }))}
+                  data={['2024', '2025', '2026'].map(year => ({ value: year, label: year }))}
                   size={isFullscreen ? "xs" : "sm"}
+                  styles={{ input: { width: '80px' } }}
                 />
+                <Text size="sm" pb={isFullscreen ? 4 : 8}>年</Text>
                 <Select
-                  label="月"
                   value={selectedMonth.toString()}
                   onChange={(value: string | null) => setSelectedMonth(parseInt(value || '8'))}
                   data={Array.from({ length: 12 }, (_, i) => ({
                     value: (i + 1).toString(),
-                    label: (i + 1) + '月'
+                    label: String(i + 1).padStart(2, '0')
                   }))}
                   size={isFullscreen ? "xs" : "sm"}
+                  styles={{ input: { width: '70px' } }}
                 />
+                <Text size="sm" pb={isFullscreen ? 4 : 8}>月</Text>
+                <Button
+                  variant="light"
+                  size={isFullscreen ? "xs" : "sm"}
+                  leftSection={<IconPaw size={16} />}
+                  rightSection={<IconPlus size={16} />}
+                  onClick={openMaleModal}
+                >
+                  オス追加
+                </Button>
               </Group>
               
               <ScrollArea 
@@ -899,7 +910,9 @@ export default function BreedingPage() {
                     <Table.Tr>
                       <Table.Th 
                         style={{ 
+                          width: isFullscreen ? 60 : 80,
                           minWidth: isFullscreen ? 60 : 80,
+                          maxWidth: isFullscreen ? 60 : 80,
                           position: 'sticky',
                           left: 0,
                           backgroundColor: 'var(--surface)',
@@ -948,15 +961,6 @@ export default function BreedingPage() {
                           )}
                         </Table.Th>
                       ))}
-                      <Table.Th style={{ minWidth: isFullscreen ? 60 : 80 }}>
-                        <ActionIcon
-                          variant="light"
-                          onClick={openMaleModal}
-                          title="オス猫追加"
-                        >
-                          <IconPlus size={isFullscreen ? 14 : 16} />
-                        </ActionIcon>
-                      </Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -964,6 +968,9 @@ export default function BreedingPage() {
                       <Table.Tr key={date}>
                         <Table.Td
                           style={{
+                            width: isFullscreen ? 60 : 80,
+                            minWidth: isFullscreen ? 60 : 80,
+                            maxWidth: isFullscreen ? 60 : 80,
                             position: 'sticky',
                             left: 0,
                             backgroundColor: 'var(--surface)',
@@ -1131,7 +1138,6 @@ export default function BreedingPage() {
                             </Table.Td>
                           );
                         })}
-                        <Table.Td></Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>

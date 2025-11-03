@@ -86,7 +86,8 @@ export default function CatDetailClient({ catId }: Props) {
         <Container size="xl">
           <Flex justify="space-between" align="center">
             <Button
-              variant="light"
+              variant="subtle"
+              color="gray"
               leftSection={<IconArrowLeft size={16} />}
               onClick={() => router.push('/cats')}
             >
@@ -95,6 +96,7 @@ export default function CatDetailClient({ catId }: Props) {
             <Group gap="sm">
               <Button
                 variant="outline"
+                color="yellow"
                 leftSection={<IconEdit size={16} />}
                 onClick={() => router.push(`/cats/${catData.id}/edit`)}
               >
@@ -102,6 +104,7 @@ export default function CatDetailClient({ catId }: Props) {
               </Button>
               <Button
                 variant="outline"
+                color="gray"
                 leftSection={<IconUser size={16} />}
                 onClick={() => router.push(`/cats/${catData.id}/pedigree`)}
               >
