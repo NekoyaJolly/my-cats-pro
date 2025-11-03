@@ -93,10 +93,9 @@ export default function CatRegistrationPage() {
     };
 
     try {
-      const response = await createCat.mutateAsync(payload);
+      await createCat.mutateAsync(payload);
       reset();
       // 登録成功後に一覧ページに遷移（タイムスタンプを追加してキャッシュをバイパス）
-      const _newCatId = response.data?.id;
       router.replace(`/cats?t=${Date.now()}`);
     } catch {
       // エラーハンドリングは useCreateCat 内で通知を表示

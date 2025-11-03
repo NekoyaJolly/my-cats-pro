@@ -157,7 +157,9 @@ export default function BreedingPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 現在の月
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // 現在の年
   const [breedingSchedule, setBreedingSchedule] = useState<Record<string, BreedingScheduleEntry>>({});
-  const [isFullscreen] = useState(false); // フルスクリーン機能は将来の拡張用
+  // Note: isFullscreen is set to false and not used for toggling currently. 
+  // This is reserved for future fullscreen feature implementation.
+  const [isFullscreen] = useState(false);
   const [selectedMaleForEdit, setSelectedMaleForEdit] = useState<string | null>(null);
   const [activeMales, setActiveMales] = useState<Cat[]>([]); // 最初は空
 
