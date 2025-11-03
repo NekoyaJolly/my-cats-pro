@@ -285,7 +285,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <Avatar radius="xl" size={34} color="var(--accent)" variant="filled">
                       {accountInitials}
                     </Avatar>
-                    <Stack gap={2} style={{ minWidth: 0 }} hiddenFrom="xs">
+                    <Stack gap={2} style={{ minWidth: 0 }} visibleFrom="xs">
                       <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
                         <IconUser size={16} style={{ color: 'var(--text-muted)' }} />
                         <Text size="sm" fw={600} style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -303,7 +303,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                         </Text>
                       </Group>
                     </Stack>
-                    <IconChevronDown size={16} style={{ color: 'var(--text-muted)' }} />
+                    <IconChevronDown size={16} style={{ color: 'var(--text-muted)' }} hiddenFrom="xs" />
                   </UnstyledButton>
                 </Menu.Target>
                 <Menu.Dropdown>
