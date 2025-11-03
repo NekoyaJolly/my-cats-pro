@@ -27,10 +27,11 @@ import {
   Title,
   Checkbox,
   Accordion,
+  Menu,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconCheck, IconPlus, IconRefresh, IconX, IconEye, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconAlertCircle, IconCheck, IconPlus, IconX, IconEye, IconEdit, IconTrash, IconChevronDown, IconCalendarPlus, IconLayoutGrid } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 
 import {
@@ -173,6 +174,7 @@ export default function CarePage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
+  const [addCardModalOpened, { open: openAddCardModal, close: closeAddCardModal }] = useDisclosure(false);
   const [completeModalOpened, { open: openCompleteModal, close: closeCompleteModal }] = useDisclosure(false);
   const [detailModalOpened, { open: openDetailModal, close: closeDetailModal }] = useDisclosure(false);
   const [detailSchedule, setDetailSchedule] = useState<CareSchedule | null>(null);
@@ -222,22 +224,27 @@ export default function CarePage() {
     setPageHeader(
       'ケアスケジュール',
       <>
-        <ActionIcon 
-          variant="subtle" 
-          aria-label="refresh" 
-          onClick={() => scheduleQuery.refetch()} 
-          loading={scheduleQuery.isFetching}
-        >
-          <IconRefresh size={18} />
-        </ActionIcon>
-        <Button leftSection={<IconPlus size={16} />} onClick={openCreateModal} size="sm">
-          ケア予定を追加
-        </Button>
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={16} />} size="sm">
+              ケアの登録
+            </Button>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Item leftSection={<IconCalendarPlus size={16} />} onClick={openCreateModal}>
+              ケア予定を追加
+            </Menu.Item>
+            <Menu.Item leftSection={<IconLayoutGrid size={16} />} onClick={openAddCardModal}>
+              カードを追加
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       </>
     );
 
     return () => setPageHeader(null);
-  }, [scheduleQuery.isFetching]);
+  }, []);
   
   const allTags = useMemo(() => {
     try {
@@ -516,21 +523,6 @@ export default function CarePage() {
 
   return (
     <Container size="lg" pb="xl">
-      <Group gap="xs" mb="lg">
-        <Select
-            placeholder="カードを追加"
-            data={(availableCareNames || []).map((name) => ({ value: name, label: name }))}
-            value={null}
-            onChange={(value) => {
-              if (value && !selectedCareNames.includes(value)) {
-                setSelectedCareNames((prev) => [...prev, value]);
-              }
-            }}
-            w={200}
-            leftSection={<IconPlus size={16} />}
-          />
-      </Group>
-
       {/* 選択されたケア名のカード表示 */}
       {selectedCareStats.length > 0 && (
         <Group grow mb="lg">
@@ -1066,6 +1058,37 @@ export default function CarePage() {
             </Button>
             <Button onClick={handleCreateSubmit} loading={addScheduleMutation.isPending}>
               登録する
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* カードを追加モーダル */}
+      <Modal
+        opened={addCardModalOpened}
+        onClose={closeAddCardModal}
+        title="カードを追加"
+        size="sm"
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            統計カードとして表示するケア名を選択してください
+          </Text>
+          <Select
+            placeholder="ケア名を選択"
+            data={(availableCareNames || []).map((name) => ({ value: name, label: name }))}
+            value={null}
+            onChange={(value) => {
+              if (value && !selectedCareNames.includes(value)) {
+                setSelectedCareNames((prev) => [...prev, value]);
+                closeAddCardModal();
+              }
+            }}
+            searchable
+          />
+          <Group justify="flex-end" mt="md">
+            <Button variant="default" onClick={closeAddCardModal}>
+              キャンセル
             </Button>
           </Group>
         </Stack>
