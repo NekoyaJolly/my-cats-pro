@@ -31,6 +31,7 @@ import {
   Container,
   Group,
   Loader,
+  Menu,
   Modal,
   MultiSelect,
   NumberInput,
@@ -55,9 +56,12 @@ import {
   IconTag,
   IconTrash,
   IconWand,
+  IconFolderPlus,
+  IconTags,
 } from '@tabler/icons-react';
 
 import { PageTitle } from '@/components/PageTitle';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 import {
   useCreateTag,
   useCreateTagCategory,
@@ -946,6 +950,8 @@ function buildTagPayload(values: TagFormValues): CreateTagRequest & {
 }
 
 export default function TagsPage() {
+  const { setPageHeader } = usePageHeader();
+  
   const [filters, setFilters] = useState<{ scopes: string[]; includeInactive: boolean }>({
     scopes: [],
     includeInactive: false,
@@ -1628,41 +1634,49 @@ export default function TagsPage() {
     setScopeDraft('');
   };
 
-  return (
-    <Container size="lg" py="xl">
-      <Stack gap="xl">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <PageTitle>タグ管理</PageTitle>
-          <Group gap="sm" wrap="wrap">
-            <Button
-              leftSection={<IconPlus size={16} />}
-              variant="outline"
-              size="sm"
-              onClick={handleOpenCreateCategory}
-              disabled={isAnyMutationPending}
-            >
-              カテゴリ追加
-            </Button>
-            <Button
-              leftSection={<IconPlus size={16} />}
-              variant="outline"
-              size="sm"
-              onClick={() => handleOpenCreateGroup()}
-              disabled={sortedCategories.length === 0 || isAnyMutationPending}
-            >
-              グループ追加
-            </Button>
-            <Button
-              leftSection={<IconTag size={16} />}
-              size="sm"
-              onClick={() => handleOpenCreateTag()}
-              disabled={sortedCategories.length === 0 || isAnyMutationPending}
-            >
-              タグ追加
-            </Button>
-          </Group>
-        </Group>
+  // ページヘッダーを設定
+  useEffect(() => {
+    setPageHeader(
+      'タグ管理',
+      <Menu shadow="md" width={200}>
+        <Menu.Target>
+          <Button leftSection={<IconTag size={16} />} rightSection={<IconChevronDown size={16} />} size="sm">
+            新規作成
+          </Button>
+        </Menu.Target>
 
+        <Menu.Dropdown>
+          <Menu.Item 
+            leftSection={<IconFolderPlus size={16} />} 
+            onClick={handleOpenCreateCategory}
+            disabled={isAnyMutationPending}
+          >
+            カテゴリ作成
+          </Menu.Item>
+          <Menu.Item 
+            leftSection={<IconTags size={16} />} 
+            onClick={() => handleOpenCreateGroup()}
+            disabled={sortedCategories.length === 0 || isAnyMutationPending}
+          >
+            グループ作成
+          </Menu.Item>
+          <Menu.Item 
+            leftSection={<IconTag size={16} />} 
+            onClick={() => handleOpenCreateTag()}
+            disabled={sortedCategories.length === 0 || isAnyMutationPending}
+          >
+            タグ作成
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    );
+
+    return () => setPageHeader(null);
+  }, [isAnyMutationPending, sortedCategories.length]);
+
+  return (
+    <Container size="lg" pb="xl">
+      <Stack gap="xl">
         <Alert icon={<IconInfoCircle size={18} />} variant="light">
           タグはカテゴリごとに整理され、カテゴリ単位でスコープ（利用ページ）やアクティブ状態を制御できます。並び替えや編集内容は保存すると即座にDBへ反映されます。
         </Alert>
