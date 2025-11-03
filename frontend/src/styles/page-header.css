@@ -3,10 +3,12 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-shrink: 0;
 }
 
-/* デスクトップ: 通常表示 (575px以上) */
-.page-actions-container button {
+/* デスクトップ: 通常表示 (576px以上) */
+.page-actions-container button,
+.page-actions-container .mantine-Button-root {
   min-width: 60px;
   max-width: 140px;
   font-size: 0.875rem;
@@ -14,36 +16,52 @@
 }
 
 /* 小型モバイル: アイコンのみ表示 (575px未満) */
-@media (max-width: 574px) {
-  .page-actions-container button {
-    min-width: 36px;
-    max-width: 36px;
+@media (max-width: 575px) {
+  .page-actions-container button,
+  .page-actions-container .mantine-Button-root {
+    min-width: 36px !important;
+    max-width: 36px !important;
     width: 36px !important;
-    height: 36px;
+    height: 36px !important;
     padding: 0.5rem !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   /* ボタンのテキストを非表示 */
-  .page-actions-container button .mantine-Button-label {
+  .page-actions-container button .mantine-Button-label,
+  .page-actions-container .mantine-Button-root .mantine-Button-label {
     display: none !important;
+    width: 0 !important;
+    overflow: hidden !important;
   }
 
   /* アイコンを中央配置 */
-  .page-actions-container button .mantine-Button-section {
+  .page-actions-container button .mantine-Button-section,
+  .page-actions-container .mantine-Button-root .mantine-Button-section {
     margin: 0 !important;
   }
   
   /* leftSection/rightSectionの調整 */
   .page-actions-container button [data-position="left"],
-  .page-actions-container button [data-position="right"] {
+  .page-actions-container button [data-position="right"],
+  .page-actions-container .mantine-Button-root [data-position="left"],
+  .page-actions-container .mantine-Button-root [data-position="right"] {
     margin: 0 !important;
   }
   
-  .page-actions-container button svg {
-    width: 16px;
-    height: 16px;
+  .page-actions-container button svg,
+  .page-actions-container .mantine-Button-root svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  /* Menu.Targetも対応 */
+  .page-actions-container .mantine-Menu-target button,
+  .page-actions-container .mantine-Menu-target .mantine-Button-root {
+    min-width: 36px !important;
+    max-width: 36px !important;
+    width: 36px !important;
   }
 }
