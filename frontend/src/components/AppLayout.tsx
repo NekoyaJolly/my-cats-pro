@@ -20,6 +20,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import '@/styles/page-header.css';
 import {
   IconPaw,
   IconList,
@@ -234,9 +235,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           h="100%"
           px="md"
           justify="space-between"
+          wrap="nowrap"
           style={{ color: 'var(--text-primary)' }}
         >
-          <Group gap="sm">
+          <Group gap="sm" wrap="nowrap" style={{ maxWidth: 'calc(100% - 200px)', flex: '1 1 auto' }}>
             <Burger
               opened={mobileOpened}
               onClick={toggleMobile}
@@ -249,22 +251,22 @@ export function AppLayout({ children }: AppLayoutProps) {
               visibleFrom="sm"
               size="sm"
             />
-            <Group gap={8}>
-              <Text fw={700} style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Group gap={8} wrap="nowrap">
+              <Text fw={700} style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                 <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🐈</span> MyCats
               </Text>
               {pageTitle && (
                 <>
                   <Text c="dimmed" size="lg">›</Text>
-                  <Text fw={600} size="md" style={{ color: 'var(--text-primary)' }}>
+                  <Text fw={600} size="md" style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                     {pageTitle}
                   </Text>
                 </>
               )}
             </Group>
           </Group>
-          <Group gap="sm">
-            {pageActions && <Group gap="sm">{pageActions}</Group>}
+          <Group gap="sm" wrap="nowrap" style={{ flex: '0 0 auto' }}>
+            {pageActions && <div className="page-actions-container">{pageActions}</div>}
             {isAuthenticated && user ? (
               <Menu shadow="sm" width={220} position="bottom-end" withinPortal>
                 <Menu.Target>
