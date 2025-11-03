@@ -6,7 +6,6 @@ import {
   Badge,
   Burger,
   Group,
-  Menu,
   ScrollArea,
   Text,
   NavLink,
@@ -14,7 +13,6 @@ import {
   Loader,
   Box,
   Stack,
-  UnstyledButton,
   Card,
   Button,
 } from '@mantine/core';
@@ -30,9 +28,7 @@ import {
   IconBabyCarriage,
   IconTag,
   IconCertificate,
-  IconChevronDown,
   IconLogout,
-  IconUser,
   IconPalette,
 } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';

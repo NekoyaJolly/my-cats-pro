@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -18,7 +18,6 @@ import {
   Skeleton,
   Alert,
 } from '@mantine/core';
-import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconPlus, IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { useGetCats, useGetCatStatistics, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -112,6 +111,7 @@ export default function CatsPage() {
 
     // クリーンアップ
     return () => setPageHeader(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 空の依存配列でマウント時のみ実行
 
   const apiCats = data?.data || [];
