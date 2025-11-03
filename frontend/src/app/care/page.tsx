@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   ActionIcon,
   Alert,
@@ -49,6 +49,7 @@ import {
   type TagCategoryView,
   type TagView,
 } from '@/lib/api/hooks/use-tags';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 const STATUS_LABELS = {
   PENDING: '未着手',
@@ -165,6 +166,8 @@ interface CompleteScheduleFormState {
 }
 
 export default function CarePage() {
+  const { setPageHeader } = usePageHeader();
+  
   const [page, setPage] = useState(1);
   const [selectedCareNames, setSelectedCareNames] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -213,6 +216,29 @@ export default function CarePage() {
   const catsQuery = useGetCats({ limit: 100 });
 
   const tagsQuery = useGetTagCategories();
+  
+  // ページヘッダーを設定
+  useEffect(() => {
+    setPageHeader(
+      'ケアスケジュール',
+      <>
+        <ActionIcon 
+          variant="subtle" 
+          aria-label="refresh" 
+          onClick={() => scheduleQuery.refetch()} 
+          loading={scheduleQuery.isFetching}
+        >
+          <IconRefresh size={18} />
+        </ActionIcon>
+        <Button leftSection={<IconPlus size={16} />} onClick={openCreateModal} size="sm">
+          ケア予定を追加
+        </Button>
+      </>
+    );
+
+    return () => setPageHeader(null);
+  }, [scheduleQuery.isFetching]);
+  
   const allTags = useMemo(() => {
     try {
       // Return empty array if data is not available or not an array
@@ -490,18 +516,8 @@ export default function CarePage() {
 
   return (
     <Container size="lg" pb="xl">
-      <Group justify="space-between" align="center" mb="lg">
-        <Title order={2}>
-          ケアスケジュール
-        </Title>
-        <Group gap="xs">
-          <ActionIcon variant="subtle" aria-label="refresh" onClick={handleRefresh} loading={scheduleQuery.isFetching}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-          <Button leftSection={<IconPlus size={16} />} onClick={openCreateModal}>
-            ケア予定を追加
-          </Button>
-          <Select
+      <Group gap="xs" mb="lg">
+        <Select
             placeholder="カードを追加"
             data={(availableCareNames || []).map((name) => ({ value: name, label: name }))}
             value={null}
@@ -513,7 +529,6 @@ export default function CarePage() {
             w={200}
             leftSection={<IconPlus size={16} />}
           />
-        </Group>
       </Group>
 
       {/* 選択されたケア名のカード表示 */}
