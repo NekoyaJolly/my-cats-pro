@@ -60,7 +60,6 @@ import {
   IconTags,
 } from '@tabler/icons-react';
 
-import { PageTitle } from '@/components/PageTitle';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import {
   useCreateTag,
@@ -1672,6 +1671,7 @@ export default function TagsPage() {
     );
 
     return () => setPageHeader(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAnyMutationPending, sortedCategories.length]);
 
   return (

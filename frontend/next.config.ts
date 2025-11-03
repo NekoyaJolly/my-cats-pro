@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
   // モノレポ対応のためのワークスペースルート設定
   outputFileTracingRoot: path.join(__dirname, "../"),
   // Memory optimization for CI/CD
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+  webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
       config.optimization.splitChunks.cacheGroups = {
         ...config.optimization.splitChunks.cacheGroups,

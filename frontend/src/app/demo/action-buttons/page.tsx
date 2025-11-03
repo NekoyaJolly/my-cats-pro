@@ -5,7 +5,7 @@
  * 統一されたCRUD操作ボタンのデザインガイド
  */
 
-import { Container, Title, Text, Stack, Group, Card, Divider, Code, Paper, SimpleGrid, Box, Center, Badge, Avatar } from '@mantine/core';
+import { Container, Title, Text, Stack, Group, Card, Divider, Code, Paper, SimpleGrid, Center, Badge } from '@mantine/core';
 import { ActionButton, ActionIconButton } from '@/components/ActionButton';
 import {
   IconPaw,
@@ -16,7 +16,6 @@ import {
   IconHeartFilled,
   IconBabyCarriage,
   IconUsers,
-  IconUser,
   IconCalendar,
   IconClock,
   IconPill,

@@ -24,7 +24,6 @@ import {
   Table,
   Text,
   Textarea,
-  Title,
   Checkbox,
   Accordion,
   Menu,
@@ -250,6 +249,7 @@ export default function CarePage() {
     );
 
     return () => setPageHeader(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   const allTags = useMemo(() => {
@@ -365,9 +365,9 @@ export default function CarePage() {
     });
   }, [selectedCareNames, scheduleQuery.data?.data]);
 
-  const handleRefresh = () => {
-    void scheduleQuery.refetch();
-  };
+  // const handleRefresh = () => {
+  //   void scheduleQuery.refetch();
+  // };
 
   const resetCreateForm = () => {
     setCreateForm({
