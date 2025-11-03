@@ -33,6 +33,7 @@ import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care
 import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 import TagSelector, { TagDisplay } from '@/components/TagSelector';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 // サンプルデータ型定義
 interface Kitten {
@@ -57,6 +58,8 @@ interface MotherCat {
 
 
 export default function KittensPage() {
+  const { setPageHeader } = usePageHeader();
+  
   const [motherCats, setMotherCats] = useState<MotherCat[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [opened, { open, close }] = useDisclosure(false);
@@ -129,6 +132,22 @@ export default function KittensPage() {
 
     setMotherCats(motherCatsData);
   }, [catsQuery.data]);
+
+  // ページヘッダーを設定
+  useEffect(() => {
+    setPageHeader(
+      '子猫管理',
+      <Button 
+        leftSection={<IconPlus size={16} />} 
+        onClick={open}
+        size="sm"
+      >
+        新規登録
+      </Button>
+    );
+
+    return () => setPageHeader(null);
+  }, []);
 
   const toggleExpanded = (catId: string) => {
     const newExpanded = new Set(expandedCats);
@@ -216,19 +235,7 @@ export default function KittensPage() {
   };
 
   return (
-  <Container size="lg" style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)', padding: '1rem', paddingBottom: '5rem' }}>
-      {/* ヘッダー - モバイル最適化 */}
-      <Group justify="space-between" mb="lg" wrap="nowrap">
-        <Title order={1} c="blue" size="h2">子猫管理</Title>
-        <Button 
-          leftSection={<IconPlus size={16} />} 
-          onClick={open}
-          size="sm"
-        >
-          新規登録
-        </Button>
-      </Group>
-
+  <Container size="lg" pb="xl">
       {/* フィルタ */}
       <Card padding="md" mb="md" bg="gray.0">
         <TagSelector 
