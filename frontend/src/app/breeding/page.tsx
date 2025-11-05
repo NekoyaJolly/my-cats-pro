@@ -25,6 +25,7 @@ import {
 } from '@mantine/core';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { useDisclosure } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import { 
   IconPlus, 
   IconHeart, 
@@ -51,9 +52,10 @@ import {
   useGetBirthPlans,
   useCreateBirthPlan,
   useDeleteBirthPlan,
+  useUpdateBirthPlan,
   type BirthPlan,
 } from '@/lib/api/hooks/use-breeding';
-import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
+import { useGetCats, useCreateCat, type Cat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 
 // 型定義
 type NgRuleType = BreedingNgRuleType;
@@ -349,6 +351,8 @@ export default function BreedingPage() {
   const { data: birthPlansResponse } = birthPlansQuery;
   const createBirthPlanMutation = useCreateBirthPlan();
   const deleteBirthPlanMutation = useDeleteBirthPlan();
+  const updateBirthPlanMutation = useUpdateBirthPlan();
+  const createCatMutation = useCreateCat();
 
   useEffect(() => {
     if (!ngRulesResponse) {
@@ -1677,18 +1681,61 @@ export default function BreedingPage() {
               詳細登録
             </Button>
             <Button
-              onClick={() => {
-                // TODO: 情報を保存して子猫管理ページへデータを移す
-                console.log('登録:', {
-                  birthPlan: selectedBirthPlan,
-                  birthCount,
-                  deathCount,
-                });
-                closeBirthInfoModal();
-                setSelectedBirthPlan(null);
-                setBirthCount(0);
-                setDeathCount(0);
+              onClick={async () => {
+                if (!selectedBirthPlan) return;
+                
+                try {
+                  const totalKittens = birthCount + deathCount;
+                  const birthDateStr = new Date().toISOString().split('T')[0];
+                  
+                  // 1. BirthPlanを更新 (出産完了、actualKittensを設定)
+                  await updateBirthPlanMutation.mutateAsync({
+                    id: selectedBirthPlan.id,
+                    payload: {
+                      status: 'BORN',
+                      actualBirthDate: birthDateStr,
+                      actualKittens: totalKittens,
+                    },
+                  });
+                  
+                  // 2. 生存している子猫を作成
+                  const createPromises: Promise<unknown>[] = [];
+                  const motherName = selectedBirthPlan.mother?.name || '不明';
+                  
+                  for (let i = 0; i < birthCount; i++) {
+                    const catData: CreateCatRequest = {
+                      name: `${motherName}${i + 1}号`,
+                      gender: 'MALE', // TODO: 性別を指定できるようにする
+                      birthDate: birthDateStr,
+                      motherId: selectedBirthPlan.motherId,
+                      fatherId: selectedBirthPlan.fatherId || undefined,
+                      isInHouse: true,
+                    };
+                    
+                    createPromises.push(createCatMutation.mutateAsync(catData));
+                  }
+                  
+                  await Promise.all(createPromises);
+                  
+                  notifications.show({
+                    title: '出産登録完了',
+                    message: `${motherName}の出産情報を登録しました（生存: ${birthCount}頭、死亡: ${deathCount}頭）`,
+                    color: 'green',
+                  });
+                  
+                  closeBirthInfoModal();
+                  setSelectedBirthPlan(null);
+                  setBirthCount(0);
+                  setDeathCount(0);
+                } catch (error) {
+                  notifications.show({
+                    title: 'エラー',
+                    message: error instanceof Error ? error.message : '出産情報の登録に失敗しました',
+                    color: 'red',
+                  });
+                }
               }}
+              loading={updateBirthPlanMutation.isPending || createCatMutation.isPending}
             >
               登録
             </Button>

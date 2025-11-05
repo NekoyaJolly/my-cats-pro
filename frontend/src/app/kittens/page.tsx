@@ -18,6 +18,7 @@ import {
   NumberInput,
   Divider,
   Container,
+  Accordion,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -31,6 +32,7 @@ import {
 import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care';
 import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
+import { useGetBirthPlans, type BirthPlan } from '@/lib/api/hooks/use-breeding';
 import TagSelector, { TagDisplay } from '@/components/TagSelector';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 
@@ -74,6 +76,7 @@ export default function KittensPage() {
   const catsQuery = useGetCats({});
   const tagCategoriesQuery = useGetTagCategories();
   const careSchedulesQuery = useGetCareSchedules({ limit: 100 } as any); // 子猫関連のケアスケジュールを取得
+  const birthPlansQuery = useGetBirthPlans({ status: 'BORN' } as any); // 出産完了した記録のみ取得
 
   // 子猫かどうかを判定する関数（生後6ヶ月未満）
   const isKitten = (birthDate: string): boolean => {
@@ -275,84 +278,99 @@ export default function KittensPage() {
               </Group>
             </Card>
           )}
-          <Stack gap="md">
-            {getFilteredMotherCats().length === 0 ? (
-              <Card padding="lg" bg="gray.0" radius="md">
-                <Text ta="center" c="dimmed">
-                  {filterTags.length > 0 ? '条件に該当する子猫が見つかりません' : '登録された子猫がありません'}
-                </Text>
-              </Card>
-            ) : (
-              getFilteredMotherCats().map((motherCat) => (
-              <Card key={motherCat.id} shadow="sm" padding="md" radius="md" withBorder>
-                {/* 母猫情報行 */}
-                <Group justify="space-between" wrap="nowrap">
-                  <Group gap="xs">
-                    <ActionIcon
-                      variant="subtle"
-                      size="sm"
-                      onClick={() => toggleExpanded(motherCat.id)}
-                    >
-                      {expandedCats.has(motherCat.id) ? (
-                        <IconChevronUp size={16} />
-                      ) : (
-                        <IconChevronDown size={16} />
-                      )}
-                    </ActionIcon>
-                    <Text fw={500} size="md">{motherCat.name}</Text>
-                    <Badge size="sm" color="blue">
-                      {motherCat.kittens.length}頭
-                    </Badge>
-                    <Badge size="sm" color="gray" variant="light">
-                      {motherCat.monthsOld}ヶ月
-                    </Badge>
-                  </Group>
-                  <Group gap="xs">
-                    <ActionIcon variant="light" size="sm">
-                      <IconEdit size={14} />
-                    </ActionIcon>
-                    <ActionIcon variant="light" size="sm" color="green">
-                      <IconDeviceFloppy size={14} />
-                    </ActionIcon>
-                  </Group>
-                </Group>
 
-                {/* 子猫詳細（展開時） */}
-                <Collapse in={expandedCats.has(motherCat.id)}>
-                  <Divider my="md" />
-                  <Grid>
-                    {motherCat.kittens.map((kitten) => (
-                      <Grid.Col key={kitten.id} span={{ base: 12, sm: 6, md: 4 }}>
-                        <Card padding="sm" radius="sm" withBorder bg="gray.0">
-                          <Stack gap="xs">
-                            <Group justify="space-between" wrap="nowrap">
-                              <Text size="sm" fw={500}>{kitten.name}</Text>
-                              <Badge
-                                size="xs"
-                                color={kitten.gender === 'オス' ? 'cyan' : 'pink'}
-                                variant="light"
-                              >
-                                {kitten.gender}
-                              </Badge>
-                            </Group>
-                            <Text size="xs" c="dimmed">色柄: {kitten.color}</Text>
-                            <Text size="xs" c="dimmed">体重: {kitten.weight}g</Text>
-                            {kitten.notes && (
-                              <Text size="xs" c="dimmed">備考: {kitten.notes}</Text>
-                            )}
-                            {kitten.tags && kitten.tags.length > 0 && (
-                              <TagDisplay tagIds={kitten.tags} size="xs" categories={tagCategoriesQuery.data?.data || []} />
-                            )}
-                          </Stack>
-                        </Card>
-                      </Grid.Col>
-                    ))}
-                  </Grid>
-                </Collapse>
-              </Card>
-              ))
-            )}
-          </Stack>
+          {/* 出産記録ベースのアコーディオン表示 */}
+          {(!birthPlansQuery.data?.data || birthPlansQuery.data.data.length === 0) ? (
+            <Card padding="lg" bg="gray.0" radius="md">
+              <Text ta="center" c="dimmed">
+                出産記録がありません
+              </Text>
+            </Card>
+          ) : (
+            <Accordion variant="separated" radius="md">
+              {birthPlansQuery.data.data.map((birthPlan: BirthPlan) => {
+                const motherName = birthPlan.mother?.name || '不明';
+                const fatherName = birthPlan.father?.name || '不明';
+                const birthDate = new Date(birthPlan.actualBirthDate || birthPlan.expectedBirthDate);
+                const formattedDate = `${birthDate.getMonth() + 1}月${String(birthDate.getDate()).padStart(2, '0')}日`;
+                const kittenCount = birthPlan.actualKittens || 0;
+
+                // この出産に属する子猫を取得
+                const birthPlanDate = (birthPlan.actualBirthDate || birthPlan.expectedBirthDate).split('T')[0];
+                const kittensForThisBirth = catsQuery.data?.data?.filter((cat: Cat) => {
+                  const matchesMother = cat.motherId === birthPlan.motherId;
+                  // 子猫のbirthDateもISO形式の可能性があるため、日付部分のみを比較
+                  const catBirthDate = cat.birthDate.split('T')[0];
+                  const matchesBirthDate = catBirthDate === birthPlanDate;
+                  
+                  return matchesMother && matchesBirthDate;
+                }) || [];
+
+                return (
+                  <Accordion.Item key={birthPlan.id} value={birthPlan.id}>
+                    <Accordion.Control>
+                      <Group gap="md" wrap="nowrap">
+                        <Text fw={500} size="md">
+                          ↓ {motherName}×{fatherName}
+                        </Text>
+                        <Badge size="lg" color="blue" variant="light">
+                          {kittenCount}頭
+                        </Badge>
+                        <Text size="sm" c="dimmed">
+                          {formattedDate}
+                        </Text>
+                      </Group>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Grid>
+                        {kittensForThisBirth.length === 0 ? (
+                          <Grid.Col span={12}>
+                            <Card padding="sm" radius="sm" withBorder bg="gray.0">
+                              <Text size="sm" ta="center" c="dimmed">
+                                子猫の詳細情報がありません
+                              </Text>
+                            </Card>
+                          </Grid.Col>
+                        ) : (
+                          kittensForThisBirth.map((kitten: Cat) => (
+                            <Grid.Col key={kitten.id} span={{ base: 12, sm: 6, md: 4 }}>
+                              <Card padding="sm" radius="sm" withBorder bg="gray.0">
+                                <Stack gap="xs">
+                                  <Group justify="space-between" wrap="nowrap">
+                                    <Text size="sm" fw={500}>{kitten.name}</Text>
+                                    <Badge
+                                      size="xs"
+                                      color={kitten.gender === 'MALE' ? 'cyan' : 'pink'}
+                                      variant="light"
+                                    >
+                                      {kitten.gender === 'MALE' ? 'オス' : 'メス'}
+                                    </Badge>
+                                  </Group>
+                                  <Text size="xs" c="dimmed">
+                                    色柄: {kitten.coatColor?.name || '未確認'}
+                                  </Text>
+                                  {kitten.description && (
+                                    <Text size="xs" c="dimmed">備考: {kitten.description}</Text>
+                                  )}
+                                  {kitten.tags && kitten.tags.length > 0 && (
+                                    <TagDisplay 
+                                      tagIds={kitten.tags.map(t => t.tag.id)} 
+                                      size="xs" 
+                                      categories={tagCategoriesQuery.data?.data || []} 
+                                    />
+                                  )}
+                                </Stack>
+                              </Card>
+                            </Grid.Col>
+                          ))
+                        )}
+                      </Grid>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                );
+              })}
+            </Accordion>
+          )}
         </Tabs.Panel>
 
         {/* ケアスケジュールタブ */}
