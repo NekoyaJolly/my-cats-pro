@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -17,9 +17,11 @@ import {
   Select,
   Skeleton,
   Alert,
+  Grid,
+  Table,
 } from '@mantine/core';
 import { PageTitle } from '@/components/PageTitle';
-import { IconSearch, IconPlus, IconAlertCircle, IconRefresh } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
 import { useGetCats, useGetCatStatistics, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
@@ -32,6 +34,75 @@ export default function CatsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setPageHeader } = usePageHeader();
+
+  // カラム幅の状態管理（ローカルストレージから復元）
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('catsTableColumnWidths');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    }
+    return {
+      name: 15,
+      gender: 10,
+      breed: 15,
+      age: 12,
+      tags: 30,
+      actions: 10,
+    };
+  });
+
+  // リサイズ中の状態
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const [startX, setStartX] = useState(0);
+  const [startWidth, setStartWidth] = useState(0);
+
+  // カラム幅をローカルストレージに保存
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('catsTableColumnWidths', JSON.stringify(columnWidths));
+    }
+  }, [columnWidths]);
+
+  // リサイズ開始
+  const handleResizeStart = (column: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setResizingColumn(column);
+    setStartX(e.clientX);
+    setStartWidth(columnWidths[column]);
+  };
+
+  // リサイズ中
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!resizingColumn) return;
+    
+    const diff = e.clientX - startX;
+    const newWidth = Math.max(5, startWidth + (diff / window.innerWidth) * 100); // 最小5%
+    
+    setColumnWidths(prev => ({
+      ...prev,
+      [resizingColumn]: newWidth,
+    }));
+  }, [resizingColumn, startX, startWidth]);
+
+  // リサイズ終了
+  const handleResizeEnd = useCallback(() => {
+    setResizingColumn(null);
+  }, []);
+
+  // マウスイベントリスナー
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove);
+      window.addEventListener('mouseup', handleResizeEnd);
+      
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove);
+        window.removeEventListener('mouseup', handleResizeEnd);
+      };
+    }
+  }, [resizingColumn, handleResizeMove, handleResizeEnd]);
 
   const queryParams = useMemo<GetCatsParams>(() => {
     const params: GetCatsParams = {};
@@ -90,24 +161,14 @@ export default function CatsPage() {
   useEffect(() => {
     setPageHeader(
       '在舎猫一覧',
-      <>
-        <Button
-          variant="subtle"
-          leftSection={<IconRefresh size={16} />}
-          onClick={() => refetch()}
-          loading={isRefetching}
-        >
-          更新
-        </Button>
-        <Button
-          variant="outline"
-          color="blue"
-          leftSection={<IconPlus size={16} />}
-          onClick={() => router.push('/cats/new')}
-        >
-          新規登録
-        </Button>
-      </>
+      <Button
+        variant="outline"
+        color="blue"
+        leftSection={<IconPlus size={16} />}
+        onClick={() => router.push('/cats/new')}
+      >
+        新規登録
+      </Button>
     );
 
     // クリーンアップ
@@ -281,51 +342,216 @@ export default function CatsPage() {
           </Stack>
         )}
 
-        {/* 猫リスト（コンパクト表示） */}
+        {/* 猫リスト（リサイズ可能なテーブル） */}
         {!isLoading && !isError && (
-          <Stack gap="xs">
-            {filteredCats.map((cat: Cat) => (
-              <Card key={cat.id} shadow="sm" padding="sm" radius="md" withBorder>
-                <Flex justify="space-between" align="center">
-                  <Group gap="md" style={{ flex: 1 }}>
-                    <Text fw={600}>{cat.name}</Text>
-                    <Badge color={cat.gender === 'MALE' ? 'blue' : cat.gender === 'FEMALE' ? 'pink' : 'gray'} size="sm">
-                      {cat.gender === 'MALE' ? 'オス' : cat.gender === 'FEMALE' ? 'メス' : cat.gender === 'NEUTER' ? '去勢' : '避妊'}
-                    </Badge>
-                    <Text size="sm">{cat.breed?.name || '未登録'}</Text>
-                    <Text size="sm">{calculateAge(cat.birthDate)}</Text>
+          <Card shadow="sm" padding="md" radius="md" withBorder>
+            <Box style={{ overflowX: 'auto', overflowY: 'visible' }}>
+              <Table striped highlightOnHover style={{ minWidth: 800, tableLayout: 'fixed' }}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th style={{ width: `${columnWidths.name}%`, position: 'relative', userSelect: 'none' }}>
+                      Name
+                      <Box
+                        style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: 8,
+                          cursor: 'col-resize',
+                          backgroundColor: resizingColumn === 'name' ? 'var(--mantine-color-blue-5)' : 'transparent',
+                          transition: 'background-color 0.2s',
+                        }}
+                        onMouseDown={(e) => handleResizeStart('name', e)}
+                        onMouseEnter={(e) => {
+                          if (!resizingColumn) {
+                            (e.target as HTMLElement).style.backgroundColor = 'var(--mantine-color-gray-3)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!resizingColumn) {
+                            (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                          }
+                        }}
+                      />
+                    </Table.Th>
+                  <Table.Th style={{ width: `${columnWidths.gender}%`, position: 'relative', userSelect: 'none' }}>
+                    Gender
+                    <Box
+                      style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 8,
+                        cursor: 'col-resize',
+                        backgroundColor: resizingColumn === 'gender' ? 'var(--mantine-color-blue-5)' : 'transparent',
+                      }}
+                      onMouseDown={(e) => handleResizeStart('gender', e)}
+                      onMouseEnter={(e) => {
+                        if (!resizingColumn) {
+                          (e.target as HTMLElement).style.backgroundColor = 'var(--mantine-color-gray-3)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!resizingColumn) {
+                          (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    />
+                  </Table.Th>
+                  <Table.Th style={{ width: `${columnWidths.breed}%`, position: 'relative', userSelect: 'none' }}>
+                    Breed
+                    <Box
+                      style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 8,
+                        cursor: 'col-resize',
+                        backgroundColor: resizingColumn === 'breed' ? 'var(--mantine-color-blue-5)' : 'transparent',
+                      }}
+                      onMouseDown={(e) => handleResizeStart('breed', e)}
+                      onMouseEnter={(e) => {
+                        if (!resizingColumn) {
+                          (e.target as HTMLElement).style.backgroundColor = 'var(--mantine-color-gray-3)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!resizingColumn) {
+                          (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    />
+                  </Table.Th>
+                  <Table.Th style={{ width: `${columnWidths.age}%`, position: 'relative', userSelect: 'none' }}>
+                    Age
+                    <Box
+                      style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 8,
+                        cursor: 'col-resize',
+                        backgroundColor: resizingColumn === 'age' ? 'var(--mantine-color-blue-5)' : 'transparent',
+                      }}
+                      onMouseDown={(e) => handleResizeStart('age', e)}
+                      onMouseEnter={(e) => {
+                        if (!resizingColumn) {
+                          (e.target as HTMLElement).style.backgroundColor = 'var(--mantine-color-gray-3)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!resizingColumn) {
+                          (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    />
+                  </Table.Th>
+                  <Table.Th style={{ width: `${columnWidths.tags}%`, position: 'relative', userSelect: 'none' }}>
+                    Tags
+                    <Box
+                      style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 8,
+                        cursor: 'col-resize',
+                        backgroundColor: resizingColumn === 'tags' ? 'var(--mantine-color-blue-5)' : 'transparent',
+                      }}
+                      onMouseDown={(e) => handleResizeStart('tags', e)}
+                      onMouseEnter={(e) => {
+                        if (!resizingColumn) {
+                          (e.target as HTMLElement).style.backgroundColor = 'var(--mantine-color-gray-3)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!resizingColumn) {
+                          (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    />
+                  </Table.Th>
+                  <Table.Th style={{ width: `${columnWidths.actions}%` }}>Operate</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {filteredCats.map((cat: Cat) => (
+                  <Table.Tr key={cat.id}>
+                    {/* 名前 */}
+                    <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <Text fw={600}>{cat.name}</Text>
+                    </Table.Td>
+                    
+                    {/* 性別バッジ */}
+                    <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      <Badge 
+                        color={cat.gender === 'MALE' ? 'blue' : cat.gender === 'FEMALE' ? 'pink' : 'gray'} 
+                        variant="light"
+                        size="sm"
+                        style={{ 
+                          width: 'fit-content',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {cat.gender === 'MALE' ? 'オス' : cat.gender === 'FEMALE' ? 'メス' : cat.gender === 'NEUTER' ? '去勢' : '避妊'}
+                      </Badge>
+                    </Table.Td>
+                    
+                    {/* 品種名 */}
+                    <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <Text size="sm">{cat.breed?.name || '未登録'}</Text>
+                    </Table.Td>
+                    
+                    {/* 年齢 */}
+                    <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      <Text size="sm">{calculateAge(cat.birthDate)}</Text>
+                    </Table.Td>
+                    
                     {/* タグ表示 */}
-                    {cat.tags && cat.tags.length > 0 && (
-                      <Group gap={4}>
-                        {cat.tags.slice(0, 3).map((catTag) => (
-                          <Badge 
-                            key={catTag.tag.id} 
-                            size="xs" 
-                            variant="dot"
-                            color={catTag.tag.color || 'gray'}
-                          >
-                            {catTag.tag.name}
-                          </Badge>
-                        ))}
-                        {cat.tags.length > 3 && (
-                          <Badge size="xs" variant="outline" color="gray">
-                            +{cat.tags.length - 3}
-                          </Badge>
-                        )}
-                      </Group>
-                    )}
-                  </Group>
-                  <Button
-                    variant="light"
-                    size="sm"
-                    onClick={() => handleViewDetails(cat.id)}
-                  >
-                    詳細
-                  </Button>
-                </Flex>
-              </Card>
-            ))}
-          </Stack>
+                    <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      {cat.tags && cat.tags.length > 0 ? (
+                        <Group gap={4} wrap="nowrap">
+                          {cat.tags.slice(0, 3).map((catTag) => (
+                            <Badge 
+                              key={catTag.tag.id} 
+                              size="xs" 
+                              variant="dot"
+                              color={catTag.tag.color || 'gray'}
+                            >
+                              {catTag.tag.name}
+                            </Badge>
+                          ))}
+                          {cat.tags.length > 3 && (
+                            <Badge size="xs" variant="outline" color="gray">
+                              +{cat.tags.length - 3}
+                            </Badge>
+                          )}
+                        </Group>
+                      ) : (
+                        <Text size="xs" c="dimmed">-</Text>
+                      )}
+                    </Table.Td>
+                    
+                    {/* 詳細ボタン */}
+                    <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      <Button
+                        variant="light"
+                        size="xs"
+                        onClick={() => handleViewDetails(cat.id)}
+                      >
+                        詳細
+                      </Button>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Box>
+        </Card>
         )}
 
         {!isLoading && !isError && filteredCats.length === 0 && (
