@@ -11,6 +11,7 @@ import { BreedsModule } from "./breeds/breeds.module";
 import { CareModule } from "./care/care.module";
 import { CatsModule } from "./cats/cats.module";
 import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { MasterDataController } from "./common/controllers/master-data.controller";
 import { AppThrottlerGuard } from "./common/guards/app-throttler.guard";
 import { CorsMiddleware } from "./common/middleware/cors.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -98,7 +99,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     TagsModule,
     HealthModule,
   ],
-  controllers: [],
+  controllers: [MasterDataController],
   providers: [
     {
       provide: APP_GUARD,

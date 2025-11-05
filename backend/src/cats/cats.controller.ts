@@ -26,6 +26,7 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 import { CatsService } from "./cats.service";
 import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
+import { GENDER_MASTER } from "./constants/gender";
 
 @ApiTags("Cats")
 @ApiBearerAuth()
@@ -184,5 +185,23 @@ export class CatsController {
       timestamp: new Date().toISOString(),
     });
     return this.catsService.remove(id);
+  }
+
+  @Get("genders")
+  @ApiOperation({ summary: "性別マスタデータを取得" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "性別マスタデータを返却",
+  })
+  getGenders() {
+    return {
+      success: true,
+      data: GENDER_MASTER.map(record => ({
+        id: parseInt(record.key),
+        code: parseInt(record.key),
+        name: record.name,
+        canonical: record.canonical,
+      })),
+    };
   }
 }
