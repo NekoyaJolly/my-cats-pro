@@ -20,7 +20,6 @@ import {
   Grid,
   Table,
 } from '@mantine/core';
-import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
 import { useGetCats, useGetCatStatistics, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -173,6 +172,7 @@ export default function CatsPage() {
 
     // クリーンアップ
     return () => setPageHeader(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 空の依存配列でマウント時のみ実行
 
   const apiCats = data?.data || [];

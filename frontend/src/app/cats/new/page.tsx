@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Box,
-  Button,
   Card,
   Container,
   Group,
@@ -15,11 +13,10 @@ import {
   Alert,
   LoadingOverlay,
   Tabs,
-  Title,
 } from '@mantine/core';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { IconDeviceFloppy, IconPlus } from '@tabler/icons-react';
+import { IconPlus } from '@tabler/icons-react';
 import { z } from 'zod';
 import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
@@ -96,9 +93,8 @@ export default function CatRegistrationPage() {
     };
 
     try {
-      const response = await createCat.mutateAsync(payload);
+      await createCat.mutateAsync(payload);
       reset();
-      const newCatId = response.data?.id;
       // 登録成功後に一覧ページに遷移（タイムスタンプを追加してキャッシュをバイパス）
       router.replace(`/cats?t=${Date.now()}`);
     } catch {

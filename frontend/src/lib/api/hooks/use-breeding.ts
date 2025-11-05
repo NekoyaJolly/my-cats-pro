@@ -7,7 +7,6 @@ import { notifications } from '@mantine/notifications';
 import {
   apiClient,
   apiRequest,
-  type ApiPathParams,
   type ApiQueryParams,
   type ApiRequestBody,
   type ApiResponse,

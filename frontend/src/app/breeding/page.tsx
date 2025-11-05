@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, ChangeEvent, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Box,
   Container,
@@ -31,11 +30,6 @@ import {
   IconHeart, 
   IconCalendar,
   IconPaw,
-  IconArrowLeft,
-  IconCheck,
-  IconX,
-  IconMaximize,
-  IconMinimize,
   IconSettings,
   IconTrash,
   IconEdit,
@@ -54,15 +48,10 @@ import {
   useCreatePregnancyCheck,
   useDeletePregnancyCheck,
   type PregnancyCheck,
-  type PregnancyStatus,
-  type CreatePregnancyCheckRequest,
   useGetBirthPlans,
   useCreateBirthPlan,
-  useUpdateBirthPlan,
   useDeleteBirthPlan,
   type BirthPlan,
-  type BirthStatus,
-  type CreateBirthPlanRequest,
 } from '@/lib/api/hooks/use-breeding';
 import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
 
@@ -95,9 +84,7 @@ interface NewRuleState {
   description: string;
 }
 
-interface BreedingCat extends Cat {
-  lastMating?: string | null;
-}
+
 
 interface BreedingScheduleEntry {
   maleId: string;
@@ -111,16 +98,17 @@ interface BreedingScheduleEntry {
   result?: string;
 }
 
-interface PregnancyCheckItem {
-  id: string;
-  maleName: string;
-  femaleName: string;
-  matingDate: string;
-  checkDate: string;
-  status: string;
-}
-
 // 猫データ（繁殖用）- APIから取得するため削除
+
+// localStorageキー
+const STORAGE_KEYS = {
+  ACTIVE_MALES: 'breeding_active_males',
+  DEFAULT_DURATION: 'breeding_default_duration',
+  SELECTED_YEAR: 'breeding_selected_year',
+  SELECTED_MONTH: 'breeding_selected_month',
+  BREEDING_SCHEDULE: 'breeding_schedule',
+  MATING_CHECKS: 'breeding_mating_checks',
+};
 
 // NGペアルール
 const initialNgPairingRules: NgPairingRule[] = [];
@@ -169,7 +157,9 @@ export default function BreedingPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 現在の月
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // 現在の年
   const [breedingSchedule, setBreedingSchedule] = useState<Record<string, BreedingScheduleEntry>>({});
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Note: isFullscreen is set to false and not used for toggling currently. 
+  // This is reserved for future fullscreen feature implementation.
+  const [isFullscreen] = useState(false);
   const [selectedMaleForEdit, setSelectedMaleForEdit] = useState<string | null>(null);
   const [activeMales, setActiveMales] = useState<Cat[]>([]); // 最初は空
 
@@ -180,7 +170,7 @@ export default function BreedingPage() {
   const [availableFemales, setAvailableFemales] = useState<Cat[]>([]);
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [maleModalOpened, { open: openMaleModal, close: closeMaleModal }] = useDisclosure(false);
-  const [rulesModalOpened, { open: openRulesModal, close: closeRulesModal }] = useDisclosure(false);
+  const [rulesModalOpened, { close: closeRulesModal }] = useDisclosure(false);
   const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
   const [birthInfoModalOpened, { open: openBirthInfoModal, close: closeBirthInfoModal }] = useDisclosure(false);
 
@@ -205,16 +195,6 @@ export default function BreedingPage() {
     description: '',
   });
 
-  // localStorageキー
-  const STORAGE_KEYS = {
-    ACTIVE_MALES: 'breeding_active_males',
-    DEFAULT_DURATION: 'breeding_default_duration',
-    SELECTED_YEAR: 'breeding_selected_year',
-    SELECTED_MONTH: 'breeding_selected_month',
-    BREEDING_SCHEDULE: 'breeding_schedule',
-    MATING_CHECKS: 'breeding_mating_checks',
-  };
-
   console.log(`BreedingPage component rendered (mount count: ${mountCountRef.current}) - breedingSchedule:`, breedingSchedule);
   console.log('BreedingPage component rendered - localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
 
@@ -238,6 +218,7 @@ export default function BreedingPage() {
       console.log('Cleaning up page header for breeding page');
       setPageHeader(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 空の依存配列でマウント時のみ実行
 
   // localStorageからデータを読み込む
@@ -367,7 +348,6 @@ export default function BreedingPage() {
   const birthPlansQuery = useGetBirthPlans();
   const { data: birthPlansResponse } = birthPlansQuery;
   const createBirthPlanMutation = useCreateBirthPlan();
-  const updateBirthPlanMutation = useUpdateBirthPlan();
   const deleteBirthPlanMutation = useDeleteBirthPlan();
 
   useEffect(() => {
@@ -411,8 +391,6 @@ export default function BreedingPage() {
   
   const maleCats = (catsResponse?.data ?? []).filter((cat: Cat) => cat.gender === 'MALE');
   const femaleCats = (catsResponse?.data ?? []).filter((cat: Cat) => cat.gender === 'FEMALE');
-  
-  const router = useRouter();
 
   const monthDates = generateMonthDates(selectedYear, selectedMonth);
 
@@ -449,15 +427,15 @@ export default function BreedingPage() {
     });
   };
 
-  // フルスクリーン切り替え
-  const toggleFullscreen = () => {
-    if (!isFullscreen) {
-      document.documentElement.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
-    setIsFullscreen(!isFullscreen);
-  };
+  // フルスクリーン切り替え（将来の機能拡張用）
+  // const toggleFullscreen = () => {
+  //   if (!isFullscreen) {
+  //     document.documentElement.requestFullscreen?.();
+  //   } else {
+  //     document.exitFullscreen?.();
+  //   }
+  //   setIsFullscreen(!isFullscreen);
+  // };
 
   // オス猫追加
   const handleAddMale = (maleData: Cat) => {

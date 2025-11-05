@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import {
   Box,
-  Title,
   Tabs,
   Button,
   Group,
@@ -147,6 +146,7 @@ export default function KittensPage() {
     );
 
     return () => setPageHeader(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleExpanded = (catId: string) => {
