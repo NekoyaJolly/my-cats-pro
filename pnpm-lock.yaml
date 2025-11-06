@@ -84,7 +84,7 @@ importers:
         specifier: ^5.0.1
         version: 5.2.0(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@10.4.20)(reflect-metadata@0.1.14)
       '@prisma/client':
-        specifier: ^6.14.0
+        specifier: ^6.16.2
         version: 6.16.2(prisma@6.16.2(typescript@5.9.2))(typescript@5.9.2)
       '@sentry/node':
         specifier: ^8.26.0
@@ -270,6 +270,18 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.0)
+      '@fullcalendar/core':
+        specifier: ^6.1.19
+        version: 6.1.19
+      '@fullcalendar/daygrid':
+        specifier: ^6.1.19
+        version: 6.1.19(@fullcalendar/core@6.1.19)
+      '@fullcalendar/interaction':
+        specifier: ^6.1.19
+        version: 6.1.19(@fullcalendar/core@6.1.19)
+      '@fullcalendar/react':
+        specifier: ^6.1.19
+        version: 6.1.19(@fullcalendar/core@6.1.19)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@hookform/resolvers':
         specifier: ^3.9.0
         version: 3.10.0(react-hook-form@7.65.0(react@19.1.0))
@@ -704,6 +716,26 @@ packages:
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
+
+  '@fullcalendar/core@6.1.19':
+    resolution: {integrity: sha512-z0aVlO5e4Wah6p6mouM0UEqtRf1MZZPt4mwzEyU6kusaNL+dlWQgAasF2cK23hwT4cmxkEmr4inULXgpyeExdQ==}
+
+  '@fullcalendar/daygrid@6.1.19':
+    resolution: {integrity: sha512-IAAfnMICnVWPjpT4zi87i3FEw0xxSza0avqY/HedKEz+l5MTBYvCDPOWDATpzXoLut3aACsjktIyw9thvIcRYQ==}
+    peerDependencies:
+      '@fullcalendar/core': ~6.1.19
+
+  '@fullcalendar/interaction@6.1.19':
+    resolution: {integrity: sha512-GOciy79xe8JMVp+1evAU3ytdwN/7tv35t5i1vFkifiuWcQMLC/JnLg/RA2s4sYmQwoYhTw/p4GLcP0gO5B3X5w==}
+    peerDependencies:
+      '@fullcalendar/core': ~6.1.19
+
+  '@fullcalendar/react@6.1.19':
+    resolution: {integrity: sha512-FP78vnyylaL/btZeHig8LQgfHgfwxLaIG6sKbNkzkPkKEACv11UyyBoTSkaavPsHtXvAkcTED1l7TOunAyPEnA==}
+    peerDependencies:
+      '@fullcalendar/core': ~6.1.19
+      react: ^16.7.0 || ^17 || ^18 || ^19
+      react-dom: ^16.7.0 || ^17 || ^18 || ^19
 
   '@hapi/address@5.1.1':
     resolution: {integrity: sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA==}
@@ -4907,6 +4939,9 @@ packages:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
 
+  preact@10.12.1:
+    resolution: {integrity: sha512-l8386ixSsBdbreOAkqtrwqHwdvR35ID8c3rKPa8lCWuO86dBi32QWHV4vfsZK1utLLFMvw+Z5Ad4XLkZzchscg==}
+
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
@@ -6459,6 +6494,24 @@ snapshots:
       tabbable: 6.2.0
 
   '@floating-ui/utils@0.2.10': {}
+
+  '@fullcalendar/core@6.1.19':
+    dependencies:
+      preact: 10.12.1
+
+  '@fullcalendar/daygrid@6.1.19(@fullcalendar/core@6.1.19)':
+    dependencies:
+      '@fullcalendar/core': 6.1.19
+
+  '@fullcalendar/interaction@6.1.19(@fullcalendar/core@6.1.19)':
+    dependencies:
+      '@fullcalendar/core': 6.1.19
+
+  '@fullcalendar/react@6.1.19(@fullcalendar/core@6.1.19)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@fullcalendar/core': 6.1.19
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
 
   '@hapi/address@5.1.1':
     dependencies:
@@ -11385,6 +11438,8 @@ snapshots:
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
+
+  preact@10.12.1: {}
 
   prelude-ls@1.2.1: {}
 

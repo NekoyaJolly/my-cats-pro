@@ -56,7 +56,7 @@
     "@nestjs/schedule": "^6.0.1",
     "@nestjs/swagger": "^7.4.2",
     "@nestjs/throttler": "^5.0.1",
-    "@prisma/client": "^6.14.0",
+    "@prisma/client": "^6.16.2",
     "@sentry/node": "^8.26.0",
     "@sentry/profiling-node": "^8.26.0",
     "@types/argon2": "^0.14.1",

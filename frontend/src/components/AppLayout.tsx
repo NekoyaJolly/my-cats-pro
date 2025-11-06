@@ -30,6 +30,8 @@ import {
   IconCertificate,
   IconLogout,
   IconPalette,
+  IconCalendarEvent,
+  IconCalendarTime,
 } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
@@ -59,6 +61,11 @@ const navigationItems = [
     icon: IconBabyCarriage,
   },
   {
+    label: 'ケアスケジュール',
+    href: '/care',
+    icon: IconCalendarEvent,
+  },
+  {
     label: 'タグ管理',
     href: '/tags',
     icon: IconTag,
@@ -67,6 +74,11 @@ const navigationItems = [
     label: '血統書データ',
     href: '/pedigrees',
     icon: IconCertificate,
+  },
+  {
+    label: 'スタッフシフト',
+    href: '/staff/shifts',
+    icon: IconCalendarTime,
   },
   {
     label: 'デザインガイド',

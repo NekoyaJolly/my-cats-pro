@@ -23,6 +23,8 @@ import { ScheduleModule } from "./schedule/schedule.module";
 import { TagsModule } from "./tags/tags.module";
 import { UploadModule } from "./upload/upload.module";
 import { UsersModule } from "./users/users.module";
+import { StaffModule } from './staff/staff.module';
+import { ShiftModule } from './shift/shift.module';
 
 type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
@@ -98,6 +100,8 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     UploadModule,
     TagsModule,
     HealthModule,
+    StaffModule,
+    ShiftModule,
   ],
   controllers: [MasterDataController],
   providers: [

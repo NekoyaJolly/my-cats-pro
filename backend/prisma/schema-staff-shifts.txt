@@ -1,0 +1,296 @@
+# スタッフシフト管理システム - データベース設計
+
+## 設計コンセプト
+
+### シフトモード
+- **簡易モード**: カレンダーにスタッフ名を配置するだけ（最小限の情報）
+- **詳細モード**: 時刻・業務・ステータス管理など詳細な情報を管理
+- **カスタムモード**: 組織ごとに必要なフィールドを選択可能
+
+### フィールドの柔軟性
+- 必須フィールドは最小限（staffId, shiftDate）
+- 詳細情報は全てオプショナル
+- UI側でモード選択により表示項目を切り替え
+
+## 新規テーブル
+
+### 1. Staff（スタッフマスタ）
+```prisma
+model Staff {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id") // User連携（任意）
+  name        String
+  email       String?  @unique
+  phoneNumber String?  @map("phone_number")
+  role        String   // ブリーダー、アシスタント、ケアスタッフなど
+  color       String   @default("#4c6ef5") // UI表示用カラー
+  isActive    Boolean  @default(true) @map("is_active")
+  hireDate    DateTime? @map("hire_date")
+  notes       String?
+  
+  user        User?    @relation(fields: [userId], references: [id])
+  shifts      Shift[]
+  availabilities StaffAvailability[]
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([userId])
+  @@map("staff")
+}
+```
+
+### 2. ShiftTemplate（シフトテンプレート）
+```prisma
+model ShiftTemplate {
+  id          String   @id @default(uuid())
+  name        String   // 午前シフト、午後シフトなど
+  description String?
+  startTime   String   @map("start_time") // HH:mm 形式
+  endTime     String   @map("end_time")   // HH:mm 形式
+  duration    Int      // 分単位
+  color       String   @default("#4dabf7")
+  breakTime   Int      @default(0) @map("break_time") // 休憩時間（分）
+  isActive    Boolean  @default(true) @map("is_active")
+  displayOrder Int     @default(0) @map("display_order")
+  
+  shifts      Shift[]
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("shift_templates")
+}
+```
+
+### 3. Shift（シフト実績）
+```prisma
+model Shift {
+  id              String      @id @default(uuid())
+  staffId         String      @map("staff_id")
+  shiftDate       DateTime    @map("shift_date") // シフトの日付【必須】
+  
+  // 簡易モード: ここまでで十分
+  displayName     String?     @map("display_name") // 表示名（カスタム可能）
+  
+  // 詳細モード: 以下はオプション
+  templateId      String?     @map("template_id")
+  startTime       DateTime?   @map("start_time")  // 予定開始時刻
+  endTime         DateTime?   @map("end_time")    // 予定終了時刻
+  breakDuration   Int?        @map("break_duration") // 休憩時間（分）
+  status          ShiftStatus @default(SCHEDULED)
+  notes           String?
+  
+  // 実績記録（詳細モード）
+  actualStartTime DateTime?   @map("actual_start_time") // 実際の出勤時刻
+  actualEndTime   DateTime?   @map("actual_end_time")   // 実際の退勤時刻
+  
+  // メタデータ
+  metadata        Json?       // カスタムフィールド用JSON
+  mode            ShiftMode   @default(SIMPLE) // シフトの作成モード
+  
+  staff           Staff            @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  template        ShiftTemplate?   @relation(fields: [templateId], references: [id])
+  tasks           ShiftTask[]
+  
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  @@index([staffId])
+  @@index([templateId])
+  @@index([shiftDate])
+  @@index([status])
+  @@index([mode])
+  @@map("shifts")
+}
+
+enum ShiftMode {
+  SIMPLE    // 簡易モード: 名前のみ
+  DETAILED  // 詳細モード: 時刻・業務管理
+  CUSTOM    // カスタムモード: 組織定義
+}
+
+enum ShiftStatus {
+  SCHEDULED   // 予定
+  CONFIRMED   // 確定
+  IN_PROGRESS // 勤務中
+  COMPLETED   // 完了
+  CANCELLED   // キャンセル
+  ABSENT      // 欠勤
+}
+```
+
+### 4. ShiftTask（シフト業務）- 詳細モード専用
+```prisma
+model ShiftTask {
+  id          String         @id @default(uuid())
+  shiftId     String         @map("shift_id")
+  taskType    String         @map("task_type") // 猫の世話、清掃、健康チェックなど
+  description String
+  priority    Priority       @default(MEDIUM)
+  status      TaskStatus     @default(PENDING)
+  startTime   DateTime?      @map("start_time")
+  endTime     DateTime?      @map("end_time")
+  notes       String?
+  
+  shift       Shift          @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  
+  @@index([shiftId])
+  @@index([status])
+  @@map("shift_tasks")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+// 注: ShiftTaskは詳細モードでのみ使用
+// 簡易モードではこのテーブルは使用しない
+```
+
+### 5. StaffAvailability（スタッフ勤務可能時間）- 詳細モード専用
+```prisma
+model StaffAvailability {
+  id              String   @id @default(uuid())
+  staffId         String   @map("staff_id")
+  dayOfWeek       Int      @map("day_of_week") // 0=日曜, 1=月曜, ..., 6=土曜
+  startTime       String   @map("start_time") // HH:mm 形式
+  endTime         String   @map("end_time")   // HH:mm 形式
+  isAvailable     Boolean  @default(true) @map("is_available")
+  notes           String?
+  
+  staff           Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@index([staffId])
+  @@map("staff_availabilities")
+}
+
+// 注: StaffAvailabilityは詳細モードでのみ使用
+// 簡易モードでは勤務可能時間の管理は不要
+```
+
+### 6. ShiftSettings（シフト設定）- 新規
+```prisma
+model ShiftSettings {
+  id                String      @id @default(uuid())
+  organizationId    String?     @map("organization_id") // 将来の多組織対応用
+  defaultMode       ShiftMode   @default(SIMPLE) @map("default_mode")
+  enabledModes      String[]    @default(["SIMPLE", "DETAILED"]) @map("enabled_modes")
+  
+  // 簡易モード設定
+  simpleRequireDisplayName Boolean @default(false) @map("simple_require_display_name")
+  
+  // 詳細モード設定
+  detailedRequireTime     Boolean @default(true) @map("detailed_require_time")
+  detailedRequireTemplate Boolean @default(false) @map("detailed_require_template")
+  detailedEnableTasks     Boolean @default(true) @map("detailed_enable_tasks")
+  detailedEnableActual    Boolean @default(true) @map("detailed_enable_actual")
+  
+  // カスタムモード設定
+  customFields      Json?       @map("custom_fields") // カスタムフィールド定義
+  
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+  
+  @@map("shift_settings")
+}
+```
+
+## API エンドポイント設計
+
+### Staff API
+- GET    /api/v1/staff              - スタッフ一覧取得
+- POST   /api/v1/staff              - スタッフ新規作成
+- GET    /api/v1/staff/:id          - スタッフ詳細取得
+- PATCH  /api/v1/staff/:id          - スタッフ更新
+- DELETE /api/v1/staff/:id          - スタッフ削除（論理削除）
+
+### ShiftTemplate API
+- GET    /api/v1/shift-templates           - テンプレート一覧取得
+- POST   /api/v1/shift-templates           - テンプレート作成
+- GET    /api/v1/shift-templates/:id       - テンプレート詳細取得
+- PATCH  /api/v1/shift-templates/:id       - テンプレート更新
+- DELETE /api/v1/shift-templates/:id       - テンプレート削除
+- PATCH  /api/v1/shift-templates/reorder   - 表示順序変更
+
+### Shift API
+- GET    /api/v1/shifts                         - シフト一覧取得（日付範囲指定）
+- POST   /api/v1/shifts                         - シフト作成
+- POST   /api/v1/shifts/bulk                    - 複数シフト一括作成
+- GET    /api/v1/shifts/:id                     - シフト詳細取得
+- PATCH  /api/v1/shifts/:id                     - シフト更新
+- DELETE /api/v1/shifts/:id                     - シフト削除
+- PATCH  /api/v1/shifts/:id/status              - ステータス更新
+- GET    /api/v1/shifts/calendar                - カレンダー表示用データ取得
+- GET    /api/v1/shifts/staff/:staffId          - スタッフ別シフト取得
+- GET    /api/v1/shifts/statistics              - シフト統計情報取得
+
+### ShiftTask API
+- GET    /api/v1/shifts/:shiftId/tasks         - シフト業務一覧
+- POST   /api/v1/shifts/:shiftId/tasks         - 業務追加
+- PATCH  /api/v1/shifts/tasks/:taskId          - 業務更新
+- DELETE /api/v1/shifts/tasks/:taskId          - 業務削除
+- PATCH  /api/v1/shifts/tasks/:taskId/status   - 業務ステータス更新
+
+### StaffAvailability API
+- GET    /api/v1/staff/:staffId/availability   - 勤務可能時間取得
+- POST   /api/v1/staff/:staffId/availability   - 勤務可能時間登録
+- PATCH  /api/v1/staff/availability/:id        - 勤務可能時間更新
+- DELETE /api/v1/staff/availability/:id        - 勤務可能時間削除
+
+## 主な機能
+
+1. **スタッフ管理**
+   - スタッフ情報の登録・更新・削除
+   - 役職・カラー設定
+   - User連携（任意）
+
+2. **シフトテンプレート管理**
+   - 午前/午後/終日/夜間などのテンプレート作成
+   - 時間帯・休憩時間の設定
+   - 表示順序のカスタマイズ
+
+3. **シフト管理**
+   - ドラッグ&ドロップでシフト作成
+   - シフトステータス管理（予定→確定→勤務中→完了）
+   - 実際の出退勤時刻記録
+   - 一括作成機能
+
+4. **業務管理**
+   - シフトごとの業務タスク登録
+   - 業務ステータス管理
+   - 優先度設定
+
+5. **勤務可能時間管理**
+   - 曜日別の勤務可能時間設定
+   - スタッフごとのスケジュール管理
+
+6. **統計・レポート**
+   - 月間勤務時間集計
+   - スタッフ別勤務実績
+   - シフト充足率
+   - 未割当日の検出
+
+## 既存テーブルとの連携
+
+- **User**: スタッフとUserの紐付け（任意）
+- **Schedule**: 猫のケアスケジュールとシフトの連携可能
+- **CareRecord**: シフト中に実施したケア記録との関連付け
+
+## 次のステップ
+
+1. schema.prismaに上記テーブル定義を追加
+2. マイグレーション実行
+3. NestJSモジュール作成（StaffModule, ShiftModule）
+4. DTOとバリデーション定義
+5. Service/Controller実装
+6. APIエンドポイントテスト

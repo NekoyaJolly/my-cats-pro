@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-11-05T23:45:32.923Z
+// Prisma Schema - Last Updated: 2025-11-06T16:53:55.859Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -41,6 +41,7 @@ model User {
   loginAttempts   LoginAttempt[]
   pregnancyChecks PregnancyCheck[]
   birthPlans      BirthPlan[]
+  staff           Staff? // Staff management relation
   // cats            Cat[]  // Removed: not using user relation for cats
 
   @@map("users")
@@ -846,4 +847,172 @@ enum TagAutomationRunStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+// ==========================================
+// Staff & Shift Management Models
+// ==========================================
+
+model Staff {
+  id        String   @id @default(uuid())
+  userId    String?  @unique @map("user_id") // User連携（任意）
+  name      String
+  email     String?  @unique
+  role      String   @default("スタッフ") // 役職
+  color     String   @default("#4dabf7") // カレンダー表示色
+  isActive  Boolean  @default(true) @map("is_active")
+  
+  user               User?               @relation(fields: [userId], references: [id])
+  shifts             Shift[]
+  availabilities     StaffAvailability[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@index([userId])
+  @@map("staff")
+}
+
+model ShiftTemplate {
+  id           String  @id @default(uuid())
+  name         String  // "午前", "午後", "終日", "夜間"
+  startTime    String  @map("start_time") // HH:mm 形式
+  endTime      String  @map("end_time")   // HH:mm 形式
+  duration     Int     // 分単位
+  color        String  @default("#4dabf7")
+  breakTime    Int     @default(0) @map("break_time") // 休憩時間（分）
+  isActive     Boolean @default(true) @map("is_active")
+  displayOrder Int     @default(0) @map("display_order")
+  
+  shifts Shift[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@map("shift_templates")
+}
+
+model Shift {
+  id              String       @id @default(uuid())
+  staffId         String       @map("staff_id")
+  shiftDate       DateTime     @map("shift_date") // シフトの日付【必須】
+  
+  // 簡易モード: ここまでで十分
+  displayName     String?      @map("display_name") // 表示名（カスタム可能）
+  
+  // 詳細モード: 以下はオプション
+  templateId      String?      @map("template_id")
+  startTime       DateTime?    @map("start_time")  // 予定開始時刻
+  endTime         DateTime?    @map("end_time")    // 予定終了時刻
+  breakDuration   Int?         @map("break_duration") // 休憩時間（分）
+  status          ShiftStatus  @default(SCHEDULED)
+  notes           String?
+  
+  // 実績記録（詳細モード）
+  actualStartTime DateTime?    @map("actual_start_time") // 実際の出勤時刻
+  actualEndTime   DateTime?    @map("actual_end_time")   // 実際の退勤時刻
+  
+  // メタデータ
+  metadata        Json?        // カスタムフィールド用JSON
+  mode            ShiftMode    @default(SIMPLE) // シフトの作成モード
+  
+  staff    Staff           @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  template ShiftTemplate?  @relation(fields: [templateId], references: [id])
+  tasks    ShiftTask[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@index([staffId])
+  @@index([templateId])
+  @@index([shiftDate])
+  @@index([status])
+  @@index([mode])
+  @@map("shifts")
+}
+
+model ShiftTask {
+  id          String     @id @default(uuid())
+  shiftId     String     @map("shift_id")
+  taskType    String     @map("task_type") // 猫の世話、清掃、健康チェックなど
+  description String
+  priority    Priority   @default(MEDIUM)
+  status      TaskStatus @default(PENDING)
+  startTime   DateTime?  @map("start_time")
+  endTime     DateTime?  @map("end_time")
+  notes       String?
+  
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@index([shiftId])
+  @@index([status])
+  @@map("shift_tasks")
+}
+
+model StaffAvailability {
+  id          String  @id @default(uuid())
+  staffId     String  @map("staff_id")
+  dayOfWeek   Int     @map("day_of_week") // 0=日曜, 1=月曜, ..., 6=土曜
+  startTime   String  @map("start_time") // HH:mm 形式
+  endTime     String  @map("end_time")   // HH:mm 形式
+  isAvailable Boolean @default(true) @map("is_available")
+  notes       String?
+  
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@index([staffId])
+  @@map("staff_availabilities")
+}
+
+model ShiftSettings {
+  id                   String     @id @default(uuid())
+  organizationId       String?    @map("organization_id") // 将来の多組織対応用
+  defaultMode          ShiftMode  @default(SIMPLE) @map("default_mode")
+  enabledModes         String[]   @default(["SIMPLE", "DETAILED"]) @map("enabled_modes")
+  
+  // 簡易モード設定
+  simpleRequireDisplayName Boolean @default(false) @map("simple_require_display_name")
+  
+  // 詳細モード設定
+  detailedRequireTime      Boolean @default(true) @map("detailed_require_time")
+  detailedRequireTemplate  Boolean @default(false) @map("detailed_require_template")
+  detailedEnableTasks      Boolean @default(true) @map("detailed_enable_tasks")
+  detailedEnableActual     Boolean @default(true) @map("detailed_enable_actual")
+  
+  // カスタムモード設定
+  customFields Json? @map("custom_fields") // カスタムフィールド定義
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@map("shift_settings")
+}
+
+// Shift Management Enums
+enum ShiftMode {
+  SIMPLE    // 簡易モード: 名前のみ
+  DETAILED  // 詳細モード: 時刻・業務管理
+  CUSTOM    // カスタムモード: 組織定義
+}
+
+enum ShiftStatus {
+  SCHEDULED   // 予定
+  CONFIRMED   // 確定
+  IN_PROGRESS // 勤務中
+  COMPLETED   // 完了
+  CANCELLED   // キャンセル
+  ABSENT      // 欠勤
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
 }
