@@ -45,17 +45,32 @@ interface AutomationMeta {
   reason?: string;
 }
 
-function getBadgeColors(tag: TagView): CSSProperties {
+function getBadgeColors(tag: TagView, isAutomated?: boolean): CSSProperties {
+  const baseStyle: CSSProperties = {};
+  
   if (tag.color) {
-    return {
-      backgroundColor: `${tag.color}20`,
-    };
+    // 自動付与タグは背景を少し薄く
+    baseStyle.backgroundColor = isAutomated ? `${tag.color}15` : `${tag.color}20`;
+    baseStyle.color = tag.color;
+  } else {
+    baseStyle.color = 'var(--mantine-color-white)';
+    baseStyle.backgroundColor = 'var(--mantine-primary-color-filled)';
   }
 
-  return {
-    color: 'var(--mantine-color-white)',
-    backgroundColor: 'var(--mantine-primary-color-filled)',
-  };
+  // 自動付与タグの場合は黒の太い破線ボーダーで区別
+  if (isAutomated) {
+    baseStyle.border = '3px dashed #000000';
+    baseStyle.borderStyle = 'dashed';
+    baseStyle.borderWidth = '3px';
+    baseStyle.borderColor = '#000000';
+    baseStyle.opacity = 0.85;
+  } else {
+    // 手動付与タグはボーダーなし
+    baseStyle.border = 'none';
+    baseStyle.borderWidth = '0';
+  }
+
+  return baseStyle;
 }
 
 function useResolvedCategories(categories?: TagCategoryView[], filters?: TagCategoryFilters) {
@@ -243,16 +258,26 @@ export default function TagSelector({
 
       {selectedTagDetails.length > 0 && (
         <Group gap="xs" mt="xs">
-          {selectedTagDetails.map((tag) => (
-            <Badge key={tag.id} size="sm" variant="light" radius="md" style={getBadgeColors(tag)}>
-              {tag.name}
-              {showAutomationBadges && automationMap.get(tag.id) && (
-                <Box component="span" ml={6}>
-                  {renderAutomationBadge(automationMap.get(tag.id))}
-                </Box>
-              )}
-            </Badge>
-          ))}
+          {selectedTagDetails.map((tag) => {
+            const automationMeta = automationMap.get(tag.id);
+            const badgeStyles = getBadgeColors(tag, !!automationMeta);
+            return (
+              <Badge 
+                key={tag.id} 
+                size="sm" 
+                variant="light" 
+                radius="md" 
+                style={badgeStyles}
+                styles={{
+                  root: {
+                    ...badgeStyles,
+                  }
+                }}
+              >
+                {tag.name}
+              </Badge>
+            );
+          })}
         </Group>
       )}
 
@@ -357,20 +382,26 @@ interface TagDisplayProps {
   categories?: TagCategoryView[];
   filters?: TagCategoryFilters;
   size?: 'xs' | 'sm' | 'md' | 'lg';
+  tagMetadata?: Record<string, Record<string, unknown>>;
 }
 
-export function TagDisplay({ tagIds, categories: categoriesProp, filters, size = 'sm' }: TagDisplayProps) {
+export function TagDisplay({ tagIds, categories: categoriesProp, filters, size = 'sm', tagMetadata }: TagDisplayProps) {
   const { categories, isLoading } = useResolvedCategories(categoriesProp, filters);
 
   const tagMap = useMemo(() => {
     const map = new Map<string, TagView>();
     categories.forEach((category) => {
       (category.tags ?? []).forEach((tag) => {
-        map.set(tag.id, tag);
+        // tagMetadataが提供されている場合は、それを使用
+        if (tagMetadata && tagMetadata[tag.id]) {
+          map.set(tag.id, { ...tag, metadata: tagMetadata[tag.id] });
+        } else {
+          map.set(tag.id, tag);
+        }
       });
     });
     return map;
-  }, [categories]);
+  }, [categories, tagMetadata]);
 
   const tags = useMemo(() => tagIds.map((tagId) => tagMap.get(tagId)).filter(Boolean) as TagView[], [tagIds, tagMap]);
 
@@ -388,14 +419,26 @@ export function TagDisplay({ tagIds, categories: categoriesProp, filters, size =
 
   return (
     <Group gap="xs">
-      {tags.map((tag) => (
-        <Badge key={tag.id} size={size} variant="light" radius="md" style={getBadgeColors(tag)}>
-          <Group gap={6} wrap="nowrap" align="center">
-            <Text span>{tag.name}</Text>
-            {renderAutomationBadge(extractAutomationMeta(tag))}
-          </Group>
-        </Badge>
-      ))}
+      {tags.map((tag) => {
+        const automationMeta = extractAutomationMeta(tag);
+        const badgeStyles = getBadgeColors(tag, !!automationMeta);
+        return (
+          <Badge 
+            key={tag.id} 
+            size={size} 
+            variant="light" 
+            radius="md" 
+            style={badgeStyles}
+            styles={{
+              root: {
+                ...badgeStyles,
+              }
+            }}
+          >
+            {tag.name}
+          </Badge>
+        );
+      })}
     </Group>
   );
 }

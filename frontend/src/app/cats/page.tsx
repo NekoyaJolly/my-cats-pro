@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -19,11 +19,16 @@ import {
   Alert,
   Grid,
   Table,
+  ActionIcon,
 } from '@mantine/core';
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
-import { useGetCats, useGetCatStatistics, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
-import { useDebouncedValue } from '@mantine/hooks';
+import { useGetCats, useGetCatStatistics, useUpdateCat, useDeleteCat, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { CatQuickEditModal } from '@/components/cats/cat-quick-edit-modal';
+import { ContextMenuProvider, OperationModalManager, useContextMenu } from '@/components/context-menu';
+import { GenderBadge } from '@/components/GenderBadge';
+import { IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +38,34 @@ export default function CatsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setPageHeader } = usePageHeader();
+  
+  // 子猫の展開/折りたたみ状態
+  const [expandedMotherIds, setExpandedMotherIds] = useState<Set<string>>(new Set());
+  
+  // 編集モーダルの状態
+  const [editModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
+  const [selectedCatForEdit, setSelectedCatForEdit] = useState<Cat | null>(null);
+
+  // コンテキストメニュー
+  const {
+    currentOperation,
+    currentEntity,
+    openOperation,
+    closeOperation,
+    handleAction: handleContextAction,
+  } = useContextMenu<Cat>({
+    view: (cat) => {
+      if (cat) {
+        router.push(`/cats/${cat.id}`);
+      }
+    },
+    duplicate: async (cat) => {
+      if (cat) {
+        // 複製ロジック（後で実装）
+        console.log('Duplicate cat:', cat);
+      }
+    },
+  });
 
   // カラム幅の状態管理（ローカルストレージから復元）
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
@@ -214,6 +247,70 @@ export default function CatsPage() {
     router.push(`/cats/${catId}`);
   };
 
+  // 子猫判定関数（6ヶ月未満）
+  const isKitten = (birthDate: string): boolean => {
+    const birth = new Date(birthDate);
+    const now = new Date();
+    const ageInMonths = (now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 30);
+    return ageInMonths < 6;
+  };
+
+  // 子猫の展開/折りたたみトグル
+  const toggleExpanded = (motherId: string) => {
+    setExpandedMotherIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(motherId)) {
+        newSet.delete(motherId);
+      } else {
+        newSet.add(motherId);
+      }
+      return newSet;
+    });
+  };
+
+  // 猫情報の編集
+  const handleEditCat = (cat: Cat) => {
+    setSelectedCatForEdit(cat);
+    openEditModal();
+  };
+
+  // 猫情報の更新
+  const updateCatMutation = useUpdateCat(selectedCatForEdit?.id || '');
+  const deleteCatMutation = useDeleteCat();
+  
+  const handleSaveCat = async (catId: string, updates: { name?: string; birthDate?: string }) => {
+    await updateCatMutation.mutateAsync(updates);
+    refetch();
+  };
+
+  // コンテキストメニューからの操作確認
+  const handleOperationConfirm = async (cat?: Cat) => {
+    if (!currentOperation || !cat) return;
+
+    switch (currentOperation) {
+      case 'edit':
+        // 編集モーダルを開く
+        setSelectedCatForEdit(cat);
+        closeOperation();
+        openEditModal();
+        break;
+
+      case 'delete':
+        // 削除実行
+        await deleteCatMutation.mutateAsync(cat.id);
+        await refetch();
+        break;
+
+      case 'duplicate':
+        // 複製ロジック（後で実装）
+        console.log('Duplicate:', cat);
+        break;
+
+      default:
+        break;
+    }
+  };
+
   // タブ別フィルタリングとソート
   const getFilteredCats = () => {
     let filtered = Array.from(apiCats);
@@ -278,6 +375,32 @@ export default function CatsPage() {
   };
 
   const filteredCats = getFilteredCats();
+
+  // 母猫と子猫を分類
+  const { motherCatsWithKittens, adultsWithoutKittens } = useMemo(() => {
+    const kittens = filteredCats.filter((cat: Cat) => isKitten(cat.birthDate) && cat.motherId);
+    const kittensByMother = new Map<string, Cat[]>();
+    
+    kittens.forEach((kitten: Cat) => {
+      if (kitten.motherId) {
+        if (!kittensByMother.has(kitten.motherId)) {
+          kittensByMother.set(kitten.motherId, []);
+        }
+        kittensByMother.get(kitten.motherId)!.push(kitten);
+      }
+    });
+
+    const kittenIds = new Set(kittens.map((k: Cat) => k.id));
+    const adultsWithoutKittens = filteredCats.filter((cat: Cat) => !kittenIds.has(cat.id) && !kittensByMother.has(cat.id));
+    const motherCatsWithKittens = filteredCats
+      .filter((cat: Cat) => kittensByMother.has(cat.id))
+      .map((cat: Cat) => ({
+        mother: cat,
+        kittens: kittensByMother.get(cat.id) || [],
+      }));
+
+    return { motherCatsWithKittens, adultsWithoutKittens };
+  }, [filteredCats]);
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
@@ -479,75 +602,270 @@ export default function CatsPage() {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {filteredCats.map((cat: Cat) => (
-                  <Table.Tr key={cat.id}>
-                    {/* 名前 */}
-                    <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <Text fw={600}>{cat.name}</Text>
-                    </Table.Td>
-                    
-                    {/* 性別バッジ */}
-                    <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      <Badge 
-                        color={cat.gender === 'MALE' ? 'blue' : cat.gender === 'FEMALE' ? 'pink' : 'gray'} 
-                        variant="light"
-                        size="sm"
-                        style={{ 
-                          width: 'fit-content',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {cat.gender === 'MALE' ? 'オス' : cat.gender === 'FEMALE' ? 'メス' : cat.gender === 'NEUTER' ? '去勢' : '避妊'}
-                      </Badge>
-                    </Table.Td>
-                    
-                    {/* 品種名 */}
-                    <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <Text size="sm">{cat.breed?.name || '未登録'}</Text>
-                    </Table.Td>
-                    
-                    {/* 年齢 */}
-                    <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      <Text size="sm">{calculateAge(cat.birthDate)}</Text>
-                    </Table.Td>
-                    
-                    {/* タグ表示 */}
-                    <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      {cat.tags && cat.tags.length > 0 ? (
-                        <Group gap={4} wrap="nowrap">
-                          {cat.tags.slice(0, 3).map((catTag) => (
-                            <Badge 
-                              key={catTag.tag.id} 
-                              size="xs" 
-                              variant="dot"
-                              color={catTag.tag.color || 'gray'}
-                            >
-                              {catTag.tag.name}
-                            </Badge>
-                          ))}
-                          {cat.tags.length > 3 && (
-                            <Badge size="xs" variant="outline" color="gray">
-                              +{cat.tags.length - 3}
-                            </Badge>
-                          )}
-                        </Group>
-                      ) : (
-                        <Text size="xs" c="dimmed">-</Text>
-                      )}
-                    </Table.Td>
-                    
-                    {/* 詳細ボタン */}
-                    <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      <Button
-                        variant="light"
-                        size="xs"
-                        onClick={() => handleViewDetails(cat.id)}
-                      >
-                        詳細
-                      </Button>
-                    </Table.Td>
-                  </Table.Tr>
+                {/* 子猫を持たない成猫 */}
+                {adultsWithoutKittens.map((cat: Cat) => (
+                  <ContextMenuProvider
+                    key={cat.id}
+                    entity={cat}
+                    entityType="猫"
+                    actions={['view', 'edit', 'delete', 'duplicate']}
+                    onAction={handleContextAction}
+                    enableDoubleClick={true}
+                    doubleClickAction="edit"
+                  >
+                    <Table.Tr 
+                      style={{ cursor: 'pointer' }}
+                      title="右クリックまたはダブルクリックで操作"
+                    >
+                      {/* 名前 */}
+                      <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <Text fw={600}>{cat.name}</Text>
+                      </Table.Td>
+                      
+                      {/* 性別バッジ */}
+                      <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        <GenderBadge gender={cat.gender} size="sm" />
+                      </Table.Td>
+                      
+                      {/* 品種名 */}
+                      <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <Text size="sm">{cat.breed?.name || '未登録'}</Text>
+                      </Table.Td>
+                      
+                      {/* 年齢 */}
+                      <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        <Text size="sm">{calculateAge(cat.birthDate)}</Text>
+                      </Table.Td>
+                      
+                      {/* タグ表示 */}
+                      <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        {cat.tags && cat.tags.length > 0 ? (
+                          <Group gap={4} wrap="nowrap">
+                            {cat.tags.slice(0, 3).map((catTag) => (
+                              <Badge 
+                                key={catTag.tag.id} 
+                                size="xs" 
+                                variant="dot"
+                                color={catTag.tag.color || 'gray'}
+                              >
+                                {catTag.tag.name}
+                              </Badge>
+                            ))}
+                            {cat.tags.length > 3 && (
+                              <Badge size="xs" variant="outline" color="gray">
+                                +{cat.tags.length - 3}
+                              </Badge>
+                            )}
+                          </Group>
+                        ) : (
+                          <Text size="xs" c="dimmed">-</Text>
+                        )}
+                      </Table.Td>
+                      
+                      {/* 詳細ボタン */}
+                      <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        <Button
+                          variant="light"
+                          size="xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetails(cat.id);
+                          }}
+                        >
+                          詳細
+                        </Button>
+                      </Table.Td>
+                    </Table.Tr>
+                  </ContextMenuProvider>
                 ))}
+
+                {/* 子猫を持つ母猫 */}
+                {motherCatsWithKittens.map(({ mother, kittens }) => {
+                  const isExpanded = expandedMotherIds.has(mother.id);
+                  return (
+                    <React.Fragment key={mother.id}>
+                      {/* 母猫の行 */}
+                      <ContextMenuProvider
+                        entity={mother}
+                        entityType="猫"
+                        actions={['view', 'edit', 'delete', 'duplicate']}
+                        onAction={handleContextAction}
+                        enableDoubleClick={true}
+                        doubleClickAction="edit"
+                      >
+                        <Table.Tr 
+                          style={{ 
+                            cursor: 'pointer',
+                            backgroundColor: isExpanded ? 'var(--mantine-color-blue-0)' : undefined
+                          }}
+                          title="右クリックまたはダブルクリックで操作"
+                        >
+                          {/* 名前（展開アイコン付き） */}
+                          <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <Group gap="xs" wrap="nowrap">
+                              <Text fw={600}>{mother.name}</Text>
+                              <Badge 
+                                size="xs" 
+                                color="pink" 
+                                variant="outline"
+                                leftSection={isExpanded ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
+                                rightSection={<IconCat size={12} />}
+                                style={{ 
+                                  backgroundColor: 'white',
+                                  cursor: 'pointer',
+                                  userSelect: 'none'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpanded(mother.id);
+                                }}
+                              >
+                                {kittens.length}
+                              </Badge>
+                            </Group>
+                          </Table.Td>
+
+                          {/* 性別バッジ */}
+                          <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            <GenderBadge gender={mother.gender} size="sm" />
+                          </Table.Td>
+                          
+                          {/* 品種名 */}
+                          <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <Text size="sm">{mother.breed?.name || '未登録'}</Text>
+                          </Table.Td>
+                          
+                          {/* 年齢 */}
+                          <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            <Text size="sm">{calculateAge(mother.birthDate)}</Text>
+                          </Table.Td>
+                          
+                          {/* タグ表示 */}
+                          <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            {mother.tags && mother.tags.length > 0 ? (
+                              <Group gap={4} wrap="nowrap">
+                                {mother.tags.slice(0, 3).map((catTag) => (
+                                  <Badge 
+                                    key={catTag.tag.id} 
+                                    size="xs" 
+                                    variant="dot"
+                                    color={catTag.tag.color || 'gray'}
+                                  >
+                                    {catTag.tag.name}
+                                  </Badge>
+                                ))}
+                                {mother.tags.length > 3 && (
+                                  <Badge size="xs" variant="outline" color="gray">
+                                    +{mother.tags.length - 3}
+                                  </Badge>
+                                )}
+                              </Group>
+                            ) : (
+                              <Text size="xs" c="dimmed">-</Text>
+                            )}
+                          </Table.Td>
+                          
+                          {/* 詳細ボタン */}
+                          <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            <Button
+                              variant="light"
+                              size="xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewDetails(mother.id);
+                              }}
+                            >
+                              詳細
+                            </Button>
+                          </Table.Td>
+                        </Table.Tr>
+                      </ContextMenuProvider>
+
+                      {/* 子猫の行（展開時） */}
+                      {isExpanded && kittens.map((kitten: Cat) => (
+                        <ContextMenuProvider
+                          key={kitten.id}
+                          entity={kitten}
+                          entityType="子猫"
+                          actions={['view', 'edit', 'delete']}
+                          onAction={handleContextAction}
+                          enableDoubleClick={true}
+                          doubleClickAction="edit"
+                        >
+                          <Table.Tr 
+                            style={{ 
+                              cursor: 'pointer',
+                              backgroundColor: 'var(--mantine-color-gray-0)'
+                            }}
+                            title="右クリックまたはダブルクリックで操作"
+                          >
+                            {/* 名前（インデント） */}
+                            <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: '3rem' }}>
+                              <Group gap="xs">
+                                <IconCat size={14} style={{ color: 'var(--mantine-color-gray-6)' }} />
+                                <Text size="sm">{kitten.name}</Text>
+                              </Group>
+                            </Table.Td>
+
+                            {/* 性別バッジ */}
+                            <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                              <GenderBadge gender={kitten.gender} size="sm" />
+                            </Table.Td>
+                            
+                            {/* 品種名 */}
+                            <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <Text size="sm">{kitten.breed?.name || '未登録'}</Text>
+                            </Table.Td>
+                            
+                            {/* 年齢 */}
+                            <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                              <Text size="sm">{calculateAge(kitten.birthDate)}</Text>
+                            </Table.Td>
+                            
+                            {/* タグ表示 */}
+                            <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                              {kitten.tags && kitten.tags.length > 0 ? (
+                                <Group gap={4} wrap="nowrap">
+                                  {kitten.tags.slice(0, 3).map((catTag) => (
+                                    <Badge 
+                                      key={catTag.tag.id} 
+                                      size="xs" 
+                                      variant="dot"
+                                      color={catTag.tag.color || 'gray'}
+                                    >
+                                      {catTag.tag.name}
+                                    </Badge>
+                                  ))}
+                                  {kitten.tags.length > 3 && (
+                                    <Badge size="xs" variant="outline" color="gray">
+                                      +{kitten.tags.length - 3}
+                                    </Badge>
+                                  )}
+                                </Group>
+                              ) : (
+                                <Text size="xs" c="dimmed">-</Text>
+                              )}
+                            </Table.Td>
+                            
+                            {/* 詳細ボタン */}
+                            <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                              <Button
+                                variant="light"
+                                size="xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewDetails(kitten.id);
+                                }}
+                              >
+                                詳細
+                              </Button>
+                            </Table.Td>
+                          </Table.Tr>
+                        </ContextMenuProvider>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
               </Table.Tbody>
             </Table>
           </Box>
@@ -562,6 +880,27 @@ export default function CatsPage() {
           </Card>
         )}
       </Container>
+
+      {/* 猫情報編集モーダル */}
+      {selectedCatForEdit && (
+        <CatQuickEditModal
+          opened={editModalOpened}
+          onClose={closeEditModal}
+          catId={selectedCatForEdit.id}
+          catName={selectedCatForEdit.name}
+          birthDate={selectedCatForEdit.birthDate}
+          onSave={handleSaveCat}
+        />
+      )}
+
+      {/* コンテキストメニュー操作モーダル */}
+      <OperationModalManager
+        operationType={currentOperation}
+        entity={currentEntity || undefined}
+        entityType="猫"
+        onClose={closeOperation}
+        onConfirm={handleOperationConfirm}
+      />
     </Box>
   );
 }

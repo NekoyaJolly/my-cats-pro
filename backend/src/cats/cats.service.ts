@@ -236,7 +236,15 @@ export class CatsService {
           coatColor: true,
           tags: {
             include: {
-              tag: true,
+              tag: {
+                include: {
+                  group: {
+                    include: {
+                      category: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -266,7 +274,15 @@ export class CatsService {
         mother: true,
         tags: {
           include: {
-            tag: true,
+            tag: {
+              include: {
+                group: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            },
           },
         },
       },

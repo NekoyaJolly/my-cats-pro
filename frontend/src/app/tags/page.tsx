@@ -60,6 +60,10 @@ import {
   IconTags,
 } from '@tabler/icons-react';
 
+import { ContextMenuProvider } from '@/components/context-menu/context-menu';
+import { useContextMenu } from '@/components/context-menu/use-context-menu';
+import { OperationModalManager } from '@/components/context-menu/operation-modal-manager';
+
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import {
   useCreateTag,
@@ -424,6 +428,7 @@ type SortableTagCardProps = {
   isAnyMutationPending: boolean;
   onEditTag: (category: TagCategoryView, group: TagGroupView, tag: TagView) => void;
   onDeleteTag: (id: string) => void;
+  onContextAction?: (action: string, tag?: TagView) => void;
 };
 
 function SortableTagCard({
@@ -436,6 +441,7 @@ function SortableTagCard({
   isAnyMutationPending,
   onEditTag,
   onDeleteTag,
+  onContextAction,
 }: SortableTagCardProps) {
   const {
     attributes,
@@ -464,86 +470,103 @@ function SortableTagCard({
   };
 
   return (
-    <Card ref={setNodeRef} style={style} withBorder radius="sm" padding="sm">
-      <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-        <Stack gap={4} style={{ flex: 1 }}>
-          <Group gap="xs" align="center" wrap="wrap">
-            <Tooltip label="ドラッグで並べ替え" withArrow withinPortal>
-              <ActionIcon
-                variant="light"
-                aria-label="タグを並べ替え"
-                ref={setActivatorNodeRef}
-                disabled={reorderTagsPending}
-                {...attributes}
-                {...listeners}
-              >
-                <IconHandGrab size={14} />
-              </ActionIcon>
-            </Tooltip>
-            <Badge color="gray" variant="light" size="sm">
-              {index + 1}
-            </Badge>
-            <Text fw={600} size="sm" style={{ color: tagTextColor }}>
-              {tag.name}
-            </Text>
-            {!tag.isActive && (
-              <Badge size="xs" color="gray" variant="outline">
-                非アクティブ
+    <ContextMenuProvider
+      entity={tag}
+      entityType="タグ"
+      actions={['edit', 'delete']}
+      onAction={onContextAction}
+    >
+      <Card 
+        ref={setNodeRef} 
+        style={{ 
+          ...style, 
+          cursor: 'pointer',
+        }} 
+        withBorder 
+        radius="sm" 
+        padding="sm"
+        title="右クリックまたはダブルクリックで操作"
+      >
+        <Group justify="space-between" align="center" gap="sm" wrap="wrap">
+          <Stack gap={4} style={{ flex: 1 }}>
+            <Group gap="xs" align="center" wrap="wrap">
+              <Tooltip label="ドラッグで並べ替え" withArrow withinPortal>
+                <ActionIcon
+                  variant="light"
+                  aria-label="タグを並べ替え"
+                  ref={setActivatorNodeRef}
+                  disabled={reorderTagsPending}
+                  {...attributes}
+                  {...listeners}
+                >
+                  <IconHandGrab size={14} />
+                </ActionIcon>
+              </Tooltip>
+              <Badge color="gray" variant="light" size="sm">
+                {index + 1}
               </Badge>
+              <Text fw={600} size="sm" style={{ color: tagTextColor }}>
+                {tag.name}
+              </Text>
+              {!tag.isActive && (
+                <Badge size="xs" color="gray" variant="outline">
+                  非アクティブ
+                </Badge>
+              )}
+              <Badge size="xs" variant="outline">
+                使用 {tag.usageCount.toLocaleString()}回
+              </Badge>
+              <AutomationIndicator tag={tag} />
+            </Group>
+            {tag.description && (
+              <Text size="xs" c="dimmed">
+                {tag.description}
+              </Text>
             )}
-            <Badge size="xs" variant="outline">
-              使用 {tag.usageCount.toLocaleString()}回
-            </Badge>
-            <AutomationIndicator tag={tag} />
-          </Group>
-          {tag.description && (
-            <Text size="xs" c="dimmed">
-              {tag.description}
-            </Text>
-          )}
-          <Group gap="xs" wrap="wrap">
-            <Badge size="xs" variant="outline">
-              手動 {tag.allowsManual ? '可' : '不可'}
-            </Badge>
-            <Badge size="xs" variant="outline">
-              自動 {tag.allowsAutomation ? '可' : '不可'}
-            </Badge>
-            <Badge size="xs" variant="outline">
-              {group.name}
-            </Badge>
-            <Badge
-              size="xs"
+            <Group gap="xs" wrap="wrap">
+              <Badge size="xs" variant="outline">
+                手動 {tag.allowsManual ? '可' : '不可'}
+              </Badge>
+              <Badge size="xs" variant="outline">
+                自動 {tag.allowsAutomation ? '可' : '不可'}
+              </Badge>
+              <Badge size="xs" variant="outline">
+                {group.name}
+              </Badge>
+              <Badge
+                size="xs"
+                variant="light"
+                style={{
+                  backgroundColor: `${(category.color ?? DEFAULT_CATEGORY_COLOR)}1A`,
+                  color: category.color ?? DEFAULT_CATEGORY_COLOR,
+                }}
+              >
+                {category.name}
+              </Badge>
+            </Group>
+          </Stack>
+          <Group gap={4} align="center" wrap="wrap">
+            <ActionIcon
               variant="light"
-              style={{
-                backgroundColor: `${(category.color ?? DEFAULT_CATEGORY_COLOR)}1A`,
-                color: category.color ?? DEFAULT_CATEGORY_COLOR,
-              }}
+              aria-label="タグを編集"
+              onClick={() => onEditTag(category, group, tag)}
+              disabled={isAnyMutationPending}
             >
-              {category.name}
-            </Badge>
+              <IconPencil size={14} />
+            </ActionIcon>
+            <ActionIcon
+              variant="light"
+              color="red"
+              aria-label="タグを削除"
+              onClick={() => onDeleteTag(tag.id)}
+              disabled={deleteTagPending || isAnyMutationPending}
+            >
+              <IconTrash size={14} />
+            </ActionIcon>
           </Group>
-        </Stack>
-        <Group gap={4} align="center" wrap="wrap">
-          <ActionIcon
-            variant="light"
-            aria-label="タグを編集"
-            onClick={() => onEditTag(category, group, tag)}
-            disabled={isAnyMutationPending}
-          >
-            <IconPencil size={14} />
-          </ActionIcon>
-          <ActionIcon
-            variant="light"
-            color="red"
-            aria-label="タグを削除"
-            onClick={() => void onDeleteTag(tag.id)}
-            disabled={deleteTagPending}
-          >
-            <IconTrash size={14} />
-          </ActionIcon>
         </Group>
-      </Group>
-    </Card>
+      </Card>
+    </ContextMenuProvider>
   );
 }
 
@@ -564,6 +587,7 @@ type SortableCategoryCardProps = {
   onDeleteGroup: (groupId: string) => void;
   onEditTag: (category: TagCategoryView, group: TagGroupView, tag: TagView) => void;
   onDeleteTag: (id: string) => void;
+  onTagContextAction?: (action: string, tag?: TagView) => void;
   onReorderGroups: (categoryId: string, groups: TagGroupView[]) => void;
   onReorderTags: (groupId: string, tags: TagView[]) => void;
 };
@@ -585,6 +609,7 @@ function SortableCategoryCard({
   onDeleteGroup,
   onEditTag,
   onDeleteTag,
+  onTagContextAction,
   onReorderGroups,
   onReorderTags,
 }: SortableCategoryCardProps) {
@@ -900,6 +925,7 @@ function SortableCategoryCard({
                                 isAnyMutationPending={isAnyMutationPending}
                                 onEditTag={onEditTag}
                                 onDeleteTag={onDeleteTag}
+                                onContextAction={onTagContextAction}
                               />
                             ))}
                           </Stack>
@@ -1251,6 +1277,36 @@ export default function TagsPage() {
       ),
     );
   }, [sortedCategories]);
+
+  // コンテキストメニュー
+  const {
+    currentOperation,
+    currentEntity,
+    handleAction: handleTagContextAction,
+    openOperation,
+    closeOperation,
+  } = useContextMenu<TagView>({
+    edit: (tag) => {
+      // タグの編集には、categoryとgroupの情報も必要
+      // flatTagsから該当タグを探して、編集モーダルを開く
+      const tagInfo = flatTags.find(t => t.tag.id === tag?.id);
+      if (tagInfo) {
+        handleEditTag(tagInfo.category, tagInfo.group, tagInfo.tag);
+      }
+    },
+    delete: (tag) => {
+      openOperation('delete');
+    },
+  });
+
+  const handleOperationConfirm = async () => {
+    if (!currentEntity) return;
+    
+    if (currentOperation === 'delete') {
+      await deleteTag.mutateAsync(currentEntity.id);
+      closeOperation();
+    }
+  };
 
   const handleOpenCreateCategory = () => {
     setEditingCategory(null);
@@ -1751,6 +1807,7 @@ export default function TagsPage() {
                         onDeleteGroup={handleDeleteGroupAction}
                         onEditTag={handleEditTag}
                         onDeleteTag={handleDeleteTag}
+                        onTagContextAction={handleTagContextAction}
                         onReorderGroups={handleReorderGroups}
                         onReorderTags={handleReorderTags}
                       />
@@ -2577,6 +2634,15 @@ export default function TagsPage() {
             </Group>
           </Stack>
         </Modal>
+
+        {/* 操作確認モーダル */}
+        <OperationModalManager
+          operationType={currentOperation}
+          entity={currentEntity}
+          entityType="タグ"
+          onClose={closeOperation}
+          onConfirm={handleOperationConfirm}
+        />
       </Stack>
     </Container>
   );

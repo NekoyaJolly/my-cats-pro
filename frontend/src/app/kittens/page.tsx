@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Tabs,
@@ -9,7 +9,6 @@ import {
   Card,
   Text,
   Badge,
-  Collapse,
   ActionIcon,
   Grid,
   Stack,
@@ -18,23 +17,28 @@ import {
   NumberInput,
   Divider,
   Container,
-  Accordion,
+  Table,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
   IconPlus,
   IconChevronDown,
   IconChevronUp,
+  IconChevronRight,
   IconEdit,
   IconDeviceFloppy,
   IconCalendar,
+  IconPaw,
 } from '@tabler/icons-react';
 import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care';
-import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
+import { useGetCats, useDeleteCat, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 import { useGetBirthPlans, type BirthPlan } from '@/lib/api/hooks/use-breeding';
 import TagSelector, { TagDisplay } from '@/components/TagSelector';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
+import { useRouter } from 'next/navigation';
+import { GenderBadge } from '@/components/GenderBadge';
 
 // サンプルデータ型定義
 interface Kitten {
@@ -46,11 +50,13 @@ interface Kitten {
   birthDate: string;
   notes?: string;
   tags?: string[];
+  rawCat: Cat; // 元のCatオブジェクトを保持
 }
 
 interface MotherCat {
   id: string;
   name: string;
+  fatherName: string;
   kittens: Kitten[];
   deliveryDate: string;
   monthsOld: number;
@@ -60,6 +66,7 @@ interface MotherCat {
 
 export default function KittensPage() {
   const { setPageHeader } = usePageHeader();
+  const router = useRouter();
   
   const [motherCats, setMotherCats] = useState<MotherCat[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
@@ -73,12 +80,59 @@ export default function KittensPage() {
   const [filterTags, setFilterTags] = useState<string[]>([]);
 
   // API hooks
-  const catsQuery = useGetCats({});
+  const catsQuery = useGetCats({ limit: 1000 });
+  const deleteCatMutation = useDeleteCat();
   const tagCategoriesQuery = useGetTagCategories();
-  const careSchedulesQuery = useGetCareSchedules({ limit: 100 } as any); // 子猫関連のケアスケジュールを取得
-  const birthPlansQuery = useGetBirthPlans({ status: 'BORN' } as any); // 出産完了した記録のみ取得
+  const careSchedulesQuery = useGetCareSchedules({ limit: 100 } as any);
+  const birthPlansQuery = useGetBirthPlans({ status: 'BORN', limit: 1000 } as any);
 
-  // 子猫かどうかを判定する関数（生後6ヶ月未満）
+  // コンテキストメニュー用の状態
+  const {
+    currentOperation,
+    currentEntity,
+    handleAction: handleKittenContextAction,
+    openOperation,
+    closeOperation,
+  } = useContextMenu<Cat>({
+    view: (kitten) => {
+      if (kitten) {
+        router.push(`/cats/${kitten.id}`);
+      }
+    },
+    edit: (kitten) => {
+      if (kitten) {
+        router.push(`/cats/${kitten.id}/edit`);
+      }
+    },
+    delete: (kitten) => {
+      if (kitten) {
+        openOperation('delete', kitten);
+      }
+    },
+  });
+
+  const handleOperationConfirm = () => {
+    if (currentOperation === 'delete' && currentEntity) {
+      deleteCatMutation.mutate(currentEntity.id, {
+        onSuccess: () => {
+          catsQuery.refetch();
+          closeOperation();
+        },
+      });
+    }
+  };
+
+  // 日付をyyyy-mm-dd形式にフォーマットする関数
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // 子猫かどうかを判定する関数(生後6ヶ月未満)
   const isKitten = (birthDate: string): boolean => {
     const birth = new Date(birthDate);
     const now = new Date();
@@ -86,26 +140,30 @@ export default function KittensPage() {
     return monthsDiff < 6;
   };
 
-  // データを読み込む
+    // データを読み込む
   useEffect(() => {
-    if (!catsQuery.data?.data) return;
+    if (!catsQuery.data?.data || !birthPlansQuery.data?.data) return;
 
     const allCats = catsQuery.data.data;
+    const birthPlans = birthPlansQuery.data.data;
 
     // 子猫のみをフィルタリング
     const kittens = allCats.filter((cat: Cat) => isKitten(cat.birthDate));
 
     // 母猫ごとに子猫をグループ化
-    const motherMap = new Map<string, { mother: Cat; kittens: Cat[] }>();
+    const motherMap = new Map<string, { mother: Cat; kittens: Cat[]; fatherName: string }>();
 
     kittens.forEach((kitten: Cat) => {
       if (kitten.motherId) {
         const motherId = kitten.motherId;
         if (!motherMap.has(motherId)) {
-          // 母猫を取得（kitten.motherが設定されている場合はそれを使う）
-          const mother = kitten.mother || allCats.find((cat: Cat) => cat.id === motherId);
+          // birthPlansから母猫を検索
+          const birthPlan = birthPlans.find((plan) => plan.mother?.id === motherId);
+          const mother = birthPlan?.mother || kitten.mother || allCats.find((cat: Cat) => cat.id === motherId);
           if (mother) {
-            motherMap.set(motherId, { mother, kittens: [] });
+            const fatherId = birthPlan?.fatherId;
+            const father = fatherId ? allCats.find((cat: Cat) => cat.id === fatherId) : null;
+            motherMap.set(motherId, { mother: mother as Cat, kittens: [], fatherName: father?.name || '不明' });
           }
         }
         if (motherMap.has(motherId)) {
@@ -115,25 +173,27 @@ export default function KittensPage() {
     });
 
     // MotherCat形式に変換
-    const motherCatsData: MotherCat[] = Array.from(motherMap.values()).map(({ mother, kittens }) => ({
+    const motherCatsData: MotherCat[] = Array.from(motherMap.values()).map(({ mother, kittens, fatherName }) => ({
       id: mother.id,
       name: mother.name,
+      fatherName: fatherName,
       kittens: kittens.map((kitten: Cat) => ({
         id: kitten.id,
         name: kitten.name,
         color: kitten.coatColor?.name || '未確認',
         gender: kitten.gender === 'MALE' ? 'オス' : 'メス',
         weight: 350, // TODO: 体重データがAPIにないので仮の値
-        birthDate: kitten.birthDate,
+        birthDate: formatDate(kitten.birthDate),
         notes: kitten.description || '',
         tags: kitten.tags?.map((catTag) => catTag.tag.id) || [],
+        rawCat: kitten, // 元のCatオブジェクトを保持
       })),
-      deliveryDate: kittens[0]?.birthDate || mother.birthDate, // 最初の子猫の生年月日を使用
-      monthsOld: Math.floor((new Date().getTime() - new Date(kittens[0]?.birthDate || mother.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 30)),
+      deliveryDate: formatDate(kittens[0]?.birthDate || mother.birthDate), // 最初の子猫の生年月日を使用
+      monthsOld: Math.floor((new Date().getTime() - new Date(kittens[0]?.birthDate || mother.birthDate).getTime()) / (1000 * 60 * 60 * 24)), // 生後日数
     }));
 
     setMotherCats(motherCatsData);
-  }, [catsQuery.data]);
+  }, [catsQuery.data, birthPlansQuery.data]);
 
   // ページヘッダーを設定
   useEffect(() => {
@@ -164,6 +224,8 @@ export default function KittensPage() {
 
   // タグでフィルタリングする関数
   const getFilteredMotherCats = () => {
+    console.log('getFilteredMotherCats called, motherCats:', motherCats.length, 'filterTags:', filterTags);
+    
     if (filterTags.length === 0) {
       return motherCats;
     }
@@ -202,7 +264,8 @@ export default function KittensPage() {
         weight: 350,
         birthDate: new Date().toISOString().split('T')[0],
         notes: '',
-        tags: selectedTags
+        tags: selectedTags,
+        rawCat: {} as Cat, // ダミー(新規登録用の一時データ)
       });
       kittenNumber++;
     }
@@ -217,7 +280,8 @@ export default function KittensPage() {
         weight: 340,
         birthDate: new Date().toISOString().split('T')[0],
         notes: '',
-        tags: selectedTags
+        tags: selectedTags,
+        rawCat: {} as Cat, // ダミー(新規登録用の一時データ)
       });
       kittenNumber++;
     }
@@ -239,8 +303,8 @@ export default function KittensPage() {
 
   return (
   <Container size="lg" pb="xl">
-      {/* フィルタ */}
-      <Card padding="md" mb="md" bg="gray.0">
+      {/* タグフィルタ */}
+      <Card padding="md" bg="gray.0" mb="md">
         <TagSelector 
           selectedTags={filterTags}
           onChange={setFilterTags}
@@ -279,98 +343,126 @@ export default function KittensPage() {
             </Card>
           )}
 
-          {/* 出産記録ベースのアコーディオン表示 */}
-          {(!birthPlansQuery.data?.data || birthPlansQuery.data.data.length === 0) ? (
-            <Card padding="lg" bg="gray.0" radius="md">
-              <Text ta="center" c="dimmed">
-                出産記録がありません
-              </Text>
+          {/* テーブル表示 - 母猫アコーディオン形式 */}
+          <Card padding="md" radius="md" withBorder>
+              {catsQuery.isLoading ? (
+                <Text ta="center" c="dimmed" py="xl">
+                  読み込み中...
+                </Text>
+              ) : getFilteredMotherCats().length === 0 ? (
+                <Stack gap="md" py="xl">
+                  <Text ta="center" c="dimmed">
+                    表示する子猫がいません
+                  </Text>
+                  <Text ta="center" size="xs" c="dimmed">
+                    (motherCats: {motherCats.length}件, 
+                    総子猫数: {motherCats.reduce((sum, m) => sum + m.kittens.length, 0)}頭)
+                  </Text>
+                </Stack>
+              ) : (
+                <Table striped withTableBorder>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th style={{ width: '40px' }}></Table.Th>
+                      <Table.Th>母猫名</Table.Th>
+                      <Table.Th>父猫名</Table.Th>
+                      <Table.Th>出産日</Table.Th>
+                      <Table.Th>生後</Table.Th>
+                      <Table.Th>子猫数</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {getFilteredMotherCats().map((mother) => {
+                      const isExpanded = expandedCats.has(mother.id);
+                      return (
+                        <React.Fragment key={mother.id}>
+                          {/* 母猫の行 */}
+                          <Table.Tr
+                            style={{ 
+                              cursor: 'pointer', 
+                              backgroundColor: isExpanded ? 'var(--mantine-color-blue-0)' : undefined 
+                            }}
+                            onClick={() => toggleExpanded(mother.id)}
+                          >
+                            <Table.Td>
+                              {isExpanded ? (
+                                <IconChevronDown size={16} />
+                              ) : (
+                                <IconChevronRight size={16} />
+                              )}
+                            </Table.Td>
+                            <Table.Td>
+                              <Text fw={600}>{mother.name}</Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Text size="sm">{mother.fatherName}</Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Text size="sm">{mother.deliveryDate}</Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Text size="sm">生後{mother.monthsOld}日</Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Badge size="sm" variant="light">
+                                {mother.kittens.length}頭
+                              </Badge>
+                            </Table.Td>
+                          </Table.Tr>
+
+                          {/* 子猫の行 (展開時) */}
+                          {isExpanded && mother.kittens.map((kitten) => {
+                            const rawCat = kitten.rawCat;
+                            if (!rawCat) {
+                              console.warn('rawCat not found for kitten:', kitten.id, kitten);
+                              return null;
+                            }
+
+                            return (
+                              <ContextMenuProvider
+                                key={kitten.id}
+                                entity={rawCat}
+                                entityType="子猫"
+                                actions={['view', 'edit', 'delete']}
+                                onAction={handleKittenContextAction}
+                              >
+                                <Table.Tr
+                                  style={{ 
+                                    cursor: 'pointer',
+                                    backgroundColor: 'var(--mantine-color-gray-0)'
+                                  }}
+                                  title="右クリックまたはダブルクリックで操作"
+                                >
+                                  <Table.Td></Table.Td>
+                                  <Table.Td colSpan={5}>
+                                    <Group gap="md" wrap="nowrap">
+                                      <IconPaw size={16} style={{ color: 'var(--mantine-color-gray-6)', flexShrink: 0 }} />
+                                      <Text fw={500} style={{ minWidth: '120px' }}>{kitten.name}</Text>
+                                      <GenderBadge gender={kitten.gender} size="sm" />
+                                      <Text size="sm" c="dimmed" style={{ minWidth: '80px' }}>{kitten.color}</Text>
+                                      {rawCat.tags && rawCat.tags.length > 0 && (
+                                        <TagDisplay 
+                                          tagIds={rawCat.tags.map(t => t.tag.id)} 
+                                          size="xs" 
+                                          categories={tagCategoriesQuery.data?.data || []}
+                                          tagMetadata={Object.fromEntries(
+                                            rawCat.tags.map(t => [t.tag.id, t.tag.metadata || {}])
+                                          )}
+                                        />
+                                      )}
+                                    </Group>
+                                  </Table.Td>
+                                </Table.Tr>
+                              </ContextMenuProvider>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    })}
+                  </Table.Tbody>
+                </Table>
+              )}
             </Card>
-          ) : (
-            <Accordion variant="separated" radius="md">
-              {birthPlansQuery.data.data.map((birthPlan: BirthPlan) => {
-                const motherName = birthPlan.mother?.name || '不明';
-                const fatherName = birthPlan.father?.name || '不明';
-                const birthDate = new Date(birthPlan.actualBirthDate || birthPlan.expectedBirthDate);
-                const formattedDate = `${birthDate.getMonth() + 1}月${String(birthDate.getDate()).padStart(2, '0')}日`;
-                const kittenCount = birthPlan.actualKittens || 0;
-
-                // この出産に属する子猫を取得
-                const birthPlanDate = (birthPlan.actualBirthDate || birthPlan.expectedBirthDate).split('T')[0];
-                const kittensForThisBirth = catsQuery.data?.data?.filter((cat: Cat) => {
-                  const matchesMother = cat.motherId === birthPlan.motherId;
-                  // 子猫のbirthDateもISO形式の可能性があるため、日付部分のみを比較
-                  const catBirthDate = cat.birthDate.split('T')[0];
-                  const matchesBirthDate = catBirthDate === birthPlanDate;
-                  
-                  return matchesMother && matchesBirthDate;
-                }) || [];
-
-                return (
-                  <Accordion.Item key={birthPlan.id} value={birthPlan.id}>
-                    <Accordion.Control>
-                      <Group gap="md" wrap="nowrap">
-                        <Text fw={500} size="md">
-                          ↓ {motherName}×{fatherName}
-                        </Text>
-                        <Badge size="lg" color="blue" variant="light">
-                          {kittenCount}頭
-                        </Badge>
-                        <Text size="sm" c="dimmed">
-                          {formattedDate}
-                        </Text>
-                      </Group>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Grid>
-                        {kittensForThisBirth.length === 0 ? (
-                          <Grid.Col span={12}>
-                            <Card padding="sm" radius="sm" withBorder bg="gray.0">
-                              <Text size="sm" ta="center" c="dimmed">
-                                子猫の詳細情報がありません
-                              </Text>
-                            </Card>
-                          </Grid.Col>
-                        ) : (
-                          kittensForThisBirth.map((kitten: Cat) => (
-                            <Grid.Col key={kitten.id} span={{ base: 12, sm: 6, md: 4 }}>
-                              <Card padding="sm" radius="sm" withBorder bg="gray.0">
-                                <Stack gap="xs">
-                                  <Group justify="space-between" wrap="nowrap">
-                                    <Text size="sm" fw={500}>{kitten.name}</Text>
-                                    <Badge
-                                      size="xs"
-                                      color={kitten.gender === 'MALE' ? 'cyan' : 'pink'}
-                                      variant="light"
-                                    >
-                                      {kitten.gender === 'MALE' ? 'オス' : 'メス'}
-                                    </Badge>
-                                  </Group>
-                                  <Text size="xs" c="dimmed">
-                                    色柄: {kitten.coatColor?.name || '未確認'}
-                                  </Text>
-                                  {kitten.description && (
-                                    <Text size="xs" c="dimmed">備考: {kitten.description}</Text>
-                                  )}
-                                  {kitten.tags && kitten.tags.length > 0 && (
-                                    <TagDisplay 
-                                      tagIds={kitten.tags.map(t => t.tag.id)} 
-                                      size="xs" 
-                                      categories={tagCategoriesQuery.data?.data || []} 
-                                    />
-                                  )}
-                                </Stack>
-                              </Card>
-                            </Grid.Col>
-                          ))
-                        )}
-                      </Grid>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                );
-              })}
-            </Accordion>
-          )}
         </Tabs.Panel>
 
         {/* ケアスケジュールタブ */}
@@ -593,19 +685,30 @@ export default function KittensPage() {
                 {motherCats.flatMap(mother => 
                   mother.kittens.map(kitten => (
                     <Grid.Col key={kitten.id} span={{ base: 12, sm: 6, md: 4 }}>
-                      <Card padding="sm" radius="sm" withBorder>
-                        <Stack gap="xs">
-                          <Group justify="space-between">
-                            <Text size="sm" fw={500}>{kitten.name}</Text>
-                            <Badge size="xs" color={kitten.gender === 'オス' ? 'cyan' : 'pink'}>
-                              {kitten.gender}
-                            </Badge>
-                          </Group>
-                          <Text size="xs" c="dimmed">現在: {kitten.weight}g</Text>
-                          <Text size="xs" c="dimmed">前回: 420g (+30g)</Text>
-                          <Text size="xs" c="dimmed">測定日: 2024/08/01</Text>
-                        </Stack>
-                      </Card>
+                      <ContextMenuProvider
+                        entity={kitten.rawCat}
+                        entityType="子猫"
+                        actions={['view', 'edit', 'delete']}
+                        onAction={handleKittenContextAction}
+                      >
+                        <Card 
+                          padding="sm" 
+                          radius="sm" 
+                          withBorder
+                          style={{ cursor: 'pointer' }}
+                          title="右クリックまたはダブルクリックで操作"
+                        >
+                          <Stack gap="xs">
+                            <Group justify="space-between">
+                              <Text size="sm" fw={500}>{kitten.name}</Text>
+                              <GenderBadge gender={kitten.gender} size="xs" />
+                            </Group>
+                            <Text size="xs" c="dimmed">現在: {kitten.weight}g</Text>
+                            <Text size="xs" c="dimmed">前回: 420g (+30g)</Text>
+                            <Text size="xs" c="dimmed">測定日: 2024/08/01</Text>
+                          </Stack>
+                        </Card>
+                      </ContextMenuProvider>
                     </Grid.Col>
                   ))
                 )}
@@ -693,6 +796,15 @@ export default function KittensPage() {
           </Group>
         </Stack>
       </Modal>
+
+      {/* 操作確認モーダル */}
+      <OperationModalManager
+        operationType={currentOperation}
+        entity={currentEntity}
+        entityType="子猫"
+        onClose={closeOperation}
+        onConfirm={handleOperationConfirm}
+      />
     </Container>
   );
 }

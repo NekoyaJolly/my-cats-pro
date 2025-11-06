@@ -38,8 +38,11 @@ export interface Cat {
       id: string; 
       name: string; 
       color: string;
-      category?: { name: string };
-      group?: { name: string };
+      metadata?: Record<string, unknown>;
+      group?: { 
+        name: string;
+        category?: { name: string };
+      };
     } 
   }>;
 }

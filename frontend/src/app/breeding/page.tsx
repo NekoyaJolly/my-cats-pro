@@ -38,6 +38,11 @@ import {
   IconRainbow,
 } from '@tabler/icons-react';
 
+import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
+import { EditableField } from '@/components/editable-field/editable-field';
+import { ContextMenuProvider, useContextMenu } from '@/components/context-menu';
+import { IconCheck, IconX, IconCalendarPlus, IconClock } from '@tabler/icons-react';
+
 import {
   useGetBreedingNgRules,
   useCreateBreedingNgRule,
@@ -175,6 +180,25 @@ export default function BreedingPage() {
   const [rulesModalOpened, { close: closeRulesModal }] = useDisclosure(false);
   const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
   const [birthInfoModalOpened, { open: openBirthInfoModal, close: closeBirthInfoModal }] = useDisclosure(false);
+  const [scheduleEditModalOpened, { open: openScheduleEditModal, close: closeScheduleEditModal }] = useDisclosure(false);
+  const [selectedScheduleForEdit, setSelectedScheduleForEdit] = useState<BreedingScheduleEntry | null>(null);
+
+  // コンテキストメニュー for breeding schedule
+  const {
+    handleAction: handleScheduleContextAction,
+  } = useContextMenu<BreedingScheduleEntry>({
+    edit: (schedule) => {
+      if (schedule) {
+        handleEditSchedule(schedule);
+      }
+    },
+    delete: (schedule) => {
+      if (schedule) {
+        setSelectedScheduleForEdit(schedule);
+        handleDeleteSchedule();
+      }
+    },
+  });
 
   // 交配チェック記録管理 - キー: "オスID-メスID-日付", 値: チェック回数
   const [matingChecks, setMatingChecks] = useState<{[key: string]: number}>({});
@@ -529,6 +553,115 @@ export default function BreedingPage() {
   // オス猫名クリック時の編集モード
   const handleMaleNameClick = (maleId: string) => {
     setSelectedMaleForEdit(selectedMaleForEdit === maleId ? null : maleId);
+  };
+
+  // 交配スケジュールの編集
+  const handleEditSchedule = (schedule: BreedingScheduleEntry) => {
+    setSelectedScheduleForEdit(schedule);
+    openScheduleEditModal();
+  };
+
+  // 交配期間とメス猫の更新
+  const handleUpdateScheduleDuration = (newDuration: number, newFemaleId?: string) => {
+    if (!selectedScheduleForEdit) return;
+
+    const { maleId, femaleId, date, duration: oldDuration, dayIndex, isHistory } = selectedScheduleForEdit;
+    
+    // 開始日を計算
+    const startDate = new Date(date);
+    startDate.setDate(startDate.getDate() - dayIndex);
+    
+    // メス猫が変更された場合、新しいメス猫情報を取得
+    let newFemaleName = selectedScheduleForEdit.femaleName;
+    let finalFemaleId = femaleId;
+    
+    if (newFemaleId && newFemaleId !== femaleId) {
+      const newFemale = catsResponse?.data?.find((f: Cat) => f.id === newFemaleId);
+      if (newFemale) {
+        newFemaleName = newFemale.name;
+        finalFemaleId = newFemaleId;
+      }
+    }
+    
+    // 新しいスケジュールを生成
+    const newSchedule: Record<string, BreedingScheduleEntry> = {};
+    const scheduleDates: string[] = [];
+    
+    for (let i = 0; i < newDuration; i++) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + i);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      scheduleDates.push(dateStr);
+      
+      const scheduleKey = `${maleId}-${dateStr}`;
+      newSchedule[scheduleKey] = {
+        ...selectedScheduleForEdit,
+        femaleId: finalFemaleId,
+        femaleName: newFemaleName,
+        date: dateStr,
+        duration: newDuration,
+        dayIndex: i,
+      };
+    }
+    
+    // 古いスケジュールを削除し、新しいスケジュールを追加
+    setBreedingSchedule((prev) => {
+      const updated = { ...prev };
+      
+      // 古いスケジュールを削除（開始日から元の期間分）
+      for (let i = 0; i < oldDuration; i++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + i);
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const scheduleKey = `${maleId}-${dateStr}`;
+        delete updated[scheduleKey];
+      }
+      
+      // 新しいスケジュールを追加
+      return { ...updated, ...newSchedule };
+    });
+
+    const message = newFemaleId && newFemaleId !== femaleId
+      ? `交配期間を${newDuration}日間に変更し、メス猫を${newFemaleName}に変更しました`
+      : `交配期間を${newDuration}日間に変更しました`;
+
+    notifications.show({
+      title: '更新成功',
+      message,
+      color: 'green',
+    });
+  };
+
+  // スケジュールの削除
+  const handleDeleteSchedule = () => {
+    if (!selectedScheduleForEdit) return;
+
+    const { maleId, date, duration, dayIndex } = selectedScheduleForEdit;
+    
+    // 開始日を計算
+    const startDate = new Date(date);
+    startDate.setDate(startDate.getDate() - dayIndex);
+    
+    // スケジュール全体を削除
+    setBreedingSchedule((prev) => {
+      const updated = { ...prev };
+      
+      for (let i = 0; i < duration; i++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + i);
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const scheduleKey = `${maleId}-${dateStr}`;
+        delete updated[scheduleKey];
+      }
+      
+      return updated;
+    });
+
+    notifications.show({
+      title: '削除成功',
+      message: 'スケジュールを削除しました',
+      color: 'green',
+    });
   };
 
   // メス猫をスケジュールに追加
@@ -1002,8 +1135,16 @@ export default function BreedingPage() {
                             >
                               {schedule ? (
                                 schedule.isHistory ? (
-                                  // 履歴：名前とチェックマークを一行表示
-                                  <Box style={{ position: 'relative', width: '100%', height: '100%', minHeight: isFullscreen ? '28px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', opacity: 0.6 }}>
+                                  // 履歴：名前とチェックマークを一行表示（ダブルクリックで編集可能、右クリックでメニュー）
+                                  <ContextMenuProvider
+                                    entity={schedule}
+                                    actions={['edit', 'delete']}
+                                    onAction={handleScheduleContextAction}
+                                  >
+                                    <Box 
+                                      style={{ position: 'relative', width: '100%', height: '100%', minHeight: isFullscreen ? '28px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', opacity: 0.6, cursor: 'pointer' }}
+                                      title="ダブルクリックまたは右クリックで操作"
+                                    >
                                     <Flex align="center" gap={4} style={{ minHeight: isFullscreen ? '24px' : '28px' }}>
                                       {/* 履歴のメス名表示（初日と最終日） */}
                                       {(schedule.dayIndex === 0 || schedule.dayIndex === schedule.duration - 1) && (
@@ -1038,8 +1179,18 @@ export default function BreedingPage() {
                                       </Box>
                                     </Flex>
                                   </Box>
+                                  </ContextMenuProvider>
                                 ) : (
-                                  <Box style={{ position: 'relative', width: '100%', height: '100%', minHeight: isFullscreen ? '28px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                  // 現在のスケジュール：ダブルクリックまたは右クリックで操作
+                                  <ContextMenuProvider
+                                    entity={schedule}
+                                    actions={['edit', 'delete']}
+                                    onAction={handleScheduleContextAction}
+                                  >
+                                  <Box 
+                                    style={{ position: 'relative', width: '100%', height: '100%', minHeight: isFullscreen ? '28px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', cursor: 'pointer' }}
+                                    title="ダブルクリックまたは右クリックで操作"
+                                  >
                                     {/* 一行表示：メス名バッジ（初日と最終日）とチェックエリア */}
                                     <Flex align="center" gap={4} style={{ minHeight: isFullscreen ? '24px' : '28px' }}>
                                       {/* メス名表示（初日と最終日） */}
@@ -1057,7 +1208,10 @@ export default function BreedingPage() {
                                             size={isFullscreen ? "xs" : "sm"}
                                             variant="light"
                                             color="green"
-                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, schedule.date, 'success')}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, schedule.date, 'success');
+                                            }}
                                             title="交配成功"
                                           >
                                             ○
@@ -1066,7 +1220,10 @@ export default function BreedingPage() {
                                             size={isFullscreen ? "xs" : "sm"}
                                             variant="light"
                                             color="red"
-                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, schedule.date, 'failure')}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, schedule.date, 'failure');
+                                            }}
                                             title="交配失敗"
                                           >
                                             ×
@@ -1087,7 +1244,10 @@ export default function BreedingPage() {
                                             alignItems: 'center',
                                             justifyContent: 'center'
                                           }}
-                                          onClick={() => handleMatingCheck(male.id, schedule.femaleId, dateString)}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleMatingCheck(male.id, schedule.femaleId, dateString);
+                                          }}
                                           title="クリックして交配記録を追加"
                                         >
                                           {getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? (
@@ -1103,6 +1263,7 @@ export default function BreedingPage() {
                                       )}
                                     </Flex>
                                   </Box>
+                                  </ContextMenuProvider>
                                 )
                               ) : (
                                 <Button
@@ -1742,6 +1903,20 @@ export default function BreedingPage() {
           </Group>
         </Stack>
       </Modal>
+
+      {/* 交配スケジュール編集モーダル */}
+      <BreedingScheduleEditModal
+        opened={scheduleEditModalOpened}
+        onClose={closeScheduleEditModal}
+        schedule={selectedScheduleForEdit}
+        availableFemales={(catsResponse?.data ?? []).filter((cat: Cat) => 
+          cat.gender === 'FEMALE' &&
+          cat.isInHouse &&
+          calculateAgeInMonths(cat.birthDate) >= 11
+        )}
+        onSave={handleUpdateScheduleDuration}
+        onDelete={handleDeleteSchedule}
+      />
     </Box>
   );
 }

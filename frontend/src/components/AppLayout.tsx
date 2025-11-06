@@ -35,6 +35,7 @@ import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
 import { notifications } from '@mantine/notifications';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { ContextMenuManager } from '@/components/context-menu';
 
 const navigationItems = [
   {
@@ -211,6 +212,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
+    <ContextMenuManager>
     <AppShell
       header={{ height: 60 }}
       navbar={{
@@ -359,6 +361,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <BottomNavigation pathname={pathname} />
       </AppShell.Main>
     </AppShell>
+    </ContextMenuManager>
   );
 }
 

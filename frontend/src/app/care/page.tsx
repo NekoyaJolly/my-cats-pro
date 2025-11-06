@@ -50,6 +50,7 @@ import {
   type TagView,
 } from '@/lib/api/hooks/use-tags';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
 
 const STATUS_LABELS = {
   PENDING: '未着手',
@@ -213,6 +214,45 @@ export default function CarePage() {
   const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
   const [editingSchedule, setEditingSchedule] = useState<CareSchedule | null>(null);
   const [deletingSchedule, setDeletingSchedule] = useState<CareSchedule | null>(null);
+
+  // コンテキストメニュー用の状態
+  const {
+    currentOperation,
+    currentEntity,
+    handleAction: handleScheduleContextAction,
+    openOperation,
+    closeOperation,
+  } = useContextMenu<CareSchedule>({
+    view: (schedule) => {
+      if (schedule) {
+        setDetailSchedule(schedule);
+        openDetailModal();
+      }
+    },
+    edit: (schedule) => {
+      if (schedule) {
+        setEditingSchedule(schedule);
+        openEditModal();
+      }
+    },
+    delete: (schedule) => {
+      if (schedule) {
+        openOperation('delete', schedule);
+      }
+    },
+  });
+
+  const handleOperationConfirm = () => {
+    if (currentOperation === 'delete' && currentEntity) {
+      setDeletingSchedule(currentEntity);
+      deleteScheduleMutation.mutate(currentEntity.id, {
+        onSuccess: () => {
+          scheduleQuery.refetch();
+          closeOperation();
+        },
+      });
+    }
+  };
 
   const catsQuery = useGetCats({ limit: 100 });
 
@@ -609,7 +649,14 @@ export default function CarePage() {
                 </Table.Thead>
                 <Table.Tbody>
                   {schedules.map((schedule) => (
-                    <Table.Tr key={schedule.id}>
+                    <ContextMenuProvider
+                      key={schedule.id}
+                      entity={schedule}
+                      entityType="ケアスケジュール"
+                      actions={['view', 'edit', 'delete']}
+                      onAction={handleScheduleContextAction}
+                    >
+                    <Table.Tr style={{ cursor: 'pointer' }} title="右クリックまたはダブルクリックで操作">
                       <Table.Td>
                         <Text size="sm" fw={500}>
                           {schedule.name}
@@ -678,6 +725,7 @@ export default function CarePage() {
                         </Group>
                       </Table.Td>
                     </Table.Tr>
+                    </ContextMenuProvider>
                   ))}
                 </Table.Tbody>
               </Table>
@@ -1523,6 +1571,15 @@ export default function CarePage() {
           </Stack>
         )}
       </Modal>
+
+      {/* コンテキストメニュー操作モーダル */}
+      <OperationModalManager
+        operationType={currentOperation}
+        entity={currentEntity}
+        entityType="ケアスケジュール"
+        onClose={closeOperation}
+        onConfirm={handleOperationConfirm}
+      />
     </Container>
   );
 }
