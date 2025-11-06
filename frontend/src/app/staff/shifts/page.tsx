@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -17,10 +17,21 @@ import {
   Modal,
   TextInput,
   ColorInput,
+  Menu,
+  Container,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { IconPlus, IconClock, IconUser } from '@tabler/icons-react';
+import { 
+  IconPlus, 
+  IconClock, 
+  IconUser, 
+  IconEdit, 
+  IconTrash,
+  IconDotsVertical,
+  IconDeviceFloppy,
+  IconX,
+} from '@tabler/icons-react';
 import {
   DndContext,
   DragEndEvent,
@@ -34,13 +45,15 @@ import { notifications } from '@mantine/notifications';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { Draggable, EventReceiveArg } from '@fullcalendar/interaction';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import type { EventDropArg, EventClickArg } from '@fullcalendar/core';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 // スタッフデータ型定義
 interface Staff {
   id: string;
   name: string;
+  email?: string;
   role: string;
   color: string;
   avatar?: string;
@@ -116,16 +129,20 @@ export default function StaffShiftsPage() {
   const calendarRef = useRef<FullCalendar>(null);
   const [eventCount, setEventCount] = useState(0);
   const processingEventRef = useRef<Set<string>>(new Set());
+  const { setPageHeader } = usePageHeader();
   
   // スタッフデータの状態管理
-  const [staff, setStaff] = useState<Staff[]>(initialMockStaff);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   
   // モーダル表示制御
-  const [opened, { open, close }] = useDisclosure(false);
+  const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false);
+  const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
+  const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
   const [loading, setLoading] = useState(false);
   
-  // フォーム設定
-  const form = useForm({
+  // 作成フォーム設定
+  const createForm = useForm({
     initialValues: {
       name: '',
       email: '',
@@ -134,10 +151,19 @@ export default function StaffShiftsPage() {
     },
     validate: {
       name: (value) => (!value ? '名前は必須です' : null),
-      email: (value) => {
-        if (!value) return null; // メールは任意
-        return /^\S+@\S+$/.test(value) ? null : 'メールアドレスの形式が正しくありません';
-      },
+    },
+  });
+
+  // 編集フォーム設定
+  const editForm = useForm({
+    initialValues: {
+      name: '',
+      email: '',
+      role: 'スタッフ',
+      color: '#4dabf7',
+    },
+    validate: {
+      name: (value) => (!value ? '名前は必須です' : null),
     },
   });
 
@@ -151,23 +177,43 @@ export default function StaffShiftsPage() {
   );
 
   // スタッフ作成処理
-  const handleCreateStaff = async (values: typeof form.values) => {
+  const handleCreateStaff = async (values: typeof createForm.values) => {
     setLoading(true);
     
     try {
+      // 空文字のフィールドを除外
+      const payload: {
+        name: string;
+        role: string;
+        color: string;
+        email?: string;
+      } = {
+        name: values.name,
+        role: values.role,
+        color: values.color,
+      };
+      
+      // メールアドレスが入力されている場合のみ追加
+      if (values.email && values.email.trim()) {
+        payload.email = values.email;
+      }
+      
       const response = await fetch('http://localhost:3004/api/v1/staff', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error('スタッフの作成に失敗しました');
+        const errorData = await response.json().catch(() => ({ message: 'サーバーエラー' }));
+        console.error('API Error Response:', errorData);
+        throw new Error(errorData.message || `スタッフの作成に失敗しました (${response.status})`);
       }
 
-      const newStaff = await response.json();
+      const result = await response.json();
+      const newStaff = result.data || result;
       
       // スタッフリストに追加
       setStaff((prev) => [...prev, newStaff]);
@@ -180,8 +226,8 @@ export default function StaffShiftsPage() {
       });
       
       // モーダルを閉じてフォームをリセット
-      close();
-      form.reset();
+      closeCreate();
+      createForm.reset();
     } catch (error) {
       console.error('スタッフ作成エラー:', error);
       notifications.show({
@@ -193,6 +239,202 @@ export default function StaffShiftsPage() {
       setLoading(false);
     }
   };
+
+  // スタッフ編集処理
+  const handleEditStaff = async (values: typeof editForm.values) => {
+    if (!selectedStaff) return;
+    
+    setLoading(true);
+    
+    try {
+      // 空文字のフィールドを除外
+      const payload: {
+        name: string;
+        role: string;
+        color: string;
+        email?: string;
+      } = {
+        name: values.name,
+        role: values.role,
+        color: values.color,
+      };
+      
+      // メールアドレスが入力されている場合のみ追加
+      if (values.email && values.email.trim()) {
+        payload.email = values.email;
+      }
+      
+      const response = await fetch(`http://localhost:3004/api/v1/staff/${selectedStaff.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'スタッフの更新に失敗しました');
+      }
+
+      const result = await response.json();
+      const updatedStaff = result.data || result;
+      
+      // スタッフリストを更新
+      setStaff((prev) =>
+        prev.map((s) => (s.id === updatedStaff.id ? updatedStaff : s))
+      );
+      
+      // 成功通知
+      notifications.show({
+        title: 'スタッフ更新成功',
+        message: `${updatedStaff.name}の情報を更新しました`,
+        color: 'green',
+      });
+      
+      // モーダルを閉じる
+      closeEdit();
+      setSelectedStaff(null);
+    } catch (error) {
+      console.error('スタッフ更新エラー:', error);
+      notifications.show({
+        title: 'エラー',
+        message: error instanceof Error ? error.message : 'スタッフの更新に失敗しました',
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // スタッフ削除処理
+  const handleDeleteStaff = async () => {
+    if (!selectedStaff) return;
+    
+    setLoading(true);
+    
+    try {
+      const response = await fetch(`http://localhost:3004/api/v1/staff/${selectedStaff.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'スタッフの削除に失敗しました');
+      }
+      
+      // スタッフリストから削除
+      setStaff((prev) => prev.filter((s) => s.id !== selectedStaff.id));
+      
+      // 成功通知
+      notifications.show({
+        title: 'スタッフ削除成功',
+        message: `${selectedStaff.name}を削除しました`,
+        color: 'blue',
+      });
+      
+      // モーダルを閉じる
+      closeDelete();
+      setSelectedStaff(null);
+    } catch (error) {
+      console.error('スタッフ削除エラー:', error);
+      notifications.show({
+        title: 'エラー',
+        message: error instanceof Error ? error.message : 'スタッフの削除に失敗しました',
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 編集モーダルを開く
+  const openEditModal = (staffMember: Staff) => {
+    setSelectedStaff(staffMember);
+    editForm.setValues({
+      name: staffMember.name,
+      email: staffMember.email || '',
+      role: staffMember.role,
+      color: staffMember.color,
+    });
+    openEdit();
+  };
+
+  // 削除モーダルを開く
+  const openDeleteModal = (staffMember: Staff) => {
+    setSelectedStaff(staffMember);
+    openDelete();
+  };
+
+  // 初期データ取得
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        const response = await fetch('http://localhost:3004/api/v1/staff');
+        if (!response.ok) {
+          throw new Error('スタッフデータの取得に失敗しました');
+        }
+        const result = await response.json();
+        const staffData = result.data || result;
+        
+        // バックエンドのスタッフデータをフロントエンドの形式に変換
+        const formattedStaff: Staff[] = staffData.map((s: {
+          id: string;
+          name: string;
+          email: string | null;
+          role: string;
+          color: string;
+        }) => ({
+          id: s.id,
+          name: s.name,
+          email: s.email || undefined,
+          role: s.role,
+          color: s.color,
+        }));
+        
+        setStaff(formattedStaff);
+      } catch (error) {
+        console.error('スタッフデータ取得エラー:', error);
+        notifications.show({
+          title: 'エラー',
+          message: 'スタッフデータの取得に失敗しました',
+          color: 'red',
+        });
+        // エラー時はモックデータを使用
+        setStaff(initialMockStaff);
+      }
+    };
+
+    fetchStaff();
+  }, []);
+
+  // ページヘッダーを設定
+  useEffect(() => {
+    setPageHeader(
+      'スタッフシフト管理',
+      <Group gap="sm">
+        <Button
+          leftSection={<IconPlus size={16} />}
+          variant="outline"
+          color="blue"
+          onClick={openCreate}
+        >
+          スタッフ追加
+        </Button>
+        <Button
+          leftSection={<IconPlus size={16} />}
+          variant="filled"
+          color="blue"
+        >
+          シフト保存
+        </Button>
+      </Group>
+    );
+
+    // クリーンアップ
+    return () => setPageHeader(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // FullCalendarの外部ドラッグ初期化
   useEffect(() => {
@@ -313,46 +555,35 @@ export default function StaffShiftsPage() {
   };
 
   return (
-    <Box p="md">
+    <Container size="xl" py="md">
       <Stack gap="md">
-        {/* ヘッダー */}
-        <Group justify="space-between">
-          <div>
-            <Title order={2}>スタッフシフト管理</Title>
-            <Text size="sm" c="dimmed" mt={4}>
-              スタッフとシフトテンプレートをカレンダーにドラッグ&ドロップしてシフトを作成
-            </Text>
-          </div>
-          <Group>
-            <Button leftSection={<IconPlus size={16} />} variant="light" onClick={open}>
-              スタッフ追加
-            </Button>
-            <Button leftSection={<IconPlus size={16} />}>シフト保存</Button>
-          </Group>
-        </Group>
+        {/* 説明文 */}
+        <Text size="sm" c="dimmed">
+          スタッフとシフトテンプレートをカレンダーにドラッグ&ドロップしてシフトを作成
+        </Text>
 
         {/* スタッフ作成モーダル */}
-        <Modal opened={opened} onClose={close} title="スタッフ追加" size="md">
-          <form onSubmit={form.onSubmit(handleCreateStaff)}>
+        <Modal opened={createOpened} onClose={closeCreate} title="スタッフ追加" size="md">
+          <form onSubmit={createForm.onSubmit(handleCreateStaff)}>
             <Stack gap="md">
               <TextInput
                 label="名前"
                 placeholder="田中 太郎"
                 required
-                {...form.getInputProps('name')}
+                {...createForm.getInputProps('name')}
               />
               
               <TextInput
                 label="メールアドレス"
                 placeholder="tanaka@example.com"
                 type="email"
-                {...form.getInputProps('email')}
+                {...createForm.getInputProps('email')}
               />
               
               <TextInput
                 label="役職"
                 placeholder="スタッフ"
-                {...form.getInputProps('role')}
+                {...createForm.getInputProps('role')}
               />
               
               <ColorInput
@@ -371,19 +602,136 @@ export default function StaffShiftsPage() {
                   '#ff6b6b',
                   '#74c0fc',
                 ]}
-                {...form.getInputProps('color')}
+                {...createForm.getInputProps('color')}
               />
 
               <Group justify="flex-end" mt="md">
-                <Button variant="light" onClick={close} disabled={loading}>
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  onClick={closeCreate}
+                  disabled={loading}
+                  leftSection={<IconX size={16} />}
+                >
                   キャンセル
                 </Button>
-                <Button type="submit" loading={loading}>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  variant="filled"
+                  color="blue"
+                  leftSection={<IconDeviceFloppy size={16} />}
+                >
                   作成
                 </Button>
               </Group>
             </Stack>
           </form>
+        </Modal>
+
+        {/* スタッフ編集モーダル */}
+        <Modal opened={editOpened} onClose={closeEdit} title="スタッフ編集" size="md">
+          <form onSubmit={editForm.onSubmit(handleEditStaff)}>
+            <Stack gap="md">
+              <TextInput
+                label="名前"
+                placeholder="田中 太郎"
+                required
+                {...editForm.getInputProps('name')}
+              />
+              
+              <TextInput
+                label="メールアドレス"
+                placeholder="tanaka@example.com"
+                type="email"
+                {...editForm.getInputProps('email')}
+              />
+              
+              <TextInput
+                label="役職"
+                placeholder="スタッフ"
+                {...editForm.getInputProps('role')}
+              />
+              
+              <ColorInput
+                label="表示カラー"
+                placeholder="カラーを選択"
+                format="hex"
+                swatches={[
+                  '#4c6ef5',
+                  '#f06595',
+                  '#20c997',
+                  '#fd7e14',
+                  '#fab005',
+                  '#51cf66',
+                  '#4dabf7',
+                  '#845ef7',
+                  '#ff6b6b',
+                  '#74c0fc',
+                ]}
+                {...editForm.getInputProps('color')}
+              />
+
+              <Group justify="flex-end" mt="md">
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  onClick={closeEdit}
+                  disabled={loading}
+                  leftSection={<IconX size={16} />}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  variant="filled"
+                  color="blue"
+                  leftSection={<IconDeviceFloppy size={16} />}
+                >
+                  保存
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        </Modal>
+
+        {/* スタッフ削除確認モーダル */}
+        <Modal
+          opened={deleteOpened}
+          onClose={closeDelete}
+          title="スタッフ削除"
+          size="sm"
+        >
+          <Stack gap="md">
+            <Text>
+              {selectedStaff?.name} を削除してもよろしいですか?
+            </Text>
+            <Text size="sm" c="dimmed">
+              この操作は取り消せません。
+            </Text>
+
+            <Group justify="flex-end" mt="md">
+              <Button
+                variant="subtle"
+                color="gray"
+                onClick={closeDelete}
+                disabled={loading}
+                leftSection={<IconX size={16} />}
+              >
+                キャンセル
+              </Button>
+              <Button
+                onClick={handleDeleteStaff}
+                loading={loading}
+                variant="filled"
+                color="red"
+                leftSection={<IconTrash size={16} />}
+              >
+                削除
+              </Button>
+            </Group>
+          </Stack>
         </Modal>
 
         {/* メインコンテンツ: 3カラムレイアウト */}
@@ -404,7 +752,7 @@ export default function StaffShiftsPage() {
                 <IconUser size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                 スタッフ一覧
               </Text>
-              <ActionIcon size="sm" variant="light" onClick={open}>
+              <ActionIcon size="sm" variant="light" color="blue" onClick={openCreate}>
                 <IconPlus size={14} />
               </ActionIcon>
             </Group>
@@ -447,6 +795,44 @@ export default function StaffShiftsPage() {
                           {staffMember.role}
                         </Badge>
                       </div>
+                      <Menu shadow="md" width={160}>
+                        <Menu.Target>
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <IconDotsVertical size={16} />
+                          </ActionIcon>
+                        </Menu.Target>
+
+                        <Menu.Dropdown>
+                          <Menu.Item
+                            leftSection={<IconEdit size={16} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(staffMember);
+                            }}
+                          >
+                            編集
+                          </Menu.Item>
+                          <Menu.Item
+                            leftSection={<IconTrash size={16} />}
+                            color="red"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteModal(staffMember);
+                            }}
+                          >
+                            削除
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
                     </Group>
                   </Card>
                 ))}
@@ -573,6 +959,6 @@ export default function StaffShiftsPage() {
           </Paper>
         </Group>
       </Stack>
-    </Box>
+    </Container>
   );
 }

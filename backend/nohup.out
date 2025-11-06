@@ -1,0 +1,13 @@
+[2J[3J[H[[90m7:25:40[0m] Starting compilation in watch mode...
+
+[[90m7:25:53[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 88442  - [39m2025/11/07 7:25:55 [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mStarting Cat Management System API...[39m
+🔧 Environment Configuration:
+  NODE_ENV: development
+  PORT: 3004
+  Database: ✓ Configured
+  JWT Secret: ✓ Configured
+  CORS Origins: http://localhost:3000
+prisma:info Starting a postgresql pool with 9 connections.
+prisma:query SELECT 1
