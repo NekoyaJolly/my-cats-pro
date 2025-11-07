@@ -48,7 +48,7 @@ export default function CatsPage() {
   const {
     currentOperation,
     currentEntity,
-    openOperation,
+    openOperation: _openOperation,
     closeOperation,
     handleAction: handleContextAction,
   } = useContextMenu<Cat>({
@@ -267,7 +267,7 @@ export default function CatsPage() {
   };
 
   // 猫情報の編集
-  const handleEditCat = (cat: Cat) => {
+  const _handleEditCat = (cat: Cat) => {
     setSelectedCatForEdit(cat);
     openEditModal();
   };

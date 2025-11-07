@@ -7,7 +7,7 @@ import interactionPlugin, { Draggable, EventReceiveArg } from '@fullcalendar/int
 import FullCalendar from '@fullcalendar/react';
 import {
   Container,
-  Title,
+  Title as _Title,
   Text,
   Group,
   Stack,
@@ -46,7 +46,7 @@ import type {
   StaffResponseDto,
   CreateStaffRequest,
   UpdateStaffRequest,
-  ShiftResponseDto,
+  ShiftResponseDto as _ShiftResponseDto,
   CalendarShiftEvent,
 } from '@/types/api.types';
 
@@ -56,7 +56,7 @@ import type { EventDropArg, EventClickArg } from '@fullcalendar/core';
 export default function StaffShiftsPage() {
   const calendarRef = useRef<FullCalendar>(null);
   const { setPageHeader } = usePageHeader();
-  const router = useRouter();
+  const _router = useRouter();
 
   // State管理
   const [staffList, setStaffList] = useState<StaffResponseDto[]>([]);

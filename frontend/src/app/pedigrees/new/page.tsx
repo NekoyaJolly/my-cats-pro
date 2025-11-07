@@ -485,7 +485,7 @@ export default function NewPedigreePage() {
           setLoading(false);
           return;
         }
-      } catch (error) {
+      } catch (_error) {
         // 404の場合は存在しないので登録可能
       }
 

@@ -563,7 +563,7 @@ export default function BreedingPage() {
   const handleUpdateScheduleDuration = (newDuration: number, newFemaleId?: string) => {
     if (!selectedScheduleForEdit) return;
 
-    const { maleId, femaleId, date, duration: oldDuration, dayIndex, isHistory } = selectedScheduleForEdit;
+    const { maleId, femaleId, date, duration: oldDuration, dayIndex, isHistory: _isHistory } = selectedScheduleForEdit;
     
     // 開始日を計算
     const startDate = new Date(date);
