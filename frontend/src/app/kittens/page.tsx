@@ -36,7 +36,7 @@ import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/co
 import { GenderBadge } from '@/components/GenderBadge';
 import TagSelector, { TagDisplay } from '@/components/TagSelector';
 import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
-import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care';
+import { useGetCareSchedules, type CareSchedule, type GetCareSchedulesParams } from '@/lib/api/hooks/use-care';
 import { useGetCats, useDeleteCat, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
@@ -86,7 +86,8 @@ export default function KittensPage() {
   const catsQuery = useGetCats({ limit: 1000 });
   const deleteCatMutation = useDeleteCat();
   const tagCategoriesQuery = useGetTagCategories();
-  const careSchedulesQuery = useGetCareSchedules({ limit: 100 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const careSchedulesQuery = useGetCareSchedules({ limit: 100 } as any);
   const birthPlansQuery = useGetBirthPlans({ status: 'BORN', limit: 1000 });
 
   // コンテキストメニュー用の状態
