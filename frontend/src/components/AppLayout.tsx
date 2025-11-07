@@ -38,6 +38,7 @@ import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
 import { notifications } from '@mantine/notifications';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuManager } from '@/components/context-menu';
+import { apiClient } from '@/lib/api/client';
 
 const navigationItems = [
   {
@@ -99,11 +100,20 @@ const bottomNavigationItems = [
   { label: 'その他', href: '/more', icon: '⚙️' },
 ];
 
+// 猫の統計情報の型
+interface CatStats {
+  male: number;
+  female: number;
+  kittens: number;
+  graduated: number;
+}
+
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname() ?? '/';
   const searchParams = useSearchParams();
   const router = useRouter();
   const { pageTitle, pageActions } = usePageHeader();
+  const [catStats, setCatStats] = useState<CatStats>({ male: 0, female: 0, kittens: 0, graduated: 0 });
 
   // デバッグ用ログ
   console.log('AppLayout pageTitle:', pageTitle);
@@ -207,6 +217,51 @@ export function AppLayout({ children }: AppLayoutProps) {
     closeDesktop();
   }, [pathname, requiresAuth, closeMobile, closeDesktop]);
 
+  // 猫の統計情報を取得
+  useEffect(() => {
+    const fetchCatStats = async () => {
+      if (!isAuthenticated || !initialized) {
+        return;
+      }
+
+      try {
+        const response = await apiClient.get('/cats', {
+          query: { limit: 1000 } as any,
+        });
+
+        if (response.success && Array.isArray(response.data)) {
+          const cats = response.data;
+          const today = new Date();
+          
+          // 統計を計算
+          const stats: CatStats = {
+            male: cats.filter((cat: any) => cat.gender === 'オス' || cat.gender === 'MALE').length,
+            female: cats.filter((cat: any) => cat.gender === 'メス' || cat.gender === 'FEMALE').length,
+            kittens: cats.filter((cat: any) => {
+              if (!cat.birthDate) return false;
+              const birthDate = new Date(cat.birthDate);
+              const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+              return ageInMonths < 12;
+            }).length,
+            graduated: cats.filter((cat: any) => 
+              cat.tags?.includes('卒業予定') || cat.tags?.includes('卒業済み') || cat.status === '卒業'
+            ).length,
+          };
+          
+          setCatStats(stats);
+        }
+      } catch (error) {
+        console.error('統計情報の取得に失敗:', error);
+      }
+    };
+
+    fetchCatStats();
+    
+    // 5分ごとに更新
+    const interval = setInterval(fetchCatStats, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, initialized]);
+
   if (!initialized || (requiresAuth && isLoading)) {
     return <FullScreenLoader />;
   }
@@ -283,6 +338,23 @@ export function AppLayout({ children }: AppLayoutProps) {
               )}
             </Group>
           </Group>
+          
+          {/* グローバル統計情報 - デスクトップのみ表示 */}
+          <Group gap="xs" visibleFrom="md" wrap="nowrap">
+            <Badge variant="light" color="blue" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
+              ♂ {catStats.male}
+            </Badge>
+            <Badge variant="light" color="pink" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
+              ♀ {catStats.female}
+            </Badge>
+            <Badge variant="light" color="orange" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
+              🐾 {catStats.kittens}
+            </Badge>
+            <Badge variant="light" color="green" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
+              🎓 {catStats.graduated}
+            </Badge>
+          </Group>
+          
           {pageActions && <div className="page-actions-container">{pageActions}</div>}
         </Group>
       </AppShell.Header>
