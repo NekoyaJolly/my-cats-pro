@@ -39,9 +39,7 @@ import {
 } from '@tabler/icons-react';
 
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
-import { EditableField } from '@/components/editable-field/editable-field';
 import { ContextMenuProvider, useContextMenu } from '@/components/context-menu';
-import { IconCheck, IconX, IconCalendarPlus, IconClock } from '@tabler/icons-react';
 
 import {
   useGetBreedingNgRules,

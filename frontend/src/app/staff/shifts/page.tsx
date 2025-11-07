@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
-  Title,
   Text,
   Group,
   Stack,
@@ -33,10 +32,6 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -45,7 +40,6 @@ import { notifications } from '@mantine/notifications';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { Draggable, EventReceiveArg } from '@fullcalendar/interaction';
-import { useRef } from 'react';
 import type { EventDropArg, EventClickArg } from '@fullcalendar/core';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 
@@ -67,19 +61,6 @@ interface ShiftTemplate {
   endTime: string;
   color: string;
   description: string;
-}
-
-// カレンダーイベント型定義
-interface CalendarEvent {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  backgroundColor: string;
-  extendedProps: {
-    staffId: string;
-    templateId: string;
-  };
 }
 
 // サンプルデータ

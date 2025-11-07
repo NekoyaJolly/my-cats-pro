@@ -23,7 +23,6 @@ import { useDisclosure } from '@mantine/hooks';
 import {
   IconPlus,
   IconChevronDown,
-  IconChevronUp,
   IconChevronRight,
   IconEdit,
   IconDeviceFloppy,
@@ -33,7 +32,7 @@ import {
 import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care';
 import { useGetCats, useDeleteCat, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
-import { useGetBirthPlans, type BirthPlan } from '@/lib/api/hooks/use-breeding';
+import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
 import TagSelector, { TagDisplay } from '@/components/TagSelector';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';

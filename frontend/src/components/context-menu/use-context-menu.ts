@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { OperationType } from './operation-modal-manager';
 
-export interface UseContextMenuReturn<T = any> {
+export interface UseContextMenuReturn<T = unknown> {
   currentOperation: OperationType | null;
   currentEntity: T | null;
   openOperation: (operation: OperationType, entity?: T) => void;
@@ -11,7 +11,7 @@ export interface UseContextMenuReturn<T = any> {
   handleAction: (action: string, entity?: T) => void;
 }
 
-export function useContextMenu<T = any>(
+export function useContextMenu<T = unknown>(
   customHandlers?: Partial<Record<string, (entity?: T) => void | Promise<void>>>
 ): UseContextMenuReturn<T> {
   const [currentOperation, setCurrentOperation] = useState<OperationType | null>(null);
