@@ -86,8 +86,8 @@ export default function KittensPage() {
   const catsQuery = useGetCats({ limit: 1000 });
   const deleteCatMutation = useDeleteCat();
   const tagCategoriesQuery = useGetTagCategories();
-  const careSchedulesQuery = useGetCareSchedules({ limit: 100 } as any);
-  const birthPlansQuery = useGetBirthPlans({ status: 'BORN', limit: 1000 } as any);
+  const careSchedulesQuery = useGetCareSchedules({ limit: 100 });
+  const birthPlansQuery = useGetBirthPlans({ status: 'BORN', limit: 1000 });
 
   // コンテキストメニュー用の状態
   const {

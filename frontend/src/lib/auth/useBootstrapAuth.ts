@@ -40,7 +40,7 @@ export function useBootstrapAuth() {
       }
     }
 
-    run();
+    void run();
 
     return () => {
       cancelled = true;

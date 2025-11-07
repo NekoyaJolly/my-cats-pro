@@ -248,7 +248,7 @@ export default function CarePage() {
       setDeletingSchedule(currentEntity);
       deleteScheduleMutation.mutate(currentEntity.id, {
         onSuccess: () => {
-          scheduleQuery.refetch();
+          void scheduleQuery.refetch();
           closeOperation();
         },
       });

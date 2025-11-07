@@ -82,6 +82,7 @@ export function BreedingScheduleEditModal({
   const handleDelete = async () => {
     if (!schedule || !onDelete) return;
 
+    // eslint-disable-next-line no-alert
     const confirmed = window.confirm(
       `${schedule.maleName} × ${schedule.femaleName} のスケジュールを削除しますか？`
     );
