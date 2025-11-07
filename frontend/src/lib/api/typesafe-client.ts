@@ -22,7 +22,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public details?: any,
+    public details?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -57,7 +57,19 @@ class TypeSafeApiClient {
         },
       });
 
-      const data: ApiResponse<T> = await response.json();
+      // JSONレスポンスをunknownとして取得（型安全）
+      const json: unknown = await response.json();
+      
+      // 型ガード: ApiResponse<T>の構造を検証
+      if (!this.isApiResponse<T>(json)) {
+        throw new ApiError(
+          'Invalid API response format',
+          response.status,
+          json,
+        );
+      }
+
+      const data: ApiResponse<T> = json;
 
       if (!response.ok) {
         throw new ApiError(
@@ -85,6 +97,23 @@ class TypeSafeApiClient {
         error instanceof Error ? error.message : 'Unknown error occurred',
       );
     }
+  }
+
+  /**
+   * 型ガード: ApiResponse<T>の構造を検証
+   */
+  private isApiResponse<T>(obj: unknown): obj is ApiResponse<T> {
+    if (typeof obj !== 'object' || obj === null) {
+      return false;
+    }
+
+    const response = obj as Record<string, unknown>;
+    
+    return (
+      typeof response.success === 'boolean' &&
+      typeof response.timestamp === 'string' &&
+      (response.error === undefined || typeof response.error === 'string')
+    );
   }
 
   // ==========================================

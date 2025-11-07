@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, type CSSProperties } from 'react';
+
 import {
   MultiSelect,
   Badge,
@@ -97,7 +98,7 @@ function extractAutomationMeta(tag: TagView): AutomationMeta | null {
     return null;
   }
 
-  const metadata = tag.metadata as Record<string, unknown>;
+  const metadata = tag.metadata;
   const automation = metadata.automation;
 
   if (!automation || typeof automation !== 'object') {
@@ -393,7 +394,7 @@ export function TagDisplay({ tagIds, categories: categoriesProp, filters, size =
     categories.forEach((category) => {
       (category.tags ?? []).forEach((tag) => {
         // tagMetadataが提供されている場合は、それを使用
-        if (tagMetadata && tagMetadata[tag.id]) {
+        if (tagMetadata?.[tag.id]) {
           map.set(tag.id, { ...tag, metadata: tagMetadata[tag.id] });
         } else {
           map.set(tag.id, tag);

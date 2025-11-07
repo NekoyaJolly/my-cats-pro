@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+
 import { Container, Paper, Title, Text, PasswordInput, Button, Alert, Group, Anchor } from '@mantine/core';
 import { IconLock, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+
 import { usePasswordResetActions, usePasswordResetSelectors } from '@/lib/auth/password-reset-store';
 
 function ResetPasswordForm() {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import {
   Container,
   Title,
@@ -21,6 +21,14 @@ import {
   Divider,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { 
+  IconDeviceFloppy, 
+  IconArrowLeft, 
+  IconDna,
+  IconPaw,
+} from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+
 import { apiClient, type ApiResponse } from '../../../lib/api/client';
 
 // API レスポンスの型定義
@@ -79,12 +87,6 @@ const createPedigree = async (data: PedigreeFormData): Promise<ApiResponse<Pedig
   // @ts-expect-error - OpenAPI型定義が未生成
   return await apiClient.post('/pedigrees', { body: data });
 };
-import { 
-  IconDeviceFloppy, 
-  IconArrowLeft, 
-  IconDna,
-  IconPaw,
-} from '@tabler/icons-react';
 
 interface Breed {
   id: string;

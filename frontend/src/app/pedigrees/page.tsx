@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react';
+
 import {
   Container,
   Paper,
@@ -19,9 +20,11 @@ import {
   Tooltip,
   LoadingOverlay,
 } from '@mantine/core';
-import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconEye, IconFilter, IconFileText, IconRefresh, IconPlus } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
+
+import { PageTitle } from '@/components/PageTitle';
+
 import { apiGet } from '../../lib/api';
 
 interface PedigreeData {

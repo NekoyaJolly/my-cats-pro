@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 
 import {
   apiClient,
@@ -8,6 +8,7 @@ import {
   type ApiRequestBody,
   type ApiResponse,
 } from '../client';
+
 import { createDomainQueryKeys } from './query-key-factory';
 import { catKeys } from './use-cats';
 

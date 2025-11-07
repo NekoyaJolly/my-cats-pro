@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
+
 import type { Request } from 'express';
 
 const AUTH_LOGIN_PATH = '/api/v1/auth/login';

@@ -1,4 +1,5 @@
 import { TextInput, TextInputProps } from '@mantine/core';
+
 import { FormField } from './FormField';
 
 export interface ColorInputFieldProps extends Omit<TextInputProps, 'value' | 'onChange'> {

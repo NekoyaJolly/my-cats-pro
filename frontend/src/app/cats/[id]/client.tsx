@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import {
   Box,
   Button,
@@ -20,9 +19,11 @@ import {
   Divider,
 } from '@mantine/core';
 import { IconArrowLeft, IconEdit, IconUser, IconAlertCircle, IconChevronDown } from '@tabler/icons-react';
-import { useGetCat } from '@/lib/api/hooks/use-cats';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
+
+import { useGetCat } from '@/lib/api/hooks/use-cats';
 
 type Props = {
   catId: string;

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+
 import {
   Container,
   Title,
@@ -18,6 +19,7 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft, IconDna } from '@tabler/icons-react';
 import { useRouter, useParams } from 'next/navigation';
+
 import { apiGet } from '../../../../lib/api';
 
 interface FamilyTreeData {
@@ -221,8 +223,8 @@ export default function FamilyTreeClient() {
         {/* 祖父母以上の世代を再帰的に表示 */}
         {currentLevel < maxLevel - 1 && (pedigree.father || pedigree.mother) && (
           <div style={{ marginLeft: '20px', paddingLeft: '20px', borderLeft: '2px solid #dee2e6' }}>
-            {pedigree.father && renderFamilyLevel(pedigree.father as FamilyTreeData, currentLevel + 1, maxLevel)}
-            {pedigree.mother && renderFamilyLevel(pedigree.mother as FamilyTreeData, currentLevel + 1, maxLevel)}
+            {pedigree.father && renderFamilyLevel(pedigree.father, currentLevel + 1, maxLevel)}
+            {pedigree.mother && renderFamilyLevel(pedigree.mother, currentLevel + 1, maxLevel)}
           </div>
         )}
       </div>

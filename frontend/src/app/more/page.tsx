@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import {
   Container,
   Card,
@@ -11,7 +10,6 @@ import {
   SimpleGrid,
   Box,
 } from '@mantine/core';
-import { PageTitle } from '@/components/PageTitle';
 import { 
   IconPlus, 
   IconTag, 
@@ -23,6 +21,10 @@ import {
   IconReport,
   IconChevronRight
 } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+
+import { PageTitle } from '@/components/PageTitle';
+
 
 interface MenuItem {
   title: string;

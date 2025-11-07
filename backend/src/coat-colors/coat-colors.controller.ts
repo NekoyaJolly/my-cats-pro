@@ -55,7 +55,7 @@ export class CoatColorsController {
     status: HttpStatus.FORBIDDEN,
     description: "管理者権限が必要です",
   })
-  create(@Body() createCoatColorDto: CreateCoatColorDto) {
+  async create(@Body() createCoatColorDto: CreateCoatColorDto) {
     return this.coatColorsService.create(createCoatColorDto);
   }
 
@@ -87,14 +87,14 @@ export class CoatColorsController {
     description: "ソート順",
     example: "asc",
   })
-  findAll(@Query() query: CoatColorQueryDto) {
+  async findAll(@Query() query: CoatColorQueryDto) {
     return this.coatColorsService.findAll(query);
   }
 
   @Get("statistics")
   @ApiOperation({ summary: "毛色データの統計情報を取得" })
   @ApiResponse({ status: HttpStatus.OK, description: "統計情報" })
-  getStatistics() {
+  async getStatistics() {
     return this.coatColorsService.getStatistics();
   }
 
@@ -106,7 +106,7 @@ export class CoatColorsController {
     description: "毛色データが見つかりません",
   })
   @ApiParam({ name: "id", description: "毛色データのID" })
-  findOne(@Param("id") id: string) {
+  async findOne(@Param("id") id: string) {
     return this.coatColorsService.findOne(id);
   }
 
@@ -131,7 +131,7 @@ export class CoatColorsController {
     description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "毛色データのID" })
-  update(
+  async update(
     @Param("id") id: string,
     @Body() updateCoatColorDto: UpdateCoatColorDto,
   ) {
@@ -155,7 +155,7 @@ export class CoatColorsController {
     description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "毛色データのID" })
-  remove(@Param("id") id: string) {
+  async remove(@Param("id") id: string) {
     return this.coatColorsService.remove(id);
   }
 }

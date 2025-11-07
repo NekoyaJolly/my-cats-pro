@@ -38,7 +38,7 @@ export class TagCategoriesController {
     description: "非アクティブカテゴリを含める",
     type: Boolean,
   })
-  findAll(
+  async findAll(
     @Query("scope") scope?: string | string[],
     @Query("includeInactive") includeInactive?: string,
   ) {
@@ -52,7 +52,7 @@ export class TagCategoriesController {
   @Post()
   @ApiOperation({ summary: "タグカテゴリの作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  create(@Body() dto: CreateTagCategoryDto) {
+  async create(@Body() dto: CreateTagCategoryDto) {
     return this.tagCategoriesService.create(dto);
   }
 
@@ -61,7 +61,7 @@ export class TagCategoriesController {
   @Patch("reorder")
   @ApiOperation({ summary: "タグカテゴリの並び替え" })
   @ApiResponse({ status: HttpStatus.OK })
-  reorder(@Body() dto: ReorderTagCategoriesDto) {
+  async reorder(@Body() dto: ReorderTagCategoriesDto) {
     return this.tagCategoriesService.reorder(dto.items);
   }
 
@@ -71,7 +71,7 @@ export class TagCategoriesController {
   @ApiOperation({ summary: "タグカテゴリの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  update(@Param("id") id: string, @Body() dto: UpdateTagCategoryDto) {
+  async update(@Param("id") id: string, @Body() dto: UpdateTagCategoryDto) {
     return this.tagCategoriesService.update(id, dto);
   }
 

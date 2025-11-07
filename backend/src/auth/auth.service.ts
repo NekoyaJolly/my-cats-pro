@@ -89,7 +89,7 @@ export class AuthService {
       },
     });
 
-    if (!user || !user.passwordHash) return null;
+    if (!user?.passwordHash) return null;
 
     // パスワード検証（Argon2またはbcrypt）
     let isValidPassword = false;
@@ -426,7 +426,7 @@ export class AuthService {
     newPassword: string,
   ): Promise<{ success: true; message: string }> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.passwordHash) {
+    if (!user?.passwordHash) {
       throw new BadRequestException("ユーザーが見つかりません");
     }
 
@@ -465,7 +465,7 @@ export class AuthService {
     try {
       const payload = this.jwt.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
-      }) as { sub: string };
+      });
 
       const user = await this.prisma.user.findFirst({
         where: { id: payload.sub, refreshToken: refreshToken },

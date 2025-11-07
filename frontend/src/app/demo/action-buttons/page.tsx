@@ -6,7 +6,6 @@
  */
 
 import { Container, Title, Text, Stack, Group, Card, Divider, Code, Paper, SimpleGrid, Center, Badge } from '@mantine/core';
-import { ActionButton, ActionIconButton } from '@/components/ActionButton';
 import {
   IconPaw,
   IconCat,
@@ -40,6 +39,8 @@ import {
   IconRuler,
   IconTemperature,
 } from '@tabler/icons-react';
+
+import { ActionButton, ActionIconButton } from '@/components/ActionButton';
 
 export default function ActionButtonDemoPage() {
   return (

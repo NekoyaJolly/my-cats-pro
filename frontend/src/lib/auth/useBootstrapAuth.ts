@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+
 import { useAuthStore } from './store';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -27,7 +28,7 @@ export function useBootstrapAuth() {
         }
 
         const json: unknown = await res.json();
-        const data = isRecord(json) && 'data' in json ? (json as Record<string, unknown>).data : null;
+        const data = isRecord(json) && 'data' in json ? (json).data : null;
 
         if (!cancelled) {
           bootstrap(data ?? null);

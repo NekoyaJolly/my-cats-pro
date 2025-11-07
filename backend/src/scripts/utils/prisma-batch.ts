@@ -60,7 +60,7 @@ export async function batchTransaction<T>(
         const item = chunk[i];
         const globalIndex = start + i;
         try {
-          await prisma.$transaction((tx) => builder(tx, item, globalIndex));
+          await prisma.$transaction(async (tx) => builder(tx, item, globalIndex));
           success += 1;
         } catch (err) {
           errors.push({ index: globalIndex, item, error: err });

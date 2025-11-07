@@ -26,7 +26,7 @@ export class TagGroupsController {
   @Post()
   @ApiOperation({ summary: "タググループの作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  create(@Body() dto: CreateTagGroupDto) {
+  async create(@Body() dto: CreateTagGroupDto) {
     return this.tagGroupsService.create(dto);
   }
 
@@ -35,7 +35,7 @@ export class TagGroupsController {
   @Patch("reorder")
   @ApiOperation({ summary: "タググループの並び替え" })
   @ApiResponse({ status: HttpStatus.OK })
-  reorder(@Body() dto: ReorderTagGroupDto) {
+  async reorder(@Body() dto: ReorderTagGroupDto) {
     return this.tagGroupsService.reorder(dto.items);
   }
 
@@ -45,7 +45,7 @@ export class TagGroupsController {
   @ApiOperation({ summary: "タググループの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  update(@Param("id") id: string, @Body() dto: UpdateTagGroupDto) {
+  async update(@Param("id") id: string, @Body() dto: UpdateTagGroupDto) {
     return this.tagGroupsService.update(id, dto);
   }
 

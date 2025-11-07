@@ -67,7 +67,7 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
     columns: true,
     skip_empty_lines: true,
     from_line: 2, // 1行目は日本語ヘッダー、2行目は英語ヘッダー
-  }) as PedigreeRow[];
+  });
 
   console.log(`📊 総レコード数: ${records.length}`);
 
@@ -78,14 +78,14 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
     // 特定のキーのみ
     filteredRecords = records.filter((record: PedigreeRow) => {
       const key = parseInt(record.キー);
-      return (options.specificKeys as number[]).includes(key);
+      return (options.specificKeys).includes(key);
     });
     console.log(`🔍 特定キー抽出: ${options.specificKeys.join(", ")}`);
   } else if (options.keyStart !== undefined && options.keyEnd !== undefined) {
     // 範囲指定
     filteredRecords = records.filter((record: PedigreeRow) => {
       const key = parseInt(record.キー);
-      return key >= (options.keyStart as number) && key <= (options.keyEnd as number);
+      return key >= (options.keyStart) && key <= (options.keyEnd);
     });
     console.log(`🔍 範囲抽出: ${options.keyStart} - ${options.keyEnd}`);
   }
@@ -113,7 +113,7 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
   let successCount = 0;
   let errorCount = 0;
 
-  for (const record of filteredRecords as PedigreeRow[]) {
+  for (const record of filteredRecords) {
     try {
       // 猫種とコートカラーのマッピング（必要に応じて実装）
       const breedId = await getOrCreateBreed(record.猫種ｺｰﾄﾞ);

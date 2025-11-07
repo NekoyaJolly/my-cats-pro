@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+
 import "./globals.css";
 import "@mantine/core/styles.css";
 import { Suspense } from "react";
-import { Providers } from "./providers";
+
 import { AppLayout } from "@/components/AppLayout";
+
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: 'MyCats',

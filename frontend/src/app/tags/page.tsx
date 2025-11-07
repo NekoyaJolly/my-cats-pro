@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+
 import {
   closestCenter,
   DndContext,
@@ -44,8 +45,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
+import { useDisclosure } from '@mantine/hooks';
 import {
   IconChevronDown,
   IconHandGrab,
@@ -61,10 +62,20 @@ import {
 } from '@tabler/icons-react';
 
 import { ContextMenuProvider } from '@/components/context-menu/context-menu';
-import { useContextMenu } from '@/components/context-menu/use-context-menu';
 import { OperationModalManager } from '@/components/context-menu/operation-modal-manager';
-
-import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { useContextMenu } from '@/components/context-menu/use-context-menu';
+import {
+  useGetAutomationRules,
+  useCreateAutomationRule,
+  useUpdateAutomationRule,
+  useDeleteAutomationRule,
+  useExecuteAutomationRule,
+  type TagAutomationRule,
+  type CreateTagAutomationRuleRequest,
+  type UpdateTagAutomationRuleRequest,
+  type TagAutomationTriggerType,
+  type TagAutomationEventType,
+} from '@/lib/api/hooks/use-tag-automation';
 import {
   useCreateTag,
   useCreateTagCategory,
@@ -90,18 +101,7 @@ import {
   type UpdateTagGroupRequest,
   type UpdateTagRequest,
 } from '@/lib/api/hooks/use-tags';
-import {
-  useGetAutomationRules,
-  useCreateAutomationRule,
-  useUpdateAutomationRule,
-  useDeleteAutomationRule,
-  useExecuteAutomationRule,
-  type TagAutomationRule,
-  type CreateTagAutomationRuleRequest,
-  type UpdateTagAutomationRuleRequest,
-  type TagAutomationTriggerType,
-  type TagAutomationEventType,
-} from '@/lib/api/hooks/use-tag-automation';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 const PRESET_COLORS = [
   '#e74c3c',
@@ -247,7 +247,7 @@ function extractAutomationMeta(tag: TagView): AutomationMeta | null {
     return null;
   }
 
-  const metadata = tag.metadata as Record<string, unknown>;
+  const metadata = tag.metadata;
   const automation = metadata.automation;
 
   if (!automation || typeof automation !== 'object') {
@@ -1167,7 +1167,7 @@ export default function TagsPage() {
     const options: { value: string; label: string }[] = [];
     
     sortedCategories.forEach((category) => {
-      if (!category || !category.groups) return;
+      if (!category?.groups) return;
       
       const groups = Array.isArray(category.groups) ? category.groups : [];
       groups.forEach((group) => {
@@ -1616,7 +1616,7 @@ export default function TagsPage() {
       if (editingAutomationRule) {
         await updateAutomationRule.mutateAsync({ 
           id: editingAutomationRule.id, 
-          payload: payload as UpdateTagAutomationRuleRequest 
+          payload: payload 
         });
       } else {
         await createAutomationRule.mutateAsync(payload as CreateTagAutomationRuleRequest);

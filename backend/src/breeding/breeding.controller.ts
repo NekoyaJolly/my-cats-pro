@@ -17,7 +17,6 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 
-import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
@@ -37,6 +36,8 @@ import {
   BirthPlanQueryDto,
 } from "./dto";
 
+import type { RequestUser } from "../auth/auth.types";
+
 @ApiTags("Breeding")
 @Controller("breeding")
 export class BreedingController {
@@ -45,7 +46,7 @@ export class BreedingController {
   @Get()
   @ApiOperation({ summary: "交配記録一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
-  findAll(@Query() query: BreedingQueryDto) {
+  async findAll(@Query() query: BreedingQueryDto) {
     return this.breedingService.findAll(query);
   }
 
@@ -54,7 +55,7 @@ export class BreedingController {
   @Post()
   @ApiOperation({ summary: "交配記録の新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  create(
+  async create(
     @Body() dto: CreateBreedingDto,
     @GetUser() user?: RequestUser,
   ) {
@@ -71,7 +72,7 @@ export class BreedingController {
   @Get("ng-rules")
   @ApiOperation({ summary: "NGペアルール一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
-  findNgRules() {
+  async findNgRules() {
     return this.breedingService.findNgRules();
   }
 
@@ -80,7 +81,7 @@ export class BreedingController {
   @Post("ng-rules")
   @ApiOperation({ summary: "NGペアルールの作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  createNgRule(@Body() dto: CreateBreedingNgRuleDto) {
+  async createNgRule(@Body() dto: CreateBreedingNgRuleDto) {
     return this.breedingService.createNgRule(dto);
   }
 
@@ -90,7 +91,7 @@ export class BreedingController {
   @ApiOperation({ summary: "NGペアルールの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  updateNgRule(@Param("id") id: string, @Body() dto: UpdateBreedingNgRuleDto) {
+  async updateNgRule(@Param("id") id: string, @Body() dto: UpdateBreedingNgRuleDto) {
     return this.breedingService.updateNgRule(id, dto);
   }
 
@@ -100,7 +101,7 @@ export class BreedingController {
   @ApiOperation({ summary: "NGペアルールの削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  removeNgRule(@Param("id") id: string) {
+  async removeNgRule(@Param("id") id: string) {
     return this.breedingService.removeNgRule(id);
   }
 
@@ -115,7 +116,7 @@ export class BreedingController {
   @Get("pregnancy-checks")
   @ApiOperation({ summary: "妊娠チェック一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
-  findAllPregnancyChecks(@Query() query: PregnancyCheckQueryDto) {
+  async findAllPregnancyChecks(@Query() query: PregnancyCheckQueryDto) {
     return this.breedingService.findAllPregnancyChecks(query);
   }
 
@@ -124,7 +125,7 @@ export class BreedingController {
   @Post("pregnancy-checks")
   @ApiOperation({ summary: "妊娠チェックの新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  createPregnancyCheck(
+  async createPregnancyCheck(
     @Body() dto: CreatePregnancyCheckDto,
     @GetUser() user?: RequestUser,
   ) {
@@ -137,7 +138,7 @@ export class BreedingController {
   @ApiOperation({ summary: "妊娠チェックの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  updatePregnancyCheck(@Param("id") id: string, @Body() dto: UpdatePregnancyCheckDto) {
+  async updatePregnancyCheck(@Param("id") id: string, @Body() dto: UpdatePregnancyCheckDto) {
     return this.breedingService.updatePregnancyCheck(id, dto);
   }
 
@@ -147,7 +148,7 @@ export class BreedingController {
   @ApiOperation({ summary: "妊娠チェックの削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  removePregnancyCheck(@Param("id") id: string) {
+  async removePregnancyCheck(@Param("id") id: string) {
     return this.breedingService.removePregnancyCheck(id);
   }
 
@@ -155,7 +156,7 @@ export class BreedingController {
   @Get("birth-plans")
   @ApiOperation({ summary: "出産計画一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
-  findAllBirthPlans(@Query() query: BirthPlanQueryDto) {
+  async findAllBirthPlans(@Query() query: BirthPlanQueryDto) {
     return this.breedingService.findAllBirthPlans(query);
   }
 
@@ -164,7 +165,7 @@ export class BreedingController {
   @Post("birth-plans")
   @ApiOperation({ summary: "出産計画の新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  createBirthPlan(
+  async createBirthPlan(
     @Body() dto: CreateBirthPlanDto,
     @GetUser() user?: RequestUser,
   ) {
@@ -177,7 +178,7 @@ export class BreedingController {
   @ApiOperation({ summary: "出産計画の更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  updateBirthPlan(@Param("id") id: string, @Body() dto: UpdateBirthPlanDto) {
+  async updateBirthPlan(@Param("id") id: string, @Body() dto: UpdateBirthPlanDto) {
     return this.breedingService.updateBirthPlan(id, dto);
   }
 
@@ -187,7 +188,7 @@ export class BreedingController {
   @ApiOperation({ summary: "出産計画の削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  removeBirthPlan(@Param("id") id: string) {
+  async removeBirthPlan(@Param("id") id: string) {
     return this.breedingService.removeBirthPlan(id);
   }
 

@@ -1,3 +1,4 @@
+import { ShiftStatus } from '@prisma/client';
 import {
   IsString,
   IsUUID,
@@ -5,7 +6,6 @@ import {
   Matches,
   IsEnum,
 } from 'class-validator';
-import { ShiftStatus } from '@prisma/client';
 
 /**
  * シフト更新DTO

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import {
   Container,
   Title,
@@ -18,6 +18,7 @@ import {
   Badge,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import {
   IconPaw,
   IconHeart,
@@ -28,10 +29,11 @@ import {
   IconChevronRight,
   IconAlertCircle,
 } from '@tabler/icons-react';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
-import { notifications } from '@mantine/notifications';
+import { useRouter } from 'next/navigation';
+
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/store';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 // 猫のデータ型
 interface Cat {

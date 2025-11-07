@@ -1,5 +1,6 @@
-import { Title, TitleProps } from '@mantine/core';
 import { ReactNode } from 'react';
+
+import { Title, TitleProps } from '@mantine/core';
 
 /**
  * セクション用タイトル（ページ内階層）

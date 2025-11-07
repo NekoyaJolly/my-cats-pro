@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+
 import {
   Container,
   Text,
@@ -18,13 +18,15 @@ import {
   Alert,
   Table,
 } from '@mantine/core';
-import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
-import { useGetCats, useGetCatStatistics, useUpdateCat, useDeleteCat, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+
 import { CatQuickEditModal } from '@/components/cats/cat-quick-edit-modal';
 import { ContextMenuProvider, OperationModalManager, useContextMenu } from '@/components/context-menu';
 import { GenderBadge } from '@/components/GenderBadge';
+import { useGetCats, useGetCatStatistics, useUpdateCat, useDeleteCat, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');

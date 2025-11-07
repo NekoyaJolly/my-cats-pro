@@ -1,9 +1,10 @@
 'use client'
 
 import { MantineProvider, type MantineColorsTuple, type MantineThemeOverride } from '@mantine/core'
-import { useBootstrapAuth } from '@/lib/auth/useBootstrapAuth'
-import { QueryClientProvider } from '@/lib/api/query-client'
 import { Notifications } from '@mantine/notifications'
+
+import { QueryClientProvider } from '@/lib/api/query-client'
+import { useBootstrapAuth } from '@/lib/auth/useBootstrapAuth'
 import { PageHeaderProvider } from '@/lib/contexts/page-header-context'
 import '@mantine/notifications/styles.css'
 

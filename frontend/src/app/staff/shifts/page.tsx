@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin, { Draggable, EventReceiveArg } from '@fullcalendar/interaction';
+import FullCalendar from '@fullcalendar/react';
 import {
   Container,
   Title,
@@ -24,6 +27,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import {
   IconPlus,
   IconUser,
@@ -34,13 +38,10 @@ import {
   IconX,
   IconAlertCircle,
 } from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin, { Draggable, EventReceiveArg } from '@fullcalendar/interaction';
-import type { EventDropArg, EventClickArg } from '@fullcalendar/core';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { useRouter } from 'next/navigation';
+
 import { apiClient, ApiError } from '@/lib/api/typesafe-client';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 import type {
   StaffResponseDto,
   CreateStaffRequest,
@@ -48,6 +49,9 @@ import type {
   ShiftResponseDto,
   CalendarShiftEvent,
 } from '@/types/api.types';
+
+import type { EventDropArg, EventClickArg } from '@fullcalendar/core';
+
 
 export default function StaffShiftsPage() {
   const calendarRef = useRef<FullCalendar>(null);

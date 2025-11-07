@@ -51,7 +51,7 @@ export class BreedsController {
     status: HttpStatus.FORBIDDEN,
     description: "管理者権限が必要です",
   })
-  create(@Body() createBreedDto: CreateBreedDto) {
+  async create(@Body() createBreedDto: CreateBreedDto) {
     return this.breedsService.create(createBreedDto);
   }
 
@@ -83,14 +83,14 @@ export class BreedsController {
     description: "ソート順",
     example: "asc",
   })
-  findAll(@Query() query: BreedQueryDto) {
+  async findAll(@Query() query: BreedQueryDto) {
     return this.breedsService.findAll(query);
   }
 
   @Get("statistics")
   @ApiOperation({ summary: "品種データの統計情報を取得" })
   @ApiResponse({ status: HttpStatus.OK, description: "統計情報" })
-  getStatistics() {
+  async getStatistics() {
     return this.breedsService.getStatistics();
   }
 
@@ -102,7 +102,7 @@ export class BreedsController {
     description: "品種データが見つかりません",
   })
   @ApiParam({ name: "id", description: "品種データのID" })
-  findOne(@Param("id") id: string) {
+  async findOne(@Param("id") id: string) {
     return this.breedsService.findOne(id);
   }
 
@@ -127,7 +127,7 @@ export class BreedsController {
     description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "品種データのID" })
-  update(@Param("id") id: string, @Body() updateBreedDto: UpdateBreedDto) {
+  async update(@Param("id") id: string, @Body() updateBreedDto: UpdateBreedDto) {
     return this.breedsService.update(id, updateBreedDto);
   }
 
@@ -148,7 +148,7 @@ export class BreedsController {
     description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "品種データのID" })
-  remove(@Param("id") id: string) {
+  async remove(@Param("id") id: string) {
     return this.breedsService.remove(id);
   }
 }

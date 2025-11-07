@@ -2,8 +2,9 @@
  * ケアスケジュールAPIフック
  */
 
-import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
+
 import {
   apiClient,
   type ApiPathParams,
@@ -11,6 +12,7 @@ import {
   type ApiRequestBody,
   type ApiSuccessData,
 } from '../client';
+
 import { createDomainQueryKeys } from './query-key-factory';
 
 export type CareType =
@@ -143,7 +145,7 @@ export function useAddCareSchedule() {
         throw new Error('ケアスケジュールの登録に失敗しました。レスポンスが不正です。');
       }
 
-      return response.data as CareScheduleResponse;
+      return response.data;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ 

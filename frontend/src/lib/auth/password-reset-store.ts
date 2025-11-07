@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import { apiClient, type ApiRequestBody, type ApiSuccessData } from '../api/client';
 
 export type PasswordResetStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -71,7 +72,7 @@ export const usePasswordResetStore = create<PasswordResetState>((set) => ({
         throw new Error(response.error || response.message || 'リクエストに失敗しました');
       }
 
-      const devToken = extractDevToken(response.data as RequestResetResponse);
+      const devToken = extractDevToken(response.data);
 
       if (devToken && process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
         console.info('🔑 Password reset token:', devToken);

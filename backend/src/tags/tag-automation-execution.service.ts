@@ -1,6 +1,7 @@
+import type { Prisma } from "@prisma/client";
+
 import { Injectable, Logger } from "@nestjs/common";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
-import type { Prisma } from "@prisma/client";
 import {
   TagAutomationEventType,
   TagAutomationRunStatus,
@@ -199,28 +200,28 @@ export class TagAutomationExecutionService {
         break;
 
       case 'PREGNANCY_CONFIRMED':
-        catIds.push((event as PregnancyConfirmedEvent).femaleId);
-        if ((event as PregnancyConfirmedEvent).maleId) {
-          catIds.push((event as PregnancyConfirmedEvent).maleId!);
+        catIds.push((event).femaleId);
+        if ((event).maleId) {
+          catIds.push((event).maleId);
         }
         break;
 
       case 'KITTEN_REGISTERED':
-        catIds.push((event as KittenRegisteredEvent).kittenId);
-        if ((event as KittenRegisteredEvent).motherId) {
-          catIds.push((event as KittenRegisteredEvent).motherId!);
+        catIds.push((event).kittenId);
+        if ((event).motherId) {
+          catIds.push((event).motherId);
         }
-        if ((event as KittenRegisteredEvent).fatherId) {
-          catIds.push((event as KittenRegisteredEvent).fatherId!);
+        if ((event).fatherId) {
+          catIds.push((event).fatherId);
         }
         break;
 
       case 'AGE_THRESHOLD':
-        catIds.push((event as AgeThresholdEvent).catId);
+        catIds.push((event).catId);
         break;
 
       case 'CUSTOM':
-        catIds.push((event as CustomEvent).targetId);
+        catIds.push((event).targetId);
         break;
     }
 

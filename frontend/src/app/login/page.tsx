@@ -5,7 +5,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+
 import {
   Container,
   Paper,
@@ -22,6 +22,8 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+
 import { useAuth } from '@/lib/auth/store';
 
 interface LoginFormValues {

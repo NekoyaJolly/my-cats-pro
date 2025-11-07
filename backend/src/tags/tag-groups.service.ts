@@ -68,7 +68,7 @@ export class TagGroupsService {
     }
 
     await this.prisma.$transaction(
-      items.map(({ id, displayOrder, categoryId }) =>
+      items.map(async ({ id, displayOrder, categoryId }) =>
         this.prisma.tagGroup.update({
           where: { id },
           data: {

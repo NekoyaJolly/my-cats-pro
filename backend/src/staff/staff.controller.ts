@@ -9,11 +9,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { StaffService } from './staff.service';
-import { CreateStaffDto } from './dto/create-staff.dto';
-import { UpdateStaffDto } from './dto/update-staff.dto';
+
 import { ApiResponse } from '../common/dto/api-response.dto';
 import { StaffResponseDto, StaffListResponseDto } from '../common/types/staff.types';
+
+import { CreateStaffDto } from './dto/create-staff.dto';
+import { UpdateStaffDto } from './dto/update-staff.dto';
+import { StaffService } from './staff.service';
 
 @Controller('staff')
 export class StaffController {

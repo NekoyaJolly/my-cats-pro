@@ -21,14 +21,14 @@ export class ApiResponse<T> {
   /**
    * エラー詳細（失敗時、開発用）
    */
-  details?: any;
+  details?: unknown;
 
   /**
    * タイムスタンプ
    */
   timestamp: string;
 
-  constructor(success: boolean, data?: T, error?: string, details?: any) {
+  constructor(success: boolean, data?: T, error?: string, details?: unknown) {
     this.success = success;
     this.data = data;
     this.error = error;
@@ -46,8 +46,8 @@ export class ApiResponse<T> {
   /**
    * エラーレスポンスを生成
    */
-  static error<T>(error: string, details?: any): ApiResponse<T> {
-    return new ApiResponse(false, undefined, error, details);
+  static error<T>(error: string, details?: unknown): ApiResponse<T> {
+    return new ApiResponse<T>(false, undefined, error, details);
   }
 }
 

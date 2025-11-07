@@ -3,10 +3,12 @@
  * Next.js + React + TypeScript 用フラット設定
  * 
  * 設定方針:
- * - 開発効率を重視し、警告レベルでの運用
- * - TypeScript型安全性は段階的改善
+ * - 本番品質を意識した厳格な型安全性チェック
+ * - 開発段階から型エラーを徹底的に検出
  * - Next.js/React のベストプラクティスに準拠
- * - Import順序は簡素化してメンテナンス性重視
+ * - セキュリティとパフォーマンスを重視
+ * 
+ * 厳格化レベル: ★★★☆☆ (Production-Ready)
  */
 
 import js from '@eslint/js';
@@ -39,39 +41,63 @@ const eslintConfig = [
       }
     },
     rules: {
-      // === TypeScript Rules ===
-      // 開発段階では警告レベルで運用、段階的にerrorに移行
-      '@typescript-eslint/no-unused-vars': ['warn', { 
+      // === TypeScript Rules (厳格化) ===
+      '@typescript-eslint/no-unused-vars': ['error', { 
         argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
+        varsIgnorePattern: '^_',
+        caughtErrors: 'all',
+        caughtErrorsIgnorePattern: '^_',
       }],
-      '@typescript-eslint/no-explicit-any': 'error', // TODO: 長期的にerrorに
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+      '@typescript-eslint/prefer-optional-chain': 'warn',
+      '@typescript-eslint/strict-boolean-expressions': 'off', // 厳しすぎるため無効
       '@typescript-eslint/triple-slash-reference': 'off', // Next.js generated files
       
-      // === Import/Export Rules ===
-      // 警告削減のため順序チェックは一旦無効化（将来Re-enable検討）
-      'import-x/order': 'off',
+      // === Import/Export Rules (厳格化) ===
+      'import-x/order': ['error', {
+        'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'type'],
+        'newlines-between': 'always',
+        'alphabetize': { 'order': 'asc', 'caseInsensitive': true },
+        'pathGroups': [
+          { 'pattern': '@/**', 'group': 'internal' },
+          { 'pattern': 'react', 'group': 'external', 'position': 'before' }
+        ],
+        'pathGroupsExcludedImportTypes': ['react']
+      }],
       'import-x/no-duplicates': 'error',
-      'import-x/no-unresolved': 'off', // TypeScriptで解決するため無効化
-      'import-x/no-unused-modules': 'off', // 開発段階では無効化
+      'import-x/no-unresolved': 'off', // TypeScriptで解決
+      'import-x/no-unused-modules': 'off',
+      'import-x/first': 'error',
+      'import-x/newline-after-import': 'error',
+      'import-x/no-default-export': 'off', // Next.jsではdefault exportが必要
       
-      // === React/Next.js Rules ===
+      // === React/Next.js Rules (厳格化) ===
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-      '@next/next/no-img-element': 'off', // Next.js Image component推奨だが強制しない
+      'react-hooks/exhaustive-deps': 'error',
+      '@next/next/no-img-element': 'warn',
       '@next/next/no-html-link-for-pages': 'error',
-      '@next/next/no-page-custom-font': 'warn',
-      '@next/next/no-unwanted-polyfillio': 'warn',
+      '@next/next/no-page-custom-font': 'error',
+      '@next/next/no-unwanted-polyfillio': 'error',
       
-      // === 一般的なJavaScript Rules ===
-      // 開発効率優先でconsoleは許可（本番ビルド時に見直し）
-      'no-console': 'off',
-      'no-debugger': 'warn',
+      // === 一般的なJavaScript Rules (本番意識) ===
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-debugger': 'error',
+      'no-alert': 'error',
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'prefer-arrow-callback': 'warn',
+      'no-throw-literal': 'error',
+      'eqeqeq': ['error', 'always', { null: 'ignore' }],
     },
     settings: {
       next: {
@@ -132,17 +158,24 @@ const eslintConfig = [
     }
   },
 
-  // === UIファイルの段階的緩和（app/components）===
+  // === 旧ファイル専用の緩和ルール（段階的移行用）===
   {
-    name: 'frontend-ui-relax-rules',
-    files: ['src/app/**/*.tsx', 'src/components/**/*.tsx'],
+    name: 'frontend-legacy-files',
+    files: [
+      'src/app/breeding/**/*.tsx',
+      'src/app/cats/**/*.tsx',
+      'src/app/pedigrees/**/*.tsx',
+      'src/app/tags/**/*.tsx',
+    ],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
+      // レガシーファイルは段階的に改善
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-floating-promises': 'warn',
     }
   },
   
@@ -156,12 +189,15 @@ const eslintConfig = [
       "node_modules/**",
       "coverage/**",
       "next-env.d.ts",
+      "**/*-old.tsx",
+      "**/*-old.ts",
       "**/*_old.tsx",
+      "**/*_old.ts",
       "**/*page_old.tsx", 
       "**/*page_new.tsx",
-      "**/*_old.ts",
       "*.config.js",
       "*.config.mjs",
+      "*.config.ts",
       "src/lib/api/generated/**"
     ]
   }

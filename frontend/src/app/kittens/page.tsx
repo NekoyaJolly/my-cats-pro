@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import {
   Box,
   Tabs,
@@ -29,15 +30,18 @@ import {
   IconCalendar,
   IconPaw,
 } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+
+import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
+import { GenderBadge } from '@/components/GenderBadge';
+import TagSelector, { TagDisplay } from '@/components/TagSelector';
+import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
 import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care';
 import { useGetCats, useDeleteCat, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
-import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
-import TagSelector, { TagDisplay } from '@/components/TagSelector';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
-import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
-import { useRouter } from 'next/navigation';
-import { GenderBadge } from '@/components/GenderBadge';
+
+
 
 // サンプルデータ型定義
 interface Kitten {

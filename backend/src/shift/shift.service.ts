@@ -1,14 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateShiftDto } from './dto/create-shift.dto';
-import { UpdateShiftDto } from './dto/update-shift.dto';
-import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
+import { Shift, Staff } from '@prisma/client';
+
 import {
   ShiftResponseDto,
   CalendarShiftEvent,
   ShiftEntity,
 } from '../common/types/shift.types';
-import { Shift, Staff } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { CreateShiftDto } from './dto/create-shift.dto';
+import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
+import { UpdateShiftDto } from './dto/update-shift.dto';
 
 @Injectable()
 export class ShiftService {
@@ -110,7 +112,16 @@ export class ShiftService {
    * シフト一覧を取得
    */
   async findAll(query: GetShiftsQueryDto): Promise<ShiftResponseDto[]> {
-    const where: any = {};
+    // 型安全な where 条件の構築
+    interface WhereCondition {
+      shiftDate?: {
+        gte?: Date;
+        lte?: Date;
+      };
+      staffId?: string;
+    }
+
+    const where: WhereCondition = {};
 
     // 日付範囲でフィルタ
     if (query.startDate && query.endDate) {
@@ -199,33 +210,19 @@ export class ShiftService {
         where: { id: updateShiftDto.staffId },
       });
 
-      if (!staff || !staff.isActive) {
+      if (!staff?.isActive) {
         throw new BadRequestException(`Staff with ID ${updateShiftDto.staffId} is not available`);
       }
     }
 
-    // 更新データを構築
-    const updateData: any = {};
-
-    if (updateShiftDto.staffId !== undefined) {
-      updateData.staffId = updateShiftDto.staffId;
-    }
-
-    if (updateShiftDto.shiftDate !== undefined) {
-      updateData.shiftDate = this.parseDate(updateShiftDto.shiftDate);
-    }
-
-    if (updateShiftDto.displayName !== undefined) {
-      updateData.displayName = updateShiftDto.displayName;
-    }
-
-    if (updateShiftDto.notes !== undefined) {
-      updateData.notes = updateShiftDto.notes;
-    }
-
-    if (updateShiftDto.status !== undefined) {
-      updateData.status = updateShiftDto.status;
-    }
+    // 更新データを構築（Prismaの型推論を利用）
+    const updateData = {
+      ...(updateShiftDto.staffId !== undefined && { staffId: updateShiftDto.staffId }),
+      ...(updateShiftDto.shiftDate !== undefined && { shiftDate: this.parseDate(updateShiftDto.shiftDate) }),
+      ...(updateShiftDto.displayName !== undefined && { displayName: updateShiftDto.displayName }),
+      ...(updateShiftDto.notes !== undefined && { notes: updateShiftDto.notes }),
+      ...(updateShiftDto.status !== undefined && { status: updateShiftDto.status }),
+    };
 
     // シフトを更新
     const shift = await this.prisma.shift.update({

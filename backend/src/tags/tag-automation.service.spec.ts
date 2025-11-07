@@ -59,7 +59,7 @@ describe("TagAutomationService", () => {
         upsert: jest.fn(),
         deleteMany: jest.fn(),
       },
-      $transaction: jest.fn((operations: Array<Promise<unknown>>) => Promise.all(operations)),
+      $transaction: jest.fn(async (operations: Array<Promise<unknown>>) => Promise.all(operations)),
     };
 
     service = new TagAutomationService(prismaMock as unknown as PrismaService);

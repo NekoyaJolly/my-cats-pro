@@ -3,7 +3,9 @@
  */
 
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+
 import { apiClient, type ApiQueryParams, type ApiResponse } from '../client';
+
 import { createDomainQueryKeys } from './query-key-factory';
 
 /**

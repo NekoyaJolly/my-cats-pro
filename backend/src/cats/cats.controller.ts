@@ -47,7 +47,7 @@ export class CatsController {
     status: HttpStatus.BAD_REQUEST,
     description: "無効なデータです",
   })
-  create(@Body() createCatDto: CreateCatDto) {
+  async create(@Body() createCatDto: CreateCatDto) {
     this.logger.log({
       message: 'Creating new cat',
       catName: createCatDto.name,
@@ -92,14 +92,14 @@ export class CatsController {
     description: "ソート順",
     example: "desc",
   })
-  findAll(@Query() query: CatQueryDto) {
+  async findAll(@Query() query: CatQueryDto) {
     return this.catsService.findAll(query);
   }
 
   @Get("statistics")
   @ApiOperation({ summary: "猫データの統計情報を取得" })
   @ApiResponse({ status: HttpStatus.OK, description: "統計情報" })
-  getStatistics() {
+  async getStatistics() {
     return this.catsService.getStatistics();
   }
 
@@ -111,7 +111,7 @@ export class CatsController {
     description: "猫データが見つかりません",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  findOne(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
+  async findOne(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     return this.catsService.findOne(id);
   }
 
@@ -123,7 +123,7 @@ export class CatsController {
     description: "猫データが見つかりません",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  getBreedingHistory(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
+  async getBreedingHistory(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     return this.catsService.getBreedingHistory(id);
   }
 
@@ -135,7 +135,7 @@ export class CatsController {
     description: "猫データが見つかりません",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  getCareHistory(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
+  async getCareHistory(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     return this.catsService.getCareHistory(id);
   }
 
@@ -154,7 +154,7 @@ export class CatsController {
     description: "無効なデータです",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  update(
+  async update(
     @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() updateCatDto: UpdateCatDto,
   ) {
@@ -178,7 +178,7 @@ export class CatsController {
     description: "猫データが見つかりません",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  remove(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
+  async remove(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     this.logger.warn({
       message: 'Deleting cat',
       catId: id,

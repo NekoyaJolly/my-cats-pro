@@ -1,8 +1,3 @@
-function toUserRole(val: string): RequestUser["role"] {
-  if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
-  return "USER";
-}
-
 import {
   Body,
   Controller,
@@ -28,7 +23,6 @@ import { RateLimiterService } from "../common/services/rate-limiter.service";
 
 import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_MAX_AGE_MS, REFRESH_COOKIE_SAMESITE, isSecureEnv } from './auth.constants';
 import { AuthService } from "./auth.service";
-import type { RequestUser } from "./auth.types";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
@@ -36,6 +30,13 @@ import { RequestPasswordResetDto } from "./dto/request-password-reset.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { GetUser } from "./get-user.decorator";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+
+import type { RequestUser } from "./auth.types";
+
+function toUserRole(val: string): RequestUser["role"] {
+  if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
+  return "USER";
+}
 
 @ApiTags("Auth")
 @Controller("auth")
@@ -123,7 +124,7 @@ export class AuthController {
   @Post("set-password")
   @ApiOperation({ summary: "パスワード設定/変更（要JWT）" })
   @ApiResponse({ status: HttpStatus.OK })
-  setPassword(@GetUser() user: RequestUser | undefined, @Body() dto: LoginDto) {
+  async setPassword(@GetUser() user: RequestUser | undefined, @Body() dto: LoginDto) {
     return this.auth.setPassword(user.userId, dto.password);
   }
 
@@ -132,7 +133,7 @@ export class AuthController {
   @Post("change-password")
   @ApiOperation({ summary: "パスワード変更（現在のパスワード確認必要）" })
   @ApiResponse({ status: HttpStatus.OK })
-  changePassword(
+  async changePassword(
     @GetUser() user: RequestUser | undefined,
     @Body() dto: ChangePasswordDto,
   ) {
@@ -147,7 +148,7 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({ summary: "パスワードリセット要求" })
   @ApiResponse({ status: HttpStatus.OK, description: 'リセット手順をメールで送信' })
-  requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+  async requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
     return this.auth.requestPasswordReset(dto.email);
   }
 
@@ -156,7 +157,7 @@ export class AuthController {
   @ApiOperation({ summary: "パスワードリセット実行" })
   @ApiResponse({ status: HttpStatus.OK, description: 'パスワードがリセットされました' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '無効または期限切れのトークン' })
-  resetPassword(@Body() dto: ResetPasswordDto) {
+  async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.auth.resetPassword(dto.token, dto.newPassword);
   }
 
@@ -190,7 +191,7 @@ export class AuthController {
   @Post("logout")
   @ApiOperation({ summary: "ログアウト（リフレッシュトークン削除）" })
   @ApiResponse({ status: HttpStatus.OK })
-  logout(@GetUser() user: RequestUser | undefined, @Res({ passthrough: true }) res: Response) {
+  async logout(@GetUser() user: RequestUser | undefined, @Res({ passthrough: true }) res: Response) {
     // Cookie 無効化
     res.cookie(REFRESH_COOKIE_NAME, '', { httpOnly: true, secure: isSecureEnv(), sameSite: REFRESH_COOKIE_SAMESITE, path: '/', maxAge: 0 });
     return this.auth.logout(user.userId);

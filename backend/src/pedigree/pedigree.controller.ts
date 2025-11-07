@@ -49,7 +49,7 @@ export class PedigreeController {
     status: HttpStatus.FORBIDDEN,
     description: "管理者権限が必要です",
   })
-  create(@Body() createPedigreeDto: CreatePedigreeDto) {
+  async create(@Body() createPedigreeDto: CreatePedigreeDto) {
     return this.pedigreeService.create(createPedigreeDto);
   }
 
@@ -88,7 +88,7 @@ export class PedigreeController {
     description: "ソート順",
     example: "desc",
   })
-  findAll(@Query() query: PedigreeQueryDto) {
+  async findAll(@Query() query: PedigreeQueryDto) {
     return this.pedigreeService.findAll(query);
   }
 
@@ -100,7 +100,7 @@ export class PedigreeController {
     description: "血統書データが見つかりません",
   })
   @ApiParam({ name: "pedigreeId", description: "血統書番号" })
-  findByPedigreeId(@Param("pedigreeId") pedigreeId: string) {
+  async findByPedigreeId(@Param("pedigreeId") pedigreeId: string) {
     return this.pedigreeService.findByPedigreeId(pedigreeId);
   }
 
@@ -112,7 +112,7 @@ export class PedigreeController {
     description: "血統書データが見つかりません",
   })
   @ApiParam({ name: "id", description: "血統書データのID" })
-  findOne(@Param("id") id: string) {
+  async findOne(@Param("id") id: string) {
     return this.pedigreeService.findOne(id);
   }
 
@@ -124,7 +124,7 @@ export class PedigreeController {
     description: "血統書データが見つかりません",
   })
   @ApiParam({ name: "id", description: "血統書データのID" })
-  getFamilyTree(@Param("id") id: string) {
+  async getFamilyTree(@Param("id") id: string) {
     return this.pedigreeService.getFamilyTree(id);
   }
 
@@ -142,7 +142,7 @@ export class PedigreeController {
     description: "取得する世代数",
     example: 3,
   })
-  getFamily(
+  async getFamily(
     @Param("id") id: string,
     @Query("generations") generations?: number,
   ) {
@@ -157,7 +157,7 @@ export class PedigreeController {
     description: "血統書データが見つかりません",
   })
   @ApiParam({ name: "id", description: "血統書データのID" })
-  getDescendants(@Param("id") id: string) {
+  async getDescendants(@Param("id") id: string) {
     return this.pedigreeService.getDescendants(id);
   }
 
@@ -182,7 +182,7 @@ export class PedigreeController {
     description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "血統書データのID" })
-  update(
+  async update(
     @Param("id") id: string,
     @Body() updatePedigreeDto: UpdatePedigreeDto,
   ) {
@@ -206,7 +206,7 @@ export class PedigreeController {
     description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "血統書データのID" })
-  remove(@Param("id") id: string) {
+  async remove(@Param("id") id: string) {
     return this.pedigreeService.remove(id);
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
+
 import { Modal, Button, Group, Text, Stack } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 

@@ -19,6 +19,7 @@ import {
   CreateMedicalRecordDto,
   MedicalRecordQueryDto,
 } from "./dto";
+
 import type {
   CareScheduleListResponse,
   CareScheduleMeta,
@@ -241,7 +242,7 @@ export class CareService {
             scheduleType: ScheduleType.CARE,
             scheduleDate: followUpDate,
             timezone: existing.timezone ?? undefined,
-            careType: (existing.careType as CareType | null) ?? null,
+            careType: (existing.careType) ?? null,
             status: ScheduleStatus.PENDING,
             priority: existing.priority ?? Priority.MEDIUM,
             recurrenceRule: existing.recurrenceRule ?? undefined,
@@ -260,7 +261,7 @@ export class CareService {
       const careRecord = await tx.careRecord.create({
         data: {
           catId: existing.catId ?? undefined,
-          careType: (existing.careType as CareType | null) ?? CareType.OTHER,
+          careType: (existing.careType) ?? CareType.OTHER,
           description: existing.name,
           careDate: completedDate,
           nextDueDate: followUpDate,
@@ -505,12 +506,12 @@ export class CareService {
       name: schedule.name ?? schedule.title,
       title: schedule.title,
       description: schedule.description ?? null,
-      scheduleDate: toIsoString(schedule.scheduleDate)!,
+      scheduleDate: toIsoString(schedule.scheduleDate),
       endDate: toIsoString(schedule.endDate),
       timezone: schedule.timezone ?? null,
       scheduleType: schedule.scheduleType,
       status: schedule.status,
-      careType: (schedule.careType as CareType | null) ?? null,
+      careType: (schedule.careType) ?? null,
       priority: schedule.priority ?? Priority.MEDIUM,
       recurrenceRule: schedule.recurrenceRule ?? null,
       assignedTo: schedule.assignedTo,
@@ -523,8 +524,8 @@ export class CareService {
         : [],
       reminders,
       tags,
-      createdAt: toIsoString(schedule.createdAt)!,
-      updatedAt: toIsoString(schedule.updatedAt)!,
+      createdAt: toIsoString(schedule.createdAt),
+      updatedAt: toIsoString(schedule.updatedAt),
     };
   }
 
@@ -555,8 +556,8 @@ export class CareService {
 
     return {
       id: record.id,
-      visitDate: toIsoString(record.visitDate)!,
-      visitType: (record.visitType as MedicalVisitType | null) ?? null,
+      visitDate: toIsoString(record.visitDate),
+      visitType: (record.visitType) ?? null,
       clinicName: record.clinicName ?? null,
       veterinarianName: record.veterinarianName ?? null,
       symptomSummary: record.symptomSummary ?? null,
@@ -575,8 +576,8 @@ export class CareService {
       tags,
       attachments,
       recordedBy: record.recordedBy,
-      createdAt: toIsoString(record.createdAt)!,
-      updatedAt: toIsoString(record.updatedAt)!,
+      createdAt: toIsoString(record.createdAt),
+      updatedAt: toIsoString(record.updatedAt),
     };
   }
 

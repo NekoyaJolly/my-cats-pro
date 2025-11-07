@@ -47,15 +47,15 @@ describe('AuthService', () => {
         {
           provide: PasswordService,
           useValue: {
-            hash: jest.fn(() => Promise.resolve('hashed-password')),
-            verify: jest.fn(() => Promise.resolve(true)),
+            hash: jest.fn(async () => Promise.resolve('hashed-password')),
+            verify: jest.fn(async () => Promise.resolve(true)),
           },
         },
         {
           provide: LoginAttemptService,
           useValue: {
-            checkAndRecordAttempt: jest.fn(() => Promise.resolve({ allowed: true })),
-            clearFailedAttempts: jest.fn(() => Promise.resolve()),
+            checkAndRecordAttempt: jest.fn(async () => Promise.resolve({ allowed: true })),
+            clearFailedAttempts: jest.fn(async () => Promise.resolve()),
           },
         },
       ],

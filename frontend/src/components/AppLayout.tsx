@@ -1,5 +1,7 @@
 'use client';
 
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import {
   AppShell,
   Avatar,
@@ -17,9 +19,9 @@ import {
   Button,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { notifications } from '@mantine/notifications';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import '@/styles/page-header.css';
 import {
   IconPaw,
@@ -33,12 +35,12 @@ import {
   IconCalendarEvent,
   IconCalendarTime,
 } from '@tabler/icons-react';
-import { useAuth } from '@/lib/auth/store';
-import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
-import { notifications } from '@mantine/notifications';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
+
 import { ContextMenuManager } from '@/components/context-menu';
 import { apiClient } from '@/lib/api/client';
+import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
+import { useAuth } from '@/lib/auth/store';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 const navigationItems = [
   {

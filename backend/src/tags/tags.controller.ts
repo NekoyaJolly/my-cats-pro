@@ -40,7 +40,7 @@ export class TagsController {
     description: "非アクティブなタグを含めるか",
     type: Boolean,
   })
-  findAll(
+  async findAll(
     @Query("scope") scope?: string | string[],
     @Query("includeInactive") includeInactive?: string,
   ) {
@@ -54,7 +54,7 @@ export class TagsController {
   @Post()
   @ApiOperation({ summary: "タグの作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  create(@Body() dto: CreateTagDto) {
+  async create(@Body() dto: CreateTagDto) {
     return this.tagsService.create(dto);
   }
 
@@ -63,7 +63,7 @@ export class TagsController {
   @Patch("reorder")
   @ApiOperation({ summary: "タグの並び替え" })
   @ApiResponse({ status: HttpStatus.OK })
-  reorder(@Body() dto: ReorderTagsDto) {
+  async reorder(@Body() dto: ReorderTagsDto) {
     return this.tagsService.reorder(dto.items);
   }
 
@@ -73,7 +73,7 @@ export class TagsController {
   @ApiOperation({ summary: "タグの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  update(@Param("id") id: string, @Body() dto: UpdateTagDto) {
+  async update(@Param("id") id: string, @Body() dto: UpdateTagDto) {
     return this.tagsService.update(id, dto);
   }
 
@@ -83,7 +83,7 @@ export class TagsController {
   @ApiOperation({ summary: "タグの削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  remove(@Param("id") id: string) {
+  async remove(@Param("id") id: string) {
     return this.tagsService.remove(id);
   }
 
@@ -94,7 +94,7 @@ export class TagsController {
   @ApiResponse({ status: HttpStatus.OK, description: "付与成功（重複時もOK）" })
   @ApiParam({ name: "id" })
   @HttpCode(HttpStatus.OK)
-  assign(@Param("id") catId: string, @Body() dto: AssignTagDto) {
+  async assign(@Param("id") catId: string, @Body() dto: AssignTagDto) {
     return this.tagsService.assignToCat(catId, dto.tagId);
   }
 
@@ -105,7 +105,7 @@ export class TagsController {
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
   @ApiParam({ name: "tagId" })
-  unassign(@Param("id") catId: string, @Param("tagId") tagId: string) {
+  async unassign(@Param("id") catId: string, @Param("tagId") tagId: string) {
     return this.tagsService.unassignFromCat(catId, tagId);
   }
 }

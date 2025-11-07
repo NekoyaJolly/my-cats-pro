@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import { apiClient, clearTokens, setTokens } from '../api/client';
 
 export interface AuthUser {
@@ -125,7 +126,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       }
 
       const payload = extractAuthPayload(response.data);
-      if (!payload || !payload.user) {
+      if (!payload?.user) {
         throw new Error('ログインレスポンスの形式が正しくありません');
       }
 

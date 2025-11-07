@@ -68,11 +68,11 @@ export function validateProductionEnvironment(): ProductionConfig {
   }
 
   return {
-    DATABASE_URL: requiredVars.DATABASE_URL!,
-    JWT_SECRET: requiredVars.JWT_SECRET!,
-    NODE_ENV: requiredVars.NODE_ENV!,
-    PORT: Number(requiredVars.PORT!),
-    CORS_ORIGIN: requiredVars.CORS_ORIGIN!,
+    DATABASE_URL: requiredVars.DATABASE_URL,
+    JWT_SECRET: requiredVars.JWT_SECRET,
+    NODE_ENV: requiredVars.NODE_ENV,
+    PORT: Number(requiredVars.PORT),
+    CORS_ORIGIN: requiredVars.CORS_ORIGIN,
   };
 }
 

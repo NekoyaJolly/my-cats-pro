@@ -18,7 +18,6 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 
-import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
@@ -32,6 +31,8 @@ import {
   CreateCareScheduleDto,
 } from "./dto";
 
+import type { RequestUser } from "../auth/auth.types";
+
 @ApiTags("Care")
 @Controller("care")
 export class CareController {
@@ -40,7 +41,7 @@ export class CareController {
   @Get("schedules")
   @ApiOperation({ summary: "ケアスケジュール一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK, type: CareScheduleListResponseDto })
-  findSchedules(@Query() query: CareQueryDto) {
+  async findSchedules(@Query() query: CareQueryDto) {
     return this.careService.findSchedules(query);
   }
 
@@ -49,7 +50,7 @@ export class CareController {
   @Post("schedules")
   @ApiOperation({ summary: "ケアスケジュールの追加" })
   @ApiResponse({ status: HttpStatus.CREATED, type: CareScheduleResponseDto })
-  addSchedule(
+  async addSchedule(
     @Body() dto: CreateCareScheduleDto,
     @GetUser() user?: RequestUser,
   ) {
@@ -63,7 +64,7 @@ export class CareController {
   @ApiOperation({ summary: "ケア完了処理（PATCH/PUT対応）" })
   @ApiResponse({ status: HttpStatus.OK, type: CareCompleteResponseDto })
   @ApiParam({ name: "id" })
-  complete(
+  async complete(
     @Param("id") id: string,
     @Body() dto: CompleteCareDto,
     @GetUser() user?: RequestUser,
@@ -77,7 +78,7 @@ export class CareController {
   @ApiOperation({ summary: "ケアスケジュールの更新" })
   @ApiResponse({ status: HttpStatus.OK, type: CareScheduleResponseDto })
   @ApiParam({ name: "id", description: "スケジュールID" })
-  updateSchedule(
+  async updateSchedule(
     @Param("id") id: string,
     @Body() dto: CreateCareScheduleDto,
     @GetUser() user?: RequestUser,
@@ -91,7 +92,7 @@ export class CareController {
   @ApiOperation({ summary: "ケアスケジュールの削除" })
   @ApiResponse({ status: HttpStatus.OK, description: "削除成功" })
   @ApiParam({ name: "id", description: "スケジュールID" })
-  deleteSchedule(@Param("id") id: string) {
+  async deleteSchedule(@Param("id") id: string) {
     return this.careService.deleteSchedule(id);
   }
 }

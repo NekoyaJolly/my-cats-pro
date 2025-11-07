@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, ChangeEvent, useRef } from 'react';
+
 import {
   Box,
   Container,
@@ -23,7 +24,6 @@ import {
   NumberInput,
   Radio,
 } from '@mantine/core';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { 
@@ -40,7 +40,6 @@ import {
 
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
 import { ContextMenuProvider, useContextMenu } from '@/components/context-menu';
-
 import {
   useGetBreedingNgRules,
   useCreateBreedingNgRule,
@@ -59,6 +58,7 @@ import {
   type BirthPlan,
 } from '@/lib/api/hooks/use-breeding';
 import { useGetCats, useCreateCat, type Cat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 // 型定義
 type NgRuleType = BreedingNgRuleType;

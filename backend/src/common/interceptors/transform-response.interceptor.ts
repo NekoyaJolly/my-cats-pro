@@ -32,7 +32,7 @@ export class TransformResponseInterceptor<T, M = undefined>
           if ('data' in obj && !('success' in obj)) {
             const payload: { success: true; data: T; meta?: M } = {
               success: true,
-              data: obj.data as T,
+              data: obj.data,
             };
             if ('meta' in obj) {
               payload.meta = obj.meta;

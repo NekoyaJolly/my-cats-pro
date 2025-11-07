@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Card,
   Container,
@@ -14,16 +15,17 @@ import {
   LoadingOverlay,
   Tabs,
 } from '@mantine/core';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
-import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
-import { useGetCoatColors } from '@/lib/api/hooks/use-coat-colors';
+
 import { ActionButton } from '@/components/ActionButton';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
 import TagSelector from '@/components/TagSelector';
+import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
+import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
+import { useGetCoatColors } from '@/lib/api/hooks/use-coat-colors';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 const optionalString = z
   .string()
@@ -312,7 +314,7 @@ export default function CatRegistrationPage() {
 
                 {createCat.isError && (
                   <Alert color="red" title="登録に失敗しました">
-                    {(createCat.error as Error)?.message ?? '時間をおいて再度お試しください。'}
+                    {(createCat.error)?.message ?? '時間をおいて再度お試しください。'}
                   </Alert>
                 )}
 

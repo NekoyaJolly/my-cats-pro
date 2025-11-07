@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import {
   Box,
   Button,
@@ -13,6 +12,7 @@ import {
   Grid,
 } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
 
 // ダミーデータ
 const pedigreeData = {
