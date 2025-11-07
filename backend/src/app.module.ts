@@ -20,11 +20,11 @@ import { HealthModule } from "./health/health.module";
 import { PedigreeModule } from "./pedigree/pedigree.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ScheduleModule } from "./schedule/schedule.module";
+import { ShiftModule } from './shift/shift.module';
+import { StaffModule } from './staff/staff.module';
 import { TagsModule } from "./tags/tags.module";
 import { UploadModule } from "./upload/upload.module";
 import { UsersModule } from "./users/users.module";
-import { StaffModule } from './staff/staff.module';
-import { ShiftModule } from './shift/shift.module';
 
 type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
