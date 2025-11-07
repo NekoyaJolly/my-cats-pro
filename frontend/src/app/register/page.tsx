@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -19,6 +19,7 @@ import {
   Box,
   Text,
   Anchor,
+  Loader,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
@@ -32,7 +33,7 @@ interface RegisterFormValues {
   confirmPassword: string;
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -281,5 +282,27 @@ export default function RegisterPage() {
         </Center>
       </Container>
     </Box>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <Box
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #eef2ff 0%, #e1f1ff 100%)',
+          }}
+        >
+          <Loader size="lg" />
+        </Box>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

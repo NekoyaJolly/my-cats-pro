@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Container, Paper, Title, Text, TextInput, Button, Alert, Group, Anchor, CopyButton, ActionIcon, Tooltip, Code } from '@mantine/core';
+import { useEffect, useMemo, useState, Suspense } from 'react';
+import { Container, Paper, Title, Text, TextInput, Button, Alert, Group, Anchor, CopyButton, ActionIcon, Tooltip, Code, Loader, Box } from '@mantine/core';
 import { IconMail, IconCheck, IconAlertCircle, IconCopy, IconCheck as IconCheckmark } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { usePasswordResetActions, usePasswordResetSelectors } from '@/lib/auth/password-reset-store';
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const searchParams = useSearchParams();
@@ -142,5 +142,26 @@ export default function ForgotPasswordPage() {
         </form>
       </Paper>
     </Container>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <Box
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Loader size="lg" />
+        </Box>
+      }
+    >
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }

@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -18,6 +18,7 @@ import {
   Center,
   Box,
   Text,
+  Loader,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
@@ -28,11 +29,17 @@ interface LoginFormValues {
   password: string;
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isAuthenticated, isLoading, error, clearError, initialized } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // クライアントサイドでのみマウント状態を設定
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const returnTo = searchParams?.get('returnTo') ?? null;
   const targetPath = useMemo(() => {
@@ -226,12 +233,37 @@ export default function LoginPage() {
                 </Stack>
               </form>
             </Paper>
-            <Text size="sm" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-              © 2025 MyCats. All rights reserved.
-            </Text>
+            {isMounted && (
+              <Text size="sm" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                © {new Date().getFullYear()} MyCats. All rights reserved.
+              </Text>
+            )}
           </Stack>
         </Center>
       </Container>
     </Box>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <Box
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #eef2ff 0%, #e1f1ff 100%)',
+          }}
+        >
+          <Loader size="lg" />
+        </Box>
+      }
+    >
+      <LoginForm />
+    </Suspense>
+  );
+}
+

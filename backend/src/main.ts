@@ -57,6 +57,7 @@ async function bootstrap() {
                 "http://localhost:3005",
                 "http://192.168.2.119:3000", // モバイル確認用（PCのIPアドレス）
                 /^http:\/\/192\.168\.\d+\.\d+:3000$/, // 同一ネットワーク内の全デバイス
+                /^http:\/\/100\.\d+\.\d+\.\d+:3000$/, // Tailscale経由のアクセス
               ],
         credentials: true,
       },

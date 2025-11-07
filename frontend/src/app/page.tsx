@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
@@ -16,8 +16,15 @@ import {
   ActionIcon,
   Modal,
   Checkbox,
+  Loader,
+  Center,
+  Alert,
 } from '@mantine/core';
-import { IconPlus, IconSettings, IconCalendarEvent, IconStethoscope, IconChevronDown } from '@tabler/icons-react';
+import { IconPlus, IconSettings, IconCalendarEvent, IconStethoscope, IconChevronDown, IconAlertCircle } from '@tabler/icons-react';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { notifications } from '@mantine/notifications';
+import { apiClient } from '@/lib/api/client';
+import { useAuth } from '@/lib/auth/store';
 
 // 猫のデータ型
 interface Cat {
@@ -192,8 +199,161 @@ const todayBreedingSchedules: BreedingSchedule[] = [
 
 export default function Home() {
   const [dashboardModalOpened, setDashboardModalOpened] = useState(false);
-  const [careSchedules, setCareSchedules] = useState<CareScheduleItem[]>(todayCareSchedules);
+  const [careSchedules, setCareSchedules] = useState<CareScheduleItem[]>([]);
+  const [cats, setCats] = useState<Cat[]>([]);
+  const [breedingSchedules, setBreedingSchedules] = useState<BreedingSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { setPageTitle } = usePageHeader();
+  const { isAuthenticated, initialized, accessToken } = useAuth();
+
+  // ページタイトルを設定
+  useEffect(() => {
+    setPageTitle('ホーム');
+    return () => setPageTitle(null);
+  }, [setPageTitle]);
+
+  // 認証チェック
+  useEffect(() => {
+    console.log('🔐 認証状態:', { isAuthenticated, initialized, hasToken: !!accessToken });
+    if (initialized && !isAuthenticated) {
+      console.warn('⚠️ 未認証です。ログインページにリダイレクトします');
+      router.push('/login');
+    }
+  }, [initialized, isAuthenticated, router, accessToken]);
+
+  // データ取得
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isAuthenticated || !initialized) {
+        console.log('⏳ 認証初期化を待機中...');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      
+      try {
+        console.log('📡 API呼び出し開始...');
+        
+        // 猫データを取得（apiClientを使用してJWTトークンを自動付与）
+        // limit=100で大量の猫データも取得できるようにする
+        const catsResponse = await apiClient.get('/cats', {
+          query: { limit: 100 } as any,
+        });
+        
+        console.log('🐱 猫データレスポンス:', catsResponse);
+        
+        if (!catsResponse.success) {
+          console.error('❌ 猫データ取得失敗:', catsResponse);
+          throw new Error(catsResponse.error || '猫データの取得に失敗しました');
+        }
+        
+        const fetchedCats = Array.isArray(catsResponse.data) ? catsResponse.data : [];
+        console.log(`✅ 猫データ取得成功: ${fetchedCats.length}件`);
+        
+        // デバッグ: 最初の猫のデータ構造を確認
+        if (fetchedCats.length > 0) {
+          console.log('📊 猫データサンプル:', fetchedCats[0]);
+          console.log('📊 性別分布:', {
+            オス: fetchedCats.filter((c: any) => c.gender === 'オス' || c.gender === 'MALE').length,
+            メス: fetchedCats.filter((c: any) => c.gender === 'メス' || c.gender === 'FEMALE').length,
+            その他: fetchedCats.filter((c: any) => c.gender !== 'オス' && c.gender !== 'MALE' && c.gender !== 'メス' && c.gender !== 'FEMALE').length,
+          });
+        }
+        
+        setCats(fetchedCats as Cat[]);
+
+        // ケアスケジュールを取得
+        try {
+          console.log('📅 ケアスケジュール取得開始...');
+          const careResponse = await apiClient.get('/care/schedules');
+          
+          console.log('📋 ケアスケジュールレスポンス:', careResponse);
+          
+          if (careResponse.success && Array.isArray(careResponse.data)) {
+            // APIレスポンスをCareScheduleItem形式に変換
+            const schedules = careResponse.data.map((item: any) => ({
+              id: item.id,
+              careType: item.title || item.type || '未定義',
+              cats: [{
+                id: item.catId || item.id,
+                name: item.catName || '不明',
+                catType: 'parent' as const,
+                completed: item.status === 'completed',
+              }],
+              isPriority: item.priority === 'high',
+              isCompleted: item.status === 'completed',
+              isExpanded: false,
+            }));
+            console.log(`✅ ケアスケジュール取得成功: ${schedules.length}件`);
+            setCareSchedules(schedules);
+          } else {
+            console.log('ℹ️ ケアスケジュールなし、サンプルデータを使用');
+            // ケアスケジュールが取得できない場合はサンプルデータを使用
+            setCareSchedules(todayCareSchedules);
+          }
+        } catch (careError) {
+          console.warn('⚠️ ケアスケジュールの取得に失敗しました:', careError);
+          setCareSchedules(todayCareSchedules);
+        }
+
+        // 交配予定を取得
+        try {
+          console.log('💕 交配予定取得開始...');
+          const breedingResponse = await apiClient.get('/breeding');
+          
+          console.log('🔄 交配予定レスポンス:', breedingResponse);
+          
+          if (breedingResponse.success && Array.isArray(breedingResponse.data)) {
+            // APIレスポンスをBreedingSchedule形式に変換
+            const schedules: BreedingSchedule[] = breedingResponse.data.map((item: any) => {
+              let scheduleType: 'mating' | 'birth_expected' | 'checkup' = 'mating';
+              if (item.status === 'pregnant') {
+                scheduleType = 'birth_expected';
+              } else if (item.type === 'checkup') {
+                scheduleType = 'checkup';
+              }
+              
+              return {
+                id: item.id,
+                maleName: item.maleName || '不明',
+                femaleName: item.femaleName || '不明',
+                scheduledDate: item.breedingDate || item.date,
+                type: scheduleType,
+                notes: item.notes,
+              };
+            });
+            console.log(`✅ 交配予定取得成功: ${schedules.length}件`);
+            // データが0件でも空配列を設定（サンプルデータは使用しない）
+            setBreedingSchedules(schedules);
+          } else {
+            console.log('ℹ️ 交配予定なし、空配列を設定');
+            // 交配予定が取得できない場合は空配列を設定
+            setBreedingSchedules([]);
+          }
+        } catch (breedingError) {
+          console.warn('⚠️ 交配予定の取得に失敗しました:', breedingError);
+          setBreedingSchedules(todayBreedingSchedules);
+        }
+        
+      } catch (err) {
+        console.error('❌ データ取得エラー:', err);
+        setError(err instanceof Error ? err.message : 'データの取得に失敗しました');
+        notifications.show({
+          title: 'エラー',
+          message: 'データの取得に失敗しました',
+          color: 'red',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [isAuthenticated, initialized]);
 
   // ダッシュボード項目の初期設定
   const [dashboardItems, setDashboardItems] = useState<DashboardItem[]>([
@@ -323,6 +483,44 @@ export default function Home() {
     weekday: 'long'
   });
 
+  // ローディング中の表示
+  if (loading) {
+    return (
+      <Container size="xl" style={{ paddingTop: '4rem' }}>
+        <Center style={{ minHeight: '60vh' }}>
+          <Stack align="center" gap="md">
+            <Loader size="lg" />
+            <Text size="sm" c="dimmed">データを読み込んでいます...</Text>
+          </Stack>
+        </Center>
+      </Container>
+    );
+  }
+
+  // エラー時の表示
+  if (error) {
+    return (
+      <Container size="xl" style={{ paddingTop: '4rem' }}>
+        <Alert
+          icon={<IconAlertCircle size="1rem" />}
+          title="エラー"
+          color="red"
+          variant="light"
+        >
+          {error}
+          <Button
+            size="sm"
+            variant="light"
+            mt="md"
+            onClick={() => window.location.reload()}
+          >
+            再読み込み
+          </Button>
+        </Alert>
+      </Container>
+    );
+  }
+
   // 猫の種類による表示
   const getCatTypeLabel = (catType: string) => {
     switch (catType) {
@@ -362,73 +560,54 @@ export default function Home() {
   };
 
   return (
-    <Box
-      style={{
-        minHeight: '100vh',
-        backgroundColor: 'var(--background-base)',
-        color: 'var(--text-primary)',
-      }}
-    >
-      {/* ヘッダー */}
-      <Box
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderBottom: '1px solid var(--border-subtle)',
-          padding: '1rem 0',
-          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
-        }}
-      >
-        <Container size="xl">
-          {/* 日付表示 */}
-          <Group justify="space-between" align="center" mb="md">
-            <Text size="lg" fw={600} style={{ color: 'var(--text-primary)' }}>
-              {today}
-            </Text>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={() => setDashboardModalOpened(true)}
-              title="ダッシュボード設定"
-              style={{ color: 'var(--text-muted)' }}
+    <Container size="xl" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
+      {/* 日付表示とダッシュボード設定 */}
+      <Group justify="space-between" align="center" mb="lg">
+        <Text size="lg" fw={600} style={{ color: 'var(--text-primary)' }}>
+          {today}
+        </Text>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          onClick={() => setDashboardModalOpened(true)}
+          title="ダッシュボード設定"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <IconSettings size={20} />
+        </ActionIcon>
+      </Group>
+
+      {/* ダッシュボード */}
+      <Stack gap="md" mb="xl">
+        <Text size="sm" fw={600} style={{ color: 'var(--text-muted)' }}>
+          ダッシュボード
+        </Text>
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+          {enabledDashboardItems.map((item) => (
+            <Card
+              key={item.id}
+              shadow="sm"
+              padding="md"
+              radius="md"
+              withBorder
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderColor: 'var(--border-subtle)',
+                color: 'var(--text-primary)',
+              }}
             >
-              <IconSettings size={16} />
-            </ActionIcon>
-          </Group>
-
-          {/* ダッシュボード */}
-          <Text size="sm" fw={600} style={{ color: 'var(--text-muted)' }} mb="sm">
-            ダッシュボード
-          </Text>
-          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm" mb="lg">
-            {enabledDashboardItems.map((item) => (
-              <Card
-                key={item.id}
-                shadow="sm"
-                padding="md"
-                radius="md"
-                withBorder
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  borderColor: 'var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                <Group justify="space-between" mb="xs">
-                  <Text size="xs" fw={500} style={{ color: 'var(--text-muted)' }}>
-                    {item.label}
-                  </Text>
-                </Group>
-                <Text size="xl" fw={700} c={item.color}>
-                  {item.getValue(cats)}
+              <Group justify="space-between" mb="xs">
+                <Text size="xs" fw={500} style={{ color: 'var(--text-muted)' }}>
+                  {item.label}
                 </Text>
-              </Card>
-            ))}
-          </SimpleGrid>
-        </Container>
-      </Box>
-
-      {/* メインコンテンツ */}
-      <Container size="lg" style={{ paddingTop: '2rem' }}>
+              </Group>
+              <Text size="xl" fw={700} c={item.color}>
+                {item.getValue(cats)}
+              </Text>
+            </Card>
+          ))}
+        </SimpleGrid>
+      </Stack>
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
           {/* 今日のケアスケジュール */}
           <Card shadow="sm" padding="lg" radius="md" withBorder>
@@ -586,7 +765,6 @@ export default function Home() {
             </Button>
           </SimpleGrid>
         </Card>
-      </Container>
 
       {/* ダッシュボード設定モーダル */}
       <Modal
@@ -615,6 +793,6 @@ export default function Home() {
           </Group>
         </Stack>
       </Modal>
-    </Box>
+    </Container>
   );
 }
