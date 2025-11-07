@@ -6,43 +6,75 @@ import {
   Patch,
   Param,
   Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-
+import { StaffService } from './staff.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
-import { StaffService } from './staff.service';
+import { ApiResponse } from '../common/dto/api-response.dto';
+import { StaffResponseDto, StaffListResponseDto } from '../common/types/staff.types';
 
 @Controller('staff')
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
+  /**
+   * スタッフを新規作成
+   */
   @Post()
-  create(@Body() createStaffDto: CreateStaffDto) {
-    return this.staffService.create(createStaffDto);
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() createStaffDto: CreateStaffDto): Promise<ApiResponse<StaffResponseDto>> {
+    const staff = await this.staffService.create(createStaffDto);
+    return ApiResponse.success(staff);
   }
 
+  /**
+   * スタッフ一覧を取得
+   */
   @Get()
-  findAll() {
-    return this.staffService.findAll();
+  async findAll(): Promise<ApiResponse<StaffListResponseDto>> {
+    const result = await this.staffService.findAll();
+    return ApiResponse.success(result);
   }
 
+  /**
+   * 指定IDのスタッフを取得
+   */
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.staffService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<ApiResponse<StaffResponseDto>> {
+    const staff = await this.staffService.findOne(id);
+    return ApiResponse.success(staff);
   }
 
+  /**
+   * スタッフ情報を更新
+   */
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto) {
-    return this.staffService.update(id, updateStaffDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateStaffDto: UpdateStaffDto,
+  ): Promise<ApiResponse<StaffResponseDto>> {
+    const staff = await this.staffService.update(id, updateStaffDto);
+    return ApiResponse.success(staff);
   }
 
+  /**
+   * スタッフを削除（論理削除）
+   */
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.staffService.remove(id);
+  @HttpCode(HttpStatus.OK)
+  async remove(@Param('id') id: string): Promise<ApiResponse<StaffResponseDto>> {
+    const staff = await this.staffService.remove(id);
+    return ApiResponse.success(staff);
   }
 
+  /**
+   * 削除したスタッフを復元
+   */
   @Patch(':id/restore')
-  restore(@Param('id') id: string) {
-    return this.staffService.restore(id);
+  async restore(@Param('id') id: string): Promise<ApiResponse<StaffResponseDto>> {
+    const staff = await this.staffService.restore(id);
+    return ApiResponse.success(staff);
   }
 }

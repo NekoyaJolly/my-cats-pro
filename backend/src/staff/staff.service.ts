@@ -1,85 +1,116 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-
 import { PrismaService } from '../prisma/prisma.service';
-
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
+import { StaffResponseDto, StaffListResponseDto } from '../common/types/staff.types';
+import { Staff } from '@prisma/client';
 
 @Injectable()
 export class StaffService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createStaffDto: CreateStaffDto) {
-    return this.prisma.staff.create({
+  /**
+   * Staffエンティティを StaffResponseDto に変換
+   */
+  private toResponseDto(staff: Staff): StaffResponseDto {
+    return {
+      id: staff.id,
+      name: staff.name,
+      email: staff.email,
+      role: staff.role,
+      color: staff.color,
+      isActive: staff.isActive,
+      createdAt: staff.createdAt.toISOString(),
+      updatedAt: staff.updatedAt.toISOString(),
+    };
+  }
+
+  /**
+   * スタッフを新規作成
+   */
+  async create(createStaffDto: CreateStaffDto): Promise<StaffResponseDto> {
+    const staff = await this.prisma.staff.create({
       data: {
-        ...createStaffDto,
+        name: createStaffDto.name,
+        email: createStaffDto.email || null,
         role: createStaffDto.role || 'スタッフ',
         color: createStaffDto.color || '#4dabf7',
-      },
-      include: {
-        user: true,
+        userId: createStaffDto.userId || null,
+        isActive: createStaffDto.isActive !== undefined ? createStaffDto.isActive : true,
       },
     });
+
+    return this.toResponseDto(staff);
   }
 
-  async findAll() {
-    return this.prisma.staff.findMany({
+  /**
+   * スタッフ一覧を取得（有効なスタッフのみ）
+   */
+  async findAll(): Promise<StaffListResponseDto> {
+    const staffList = await this.prisma.staff.findMany({
       where: { isActive: true },
-      include: {
-        user: true,
-        _count: {
-          select: { shifts: true },
-        },
-      },
       orderBy: { createdAt: 'desc' },
     });
+
+    return {
+      staffList: staffList.map((staff) => this.toResponseDto(staff)),
+      total: staffList.length,
+    };
   }
 
-  async findOne(id: string) {
+  /**
+   * 指定IDのスタッフを取得
+   */
+  async findOne(id: string): Promise<StaffResponseDto> {
     const staff = await this.prisma.staff.findUnique({
       where: { id },
-      include: {
-        user: true,
-        shifts: {
-          orderBy: { shiftDate: 'desc' },
-          take: 10,
-        },
-        availabilities: {
-          orderBy: { dayOfWeek: 'asc' },
-        },
-      },
     });
 
     if (!staff) {
       throw new NotFoundException(`Staff with ID ${id} not found`);
     }
 
-    return staff;
+    return this.toResponseDto(staff);
   }
 
-  async update(id: string, updateStaffDto: UpdateStaffDto) {
-    await this.findOne(id); // Check if exists
+  /**
+   * スタッフ情報を更新
+   */
+  async update(id: string, updateStaffDto: UpdateStaffDto): Promise<StaffResponseDto> {
+    await this.findOne(id); // 存在チェック
 
-    return this.prisma.staff.update({
+    const staff = await this.prisma.staff.update({
       where: { id },
-      data: updateStaffDto,
-      include: {
-        user: true,
+      data: {
+        ...(updateStaffDto.name !== undefined && { name: updateStaffDto.name }),
+        ...(updateStaffDto.email !== undefined && { email: updateStaffDto.email }),
+        ...(updateStaffDto.role !== undefined && { role: updateStaffDto.role }),
+        ...(updateStaffDto.color !== undefined && { color: updateStaffDto.color }),
+        ...(updateStaffDto.isActive !== undefined && { isActive: updateStaffDto.isActive }),
       },
     });
+
+    return this.toResponseDto(staff);
   }
 
-  async remove(id: string) {
-    await this.findOne(id); // Check if exists
+  /**
+   * スタッフを削除（論理削除）
+   */
+  async remove(id: string): Promise<StaffResponseDto> {
+    await this.findOne(id); // 存在チェック
 
-    // Soft delete
-    return this.prisma.staff.update({
+    const staff = await this.prisma.staff.update({
       where: { id },
       data: { isActive: false },
     });
+
+    return this.toResponseDto(staff);
   }
 
-  async restore(id: string) {
+  /**
+   * 削除したスタッフを復元
+   */
+  async restore(id: string): Promise<StaffResponseDto> {
     const staff = await this.prisma.staff.findUnique({
       where: { id },
     });
@@ -88,9 +119,11 @@ export class StaffService {
       throw new NotFoundException(`Staff with ID ${id} not found`);
     }
 
-    return this.prisma.staff.update({
+    const restoredStaff = await this.prisma.staff.update({
       where: { id },
       data: { isActive: true },
     });
+
+    return this.toResponseDto(restoredStaff);
   }
 }

@@ -1,432 +1,144 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  Box,
-  Paper,
+  Container,
+  Title,
   Text,
   Group,
   Stack,
-  Badge,
   Button,
-  ScrollArea,
+  Paper,
   Card,
   Avatar,
-  ActionIcon,
   Modal,
   TextInput,
   ColorInput,
+  ScrollArea,
+  LoadingOverlay,
+  Alert,
+  Badge,
+  ActionIcon,
   Menu,
-  Container,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { 
-  IconPlus, 
-  IconClock, 
-  IconUser, 
-  IconEdit, 
+import {
+  IconPlus,
+  IconUser,
+  IconEdit,
   IconTrash,
   IconDotsVertical,
   IconDeviceFloppy,
   IconX,
+  IconAlertCircle,
 } from '@tabler/icons-react';
-import {
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
 import { notifications } from '@mantine/notifications';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { Draggable, EventReceiveArg } from '@fullcalendar/interaction';
 import type { EventDropArg, EventClickArg } from '@fullcalendar/core';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
-
-// スタッフデータ型定義
-interface Staff {
-  id: string;
-  name: string;
-  email?: string;
-  role: string;
-  color: string;
-  avatar?: string;
-}
-
-// シフトテンプレート型定義
-interface ShiftTemplate {
-  id: string;
-  name: string;
-  startTime: string;
-  endTime: string;
-  color: string;
-  description: string;
-}
-
-// サンプルデータ
-const initialMockStaff: Staff[] = [
-  { id: 'staff-1', name: '田中 花子', role: 'ブリーダー', color: '#4c6ef5' },
-  { id: 'staff-2', name: '佐藤 太郎', role: 'アシスタント', color: '#f06595' },
-  { id: 'staff-3', name: '鈴木 次郎', role: 'ケアスタッフ', color: '#20c997' },
-  { id: 'staff-4', name: '山田 美咲', role: 'ブリーダー', color: '#fd7e14' },
-];
-
-const shiftTemplates: ShiftTemplate[] = [
-  {
-    id: 'template-1',
-    name: '午前シフト',
-    startTime: '09:00',
-    endTime: '13:00',
-    color: '#4dabf7',
-    description: '9:00 - 13:00',
-  },
-  {
-    id: 'template-2',
-    name: '午後シフト',
-    startTime: '13:00',
-    endTime: '18:00',
-    color: '#fab005',
-    description: '13:00 - 18:00',
-  },
-  {
-    id: 'template-3',
-    name: '終日シフト',
-    startTime: '09:00',
-    endTime: '18:00',
-    color: '#51cf66',
-    description: '9:00 - 18:00',
-  },
-  {
-    id: 'template-4',
-    name: '夜間シフト',
-    startTime: '18:00',
-    endTime: '22:00',
-    color: '#845ef7',
-    description: '18:00 - 22:00',
-  },
-];
+import { apiClient, ApiError } from '@/lib/api/typesafe-client';
+import type {
+  StaffResponseDto,
+  CreateStaffRequest,
+  UpdateStaffRequest,
+  ShiftResponseDto,
+  CalendarShiftEvent,
+} from '@/types/api.types';
 
 export default function StaffShiftsPage() {
   const calendarRef = useRef<FullCalendar>(null);
-  const [eventCount, setEventCount] = useState(0);
-  const processingEventRef = useRef<Set<string>>(new Set());
   const { setPageHeader } = usePageHeader();
-  
-  // スタッフデータの状態管理
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  
-  // モーダル表示制御
+  const router = useRouter();
+
+  // State管理
+  const [staffList, setStaffList] = useState<StaffResponseDto[]>([]);
+  const [shifts, setShifts] = useState<CalendarShiftEvent[]>([]);
+  const [selectedStaff, setSelectedStaff] = useState<StaffResponseDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // モーダル制御
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false);
   const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
-  const [loading, setLoading] = useState(false);
-  
-  // 作成フォーム設定
-  const createForm = useForm({
+  const [operationLoading, setOperationLoading] = useState(false);
+
+  // スタッフ作成フォーム
+  const createForm = useForm<CreateStaffRequest>({
     initialValues: {
       name: '',
-      email: '',
+      email: null,
       role: 'スタッフ',
       color: '#4dabf7',
     },
     validate: {
       name: (value) => (!value ? '名前は必須です' : null),
-    },
-  });
-
-  // 編集フォーム設定
-  const editForm = useForm({
-    initialValues: {
-      name: '',
-      email: '',
-      role: 'スタッフ',
-      color: '#4dabf7',
-    },
-    validate: {
-      name: (value) => (!value ? '名前は必須です' : null),
-    },
-  });
-
-  // ドラッグセンサー設定
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
-
-  // スタッフ作成処理
-  const handleCreateStaff = async (values: typeof createForm.values) => {
-    setLoading(true);
-    
-    try {
-      // 空文字のフィールドを除外
-      const payload: {
-        name: string;
-        role: string;
-        color: string;
-        email?: string;
-      } = {
-        name: values.name,
-        role: values.role,
-        color: values.color,
-      };
-      
-      // メールアドレスが入力されている場合のみ追加
-      if (values.email && values.email.trim()) {
-        payload.email = values.email;
-      }
-      
-      const response = await fetch('http://localhost:3004/api/v1/staff', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'サーバーエラー' }));
-        console.error('API Error Response:', errorData);
-        throw new Error(errorData.message || `スタッフの作成に失敗しました (${response.status})`);
-      }
-
-      const result = await response.json();
-      const newStaff = result.data || result;
-      
-      // スタッフリストに追加
-      setStaff((prev) => [...prev, newStaff]);
-      
-      // 成功通知
-      notifications.show({
-        title: 'スタッフ作成成功',
-        message: `${newStaff.name}を追加しました`,
-        color: 'green',
-      });
-      
-      // モーダルを閉じてフォームをリセット
-      closeCreate();
-      createForm.reset();
-    } catch (error) {
-      console.error('スタッフ作成エラー:', error);
-      notifications.show({
-        title: 'エラー',
-        message: error instanceof Error ? error.message : 'スタッフの作成に失敗しました',
-        color: 'red',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // スタッフ編集処理
-  const handleEditStaff = async (values: typeof editForm.values) => {
-    if (!selectedStaff) return;
-    
-    setLoading(true);
-    
-    try {
-      // 空文字のフィールドを除外
-      const payload: {
-        name: string;
-        role: string;
-        color: string;
-        email?: string;
-      } = {
-        name: values.name,
-        role: values.role,
-        color: values.color,
-      };
-      
-      // メールアドレスが入力されている場合のみ追加
-      if (values.email && values.email.trim()) {
-        payload.email = values.email;
-      }
-      
-      const response = await fetch(`http://localhost:3004/api/v1/staff/${selectedStaff.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'スタッフの更新に失敗しました');
-      }
-
-      const result = await response.json();
-      const updatedStaff = result.data || result;
-      
-      // スタッフリストを更新
-      setStaff((prev) =>
-        prev.map((s) => (s.id === updatedStaff.id ? updatedStaff : s))
-      );
-      
-      // 成功通知
-      notifications.show({
-        title: 'スタッフ更新成功',
-        message: `${updatedStaff.name}の情報を更新しました`,
-        color: 'green',
-      });
-      
-      // モーダルを閉じる
-      closeEdit();
-      setSelectedStaff(null);
-    } catch (error) {
-      console.error('スタッフ更新エラー:', error);
-      notifications.show({
-        title: 'エラー',
-        message: error instanceof Error ? error.message : 'スタッフの更新に失敗しました',
-        color: 'red',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // スタッフ削除処理
-  const handleDeleteStaff = async () => {
-    if (!selectedStaff) return;
-    
-    setLoading(true);
-    
-    try {
-      const response = await fetch(`http://localhost:3004/api/v1/staff/${selectedStaff.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'スタッフの削除に失敗しました');
-      }
-      
-      // スタッフリストから削除
-      setStaff((prev) => prev.filter((s) => s.id !== selectedStaff.id));
-      
-      // 成功通知
-      notifications.show({
-        title: 'スタッフ削除成功',
-        message: `${selectedStaff.name}を削除しました`,
-        color: 'blue',
-      });
-      
-      // モーダルを閉じる
-      closeDelete();
-      setSelectedStaff(null);
-    } catch (error) {
-      console.error('スタッフ削除エラー:', error);
-      notifications.show({
-        title: 'エラー',
-        message: error instanceof Error ? error.message : 'スタッフの削除に失敗しました',
-        color: 'red',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 編集モーダルを開く
-  const openEditModal = (staffMember: Staff) => {
-    setSelectedStaff(staffMember);
-    editForm.setValues({
-      name: staffMember.name,
-      email: staffMember.email || '',
-      role: staffMember.role,
-      color: staffMember.color,
-    });
-    openEdit();
-  };
-
-  // 削除モーダルを開く
-  const openDeleteModal = (staffMember: Staff) => {
-    setSelectedStaff(staffMember);
-    openDelete();
-  };
-
-  // 初期データ取得
-  useEffect(() => {
-    const fetchStaff = async () => {
-      try {
-        const response = await fetch('http://localhost:3004/api/v1/staff');
-        if (!response.ok) {
-          throw new Error('スタッフデータの取得に失敗しました');
+      color: (value) => {
+        if (!value) return 'カラーは必須です';
+        if (!/^#[0-9A-Fa-f]{6}$/.test(value)) {
+          return 'カラーコードは#000000形式で指定してください';
         }
-        const result = await response.json();
-        const staffData = result.data || result;
-        
-        // バックエンドのスタッフデータをフロントエンドの形式に変換
-        const formattedStaff: Staff[] = staffData.map((s: {
-          id: string;
-          name: string;
-          email: string | null;
-          role: string;
-          color: string;
-        }) => ({
-          id: s.id,
-          name: s.name,
-          email: s.email || undefined,
-          role: s.role,
-          color: s.color,
-        }));
-        
-        setStaff(formattedStaff);
-      } catch (error) {
-        console.error('スタッフデータ取得エラー:', error);
-        notifications.show({
-          title: 'エラー',
-          message: 'スタッフデータの取得に失敗しました',
-          color: 'red',
-        });
-        // エラー時はモックデータを使用
-        setStaff(initialMockStaff);
-      }
-    };
+        return null;
+      },
+    },
+  });
 
-    fetchStaff();
-  }, []);
+  // スタッフ編集フォーム
+  const editForm = useForm<UpdateStaffRequest>({
+    initialValues: {
+      name: '',
+      email: null,
+      role: 'スタッフ',
+      color: '#4dabf7',
+    },
+    validate: {
+      name: (value) => (!value ? '名前は必須です' : null),
+      color: (value) => {
+        if (!value) return 'カラーは必須です';
+        if (!/^#[0-9A-Fa-f]{6}$/.test(value)) {
+          return 'カラーコードは#000000形式で指定してください';
+        }
+        return null;
+      },
+    },
+  });
 
-  // ページヘッダーを設定
+  // ページヘッダー設定
   useEffect(() => {
     setPageHeader(
       'スタッフシフト管理',
       <Group gap="sm">
         <Button
           leftSection={<IconPlus size={16} />}
-          variant="outline"
+          variant="filled"
           color="blue"
           onClick={openCreate}
         >
           スタッフ追加
         </Button>
-        <Button
-          leftSection={<IconPlus size={16} />}
-          variant="filled"
-          color="blue"
-        >
-          シフト保存
-        </Button>
       </Group>
     );
 
-    // クリーンアップ
     return () => setPageHeader(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // FullCalendarの外部ドラッグ初期化
+  // 初期データ取得
   useEffect(() => {
-    let staffDraggable: Draggable | null = null;
-    let templateDraggable: Draggable | null = null;
+    fetchInitialData();
+  }, []);
 
-    // スタッフカードのドラッグ初期化
+  // ドラッグ可能な要素の初期化
+  useEffect(() => {
+    let draggable: Draggable | null = null;
+
     const staffListElement = document.getElementById('staff-list');
-    const staffElements = document.querySelectorAll('.draggable-staff');
-    if (staffListElement && staffElements.length > 0) {
-      staffDraggable = new Draggable(staffListElement, {
+    if (staffListElement && staffList.length > 0) {
+      draggable = new Draggable(staffListElement, {
         itemSelector: '.draggable-staff',
         eventData: function (eventEl: HTMLElement) {
           const staffId = eventEl.getAttribute('data-staff-id') || '';
@@ -435,511 +147,617 @@ export default function StaffShiftsPage() {
           return {
             title: staffName,
             backgroundColor: staffColor,
+            borderColor: staffColor,
             extendedProps: {
               staffId: staffId,
-              templateId: 'template-3', // デフォルトで終日シフト
+              staffName: staffName,
             },
           };
         },
       });
     }
 
-    // シフトテンプレートのドラッグ初期化
-    const templateListElement = document.getElementById('template-list');
-    const templateElements = document.querySelectorAll('.draggable-template');
-    if (templateListElement && templateElements.length > 0) {
-      templateDraggable = new Draggable(templateListElement, {
-        itemSelector: '.draggable-template',
-        eventData: function (eventEl: HTMLElement) {
-          const templateId = eventEl.getAttribute('data-template-id') || '';
-          const template = shiftTemplates.find((t) => t.id === templateId);
-          return {
-            title: template?.name || '',
-            backgroundColor: template?.color,
-            duration: { hours: 4 }, // デフォルト期間
-            extendedProps: {
-              templateId: templateId,
-            },
-          };
-        },
-      });
-    }
-
-    // クリーンアップ関数
     return () => {
-      if (staffDraggable) {
-        staffDraggable.destroy();
-      }
-      if (templateDraggable) {
-        templateDraggable.destroy();
+      if (draggable) {
+        draggable.destroy();
       }
     };
-  }, [staff]); // staffが変更されたら再初期化
+  }, [staffList]);
 
-  // カレンダーへのイベント追加
-  const handleEventReceive = (info: EventReceiveArg) => {
-    // イベントの一意なキーを生成
-    const eventKey = `${info.event.title}-${info.event.startStr}`;
-    
-    // 既に処理中の場合はスキップ
-    if (processingEventRef.current.has(eventKey)) {
+  /**
+   * 初期データ取得
+   */
+  const fetchInitialData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // スタッフ一覧を取得
+      const staffData = await apiClient.getStaffList();
+      setStaffList(staffData.staffList);
+
+      // 今月のシフトデータを取得
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .split('T')[0];
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        .toISOString()
+        .split('T')[0];
+
+      const shiftsData = await apiClient.getCalendarShifts({ startDate, endDate });
+      setShifts(shiftsData);
+    } catch (err) {
+      const errorMessage = err instanceof ApiError ? err.message : 'データの取得に失敗しました';
+      setError(errorMessage);
+      notifications.show({
+        title: 'エラー',
+        message: errorMessage,
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * スタッフ作成
+   */
+  const handleCreateStaff = async (values: CreateStaffRequest) => {
+    setOperationLoading(true);
+
+    try {
+      const newStaff = await apiClient.createStaff(values);
+      setStaffList((prev) => [...prev, newStaff]);
+
+      notifications.show({
+        title: 'スタッフ作成成功',
+        message: `${newStaff.name}を追加しました`,
+        color: 'green',
+      });
+
+      closeCreate();
+      createForm.reset();
+    } catch (err) {
+      const errorMessage = err instanceof ApiError ? err.message : 'スタッフの作成に失敗しました';
+      notifications.show({
+        title: 'エラー',
+        message: errorMessage,
+        color: 'red',
+      });
+    } finally {
+      setOperationLoading(false);
+    }
+  };
+
+  /**
+   * スタッフ編集
+   */
+  const handleEditStaff = async (values: UpdateStaffRequest) => {
+    if (!selectedStaff) return;
+
+    setOperationLoading(true);
+
+    try {
+      const updatedStaff = await apiClient.updateStaff(selectedStaff.id, values);
+      setStaffList((prev) => prev.map((s) => (s.id === updatedStaff.id ? updatedStaff : s)));
+
+      notifications.show({
+        title: 'スタッフ更新成功',
+        message: `${updatedStaff.name}の情報を更新しました`,
+        color: 'green',
+      });
+
+      closeEdit();
+      setSelectedStaff(null);
+    } catch (err) {
+      const errorMessage = err instanceof ApiError ? err.message : 'スタッフの更新に失敗しました';
+      notifications.show({
+        title: 'エラー',
+        message: errorMessage,
+        color: 'red',
+      });
+    } finally {
+      setOperationLoading(false);
+    }
+  };
+
+  /**
+   * スタッフ削除
+   */
+  const handleDeleteStaff = async () => {
+    if (!selectedStaff) return;
+
+    setOperationLoading(true);
+
+    try {
+      await apiClient.deleteStaff(selectedStaff.id);
+      setStaffList((prev) => prev.filter((s) => s.id !== selectedStaff.id));
+
+      notifications.show({
+        title: 'スタッフ削除成功',
+        message: `${selectedStaff.name}を削除しました`,
+        color: 'blue',
+      });
+
+      closeDelete();
+      setSelectedStaff(null);
+    } catch (err) {
+      const errorMessage = err instanceof ApiError ? err.message : 'スタッフの削除に失敗しました';
+      notifications.show({
+        title: 'エラー',
+        message: errorMessage,
+        color: 'red',
+      });
+    } finally {
+      setOperationLoading(false);
+    }
+  };
+
+  /**
+   * 編集モーダルを開く
+   */
+  const openEditModal = (staff: StaffResponseDto) => {
+    setSelectedStaff(staff);
+    editForm.setValues({
+      name: staff.name,
+      email: staff.email,
+      role: staff.role,
+      color: staff.color,
+    });
+    openEdit();
+  };
+
+  /**
+   * 削除モーダルを開く
+   */
+  const openDeleteModal = (staff: StaffResponseDto) => {
+    setSelectedStaff(staff);
+    openDelete();
+  };
+
+  /**
+   * カレンダーへのドロップイベント
+   */
+  const handleEventReceive = async (info: EventReceiveArg) => {
+    const staffId = info.event.extendedProps.staffId;
+    const shiftDate = info.event.startStr.split('T')[0]; // YYYY-MM-DD
+
+    try {
+      const newShift = await apiClient.createShift({
+        staffId,
+        shiftDate,
+      });
+
+      // カレンダーイベントを更新
+      info.event.setExtendedProp('shiftId', newShift.id);
+
+      // シフトリストを更新
+      await refreshShifts();
+
+      notifications.show({
+        title: 'シフト作成成功',
+        message: `${info.event.title}のシフトを追加しました`,
+        color: 'green',
+      });
+    } catch (err) {
+      info.revert(); // ドロップを元に戻す
+      const errorMessage = err instanceof ApiError ? err.message : 'シフトの作成に失敗しました';
+      notifications.show({
+        title: 'エラー',
+        message: errorMessage,
+        color: 'red',
+      });
+    }
+  };
+
+  /**
+   * カレンダーイベントの移動
+   */
+  const handleEventDrop = async (info: EventDropArg) => {
+    const shiftId = info.event.extendedProps.shiftId;
+    if (!shiftId) {
       info.revert();
       return;
     }
-    
-    // 処理中としてマーク
-    processingEventRef.current.add(eventKey);
-    
-    // 500ms後にマークをクリア（同じイベントの再ドロップを許可）
-    setTimeout(() => {
-      processingEventRef.current.delete(eventKey);
-    }, 500);
-    
-    // FullCalendarが既にイベントを追加しているので、通知のみ表示
-    const calendarApi = calendarRef.current?.getApi();
-    if (calendarApi) {
-      setEventCount(calendarApi.getEvents().length);
-    }
-    
-    notifications.show({
-      title: 'シフト追加',
-      message: `${info.event.title}のシフトを追加しました`,
-      color: 'green',
-    });
-  };
 
-  // イベント削除
-  const handleEventClick = (info: EventClickArg) => {
-    if (confirm(`${info.event.title}のシフトを削除しますか?`)) {
-      info.event.remove();
-      
-      const calendarApi = calendarRef.current?.getApi();
-      if (calendarApi) {
-        setEventCount(calendarApi.getEvents().length);
-      }
-      
+    const newShiftDate = info.event.startStr.split('T')[0]; // YYYY-MM-DD
+
+    try {
+      await apiClient.updateShift(shiftId, { shiftDate: newShiftDate });
+
       notifications.show({
-        title: 'シフト削除',
-        message: `${info.event.title}のシフトを削除しました`,
+        title: 'シフト変更成功',
+        message: `${info.event.title}のシフトを変更しました`,
         color: 'blue',
+      });
+    } catch (err) {
+      info.revert(); // 移動を元に戻す
+      const errorMessage = err instanceof ApiError ? err.message : 'シフトの変更に失敗しました';
+      notifications.show({
+        title: 'エラー',
+        message: errorMessage,
+        color: 'red',
       });
     }
   };
 
-  // イベント移動
-  const handleEventDrop = (info: EventDropArg) => {
-    notifications.show({
-      title: 'シフト変更',
-      message: `${info.event.title}のシフトを変更しました`,
-      color: 'blue',
-    });
+  /**
+   * カレンダーイベントのクリック（削除）
+   */
+  const handleEventClick = async (info: EventClickArg) => {
+    const shiftId = info.event.extendedProps.shiftId;
+    if (!shiftId) return;
+
+    if (confirm(`${info.event.title}のシフトを削除しますか?`)) {
+      try {
+        await apiClient.deleteShift(shiftId);
+        info.event.remove();
+
+        notifications.show({
+          title: 'シフト削除成功',
+          message: `${info.event.title}のシフトを削除しました`,
+          color: 'blue',
+        });
+      } catch (err) {
+        const errorMessage = err instanceof ApiError ? err.message : 'シフトの削除に失敗しました';
+        notifications.show({
+          title: 'エラー',
+          message: errorMessage,
+          color: 'red',
+        });
+      }
+    }
   };
+
+  /**
+   * シフトデータを再取得
+   */
+  const refreshShifts = async () => {
+    const calendarApi = calendarRef.current?.getApi();
+    if (!calendarApi) return;
+
+    const view = calendarApi.view;
+    const startDate = view.activeStart.toISOString().split('T')[0];
+    const endDate = view.activeEnd.toISOString().split('T')[0];
+
+    try {
+      const shiftsData = await apiClient.getCalendarShifts({ startDate, endDate });
+      setShifts(shiftsData);
+    } catch (err) {
+      console.error('シフトの再取得に失敗:', err);
+    }
+  };
+
+  if (error && !loading) {
+    return (
+      <Container size="xl" py="md">
+        <Alert
+          icon={<IconAlertCircle size="1rem" />}
+          title="エラー"
+          color="red"
+          variant="light"
+        >
+          {error}
+        </Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container size="xl" py="md">
-      <Stack gap="md">
-        {/* 説明文 */}
-        <Text size="sm" c="dimmed">
-          スタッフとシフトテンプレートをカレンダーにドラッグ&ドロップしてシフトを作成
-        </Text>
+      <LoadingOverlay visible={loading} />
 
-        {/* スタッフ作成モーダル */}
-        <Modal opened={createOpened} onClose={closeCreate} title="スタッフ追加" size="md">
-          <form onSubmit={createForm.onSubmit(handleCreateStaff)}>
-            <Stack gap="md">
-              <TextInput
-                label="名前"
-                placeholder="田中 太郎"
-                required
-                {...createForm.getInputProps('name')}
-              />
-              
-              <TextInput
-                label="メールアドレス"
-                placeholder="tanaka@example.com"
-                type="email"
-                {...createForm.getInputProps('email')}
-              />
-              
-              <TextInput
-                label="役職"
-                placeholder="スタッフ"
-                {...createForm.getInputProps('role')}
-              />
-              
-              <ColorInput
-                label="表示カラー"
-                placeholder="カラーを選択"
-                format="hex"
-                swatches={[
-                  '#4c6ef5',
-                  '#f06595',
-                  '#20c997',
-                  '#fd7e14',
-                  '#fab005',
-                  '#51cf66',
-                  '#4dabf7',
-                  '#845ef7',
-                  '#ff6b6b',
-                  '#74c0fc',
-                ]}
-                {...createForm.getInputProps('color')}
-              />
-
-              <Group justify="flex-end" mt="md">
-                <Button
-                  variant="subtle"
-                  color="gray"
-                  onClick={closeCreate}
-                  disabled={loading}
-                  leftSection={<IconX size={16} />}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  type="submit"
-                  loading={loading}
-                  variant="filled"
-                  color="blue"
-                  leftSection={<IconDeviceFloppy size={16} />}
-                >
-                  作成
-                </Button>
-              </Group>
-            </Stack>
-          </form>
-        </Modal>
-
-        {/* スタッフ編集モーダル */}
-        <Modal opened={editOpened} onClose={closeEdit} title="スタッフ編集" size="md">
-          <form onSubmit={editForm.onSubmit(handleEditStaff)}>
-            <Stack gap="md">
-              <TextInput
-                label="名前"
-                placeholder="田中 太郎"
-                required
-                {...editForm.getInputProps('name')}
-              />
-              
-              <TextInput
-                label="メールアドレス"
-                placeholder="tanaka@example.com"
-                type="email"
-                {...editForm.getInputProps('email')}
-              />
-              
-              <TextInput
-                label="役職"
-                placeholder="スタッフ"
-                {...editForm.getInputProps('role')}
-              />
-              
-              <ColorInput
-                label="表示カラー"
-                placeholder="カラーを選択"
-                format="hex"
-                swatches={[
-                  '#4c6ef5',
-                  '#f06595',
-                  '#20c997',
-                  '#fd7e14',
-                  '#fab005',
-                  '#51cf66',
-                  '#4dabf7',
-                  '#845ef7',
-                  '#ff6b6b',
-                  '#74c0fc',
-                ]}
-                {...editForm.getInputProps('color')}
-              />
-
-              <Group justify="flex-end" mt="md">
-                <Button
-                  variant="subtle"
-                  color="gray"
-                  onClick={closeEdit}
-                  disabled={loading}
-                  leftSection={<IconX size={16} />}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  type="submit"
-                  loading={loading}
-                  variant="filled"
-                  color="blue"
-                  leftSection={<IconDeviceFloppy size={16} />}
-                >
-                  保存
-                </Button>
-              </Group>
-            </Stack>
-          </form>
-        </Modal>
-
-        {/* スタッフ削除確認モーダル */}
-        <Modal
-          opened={deleteOpened}
-          onClose={closeDelete}
-          title="スタッフ削除"
-          size="sm"
-        >
+      {/* スタッフ作成モーダル */}
+      <Modal opened={createOpened} onClose={closeCreate} title="スタッフ追加" size="md">
+        <form onSubmit={createForm.onSubmit(handleCreateStaff)}>
           <Stack gap="md">
-            <Text>
-              {selectedStaff?.name} を削除してもよろしいですか?
-            </Text>
-            <Text size="sm" c="dimmed">
-              この操作は取り消せません。
-            </Text>
+            <TextInput
+              label="名前"
+              placeholder="田中 太郎"
+              required
+              {...createForm.getInputProps('name')}
+            />
+
+            <TextInput
+              label="メールアドレス（任意）"
+              placeholder="tanaka@example.com"
+              type="email"
+              {...createForm.getInputProps('email')}
+            />
+
+            <TextInput
+              label="役職"
+              placeholder="スタッフ"
+              {...createForm.getInputProps('role')}
+            />
+
+            <ColorInput
+              label="表示カラー"
+              placeholder="カラーを選択"
+              format="hex"
+              swatches={[
+                '#4c6ef5',
+                '#f06595',
+                '#20c997',
+                '#fd7e14',
+                '#fab005',
+                '#51cf66',
+                '#4dabf7',
+                '#845ef7',
+                '#ff6b6b',
+                '#74c0fc',
+              ]}
+              {...createForm.getInputProps('color')}
+            />
 
             <Group justify="flex-end" mt="md">
               <Button
                 variant="subtle"
                 color="gray"
-                onClick={closeDelete}
-                disabled={loading}
+                onClick={closeCreate}
+                disabled={operationLoading}
                 leftSection={<IconX size={16} />}
               >
                 キャンセル
               </Button>
               <Button
-                onClick={handleDeleteStaff}
-                loading={loading}
+                type="submit"
+                loading={operationLoading}
                 variant="filled"
-                color="red"
-                leftSection={<IconTrash size={16} />}
+                color="blue"
+                leftSection={<IconDeviceFloppy size={16} />}
               >
-                削除
+                作成
               </Button>
             </Group>
           </Stack>
-        </Modal>
+        </form>
+      </Modal>
 
-        {/* メインコンテンツ: 3カラムレイアウト */}
-        <Group align="flex-start" gap="md" style={{ height: 'calc(100vh - 200px)' }}>
-          {/* 左サイドバー: スタッフリスト */}
-          <Paper
-            withBorder
-            p="md"
-            style={{
-              width: 250,
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <Group justify="space-between" mb="md">
-              <Text fw={600} size="sm">
-                <IconUser size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                スタッフ一覧
-              </Text>
-              <ActionIcon size="sm" variant="light" color="blue" onClick={openCreate}>
-                <IconPlus size={14} />
-              </ActionIcon>
-            </Group>
-
-            <ScrollArea style={{ flex: 1 }} id="staff-list">
-              <Stack gap="xs">
-                {staff.map((staffMember) => (
-                  <Card
-                    key={staffMember.id}
-                    className="draggable-staff"
-                    data-staff-id={staffMember.id}
-                    data-staff-name={staffMember.name}
-                    data-staff-color={staffMember.color}
-                    p="sm"
-                    withBorder
-                    style={{
-                      cursor: 'grab',
-                      transition: 'all 0.2s',
-                      borderColor: staffMember.color,
-                      borderWidth: 2,
-                    }}
-                    styles={{
-                      root: {
-                        '&:hover': {
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                          transform: 'translateY(-2px)',
-                        },
-                      },
-                    }}
-                  >
-                    <Group gap="sm" wrap="nowrap">
-                      <Avatar color={staffMember.color} radius="xl" size="sm">
-                        {staffMember.name.charAt(0)}
-                      </Avatar>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <Text size="sm" fw={500} truncate>
-                          {staffMember.name}
-                        </Text>
-                        <Badge size="xs" variant="light" color={staffMember.color}>
-                          {staffMember.role}
-                        </Badge>
-                      </div>
-                      <Menu shadow="md" width={160}>
-                        <Menu.Target>
-                          <ActionIcon
-                            variant="subtle"
-                            color="gray"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                            }}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <IconDotsVertical size={16} />
-                          </ActionIcon>
-                        </Menu.Target>
-
-                        <Menu.Dropdown>
-                          <Menu.Item
-                            leftSection={<IconEdit size={16} />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(staffMember);
-                            }}
-                          >
-                            編集
-                          </Menu.Item>
-                          <Menu.Item
-                            leftSection={<IconTrash size={16} />}
-                            color="red"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDeleteModal(staffMember);
-                            }}
-                          >
-                            削除
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </Group>
-                  </Card>
-                ))}
-              </Stack>
-            </ScrollArea>
-          </Paper>
-
-          {/* 中央: カレンダー */}
-          <Paper
-            withBorder
-            p="md"
-            style={{
-              flex: 1,
-              height: '100%',
-              overflow: 'hidden',
-            }}
-          >
-            <FullCalendar
-              ref={calendarRef}
-              plugins={[dayGridPlugin, interactionPlugin]}
-              initialView="dayGridMonth"
-              locale="ja"
-              headerToolbar={{
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,dayGridWeek',
-              }}
-              buttonText={{
-                today: '今日',
-                month: '月',
-                week: '週',
-              }}
-              height="100%"
-              editable={true}
-              droppable={true}
-              eventReceive={handleEventReceive}
-              eventClick={handleEventClick}
-              eventDrop={handleEventDrop}
+      {/* スタッフ編集モーダル */}
+      <Modal opened={editOpened} onClose={closeEdit} title="スタッフ編集" size="md">
+        <form onSubmit={editForm.onSubmit(handleEditStaff)}>
+          <Stack gap="md">
+            <TextInput
+              label="名前"
+              placeholder="田中 太郎"
+              required
+              {...editForm.getInputProps('name')}
             />
-          </Paper>
 
-          {/* 右サイドバー: シフトテンプレート */}
-          <Paper
-            withBorder
-            p="md"
-            style={{
-              width: 250,
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <Group justify="space-between" mb="md">
-              <Text fw={600} size="sm">
-                <IconClock size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                シフトテンプレート
-              </Text>
-              <ActionIcon size="sm" variant="light">
-                <IconPlus size={14} />
-              </ActionIcon>
+            <TextInput
+              label="メールアドレス（任意）"
+              placeholder="tanaka@example.com"
+              type="email"
+              {...editForm.getInputProps('email')}
+            />
+
+            <TextInput
+              label="役職"
+              placeholder="スタッフ"
+              {...editForm.getInputProps('role')}
+            />
+
+            <ColorInput
+              label="表示カラー"
+              placeholder="カラーを選択"
+              format="hex"
+              swatches={[
+                '#4c6ef5',
+                '#f06595',
+                '#20c997',
+                '#fd7e14',
+                '#fab005',
+                '#51cf66',
+                '#4dabf7',
+                '#845ef7',
+                '#ff6b6b',
+                '#74c0fc',
+              ]}
+              {...editForm.getInputProps('color')}
+            />
+
+            <Group justify="flex-end" mt="md">
+              <Button
+                variant="subtle"
+                color="gray"
+                onClick={closeEdit}
+                disabled={operationLoading}
+                leftSection={<IconX size={16} />}
+              >
+                キャンセル
+              </Button>
+              <Button
+                type="submit"
+                loading={operationLoading}
+                variant="filled"
+                color="blue"
+                leftSection={<IconDeviceFloppy size={16} />}
+              >
+                保存
+              </Button>
             </Group>
+          </Stack>
+        </form>
+      </Modal>
 
-            <ScrollArea style={{ flex: 1 }} id="template-list">
-              <Stack gap="xs">
-                {shiftTemplates.map((template) => (
-                  <Card
-                    key={template.id}
-                    className="draggable-template"
-                    data-template-id={template.id}
-                    p="sm"
-                    withBorder
-                    style={{
-                      cursor: 'grab',
-                      transition: 'all 0.2s',
-                      borderColor: template.color,
-                      borderWidth: 2,
-                      backgroundColor: `${template.color}10`,
-                    }}
-                    styles={{
-                      root: {
-                        '&:hover': {
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                          transform: 'translateY(-2px)',
-                        },
+      {/* スタッフ削除確認モーダル */}
+      <Modal opened={deleteOpened} onClose={closeDelete} title="スタッフ削除" size="sm">
+        <Stack gap="md">
+          <Text>{selectedStaff?.name} を削除してもよろしいですか?</Text>
+          <Text size="sm" c="dimmed">
+            この操作は取り消せません。
+          </Text>
+
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              color="gray"
+              onClick={closeDelete}
+              disabled={operationLoading}
+              leftSection={<IconX size={16} />}
+            >
+              キャンセル
+              </Button>
+            <Button
+              onClick={handleDeleteStaff}
+              loading={operationLoading}
+              variant="filled"
+              color="red"
+              leftSection={<IconTrash size={16} />}
+            >
+              削除
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* メインコンテンツ: カンバンビューレイアウト */}
+      <Group align="flex-start" gap="md" style={{ height: 'calc(100vh - 200px)' }}>
+        {/* 左サイドバー: スタッフ一覧 */}
+        <Paper
+          withBorder
+          p="md"
+          style={{
+            width: 280,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <Group justify="space-between" mb="md">
+            <Text fw={600} size="sm">
+              <IconUser size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+              スタッフ一覧
+            </Text>
+            <Badge size="sm" variant="light">
+              {staffList.length}人
+            </Badge>
+          </Group>
+
+          <Text size="xs" c="dimmed" mb="md">
+            スタッフをカレンダーにドラッグ
+          </Text>
+
+          <ScrollArea style={{ flex: 1 }} id="staff-list">
+            <Stack gap="xs">
+              {staffList.map((staff) => (
+                <Card
+                  key={staff.id}
+                  className="draggable-staff"
+                  data-staff-id={staff.id}
+                  data-staff-name={staff.name}
+                  data-staff-color={staff.color}
+                  p="sm"
+                  withBorder
+                  style={{
+                    cursor: 'grab',
+                    transition: 'all 0.2s',
+                    borderColor: staff.color,
+                    borderWidth: 2,
+                  }}
+                  styles={{
+                    root: {
+                      '&:hover': {
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        transform: 'translateY(-2px)',
                       },
-                    }}
-                  >
-                    <Stack gap={4}>
-                      <Text size="sm" fw={600} c={template.color}>
-                        {template.name}
+                    },
+                  }}
+                >
+                  <Group gap="sm" wrap="nowrap">
+                    <Avatar color={staff.color} radius="xl" size="sm">
+                      {staff.name.charAt(0)}
+                    </Avatar>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Text size="sm" fw={500} truncate>
+                        {staff.name}
                       </Text>
-                      <Group gap="xs">
-                        <IconClock size={14} color={template.color} />
-                        <Text size="xs" c="dimmed">
-                          {template.description}
-                        </Text>
-                      </Group>
-                    </Stack>
-                  </Card>
-                ))}
-              </Stack>
-            </ScrollArea>
+                      <Badge size="xs" variant="light" color={staff.color}>
+                        {staff.role}
+                      </Badge>
+                    </div>
+                    <Menu shadow="md" width={160}>
+                      <Menu.Target>
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <IconDotsVertical size={16} />
+                        </ActionIcon>
+                      </Menu.Target>
 
-            {/* 統計情報 */}
-            <Box mt="md" pt="md" style={{ borderTop: '1px solid #e9ecef' }}>
-              <Text size="xs" fw={600} mb="xs" c="dimmed">
-                今月の統計
-              </Text>
-              <Stack gap={6}>
-                <Group justify="space-between">
-                  <Text size="xs">登録シフト数</Text>
-                  <Badge size="sm" variant="light">
-                    {eventCount}
-                  </Badge>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="xs">スタッフ数</Text>
-                  <Badge size="sm" variant="light">
-                    {staff.length}
-                  </Badge>
-                </Group>
-              </Stack>
-            </Box>
-          </Paper>
-        </Group>
-      </Stack>
+                      <Menu.Dropdown>
+                        <Menu.Item
+                          leftSection={<IconEdit size={16} />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(staff);
+                          }}
+                        >
+                          編集
+                        </Menu.Item>
+                        <Menu.Item
+                          leftSection={<IconTrash size={16} />}
+                          color="red"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteModal(staff);
+                          }}
+                        >
+                          削除
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  </Group>
+                </Card>
+              ))}
+            </Stack>
+          </ScrollArea>
+        </Paper>
+
+        {/* 中央: カレンダー */}
+        <Paper
+          withBorder
+          p="md"
+          style={{
+            flex: 1,
+            height: '100%',
+            overflow: 'hidden',
+          }}
+        >
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[dayGridPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
+            locale="ja"
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,dayGridWeek',
+            }}
+            buttonText={{
+              today: '今日',
+              month: '月',
+              week: '週',
+            }}
+            height="100%"
+            editable={true}
+            droppable={true}
+            events={shifts}
+            eventReceive={handleEventReceive}
+            eventClick={handleEventClick}
+            eventDrop={handleEventDrop}
+          />
+        </Paper>
+      </Group>
     </Container>
   );
 }

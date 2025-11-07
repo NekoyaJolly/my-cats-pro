@@ -7,95 +7,78 @@ import {
   Param,
   Delete,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-
-import { CreateShiftTemplateDto } from './dto/create-shift-template.dto';
+import { ShiftService } from './shift.service';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
-import { ShiftService } from './shift.service';
+import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
+import { ApiResponse } from '../common/dto/api-response.dto';
+import { ShiftResponseDto, CalendarShiftEvent } from '../common/types/shift.types';
 
 @Controller('shifts')
 export class ShiftController {
   constructor(private readonly shiftService: ShiftService) {}
 
-  // ==========================================
-  // Shift Endpoints
-  // ==========================================
-
+  /**
+   * シフトを新規作成
+   */
   @Post()
-  create(@Body() createShiftDto: CreateShiftDto) {
-    return this.shiftService.create(createShiftDto);
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() createShiftDto: CreateShiftDto): Promise<ApiResponse<ShiftResponseDto>> {
+    const shift = await this.shiftService.create(createShiftDto);
+    return ApiResponse.success(shift);
   }
 
+  /**
+   * シフト一覧を取得
+   */
   @Get()
-  findAll(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('staffId') staffId?: string,
-  ) {
-    return this.shiftService.findAll(startDate, endDate, staffId);
+  async findAll(@Query() query: GetShiftsQueryDto): Promise<ApiResponse<ShiftResponseDto[]>> {
+    const shifts = await this.shiftService.findAll(query);
+    return ApiResponse.success(shifts);
   }
 
+  /**
+   * カレンダー表示用のシフトデータを取得
+   */
   @Get('calendar')
-  getCalendarData(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ) {
-    return this.shiftService.getCalendarData(startDate, endDate);
+  async getCalendarData(
+    @Query() query: GetShiftsQueryDto,
+  ): Promise<ApiResponse<CalendarShiftEvent[]>> {
+    const events = await this.shiftService.getCalendarData(query);
+    return ApiResponse.success(events);
   }
 
-  @Get('statistics')
-  getStatistics(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ) {
-    return this.shiftService.getStatistics(startDate, endDate);
-  }
-
+  /**
+   * 指定IDのシフトを取得
+   */
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.shiftService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<ApiResponse<ShiftResponseDto>> {
+    const shift = await this.shiftService.findOne(id);
+    return ApiResponse.success(shift);
   }
 
+  /**
+   * シフト情報を更新
+   */
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateShiftDto: UpdateShiftDto) {
-    return this.shiftService.update(id, updateShiftDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.shiftService.remove(id);
-  }
-
-  // ==========================================
-  // Template Endpoints
-  // ==========================================
-
-  @Post('templates')
-  createTemplate(@Body() createTemplateDto: CreateShiftTemplateDto) {
-    return this.shiftService.createTemplate(createTemplateDto);
-  }
-
-  @Get('templates')
-  findAllTemplates() {
-    return this.shiftService.findAllTemplates();
-  }
-
-  @Get('templates/:id')
-  findOneTemplate(@Param('id') id: string) {
-    return this.shiftService.findOneTemplate(id);
-  }
-
-  @Patch('templates/:id')
-  updateTemplate(
+  async update(
     @Param('id') id: string,
-    @Body() updateTemplateDto: CreateShiftTemplateDto,
-  ) {
-    return this.shiftService.updateTemplate(id, updateTemplateDto);
+    @Body() updateShiftDto: UpdateShiftDto,
+  ): Promise<ApiResponse<ShiftResponseDto>> {
+    const shift = await this.shiftService.update(id, updateShiftDto);
+    return ApiResponse.success(shift);
   }
 
-  @Delete('templates/:id')
-  removeTemplate(@Param('id') id: string) {
-    return this.shiftService.removeTemplate(id);
+  /**
+   * シフトを削除
+   */
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  async remove(@Param('id') id: string): Promise<ApiResponse<{ id: string }>> {
+    await this.shiftService.remove(id);
+    return ApiResponse.success({ id });
   }
 }

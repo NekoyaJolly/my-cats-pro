@@ -1,80 +1,181 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
-import { CreateShiftTemplateDto } from './dto/create-shift-template.dto';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
+import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
+import {
+  ShiftResponseDto,
+  CalendarShiftEvent,
+  ShiftEntity,
+} from '../common/types/shift.types';
+import { Shift, Staff } from '@prisma/client';
 
 @Injectable()
 export class ShiftService {
   constructor(private prisma: PrismaService) {}
 
-  // ==========================================
-  // Shift CRUD
-  // ==========================================
+  /**
+   * 日付文字列（YYYY-MM-DD）をDateオブジェクトに変換
+   * 不正な日付の場合はエラーをスロー
+   */
+  private parseDate(dateString: string): Date {
+    const date = new Date(dateString + 'T00:00:00.000Z');
+    if (isNaN(date.getTime())) {
+      throw new BadRequestException(`Invalid date format: ${dateString}`);
+    }
+    return date;
+  }
 
-  async create(createShiftDto: CreateShiftDto) {
-    return this.prisma.shift.create({
+  /**
+   * Shiftエンティティを ShiftResponseDto に変換
+   */
+  private toResponseDto(shift: Shift & { staff: Staff }): ShiftResponseDto {
+    return {
+      id: shift.id,
+      staffId: shift.staffId,
+      staffName: shift.staff.name,
+      staffColor: shift.staff.color,
+      shiftDate: shift.shiftDate.toISOString().split('T')[0], // YYYY-MM-DD
+      displayName: shift.displayName,
+      status: shift.status,
+      notes: shift.notes,
+      createdAt: shift.createdAt.toISOString(),
+      updatedAt: shift.updatedAt.toISOString(),
+    };
+  }
+
+  /**
+   * Shiftエンティティを CalendarShiftEvent に変換
+   */
+  private toCalendarEvent(shift: Shift & { staff: Staff }): CalendarShiftEvent {
+    const shiftDate = shift.shiftDate.toISOString().split('T')[0];
+    const displayName = shift.displayName || shift.staff.name;
+
+    return {
+      id: shift.id,
+      title: displayName,
+      start: `${shiftDate}T00:00:00`,
+      end: `${shiftDate}T23:59:59`,
+      backgroundColor: shift.staff.color,
+      borderColor: shift.staff.color,
+      extendedProps: {
+        shiftId: shift.id,
+        staffId: shift.staffId,
+        staffName: shift.staff.name,
+        displayName: shift.displayName,
+        notes: shift.notes,
+      },
+    };
+  }
+
+  /**
+   * シフトを新規作成
+   */
+  async create(createShiftDto: CreateShiftDto): Promise<ShiftResponseDto> {
+    // スタッフの存在確認
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: createShiftDto.staffId },
+    });
+
+    if (!staff) {
+      throw new NotFoundException(`Staff with ID ${createShiftDto.staffId} not found`);
+    }
+
+    if (!staff.isActive) {
+      throw new BadRequestException(`Staff with ID ${createShiftDto.staffId} is not active`);
+    }
+
+    // 日付をパース
+    const shiftDate = this.parseDate(createShiftDto.shiftDate);
+
+    // シフトを作成
+    const shift = await this.prisma.shift.create({
       data: {
-        ...createShiftDto,
-        shiftDate: new Date(createShiftDto.shiftDate),
-        startTime: createShiftDto.startTime
-          ? new Date(createShiftDto.startTime)
-          : null,
-        endTime: createShiftDto.endTime
-          ? new Date(createShiftDto.endTime)
-          : null,
-        actualStartTime: createShiftDto.actualStartTime
-          ? new Date(createShiftDto.actualStartTime)
-          : null,
-        actualEndTime: createShiftDto.actualEndTime
-          ? new Date(createShiftDto.actualEndTime)
-          : null,
+        staffId: createShiftDto.staffId,
+        shiftDate: shiftDate,
+        displayName: createShiftDto.displayName || null,
+        notes: createShiftDto.notes || null,
+        status: 'SCHEDULED', // デフォルト値
+        mode: 'SIMPLE', // 最小実装では簡易モード
       },
       include: {
         staff: true,
-        template: true,
-        tasks: true,
       },
     });
+
+    return this.toResponseDto(shift);
   }
 
-  async findAll(startDate?: string, endDate?: string, staffId?: string) {
-    const where: Prisma.ShiftWhereInput = {};
+  /**
+   * シフト一覧を取得
+   */
+  async findAll(query: GetShiftsQueryDto): Promise<ShiftResponseDto[]> {
+    const where: any = {};
 
-    if (startDate && endDate) {
+    // 日付範囲でフィルタ
+    if (query.startDate && query.endDate) {
       where.shiftDate = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: this.parseDate(query.startDate),
+        lte: this.parseDate(query.endDate),
+      };
+    } else if (query.startDate) {
+      where.shiftDate = {
+        gte: this.parseDate(query.startDate),
+      };
+    } else if (query.endDate) {
+      where.shiftDate = {
+        lte: this.parseDate(query.endDate),
       };
     }
 
-    if (staffId) {
-      where.staffId = staffId;
+    // スタッフIDでフィルタ
+    if (query.staffId) {
+      where.staffId = query.staffId;
     }
 
-    return this.prisma.shift.findMany({
+    const shifts = await this.prisma.shift.findMany({
       where,
       include: {
         staff: true,
-        template: true,
-        tasks: true,
       },
       orderBy: { shiftDate: 'asc' },
     });
+
+    return shifts.map((shift) => this.toResponseDto(shift));
   }
 
-  async findOne(id: string) {
+  /**
+   * カレンダー表示用のシフトデータを取得
+   */
+  async getCalendarData(query: GetShiftsQueryDto): Promise<CalendarShiftEvent[]> {
+    const shifts = await this.prisma.shift.findMany({
+      where: {
+        ...(query.startDate &&
+          query.endDate && {
+            shiftDate: {
+              gte: this.parseDate(query.startDate),
+              lte: this.parseDate(query.endDate),
+            },
+          }),
+        ...(query.staffId && { staffId: query.staffId }),
+      },
+      include: {
+        staff: true,
+      },
+      orderBy: { shiftDate: 'asc' },
+    });
+
+    return shifts.map((shift) => this.toCalendarEvent(shift));
+  }
+
+  /**
+   * 指定IDのシフトを取得
+   */
+  async findOne(id: string): Promise<ShiftResponseDto> {
     const shift = await this.prisma.shift.findUnique({
       where: { id },
       include: {
         staff: true,
-        template: true,
-        tasks: {
-          orderBy: { createdAt: 'asc' },
-        },
       },
     });
 
@@ -82,150 +183,72 @@ export class ShiftService {
       throw new NotFoundException(`Shift with ID ${id} not found`);
     }
 
-    return shift;
+    return this.toResponseDto(shift);
   }
 
-  async update(id: string, updateShiftDto: UpdateShiftDto) {
+  /**
+   * シフト情報を更新
+   */
+  async update(id: string, updateShiftDto: UpdateShiftDto): Promise<ShiftResponseDto> {
+    // 既存シフトの存在確認
     await this.findOne(id);
 
-    return this.prisma.shift.update({
-      where: { id },
-      data: {
-        ...updateShiftDto,
-        shiftDate: updateShiftDto.shiftDate
-          ? new Date(updateShiftDto.shiftDate)
-          : undefined,
-        startTime: updateShiftDto.startTime
-          ? new Date(updateShiftDto.startTime)
-          : undefined,
-        endTime: updateShiftDto.endTime
-          ? new Date(updateShiftDto.endTime)
-          : undefined,
-        actualStartTime: updateShiftDto.actualStartTime
-          ? new Date(updateShiftDto.actualStartTime)
-          : undefined,
-        actualEndTime: updateShiftDto.actualEndTime
-          ? new Date(updateShiftDto.actualEndTime)
-          : undefined,
-      },
-      include: {
-        staff: true,
-        template: true,
-        tasks: true,
-      },
-    });
-  }
+    // スタッフIDが変更される場合、スタッフの存在確認
+    if (updateShiftDto.staffId) {
+      const staff = await this.prisma.staff.findUnique({
+        where: { id: updateShiftDto.staffId },
+      });
 
-  async remove(id: string) {
-    await this.findOne(id);
-
-    return this.prisma.shift.delete({
-      where: { id },
-    });
-  }
-
-  // ==========================================
-  // Shift Template CRUD
-  // ==========================================
-
-  async createTemplate(createTemplateDto: CreateShiftTemplateDto) {
-    return this.prisma.shiftTemplate.create({
-      data: createTemplateDto,
-    });
-  }
-
-  async findAllTemplates() {
-    return this.prisma.shiftTemplate.findMany({
-      where: { isActive: true },
-      orderBy: { displayOrder: 'asc' },
-    });
-  }
-
-  async findOneTemplate(id: string) {
-    const template = await this.prisma.shiftTemplate.findUnique({
-      where: { id },
-    });
-
-    if (!template) {
-      throw new NotFoundException(`Template with ID ${id} not found`);
+      if (!staff || !staff.isActive) {
+        throw new BadRequestException(`Staff with ID ${updateShiftDto.staffId} is not available`);
+      }
     }
 
-    return template;
-  }
+    // 更新データを構築
+    const updateData: any = {};
 
-  async updateTemplate(id: string, updateTemplateDto: CreateShiftTemplateDto) {
-    await this.findOneTemplate(id);
+    if (updateShiftDto.staffId !== undefined) {
+      updateData.staffId = updateShiftDto.staffId;
+    }
 
-    return this.prisma.shiftTemplate.update({
+    if (updateShiftDto.shiftDate !== undefined) {
+      updateData.shiftDate = this.parseDate(updateShiftDto.shiftDate);
+    }
+
+    if (updateShiftDto.displayName !== undefined) {
+      updateData.displayName = updateShiftDto.displayName;
+    }
+
+    if (updateShiftDto.notes !== undefined) {
+      updateData.notes = updateShiftDto.notes;
+    }
+
+    if (updateShiftDto.status !== undefined) {
+      updateData.status = updateShiftDto.status;
+    }
+
+    // シフトを更新
+    const shift = await this.prisma.shift.update({
       where: { id },
-      data: updateTemplateDto,
+      data: updateData,
+      include: {
+        staff: true,
+      },
     });
+
+    return this.toResponseDto(shift);
   }
 
-  async removeTemplate(id: string) {
-    await this.findOneTemplate(id);
+  /**
+   * シフトを削除
+   */
+  async remove(id: string): Promise<void> {
+    // 存在確認
+    await this.findOne(id);
 
-    return this.prisma.shiftTemplate.update({
+    // 物理削除
+    await this.prisma.shift.delete({
       where: { id },
-      data: { isActive: false },
     });
-  }
-
-  // ==========================================
-  // Calendar View
-  // ==========================================
-
-  async getCalendarData(startDate: string, endDate: string) {
-    const shifts = await this.findAll(startDate, endDate);
-
-    return shifts.map((shift) => ({
-      id: shift.id,
-      title: shift.displayName || shift.staff.name,
-      start: shift.startTime || shift.shiftDate,
-      end: shift.endTime || shift.shiftDate,
-      backgroundColor: shift.staff.color,
-      extendedProps: {
-        staffId: shift.staff.id,
-        staffName: shift.staff.name,
-        mode: shift.mode,
-        status: shift.status,
-        notes: shift.notes,
-      },
-    }));
-  }
-
-  // ==========================================
-  // Statistics
-  // ==========================================
-
-  async getStatistics(startDate: string, endDate: string) {
-    const shifts = await this.findAll(startDate, endDate);
-
-    const totalShifts = shifts.length;
-    const confirmedShifts = shifts.filter(
-      (s) => s.status === 'CONFIRMED',
-    ).length;
-    const completedShifts = shifts.filter(
-      (s) => s.status === 'COMPLETED',
-    ).length;
-
-    const staffStats = shifts.reduce(
-      (acc, shift) => {
-        const staffName = shift.staff.name;
-        if (!acc[staffName]) {
-          acc[staffName] = 0;
-        }
-        acc[staffName]++;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    return {
-      totalShifts,
-      confirmedShifts,
-      completedShifts,
-      staffStats,
-    };
   }
 }

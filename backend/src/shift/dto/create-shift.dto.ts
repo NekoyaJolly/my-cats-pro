@@ -1,62 +1,44 @@
-import { ShiftMode, ShiftStatus, Prisma } from '@prisma/client';
 import {
   IsString,
   IsUUID,
-  IsDateString,
+  IsNotEmpty,
   IsOptional,
-  IsEnum,
-  IsInt,
-  IsObject,
+  Matches,
 } from 'class-validator';
 
+/**
+ * シフト作成DTO（最小実装）
+ * ドラッグ&ドロップでスタッフをカレンダーに配置する際に使用
+ */
 export class CreateShiftDto {
-  @IsUUID()
+  /**
+   * スタッフID（必須）
+   */
+  @IsUUID('4', { message: '有効なスタッフIDを指定してください' })
+  @IsNotEmpty({ message: 'スタッフIDは必須です' })
   staffId: string;
 
-  @IsDateString()
+  /**
+   * シフト日付（必須、YYYY-MM-DD形式）
+   */
+  @IsString()
+  @IsNotEmpty({ message: 'シフト日付は必須です' })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'シフト日付はYYYY-MM-DD形式で指定してください',
+  })
   shiftDate: string;
 
+  /**
+   * 表示名（任意、指定しない場合はスタッフ名を使用）
+   */
   @IsOptional()
   @IsString()
-  displayName?: string;
+  displayName?: string | null;
 
-  @IsOptional()
-  @IsUUID()
-  templateId?: string;
-
-  @IsOptional()
-  @IsDateString()
-  startTime?: string;
-
-  @IsOptional()
-  @IsDateString()
-  endTime?: string;
-
-  @IsOptional()
-  @IsInt()
-  breakDuration?: number;
-
-  @IsOptional()
-  @IsEnum(ShiftStatus)
-  status?: ShiftStatus;
-
+  /**
+   * 備考（任意）
+   */
   @IsOptional()
   @IsString()
-  notes?: string;
-
-  @IsOptional()
-  @IsDateString()
-  actualStartTime?: string;
-
-  @IsOptional()
-  @IsDateString()
-  actualEndTime?: string;
-
-  @IsOptional()
-  @IsObject()
-  metadata?: Prisma.InputJsonValue;
-
-  @IsOptional()
-  @IsEnum(ShiftMode)
-  mode?: ShiftMode;
+  notes?: string | null;
 }
