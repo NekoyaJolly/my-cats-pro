@@ -3,8 +3,8 @@ import type { Prisma } from "@prisma/client";
 import { Injectable, Logger } from "@nestjs/common";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import {
-  TagAutomationEventType,
-  TagAutomationRunStatus,
+  TagAutomationEventType as _TagAutomationEventType,
+  TagAutomationRunStatus as _TagAutomationRunStatus,
   TagAssignmentAction,
   TagAssignmentSource,
 } from "@prisma/client";

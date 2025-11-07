@@ -151,6 +151,7 @@ export default [
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-misused-promises': 'off', // csv-parserの.on("data")で誤検知
       '@typescript-eslint/prefer-promise-reject-errors': 'off',
       'no-console': 'off', // スクリプトでのログ出力は許可

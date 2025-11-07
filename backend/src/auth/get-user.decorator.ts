@@ -3,8 +3,8 @@ import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import type { RequestUser } from "./auth.types";
 
 export const GetUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-  const request = ctx.switchToHttp().getRequest();
+  (_data: unknown, ctx: ExecutionContext): RequestUser => {
+  const request = ctx.switchToHttp().getRequest<{ user: RequestUser }>();
   return request.user;
   },
 );

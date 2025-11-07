@@ -4,7 +4,7 @@ import { Shift, Staff } from '@prisma/client';
 import {
   ShiftResponseDto,
   CalendarShiftEvent,
-  ShiftEntity,
+  ShiftEntity as _ShiftEntity,
 } from '../common/types/shift.types';
 import { PrismaService } from '../prisma/prisma.service';
 

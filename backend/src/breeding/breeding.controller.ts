@@ -25,7 +25,7 @@ import { BreedingService } from "./breeding.service";
 import {
   BreedingQueryDto,
   CreateBreedingDto,
-  UpdateBreedingDto,
+  UpdateBreedingDto as _UpdateBreedingDto,
   CreateBreedingNgRuleDto,
   UpdateBreedingNgRuleDto,
   CreatePregnancyCheckDto,

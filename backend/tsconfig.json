@@ -31,7 +31,8 @@
     "src/scripts/check-*.ts",
     "src/scripts/build-*.ts",
     "src/scripts/rename-*.ts",
-    "**/*.bak.ts"
+    "**/*.bak.ts",
+    "**/*-old.ts"
   ],
   "watchOptions": {
     "watchFile": "useFsEvents",

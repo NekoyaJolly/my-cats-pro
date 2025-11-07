@@ -143,7 +143,7 @@ export class TagCategoriesService {
     }
 
     await this.prisma.$transaction(
-      items.map(async ({ id, displayOrder }) =>
+      items.map(({ id, displayOrder }) =>
         this.prisma.tagCategory.update({ where: { id }, data: { displayOrder } }),
       ),
     );

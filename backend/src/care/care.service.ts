@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   CareType,
   MedicalRecordStatus,
-  MedicalVisitType,
+  MedicalVisitType as _MedicalVisitType,
   Priority,
   Prisma,
   ReminderRepeatFrequency,

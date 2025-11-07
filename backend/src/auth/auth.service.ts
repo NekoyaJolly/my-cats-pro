@@ -18,6 +18,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { LoginAttemptService, LoginAttemptData } from "./login-attempt.service";
 import { PasswordService } from "./password.service";
 
+import type { JwtPayload } from "./auth.types";
+
 type ValidatedUser = {
   id: string;
   email: string;
@@ -463,7 +465,7 @@ export class AuthService {
       throw new UnauthorizedException('Missing refresh token');
     }
     try {
-      const payload = this.jwt.verify(refreshToken, {
+      const payload = this.jwt.verify<JwtPayload>(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
       });
 
