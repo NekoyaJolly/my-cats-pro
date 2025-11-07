@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
   Container,
   Title,
-  Card,
   TextInput,
   Select,
   NumberInput,
@@ -57,7 +56,7 @@ interface PedigreeResponse {
 const getBreeds = async (params?: { limit?: string }): Promise<ApiResponse<BreedsResponse>> => {
   // OpenAPI型定義が未生成のため一時的に型チェックをスキップ
   // 型定義生成後は @ts-expect-error を削除できます
-  // @ts-expect-error
+  // @ts-expect-error - OpenAPI type definition not yet generated
   return await apiClient.get('/breeds', params ? { query: params } : undefined);
 };
 
@@ -84,10 +83,7 @@ import {
   IconDeviceFloppy, 
   IconArrowLeft, 
   IconDna,
-  IconInfoCircle,
   IconPaw,
-  IconUser,
-  IconPlus,
 } from '@tabler/icons-react';
 
 interface Breed {

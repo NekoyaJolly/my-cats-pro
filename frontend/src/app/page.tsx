@@ -21,7 +21,6 @@ import { useMediaQuery } from '@mantine/hooks';
 import {
   IconPaw,
   IconHeart,
-  IconCalendarEvent,
   IconCertificate,
   IconPlus,
   IconChartBar,

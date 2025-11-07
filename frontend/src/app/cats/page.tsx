@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -10,25 +10,21 @@ import {
   Card,
   Group,
   Stack,
-  Flex,
   Box,
   Badge,
   Tabs,
   Select,
   Skeleton,
   Alert,
-  Grid,
   Table,
-  ActionIcon,
 } from '@mantine/core';
-import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { useGetCats, useGetCatStatistics, useUpdateCat, useDeleteCat, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { CatQuickEditModal } from '@/components/cats/cat-quick-edit-modal';
 import { ContextMenuProvider, OperationModalManager, useContextMenu } from '@/components/context-menu';
 import { GenderBadge } from '@/components/GenderBadge';
-import { IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');

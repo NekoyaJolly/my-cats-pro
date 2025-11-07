@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+
 import { PrismaService } from '../prisma/prisma.service';
+
+import { CreateShiftTemplateDto } from './dto/create-shift-template.dto';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
-import { CreateShiftTemplateDto } from './dto/create-shift-template.dto';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ShiftService {

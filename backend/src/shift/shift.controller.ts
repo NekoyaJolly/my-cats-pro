@@ -8,10 +8,11 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { ShiftService } from './shift.service';
+
+import { CreateShiftTemplateDto } from './dto/create-shift-template.dto';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
-import { CreateShiftTemplateDto } from './dto/create-shift-template.dto';
+import { ShiftService } from './shift.service';
 
 @Controller('shifts')
 export class ShiftController {

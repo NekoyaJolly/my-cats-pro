@@ -1,3 +1,4 @@
+import { ShiftMode, ShiftStatus, Prisma } from '@prisma/client';
 import {
   IsString,
   IsUUID,
@@ -7,7 +8,6 @@ import {
   IsInt,
   IsObject,
 } from 'class-validator';
-import { ShiftMode, ShiftStatus } from '@prisma/client';
 
 export class CreateShiftDto {
   @IsUUID()
@@ -54,7 +54,7 @@ export class CreateShiftDto {
 
   @IsOptional()
   @IsObject()
-  metadata?: any;
+  metadata?: Prisma.InputJsonValue;
 
   @IsOptional()
   @IsEnum(ShiftMode)

@@ -25,8 +25,8 @@ import {
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 import { CatsService } from "./cats.service";
-import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 import { GENDER_MASTER } from "./constants/gender";
+import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 
 @ApiTags("Cats")
 @ApiBearerAuth()

@@ -1,5 +1,6 @@
 import { Controller, Get, HttpStatus } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+
 import { GENDER_MASTER } from "../../cats/constants/gender";
 
 @ApiTags("Master Data")
