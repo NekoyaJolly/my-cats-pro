@@ -419,46 +419,41 @@ export default function CatsPage() {
 
   const filteredCats = getFilteredCats();
 
-  // 母猫と子猫を分類
-  const { motherCatsWithKittens, adultsWithoutKittens } = useMemo(() => {
+  // 母猫の子猫マップと表示用猫リストを作成
+  const { displayCats, kittensByMother } = useMemo(() => {
     // Maleタブ: 成猫のオスのみ表示（子猫完全除外）
     if (activeTab === 'male') {
-      return { motherCatsWithKittens: [], adultsWithoutKittens: filteredCats };
+      return { displayCats: filteredCats, kittensByMother: new Map<string, Cat[]>() };
     }
     
     // Kittenタブ: 子猫全頭を個別表示（母猫に格納しない）
     if (activeTab === 'kitten') {
-      return { motherCatsWithKittens: [], adultsWithoutKittens: filteredCats };
+      return { displayCats: filteredCats, kittensByMother: new Map<string, Cat[]>() };
     }
     
     // Gradタブ: 個別表示（母猫に格納しない）
     if (activeTab === 'grad') {
-      return { motherCatsWithKittens: [], adultsWithoutKittens: filteredCats };
+      return { displayCats: filteredCats, kittensByMother: new Map<string, Cat[]>() };
     }
     
     // Cats/Female/Raisingタブ: 母猫に子猫を格納して表示
     const kittens = filteredCats.filter((cat: Cat) => isKitten(cat.birthDate) && cat.motherId);
-    const kittensByMother = new Map<string, Cat[]>();
+    const kittensByMotherMap = new Map<string, Cat[]>();
     
     kittens.forEach((kitten: Cat) => {
       if (kitten.motherId) {
-        if (!kittensByMother.has(kitten.motherId)) {
-          kittensByMother.set(kitten.motherId, []);
+        if (!kittensByMotherMap.has(kitten.motherId)) {
+          kittensByMotherMap.set(kitten.motherId, []);
         }
-        kittensByMother.get(kitten.motherId)!.push(kitten);
+        kittensByMotherMap.get(kitten.motherId)!.push(kitten);
       }
     });
 
+    // 子猫を除外した表示用リスト（母猫は含む、ソート順を維持）
     const kittenIds = new Set(kittens.map((k: Cat) => k.id));
-    const adultsWithoutKittens = filteredCats.filter((cat: Cat) => !kittenIds.has(cat.id) && !kittensByMother.has(cat.id));
-    const motherCatsWithKittens = filteredCats
-      .filter((cat: Cat) => kittensByMother.has(cat.id))
-      .map((cat: Cat) => ({
-        mother: cat,
-        kittens: kittensByMother.get(cat.id) || [],
-      }));
+    const displayCats = filteredCats.filter((cat: Cat) => !kittenIds.has(cat.id));
 
-    return { motherCatsWithKittens, adultsWithoutKittens };
+    return { displayCats, kittensByMother: kittensByMotherMap };
   }, [filteredCats, activeTab]);
 
   return (
@@ -665,91 +660,17 @@ export default function CatsPage() {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {/* 子猫を持たない成猫 */}
-                {adultsWithoutKittens.map((cat: Cat) => (
-                  <ContextMenuProvider
-                    key={cat.id}
-                    entity={cat}
-                    entityType="猫"
-                    actions={['view', 'edit', 'delete', 'duplicate']}
-                    onAction={handleContextAction}
-                    enableDoubleClick={true}
-                    doubleClickAction="edit"
-                  >
-                    <Table.Tr 
-                      style={{ cursor: 'pointer' }}
-                      title="右クリックまたはダブルクリックで操作"
-                    >
-                      {/* 名前 */}
-                      <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <Text fw={600}>{cat.name}</Text>
-                      </Table.Td>
-                      
-                      {/* 性別バッジ */}
-                      <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        <GenderBadge gender={cat.gender} size="sm" />
-                      </Table.Td>
-                      
-                      {/* 品種名 */}
-                      <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <Text size="sm">{cat.breed?.name || '未登録'}</Text>
-                      </Table.Td>
-                      
-                      {/* 年齢 */}
-                      <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        <Text size="sm">{calculateAge(cat.birthDate)}</Text>
-                      </Table.Td>
-                      
-                      {/* タグ表示 */}
-                      <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        {cat.tags && cat.tags.length > 0 ? (
-                          <Group gap={4} wrap="nowrap">
-                            {cat.tags.slice(0, 3).map((catTag) => (
-                              <Badge 
-                                key={catTag.tag.id} 
-                                size="xs" 
-                                variant="dot"
-                                color={catTag.tag.color || 'gray'}
-                              >
-                                {catTag.tag.name}
-                              </Badge>
-                            ))}
-                            {cat.tags.length > 3 && (
-                              <Badge size="xs" variant="outline" color="gray">
-                                +{cat.tags.length - 3}
-                              </Badge>
-                            )}
-                          </Group>
-                        ) : (
-                          <Text size="xs" c="dimmed">-</Text>
-                        )}
-                      </Table.Td>
-                      
-                      {/* 詳細ボタン */}
-                      <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        <Button
-                          variant="light"
-                          size="xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewDetails(cat.id);
-                          }}
-                        >
-                          詳細
-                        </Button>
-                      </Table.Td>
-                    </Table.Tr>
-                  </ContextMenuProvider>
-                ))}
+                {/* ソート済みの猫リストを1つずつ表示 */}
+                {displayCats.map((cat: Cat) => {
+                  const kittens = kittensByMother.get(cat.id) || [];
+                  const hasMother = kittens.length > 0;
+                  const isExpanded = expandedMotherIds.has(cat.id);
 
-                {/* 子猫を持つ母猫 */}
-                {motherCatsWithKittens.map(({ mother, kittens }) => {
-                  const isExpanded = expandedMotherIds.has(mother.id);
                   return (
-                    <React.Fragment key={mother.id}>
-                      {/* 母猫の行 */}
+                    <React.Fragment key={cat.id}>
+                      {/* 猫の行（母猫または通常の猫） */}
                       <ContextMenuProvider
-                        entity={mother}
+                        entity={cat}
                         entityType="猫"
                         actions={['view', 'edit', 'delete', 'duplicate']}
                         onAction={handleContextAction}
@@ -759,55 +680,64 @@ export default function CatsPage() {
                         <Table.Tr 
                           style={{ 
                             cursor: 'pointer',
-                            backgroundColor: isExpanded ? 'var(--mantine-color-blue-0)' : undefined
+                            backgroundColor: (hasMother && isExpanded) ? 'var(--mantine-color-blue-0)' : undefined
                           }}
                           title="右クリックまたはダブルクリックで操作"
                         >
-                          {/* 名前（展開アイコン付き） */}
-                          <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            <Group gap="xs" wrap="nowrap">
-                              <Text fw={600}>{mother.name}</Text>
-                              <Badge 
-                                size="xs" 
-                                color="pink" 
-                                variant="outline"
-                                leftSection={isExpanded ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
-                                rightSection={<IconCat size={12} />}
-                                style={{ 
-                                  backgroundColor: 'white',
-                                  cursor: 'pointer',
-                                  userSelect: 'none'
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleExpanded(mother.id);
-                                }}
-                              >
-                                {kittens.length}
-                              </Badge>
-                            </Group>
+                          {/* 名前 */}
+                          <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            {hasMother ? (
+                              <Group gap="xs" wrap="nowrap" justify="space-between" style={{ width: '100%' }}>
+                                <Text fw={600} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                                  {cat.name}
+                                </Text>
+                                <Badge 
+                                  size="xs" 
+                                  color="pink" 
+                                  variant="outline"
+                                  leftSection={isExpanded ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
+                                  rightSection={<IconCat size={12} />}
+                                  style={{ 
+                                    backgroundColor: 'white',
+                                    cursor: 'pointer',
+                                    userSelect: 'none',
+                                    flexShrink: 0
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleExpanded(cat.id);
+                                  }}
+                                >
+                                  {kittens.length}
+                                </Badge>
+                              </Group>
+                            ) : (
+                              <Text fw={600} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {cat.name}
+                              </Text>
+                            )}
                           </Table.Td>
-
+                          
                           {/* 性別バッジ */}
                           <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                            <GenderBadge gender={mother.gender} size="sm" />
+                            <GenderBadge gender={cat.gender} size="sm" />
                           </Table.Td>
                           
                           {/* 品種名 */}
                           <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            <Text size="sm">{mother.breed?.name || '未登録'}</Text>
+                            <Text size="sm">{cat.breed?.name || '未登録'}</Text>
                           </Table.Td>
                           
                           {/* 年齢 */}
                           <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                            <Text size="sm">{calculateAge(mother.birthDate)}</Text>
+                            <Text size="sm">{calculateAge(cat.birthDate)}</Text>
                           </Table.Td>
                           
                           {/* タグ表示 */}
                           <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                            {mother.tags && mother.tags.length > 0 ? (
+                            {cat.tags && cat.tags.length > 0 ? (
                               <Group gap={4} wrap="nowrap">
-                                {mother.tags.slice(0, 3).map((catTag) => (
+                                {cat.tags.slice(0, 3).map((catTag) => (
                                   <Badge 
                                     key={catTag.tag.id} 
                                     size="xs" 
@@ -817,9 +747,9 @@ export default function CatsPage() {
                                     {catTag.tag.name}
                                   </Badge>
                                 ))}
-                                {mother.tags.length > 3 && (
+                                {cat.tags.length > 3 && (
                                   <Badge size="xs" variant="outline" color="gray">
-                                    +{mother.tags.length - 3}
+                                    +{cat.tags.length - 3}
                                   </Badge>
                                 )}
                               </Group>
@@ -835,7 +765,7 @@ export default function CatsPage() {
                               size="xs"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleViewDetails(mother.id);
+                                handleViewDetails(cat.id);
                               }}
                             >
                               詳細
@@ -845,7 +775,7 @@ export default function CatsPage() {
                       </ContextMenuProvider>
 
                       {/* 子猫の行（展開時） */}
-                      {isExpanded && kittens.map((kitten: Cat) => (
+                      {hasMother && isExpanded && kittens.map((kitten: Cat) => (
                         <ContextMenuProvider
                           key={kitten.id}
                           entity={kitten}
