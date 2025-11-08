@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
-  Title,
   Text,
   Group,
   Stack,
@@ -45,14 +44,13 @@ import type {
   StaffResponseDto,
   CreateStaffRequest,
   UpdateStaffRequest,
-  ShiftResponseDto,
   CalendarShiftEvent,
 } from '@/types/api.types';
 
 export default function StaffShiftsPage() {
   const calendarRef = useRef<FullCalendar>(null);
   const { setPageHeader } = usePageHeader();
-  const router = useRouter();
+  useRouter();
 
   // State管理
   const [staffList, setStaffList] = useState<StaffResponseDto[]>([]);

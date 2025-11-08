@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Staff } from '@prisma/client';
+
+import { StaffResponseDto, StaffListResponseDto } from '../common/types/staff.types';
 import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
-import { StaffResponseDto, StaffListResponseDto } from '../common/types/staff.types';
-import { Staff } from '@prisma/client';
 
 @Injectable()
 export class StaffService {

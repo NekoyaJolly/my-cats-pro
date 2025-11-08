@@ -8,7 +8,6 @@ import { useGetCat, useUpdateCat, useDeleteCat } from "@/lib/api/hooks/use-cats"
 import { useGetBreeds } from "@/lib/api/hooks/use-breeds";
 import { useGetCoatColors } from "@/lib/api/hooks/use-coat-colors";
 import { format } from "date-fns";
-import { notifications } from "@mantine/notifications";
 
 type Props = {
   catId: string;

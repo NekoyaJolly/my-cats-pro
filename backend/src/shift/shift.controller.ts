@@ -10,12 +10,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ShiftService } from './shift.service';
-import { CreateShiftDto } from './dto/create-shift.dto';
-import { UpdateShiftDto } from './dto/update-shift.dto';
-import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
+
 import { ApiResponse } from '../common/dto/api-response.dto';
 import { ShiftResponseDto, CalendarShiftEvent } from '../common/types/shift.types';
+
+import { CreateShiftDto } from './dto/create-shift.dto';
+import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
+import { UpdateShiftDto } from './dto/update-shift.dto';
+import { ShiftService } from './shift.service';
 
 @Controller('shifts')
 export class ShiftController {
