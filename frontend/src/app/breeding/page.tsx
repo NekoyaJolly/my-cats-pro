@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, ChangeEvent, useRef } from 'react';
+import React, { useEffect, useState, ChangeEvent, useRef } from 'react';
 import {
   Box,
   Container,
@@ -36,10 +36,13 @@ import {
   IconEdit,
   IconBabyCarriage,
   IconRainbow,
+  IconChevronDown,
+  IconChevronRight,
 } from '@tabler/icons-react';
 
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
 import { ContextMenuProvider, useContextMenu } from '@/components/context-menu';
+import TagSelector, { TagDisplay } from '@/components/TagSelector';
 
 import {
   useGetBreedingNgRules,
@@ -59,6 +62,7 @@ import {
   type BirthPlan,
 } from '@/lib/api/hooks/use-breeding';
 import { useGetCats, useCreateCat, type Cat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
+import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 
 // 型定義
 type NgRuleType = BreedingNgRuleType;
@@ -205,6 +209,7 @@ export default function BreedingPage() {
   const [selectedBirthPlan, setSelectedBirthPlan] = useState<BirthPlan | null>(null);
   const [birthCount, setBirthCount] = useState<number>(0);
   const [deathCount, setDeathCount] = useState<number>(0);
+  const [expandedRaisingCats, setExpandedRaisingCats] = useState<Set<string>>(new Set());
 
   const [ngPairingRules, setNgPairingRules] = useState<NgPairingRule[]>(initialNgPairingRules);
   const [rulesError, setRulesError] = useState<string | null>(null);
@@ -359,6 +364,7 @@ export default function BreedingPage() {
 
   const catsQuery = useGetCats({ limit: 1000 }, { enabled: true });
   const { data: catsResponse } = catsQuery;
+  const tagCategoriesQuery = useGetTagCategories();
   const ngRulesQuery = useGetBreedingNgRules();
   const { data: ngRulesResponse, isLoading: isNgRulesLoading, isFetching: isNgRulesFetching, error: ngRulesError } = ngRulesQuery;
 
@@ -955,6 +961,9 @@ export default function BreedingPage() {
             <Tabs.Tab value="birth" leftSection={<IconPaw size={16} />} style={{ whiteSpace: 'nowrap' }}>
               出産予定 ({birthPlansResponse?.data?.length || 0})
             </Tabs.Tab>
+            <Tabs.Tab value="raising" leftSection={<IconBabyCarriage size={16} />} style={{ whiteSpace: 'nowrap' }}>
+              子育て中
+            </Tabs.Tab>
           </Tabs.List>
 
           {/* 交配管理表タブ */}
@@ -1406,6 +1415,157 @@ export default function BreedingPage() {
                 );
               })}
             </Stack>
+          </Tabs.Panel>
+
+          {/* 子育て中タブ */}
+          <Tabs.Panel value="raising" pt="md">
+            <Card padding="md" radius="md" withBorder>
+              {catsQuery.isLoading ? (
+                <Text ta="center" c="dimmed" py="xl">読み込み中...</Text>
+              ) : (() => {
+                // 子猫を持つ母猫をフィルタリング
+                const mothersWithKittens = (catsResponse?.data || [])
+                  .filter((cat: Cat) => {
+                    // 生後3ヶ月以内の子猫がいる母猫を抽出
+                    const hasYoungKittens = (catsResponse?.data || []).some((kitten: Cat) => {
+                      if (kitten.motherId !== cat.id) return false;
+                      
+                      const birthDate = new Date(kitten.birthDate);
+                      const now = new Date();
+                      const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+                      
+                      return ageInMonths <= 3;
+                    });
+                    
+                    return hasYoungKittens;
+                  })
+                  .map((mother: Cat) => {
+                    // この母猫の子猫を取得
+                    const kittens = (catsResponse?.data || []).filter((kitten: Cat) => {
+                      if (kitten.motherId !== mother.id) return false;
+                      
+                      const birthDate = new Date(kitten.birthDate);
+                      const now = new Date();
+                      const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+                      
+                      return ageInMonths <= 3;
+                    });
+                    
+                    return { mother, kittens };
+                  });
+
+                if (mothersWithKittens.length === 0) {
+                  return (
+                    <Text ta="center" c="dimmed" py="xl">
+                      現在子育て中の母猫はいません
+                    </Text>
+                  );
+                }
+
+                return (
+                  <Table striped withTableBorder>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th style={{ width: '40px' }}></Table.Th>
+                        <Table.Th>母猫名</Table.Th>
+                        <Table.Th>父猫名</Table.Th>
+                        <Table.Th>出産日</Table.Th>
+                        <Table.Th>生後</Table.Th>
+                        <Table.Th>子猫数</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {mothersWithKittens.map(({ mother, kittens }) => {
+                        const isExpanded = expandedRaisingCats.has(mother.id);
+                        const oldestKitten = kittens.length > 0 ? kittens.reduce((oldest, k) => 
+                          new Date(k.birthDate) < new Date(oldest.birthDate) ? k : oldest
+                        ) : null;
+                        
+                        const ageInMonths = oldestKitten 
+                          ? calculateAgeInMonths(oldestKitten.birthDate)
+                          : 0;
+
+                        return (
+                          <React.Fragment key={mother.id}>
+                            {/* 母猫の行 */}
+                            <Table.Tr
+                              style={{ cursor: 'pointer', backgroundColor: isExpanded ? '#f8f9fa' : undefined }}
+                              onClick={() => {
+                                const newExpanded = new Set(expandedRaisingCats);
+                                if (newExpanded.has(mother.id)) {
+                                  newExpanded.delete(mother.id);
+                                } else {
+                                  newExpanded.add(mother.id);
+                                }
+                                setExpandedRaisingCats(newExpanded);
+                              }}
+                            >
+                              <Table.Td>
+                                {isExpanded ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
+                              </Table.Td>
+                              <Table.Td>
+                                <Text fw={500}>{mother.name}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                {mother.fatherId 
+                                  ? catsResponse?.data?.find((c: Cat) => c.id === mother.fatherId)?.name || '不明'
+                                  : '不明'
+                                }
+                              </Table.Td>
+                              <Table.Td>
+                                {oldestKitten 
+                                  ? new Date(oldestKitten.birthDate).toLocaleDateString('ja-JP')
+                                  : '-'
+                                }
+                              </Table.Td>
+                              <Table.Td>
+                                {ageInMonths}ヶ月
+                              </Table.Td>
+                              <Table.Td>
+                                {kittens.length}頭
+                              </Table.Td>
+                            </Table.Tr>
+
+                            {/* 子猫の詳細行 */}
+                            {isExpanded && kittens.map((kitten: Cat) => (
+                              <Table.Tr key={kitten.id} style={{ backgroundColor: '#f8f9fa' }}>
+                                <Table.Td></Table.Td>
+                                <Table.Td colSpan={1}>
+                                  <Text size="sm" pl="md">{kitten.name}</Text>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Text size="sm">{kitten.gender === 'MALE' ? 'オス' : 'メス'}</Text>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Text size="sm">{kitten.coatColor?.name || '-'}</Text>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Text size="sm">{calculateAgeInMonths(kitten.birthDate)}ヶ月</Text>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Group gap="xs">
+                                    {kitten.tags && kitten.tags.length > 0 && (
+                                      <TagDisplay 
+                                        tagIds={kitten.tags.map(t => t.tag.id)} 
+                                        size="xs" 
+                                        categories={tagCategoriesQuery.data?.data || []}
+                                        tagMetadata={Object.fromEntries(
+                                          kitten.tags.map(t => [t.tag.id, t.tag.metadata || {}])
+                                        )}
+                                      />
+                                    )}
+                                  </Group>
+                                </Table.Td>
+                              </Table.Tr>
+                            ))}
+                          </React.Fragment>
+                        );
+                      })}
+                    </Table.Tbody>
+                  </Table>
+                );
+              })()}
+            </Card>
           </Tabs.Panel>
         </Tabs>
       </Container>

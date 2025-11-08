@@ -23,6 +23,7 @@ import { useGetCats, useGetCatStatistics, useUpdateCat, useDeleteCat, type Cat, 
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { CatQuickEditModal } from '@/components/cats/cat-quick-edit-modal';
+import { CatEditModal } from '@/components/cats/cat-edit-modal';
 import { ContextMenuProvider, OperationModalManager, useContextMenu } from '@/components/context-menu';
 import { GenderBadge } from '@/components/GenderBadge';
 
@@ -53,6 +54,12 @@ export default function CatsPage() {
     view: (cat) => {
       if (cat) {
         router.push(`/cats/${cat.id}`);
+      }
+    },
+    edit: (cat) => {
+      if (cat) {
+        setSelectedCatForEdit(cat);
+        openEditModal();
       }
     },
     duplicate: async (cat) => {
@@ -879,13 +886,13 @@ export default function CatsPage() {
 
       {/* 猫情報編集モーダル */}
       {selectedCatForEdit && (
-        <CatQuickEditModal
+        <CatEditModal
           opened={editModalOpened}
           onClose={closeEditModal}
           catId={selectedCatForEdit.id}
-          catName={selectedCatForEdit.name}
-          birthDate={selectedCatForEdit.birthDate}
-          onSave={handleSaveCat}
+          onSuccess={() => {
+            refetch();
+          }}
         />
       )}
 

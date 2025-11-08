@@ -36,6 +36,7 @@ import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
 import TagSelector, { TagDisplay } from '@/components/TagSelector';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
+import { CatEditModal } from '@/components/cats/cat-edit-modal';
 import { useRouter } from 'next/navigation';
 import { GenderBadge } from '@/components/GenderBadge';
 
@@ -71,6 +72,10 @@ export default function KittensPage() {
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [opened, { open, close }] = useDisclosure(false);
   
+  // 編集モーダルの状態
+  const [editModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
+  const [selectedKittenForEdit, setSelectedKittenForEdit] = useState<Cat | null>(null);
+  
   // 新規登録用の状態
   const [selectedMother, setSelectedMother] = useState<string>('');
   const [maleCount, setMaleCount] = useState<number>(0);
@@ -100,7 +105,8 @@ export default function KittensPage() {
     },
     edit: (kitten) => {
       if (kitten) {
-        router.push(`/cats/${kitten.id}/edit`);
+        setSelectedKittenForEdit(kitten);
+        openEditModal();
       }
     },
     delete: (kitten) => {
@@ -804,6 +810,18 @@ export default function KittensPage() {
         onClose={closeOperation}
         onConfirm={handleOperationConfirm}
       />
+
+      {/* 子猫編集モーダル */}
+      {selectedKittenForEdit && (
+        <CatEditModal
+          opened={editModalOpened}
+          onClose={closeEditModal}
+          catId={selectedKittenForEdit.id}
+          onSuccess={() => {
+            catsQuery.refetch();
+          }}
+        />
+      )}
     </Container>
   );
 }
