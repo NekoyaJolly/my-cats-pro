@@ -36,6 +36,7 @@ import {
   UpdateBirthPlanDto,
   BirthPlanQueryDto,
 } from "./dto";
+import { CreateKittenDispositionDto, UpdateKittenDispositionDto } from "./dto/kitten-disposition.dto";
 
 @ApiTags("Breeding")
 @Controller("breeding")
@@ -205,7 +206,7 @@ export class BreedingController {
   @ApiOperation({ summary: "子猫処遇の登録" })
   @ApiResponse({ status: HttpStatus.CREATED })
   createKittenDisposition(
-    @Body() dto: any,
+    @Body() dto: CreateKittenDispositionDto,
     @GetUser() user?: RequestUser,
   ) {
     return this.breedingService.createKittenDisposition(dto, user?.userId);
@@ -215,7 +216,7 @@ export class BreedingController {
   @ApiOperation({ summary: "子猫処遇の更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
-  updateKittenDisposition(@Param("id") id: string, @Body() dto: any) {
+  updateKittenDisposition(@Param("id") id: string, @Body() dto: UpdateKittenDispositionDto) {
     return this.breedingService.updateKittenDisposition(id, dto);
   }
 

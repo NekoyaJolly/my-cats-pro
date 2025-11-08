@@ -460,7 +460,7 @@ export class BreedingService {
     return { success: true, data: dispositions };
   }
 
-  async createKittenDisposition(dto: any, userId?: string) {
+  async createKittenDisposition(dto: CreateKittenDispositionDto, _userId?: string) {
     const { birthRecordId, kittenId, name, gender, disposition, trainingStartDate, saleInfo, deathDate, deathReason, notes } = dto;
 
     // Validate birthRecord exists
@@ -477,7 +477,7 @@ export class BreedingService {
         gender,
         disposition,
         trainingStartDate: trainingStartDate ? new Date(trainingStartDate) : undefined,
-        saleInfo: saleInfo ? JSON.parse(JSON.stringify(saleInfo)) : undefined,
+        saleInfo: saleInfo ? (saleInfo as object) : undefined,
         deathDate: deathDate ? new Date(deathDate) : undefined,
         deathReason,
         notes,
@@ -490,7 +490,7 @@ export class BreedingService {
     return { success: true, data: result };
   }
 
-  async updateKittenDisposition(id: string, dto: any) {
+  async updateKittenDisposition(id: string, dto: UpdateKittenDispositionDto) {
     const { kittenId, name, gender, disposition, trainingStartDate, saleInfo, deathDate, deathReason, notes } = dto;
 
     await this.prisma.kittenDisposition.update({
@@ -501,7 +501,7 @@ export class BreedingService {
         gender,
         disposition,
         trainingStartDate: trainingStartDate ? new Date(trainingStartDate) : undefined,
-        saleInfo: saleInfo ? JSON.parse(JSON.stringify(saleInfo)) : undefined,
+        saleInfo: saleInfo ? (saleInfo as object) : undefined,
         deathDate: deathDate ? new Date(deathDate) : undefined,
         deathReason,
         notes,

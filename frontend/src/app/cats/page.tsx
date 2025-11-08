@@ -22,7 +22,6 @@ import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconCh
 import { useGetCats, useGetCatStatistics, useUpdateCat, useDeleteCat, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
-import { CatQuickEditModal } from '@/components/cats/cat-quick-edit-modal';
 import { CatEditModal } from '@/components/cats/cat-edit-modal';
 import { ContextMenuProvider, OperationModalManager, useContextMenu } from '@/components/context-menu';
 import { GenderBadge } from '@/components/GenderBadge';
@@ -53,7 +52,6 @@ export default function CatsPage() {
   const {
     currentOperation,
     currentEntity,
-    openOperation,
     closeOperation,
     handleAction: handleContextAction,
   } = useContextMenu<Cat>({
@@ -167,7 +165,7 @@ export default function CatsPage() {
     staleTime: 5 * 60 * 1000, // 5分間はキャッシュを使用
   });
 
-  const { data: statsData } = useGetCatStatistics();
+  useGetCatStatistics();
 
   // URLパラメータからタブを取得して反映
   useEffect(() => {
@@ -289,20 +287,9 @@ export default function CatsPage() {
     });
   };
 
-  // 猫情報の編集
-  const handleEditCat = (cat: Cat) => {
-    setSelectedCatForEdit(cat);
-    openEditModal();
-  };
-
   // 猫情報の更新
   const updateCatMutation = useUpdateCat(selectedCatForEdit?.id || '');
   const deleteCatMutation = useDeleteCat();
-  
-  const handleSaveCat = async (catId: string, updates: { name?: string; birthDate?: string }) => {
-    await updateCatMutation.mutateAsync(updates);
-    refetch();
-  };
 
   // コンテキストメニューからの操作確認
   const handleOperationConfirm = async (cat?: Cat) => {
@@ -394,21 +381,24 @@ export default function CatsPage() {
           return (a.breed?.name || '').localeCompare(b.breed?.name || '');
         case 'gender':
           return a.gender.localeCompare(b.gender);
-        case 'gender-name':
+        case 'gender-name': {
           // 性別順（メス→オス）→名前順
           const genderCompare = a.gender.localeCompare(b.gender);
           if (genderCompare !== 0) return genderCompare;
           return a.name.localeCompare(b.name);
-        case 'gender-age':
+        }
+        case 'gender-age': {
           // 性別順（メス→オス）→年齢順（新しい順）
           const genderCompare2 = a.gender.localeCompare(b.gender);
           if (genderCompare2 !== 0) return genderCompare2;
           return new Date(b.birthDate).getTime() - new Date(a.birthDate).getTime();
-        case 'breed-name':
+        }
+        case 'breed-name': {
           // 品種順→名前順
           const breedCompare = (a.breed?.name || '').localeCompare(b.breed?.name || '');
           if (breedCompare !== 0) return breedCompare;
           return a.name.localeCompare(b.name);
+        }
         default:
           return 0;
       }

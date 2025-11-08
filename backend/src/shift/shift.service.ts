@@ -1,14 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateShiftDto } from './dto/create-shift.dto';
-import { UpdateShiftDto } from './dto/update-shift.dto';
-import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
+import { Shift, Staff } from '@prisma/client';
+
 import {
   ShiftResponseDto,
   CalendarShiftEvent,
   ShiftEntity,
 } from '../common/types/shift.types';
-import { Shift, Staff } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { CreateShiftDto } from './dto/create-shift.dto';
+import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
+import { UpdateShiftDto } from './dto/update-shift.dto';
 
 @Injectable()
 export class ShiftService {
@@ -110,7 +112,7 @@ export class ShiftService {
    * シフト一覧を取得
    */
   async findAll(query: GetShiftsQueryDto): Promise<ShiftResponseDto[]> {
-    const where: any = {};
+    const where: Prisma.ShiftWhereInput = {};
 
     // 日付範囲でフィルタ
     if (query.startDate && query.endDate) {
@@ -205,7 +207,7 @@ export class ShiftService {
     }
 
     // 更新データを構築
-    const updateData: any = {};
+    const updateData: Prisma.ShiftUpdateInput = {};
 
     if (updateShiftDto.staffId !== undefined) {
       updateData.staffId = updateShiftDto.staffId;

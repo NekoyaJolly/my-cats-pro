@@ -43,7 +43,7 @@ import {
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
 import { KittenDispositionModal } from '@/components/breeding/kitten-disposition-modal';
 import { ContextMenuProvider, useContextMenu } from '@/components/context-menu';
-import TagSelector, { TagDisplay } from '@/components/TagSelector';
+import { TagDisplay } from '@/components/TagSelector';
 
 import {
   useGetBreedingNgRules,
@@ -594,7 +594,7 @@ export default function BreedingPage() {
   const handleUpdateScheduleDuration = (newDuration: number, newFemaleId?: string) => {
     if (!selectedScheduleForEdit) return;
 
-    const { maleId, femaleId, date, duration: oldDuration, dayIndex, isHistory } = selectedScheduleForEdit;
+    const { maleId, femaleId, date, duration: oldDuration, dayIndex } = selectedScheduleForEdit;
     
     // 開始日を計算
     const startDate = new Date(date);
