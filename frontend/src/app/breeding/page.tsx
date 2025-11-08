@@ -41,6 +41,7 @@ import {
 } from '@tabler/icons-react';
 
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
+import { KittenDispositionModal } from '@/components/breeding/kitten-disposition-modal';
 import { ContextMenuProvider, useContextMenu } from '@/components/context-menu';
 import TagSelector, { TagDisplay } from '@/components/TagSelector';
 
@@ -60,6 +61,9 @@ import {
   useDeleteBirthPlan,
   useUpdateBirthPlan,
   type BirthPlan,
+  useCompleteBirthRecord,
+  useCreateKittenDisposition,
+  type CreateKittenDispositionRequest,
 } from '@/lib/api/hooks/use-breeding';
 import { useGetCats, useCreateCat, type Cat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
@@ -183,7 +187,14 @@ export default function BreedingPage() {
   const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
   const [birthInfoModalOpened, { open: openBirthInfoModal, close: closeBirthInfoModal }] = useDisclosure(false);
   const [scheduleEditModalOpened, { open: openScheduleEditModal, close: closeScheduleEditModal }] = useDisclosure(false);
+  const [pregnancyCheckModalOpened, { open: openPregnancyCheckModal, close: closePregnancyCheckModal }] = useDisclosure(false);
   const [selectedScheduleForEdit, setSelectedScheduleForEdit] = useState<BreedingScheduleEntry | null>(null);
+  const [selectedPregnancyCheck, setSelectedPregnancyCheck] = useState<PregnancyCheck | null>(null);
+  const [pregnancyChecks, setPregnancyChecks] = useState({
+    weightGain: false,
+    pinking: false,
+    palpation: false,
+  });
 
   // コンテキストメニュー for breeding schedule
   const {
@@ -209,7 +220,17 @@ export default function BreedingPage() {
   const [selectedBirthPlan, setSelectedBirthPlan] = useState<BirthPlan | null>(null);
   const [birthCount, setBirthCount] = useState<number>(0);
   const [deathCount, setDeathCount] = useState<number>(0);
+  const [birthDate, setBirthDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [expandedRaisingCats, setExpandedRaisingCats] = useState<Set<string>>(new Set());
+
+  // 子猫処遇モーダルの状態
+  const [dispositionModalOpened, { open: openDispositionModal, close: closeDispositionModal }] = useDisclosure(false);
+  const [selectedKitten, setSelectedKitten] = useState<Cat | null>(null);
+  const [selectedDispositionType, setSelectedDispositionType] = useState<'TRAINING' | 'SALE' | 'DECEASED'>('TRAINING');
+
+  // 出産記録完了確認モーダルの状態
+  const [completeConfirmModalOpened, { open: openCompleteConfirmModal, close: closeCompleteConfirmModal }] = useDisclosure(false);
+  const [selectedBirthPlanForComplete, setSelectedBirthPlanForComplete] = useState<BirthPlan | null>(null);
 
   const [ngPairingRules, setNgPairingRules] = useState<NgPairingRule[]>(initialNgPairingRules);
   const [rulesError, setRulesError] = useState<string | null>(null);
@@ -381,6 +402,10 @@ export default function BreedingPage() {
   const deleteBirthPlanMutation = useDeleteBirthPlan();
   const updateBirthPlanMutation = useUpdateBirthPlan();
   const createCatMutation = useCreateCat();
+
+  // Kitten Disposition hooks
+  const createKittenDispositionMutation = useCreateKittenDisposition();
+  const completeBirthRecordMutation = useCompleteBirthRecord();
 
   useEffect(() => {
     if (!ngRulesResponse) {
@@ -793,26 +818,96 @@ export default function BreedingPage() {
   // 妊娠確認
   const handlePregnancyCheck = (checkItem: PregnancyCheck, isPregnant: boolean) => {
     if (isPregnant) {
-      // 妊娠の場合：出産予定リストに追加
-      const expectedDate = new Date(checkItem.checkDate);
-      expectedDate.setDate(expectedDate.getDate() + 45); // 妊娠確認から約45日後に出産予定
-      
-      createBirthPlanMutation.mutate({
-        motherId: checkItem.motherId,
-        fatherId: checkItem.fatherId ?? undefined,
-        matingDate: checkItem.matingDate ?? undefined,
-        expectedBirthDate: expectedDate.toISOString().split('T')[0],
-        status: 'EXPECTED',
-        notes: '妊娠確認による出産予定',
-      }, {
-        onSuccess: () => {
-          // 出産予定作成成功後、妊娠確認中から削除
-          deletePregnancyCheckMutation.mutate(checkItem.id);
-        }
+      // 妊娠の場合：チェックリストモーダルを開く
+      setSelectedPregnancyCheck(checkItem);
+      setPregnancyChecks({
+        weightGain: false,
+        pinking: false,
+        palpation: false,
       });
+      openPregnancyCheckModal();
     } else {
       // 非妊娠の場合：妊娠チェックを削除
       deletePregnancyCheckMutation.mutate(checkItem.id);
+    }
+  };
+
+  // 妊娠確認モーダルでの確定処理
+  const handleConfirmPregnancy = () => {
+    if (!selectedPregnancyCheck) return;
+
+    // 出産予定リストに追加
+    const expectedDate = new Date(selectedPregnancyCheck.checkDate);
+    expectedDate.setDate(expectedDate.getDate() + 45); // 妊娠確認から約45日後に出産予定
+    
+    createBirthPlanMutation.mutate({
+      motherId: selectedPregnancyCheck.motherId,
+      fatherId: selectedPregnancyCheck.fatherId ?? undefined,
+      matingDate: selectedPregnancyCheck.matingDate ?? undefined,
+      expectedBirthDate: expectedDate.toISOString().split('T')[0],
+      status: 'EXPECTED',
+      notes: '妊娠確認による出産予定',
+    }, {
+      onSuccess: () => {
+        // 出産予定作成成功後、妊娠確認中から削除
+        deletePregnancyCheckMutation.mutate(selectedPregnancyCheck.id);
+        closePregnancyCheckModal();
+        setSelectedPregnancyCheck(null);
+        setPregnancyChecks({
+          weightGain: false,
+          pinking: false,
+          palpation: false,
+        });
+      }
+    });
+  };
+
+  // 子猫処遇登録ハンドラー
+  const handleKittenDispositionSubmit = async (data: {
+    disposition: 'TRAINING' | 'SALE' | 'DECEASED';
+    trainingStartDate?: string;
+    saleInfo?: { buyer: string; price: number; saleDate: string; notes?: string };
+    deathDate?: string;
+    deathReason?: string;
+    notes?: string;
+  }) => {
+    if (!selectedKitten) return;
+
+    // BirthPlanを取得（子猫のmotherIdから）
+    const birthPlan = (birthPlansResponse?.data || []).find(
+      (bp: BirthPlan) => bp.motherId === selectedKitten.motherId && bp.status === 'BORN'
+    );
+
+    if (!birthPlan) {
+      notifications.show({
+        title: 'エラー',
+        message: '出産記録が見つかりません',
+        color: 'red',
+      });
+      return;
+    }
+
+    const payload: CreateKittenDispositionRequest = {
+      birthRecordId: birthPlan.id,
+      kittenId: selectedKitten.id,
+      name: selectedKitten.name,
+      gender: selectedKitten.gender,
+      disposition: data.disposition,
+      trainingStartDate: data.trainingStartDate,
+      saleInfo: data.saleInfo,
+      deathDate: data.deathDate,
+      deathReason: data.deathReason,
+      notes: data.notes,
+    };
+
+    try {
+      await createKittenDispositionMutation.mutateAsync(payload);
+      
+      closeDispositionModal();
+      setSelectedKitten(null);
+      catsQuery.refetch();
+    } catch (error) {
+      console.error('Failed to create kitten disposition:', error);
     }
   };
 
@@ -959,10 +1054,27 @@ export default function BreedingPage() {
               妊娠確認 ({pregnancyChecksResponse?.data?.length || 0})
             </Tabs.Tab>
             <Tabs.Tab value="birth" leftSection={<IconPaw size={16} />} style={{ whiteSpace: 'nowrap' }}>
-              出産予定 ({birthPlansResponse?.data?.length || 0})
+              出産予定 ({birthPlansResponse?.data?.filter((item: BirthPlan) => item.status === 'EXPECTED').length || 0})
             </Tabs.Tab>
             <Tabs.Tab value="raising" leftSection={<IconBabyCarriage size={16} />} style={{ whiteSpace: 'nowrap' }}>
-              子育て中
+              子育て中 ({(() => {
+                // 子猫を持つ母猫の数を計算
+                const mothersWithKittens = (catsResponse?.data || []).filter((cat: Cat) => {
+                  // 生後3ヶ月以内の子猫がいる母猫を抽出
+                  const hasYoungKittens = (catsResponse?.data || []).some((kitten: Cat) => {
+                    if (kitten.motherId !== cat.id) return false;
+                    
+                    const birthDate = new Date(kitten.birthDate);
+                    const now = new Date();
+                    const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+                    
+                    return ageInMonths <= 3;
+                  });
+                  
+                  return hasYoungKittens;
+                });
+                return mothersWithKittens.length;
+              })()})
             </Tabs.Tab>
           </Tabs.List>
 
@@ -1360,7 +1472,7 @@ export default function BreedingPage() {
           {/* 出産予定一覧タブ */}
           <Tabs.Panel value="birth" pt="md">
             <Stack gap="sm">
-              {birthPlansResponse?.data?.map((item: BirthPlan) => {
+              {birthPlansResponse?.data?.filter((item: BirthPlan) => item.status === 'EXPECTED').map((item: BirthPlan) => {
                 // 父猫の名前を取得（fatherIdから）
                 const fatherName = item.fatherId 
                   ? catsResponse?.data?.find((cat: Cat) => cat.id === item.fatherId)?.name || '不明'
@@ -1391,6 +1503,7 @@ export default function BreedingPage() {
                             setSelectedBirthPlan(item);
                             setBirthCount(0);
                             setDeathCount(0);
+                            setBirthDate(new Date().toISOString().split('T')[0]);
                             openBirthInfoModal();
                           }}
                           title="出産確認"
@@ -1423,9 +1536,16 @@ export default function BreedingPage() {
               {catsQuery.isLoading ? (
                 <Text ta="center" c="dimmed" py="xl">読み込み中...</Text>
               ) : (() => {
-                // 子猫を持つ母猫をフィルタリング
+                // 子猫を持つ母猫をフィルタリング（完了していない出産記録のみ）
                 const mothersWithKittens = (catsResponse?.data || [])
                   .filter((cat: Cat) => {
+                    // この母猫の未完了の出産記録を確認
+                    const activeBirthPlan = (birthPlansResponse?.data || []).find(
+                      (bp: BirthPlan) => bp.motherId === cat.id && bp.status === 'BORN' && !bp.completedAt
+                    );
+                    
+                    if (!activeBirthPlan) return false;
+                    
                     // 生後3ヶ月以内の子猫がいる母猫を抽出
                     const hasYoungKittens = (catsResponse?.data || []).some((kitten: Cat) => {
                       if (kitten.motherId !== cat.id) return false;
@@ -1472,6 +1592,7 @@ export default function BreedingPage() {
                         <Table.Th>出産日</Table.Th>
                         <Table.Th>生後</Table.Th>
                         <Table.Th>子猫数</Table.Th>
+                        <Table.Th>処遇完了</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -1484,6 +1605,14 @@ export default function BreedingPage() {
                         const ageInMonths = oldestKitten 
                           ? calculateAgeInMonths(oldestKitten.birthDate)
                           : 0;
+
+                        // この母猫のBirthPlanを取得して出産数と死亡数を計算
+                        const birthPlan = (birthPlansResponse?.data || []).find(
+                          (bp: BirthPlan) => bp.motherId === mother.id && bp.status === 'BORN'
+                        );
+                        const totalBorn = birthPlan?.actualKittens || kittens.length;
+                        const alive = kittens.length;
+                        const dead = totalBorn - alive;
 
                         return (
                           <React.Fragment key={mother.id}>
@@ -1522,7 +1651,29 @@ export default function BreedingPage() {
                                 {ageInMonths}ヶ月
                               </Table.Td>
                               <Table.Td>
-                                {kittens.length}頭
+                                {alive}頭（{totalBorn}-{dead}）
+                              </Table.Td>
+                              <Table.Td>
+                                {birthPlan && !birthPlan.completedAt ? (
+                                  <Button
+                                    size="xs"
+                                    variant="light"
+                                    color="blue"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (birthPlan) {
+                                        setSelectedBirthPlanForComplete(birthPlan);
+                                        openCompleteConfirmModal();
+                                      }
+                                    }}
+                                  >
+                                    完了
+                                  </Button>
+                                ) : birthPlan?.completedAt ? (
+                                  <Badge color="green" size="sm">完了済</Badge>
+                                ) : (
+                                  <Text size="sm" c="dimmed">-</Text>
+                                )}
                               </Table.Td>
                             </Table.Tr>
 
@@ -1554,6 +1705,52 @@ export default function BreedingPage() {
                                         )}
                                       />
                                     )}
+                                  </Group>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Group gap={4}>
+                                    <ActionIcon
+                                      size="sm"
+                                      variant="light"
+                                      color="blue"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedKitten(kitten);
+                                        setSelectedDispositionType('TRAINING');
+                                        openDispositionModal();
+                                      }}
+                                      title="養成開始"
+                                    >
+                                      🎓
+                                    </ActionIcon>
+                                    <ActionIcon
+                                      size="sm"
+                                      variant="light"
+                                      color="green"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedKitten(kitten);
+                                        setSelectedDispositionType('SALE');
+                                        openDispositionModal();
+                                      }}
+                                      title="出荷"
+                                    >
+                                      💰
+                                    </ActionIcon>
+                                    <ActionIcon
+                                      size="sm"
+                                      variant="light"
+                                      color="gray"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedKitten(kitten);
+                                        setSelectedDispositionType('DECEASED');
+                                        openDispositionModal();
+                                      }}
+                                      title="死亡登録"
+                                    >
+                                      🌈
+                                    </ActionIcon>
                                   </Group>
                                 </Table.Td>
                               </Table.Tr>
@@ -1928,6 +2125,7 @@ export default function BreedingPage() {
           setSelectedBirthPlan(null);
           setBirthCount(0);
           setDeathCount(0);
+          setBirthDate(new Date().toISOString().split('T')[0]);
         }}
         title="出産情報の入力"
         size="md"
@@ -1942,6 +2140,14 @@ export default function BreedingPage() {
                 : '不明'
             })` : ''}
             readOnly
+          />
+
+          {/* 出産日 */}
+          <TextInput
+            label="出産日"
+            type="date"
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
           />
 
           {/* 出産頭数 */}
@@ -2004,16 +2210,16 @@ export default function BreedingPage() {
                 if (!selectedBirthPlan) return;
                 
                 try {
-                  const totalKittens = birthCount + deathCount;
-                  const birthDateStr = new Date().toISOString().split('T')[0];
+                  const birthDateStr = birthDate;
+                  const aliveCount = birthCount - deathCount;
                   
-                  // 1. BirthPlanを更新 (出産完了、actualKittensを設定)
+                  // 1. BirthPlanを更新 (出産完了、actualKittensに生まれた総数を設定)
                   await updateBirthPlanMutation.mutateAsync({
                     id: selectedBirthPlan.id,
                     payload: {
                       status: 'BORN',
                       actualBirthDate: birthDateStr,
-                      actualKittens: totalKittens,
+                      actualKittens: birthCount,
                     },
                   });
                   
@@ -2021,7 +2227,7 @@ export default function BreedingPage() {
                   const createPromises: Promise<unknown>[] = [];
                   const motherName = selectedBirthPlan.mother?.name || '不明';
                   
-                  for (let i = 0; i < birthCount; i++) {
+                  for (let i = 0; i < aliveCount; i++) {
                     const catData: CreateCatRequest = {
                       name: `${motherName}${i + 1}号`,
                       gender: 'MALE', // TODO: 性別を指定できるようにする
@@ -2038,7 +2244,7 @@ export default function BreedingPage() {
                   
                   notifications.show({
                     title: '出産登録完了',
-                    message: `${motherName}の出産情報を登録しました（生存: ${birthCount}頭、死亡: ${deathCount}頭）`,
+                    message: `${motherName}の出産情報を登録しました（出産: ${birthCount}頭、生存: ${aliveCount}頭、死亡: ${deathCount}頭）`,
                     color: 'green',
                   });
                   
@@ -2046,6 +2252,7 @@ export default function BreedingPage() {
                   setSelectedBirthPlan(null);
                   setBirthCount(0);
                   setDeathCount(0);
+                  setBirthDate(new Date().toISOString().split('T')[0]);
                 } catch (error) {
                   notifications.show({
                     title: 'エラー',
@@ -2057,6 +2264,76 @@ export default function BreedingPage() {
               loading={updateBirthPlanMutation.isPending || createCatMutation.isPending}
             >
               登録
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* 妊娠確認モーダル */}
+      <Modal
+        opened={pregnancyCheckModalOpened}
+        onClose={() => {
+          closePregnancyCheckModal();
+          setSelectedPregnancyCheck(null);
+          setPregnancyChecks({
+            weightGain: false,
+            pinking: false,
+            palpation: false,
+          });
+        }}
+        title="妊娠確認チェック"
+        size="md"
+      >
+        <Stack gap="md">
+          {/* 母猫情報 */}
+          <TextInput
+            label="母猫"
+            value={selectedPregnancyCheck?.mother?.name || '不明'}
+            readOnly
+          />
+
+          {/* チェックリスト */}
+          <Stack gap="sm">
+            <Text size="sm" fw={500}>妊娠兆候</Text>
+            <Checkbox
+              label="体重増加"
+              checked={pregnancyChecks.weightGain}
+              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, weightGain: e.currentTarget.checked }))}
+            />
+            <Checkbox
+              label="ピンキング（乳首の色が濃くなる）"
+              checked={pregnancyChecks.pinking}
+              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, pinking: e.currentTarget.checked }))}
+            />
+            <Checkbox
+              label="触診（お腹が膨らんでいる）"
+              checked={pregnancyChecks.palpation}
+              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, palpation: e.currentTarget.checked }))}
+            />
+          </Stack>
+
+          {/* アクションボタン */}
+          <Group justify="flex-end" gap="sm" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => {
+                closePregnancyCheckModal();
+                setSelectedPregnancyCheck(null);
+                setPregnancyChecks({
+                  weightGain: false,
+                  pinking: false,
+                  palpation: false,
+                });
+              }}
+            >
+              キャンセル
+            </Button>
+            <Button
+              color="green"
+              onClick={handleConfirmPregnancy}
+              loading={createBirthPlanMutation.isPending || deletePregnancyCheckMutation.isPending}
+            >
+              妊娠確定
             </Button>
           </Group>
         </Stack>
@@ -2075,6 +2352,61 @@ export default function BreedingPage() {
         onSave={handleUpdateScheduleDuration}
         onDelete={handleDeleteSchedule}
       />
+
+      {/* 子猫処遇登録モーダル */}
+      <KittenDispositionModal
+        opened={dispositionModalOpened}
+        onClose={() => {
+          closeDispositionModal();
+          setSelectedKitten(null);
+        }}
+        kitten={selectedKitten}
+        dispositionType={selectedDispositionType}
+        onSubmit={handleKittenDispositionSubmit}
+        loading={createKittenDispositionMutation.isPending}
+      />
+
+      {/* 出産記録完了確認モーダル */}
+      <Modal
+        opened={completeConfirmModalOpened}
+        onClose={closeCompleteConfirmModal}
+        title="出産記録を完了しますか？"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm">
+            {selectedBirthPlanForComplete?.mother?.name || '不明'}の出産記録を完了します。
+            完了後は子育て中タブから削除され、母猫詳細ページの出産記録に格納されます。
+          </Text>
+          <Text size="sm" c="dimmed">
+            この操作は元に戻せません。
+          </Text>
+          <Group justify="flex-end" gap="sm" mt="md">
+            <Button
+              variant="outline"
+              onClick={closeCompleteConfirmModal}
+            >
+              キャンセル
+            </Button>
+            <Button
+              color="blue"
+              onClick={() => {
+                if (selectedBirthPlanForComplete) {
+                  completeBirthRecordMutation.mutate(selectedBirthPlanForComplete.id, {
+                    onSuccess: () => {
+                      closeCompleteConfirmModal();
+                      setSelectedBirthPlanForComplete(null);
+                    },
+                  });
+                }
+              }}
+              loading={completeBirthRecordMutation.isPending}
+            >
+              完了する
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Box>
   );
 }

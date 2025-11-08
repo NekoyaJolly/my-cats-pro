@@ -240,6 +240,18 @@ export class TagAutomationController {
         };
         break;
 
+      case "PAGE_ACTION":
+        eventName = TAG_AUTOMATION_EVENTS.PAGE_ACTION;
+        eventPayload = {
+          eventType: "PAGE_ACTION" as const,
+          page: testPayload?.page || rule.config?.['page'] || "cats",
+          action: testPayload?.action || rule.config?.['action'] || "create",
+          targetId: testPayload?.targetId || "test-target-id",
+          targetType: testPayload?.targetType as string | undefined,
+          additionalData: testPayload?.additionalData as Record<string, unknown> | undefined,
+        };
+        break;
+
       case "CUSTOM":
         eventName = TAG_AUTOMATION_EVENTS.CUSTOM;
         eventPayload = {

@@ -15,6 +15,8 @@ import {
   CreateBirthPlanDto,
   UpdateBirthPlanDto,
   BirthPlanQueryDto,
+  CreateKittenDispositionDto,
+  UpdateKittenDispositionDto,
 } from "./dto";
 import {
   BreedingWhereInput,
@@ -441,6 +443,86 @@ export class BreedingService {
 
   async removeBirthPlan(id: string): Promise<BreedingSuccessResponse> {
     await this.prisma.birthPlan.delete({ where: { id } });
+    return { success: true };
+  }
+
+  // ========== Kitten Disposition Methods ==========
+
+  async findAllKittenDispositions(birthRecordId: string) {
+    const dispositions = await this.prisma.kittenDisposition.findMany({
+      where: { birthRecordId },
+      include: {
+        kitten: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return { success: true, data: dispositions };
+  }
+
+  async createKittenDisposition(dto: any, userId?: string) {
+    const { birthRecordId, kittenId, name, gender, disposition, trainingStartDate, saleInfo, deathDate, deathReason, notes } = dto;
+
+    // Validate birthRecord exists
+    const birthRecord = await this.prisma.birthPlan.findUnique({
+      where: { id: birthRecordId },
+    });
+    if (!birthRecord) throw new NotFoundException("Birth record not found");
+
+    const result = await this.prisma.kittenDisposition.create({
+      data: {
+        birthRecordId,
+        kittenId,
+        name,
+        gender,
+        disposition,
+        trainingStartDate: trainingStartDate ? new Date(trainingStartDate) : undefined,
+        saleInfo: saleInfo ? JSON.parse(JSON.stringify(saleInfo)) : undefined,
+        deathDate: deathDate ? new Date(deathDate) : undefined,
+        deathReason,
+        notes,
+      },
+      include: {
+        kitten: { select: { id: true, name: true } },
+      },
+    });
+
+    return { success: true, data: result };
+  }
+
+  async updateKittenDisposition(id: string, dto: any) {
+    const { kittenId, name, gender, disposition, trainingStartDate, saleInfo, deathDate, deathReason, notes } = dto;
+
+    await this.prisma.kittenDisposition.update({
+      where: { id },
+      data: {
+        kittenId,
+        name,
+        gender,
+        disposition,
+        trainingStartDate: trainingStartDate ? new Date(trainingStartDate) : undefined,
+        saleInfo: saleInfo ? JSON.parse(JSON.stringify(saleInfo)) : undefined,
+        deathDate: deathDate ? new Date(deathDate) : undefined,
+        deathReason,
+        notes,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async removeKittenDisposition(id: string) {
+    await this.prisma.kittenDisposition.delete({ where: { id } });
+    return { success: true };
+  }
+
+  async completeBirthRecord(id: string) {
+    await this.prisma.birthPlan.update({
+      where: { id },
+      data: {
+        completedAt: new Date(),
+      },
+    });
     return { success: true };
   }
 }

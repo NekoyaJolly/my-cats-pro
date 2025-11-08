@@ -176,6 +176,13 @@ type AutomationRuleFormValues = {
       maxMonths?: number;
     };
   };
+  // PAGE_ACTION設定
+  pageAction?: {
+    page: string;
+    action: string;
+    targetSelection: string;
+    specificCatIds?: string[];
+  };
 };
 
 const TRIGGER_TYPE_OPTIONS = [
@@ -190,6 +197,7 @@ const EVENT_TYPE_OPTIONS = [
   { value: 'PREGNANCY_CONFIRMED', label: '妊娠確認' },
   { value: 'KITTEN_REGISTERED', label: '子猫登録' },
   { value: 'AGE_THRESHOLD', label: '年齢閾値' },
+  { value: 'PAGE_ACTION', label: 'ページ・アクション駆動（柔軟設定）' },
   { value: 'CUSTOM', label: 'カスタム' },
 ];
 
@@ -200,6 +208,80 @@ const AUTOMATION_SCOPE_OPTIONS = [
   { value: 'health', label: '健康管理' },
   { value: 'care', label: 'ケア記録' },
   { value: 'pedigree', label: '血統管理' },
+];
+
+// PAGE_ACTIONで選択可能なページ（実際のナビゲーション構造に基づく）
+const PAGE_OPTIONS = [
+  { value: 'cats', label: '在舎猫一覧', href: '/cats' },
+  { value: 'cats-new', label: '新規猫登録', href: '/cats/new' },
+  { value: 'cats-detail', label: '猫詳細', href: '/cats/[id]' },
+  { value: 'breeding', label: '交配管理', href: '/breeding' },
+  { value: 'kittens', label: '子猫管理', href: '/kittens' },
+  { value: 'care', label: 'ケアスケジュール', href: '/care' },
+  { value: 'pedigrees', label: '血統書データ', href: '/pedigrees' },
+  { value: 'tags', label: 'タグ管理', href: '/tags' },
+  { value: 'staff-shifts', label: 'スタッフシフト', href: '/staff/shifts' },
+];
+
+// ページごとに利用可能なアクション
+const PAGE_ACTIONS_MAP: Record<string, Array<{ value: string; label: string; description?: string }>> = {
+  'cats': [
+    { value: 'view', label: '一覧表示', description: '猫一覧ページが表示された時' },
+    { value: 'filter', label: 'フィルタ適用', description: '検索・フィルタが適用された時' },
+    { value: 'sort', label: 'ソート変更', description: '並び順が変更された時' },
+  ],
+  'cats-new': [
+    { value: 'create', label: '新規登録', description: '新しい猫が登録された時' },
+    { value: 'create_success', label: '登録成功', description: '猫の登録が成功した時' },
+  ],
+  'cats-detail': [
+    { value: 'view', label: '詳細表示', description: '猫の詳細が表示された時' },
+    { value: 'update', label: '情報更新', description: '猫の情報が更新された時' },
+    { value: 'delete', label: '削除', description: '猫が削除された時' },
+    { value: 'tag_added', label: 'タグ追加', description: '猫にタグが追加された時' },
+    { value: 'tag_removed', label: 'タグ削除', description: '猫からタグが削除された時' },
+  ],
+  'breeding': [
+    { value: 'create', label: '交配予定登録', description: '新しい交配予定が登録された時' },
+    { value: 'update', label: '交配情報更新', description: '交配情報が更新された時' },
+    { value: 'confirm', label: '交配確認', description: '交配が確認された時' },
+    { value: 'pregnancy_confirmed', label: '妊娠確認', description: '妊娠が確認された時' },
+    { value: 'cancel', label: 'キャンセル', description: '交配予定がキャンセルされた時' },
+  ],
+  'kittens': [
+    { value: 'register', label: '子猫登録', description: '新しい子猫が登録された時' },
+    { value: 'update', label: '子猫情報更新', description: '子猫の情報が更新された時' },
+    { value: 'graduate', label: '卒業処理', description: '子猫が卒業した時' },
+    { value: 'health_check', label: '健康チェック', description: '健康チェックが記録された時' },
+  ],
+  'care': [
+    { value: 'create', label: 'ケア予定登録', description: '新しいケア予定が登録された時' },
+    { value: 'complete', label: 'ケア完了', description: 'ケアが完了した時' },
+    { value: 'update', label: 'ケア情報更新', description: 'ケア情報が更新された時' },
+    { value: 'cancel', label: 'キャンセル', description: 'ケア予定がキャンセルされた時' },
+  ],
+  'pedigrees': [
+    { value: 'create', label: '血統書作成', description: '新しい血統書が作成された時' },
+    { value: 'update', label: '血統書更新', description: '血統書が更新された時' },
+    { value: 'export', label: 'エクスポート', description: '血統書がエクスポートされた時' },
+  ],
+  'tags': [
+    { value: 'create', label: 'タグ作成', description: '新しいタグが作成された時' },
+    { value: 'update', label: 'タグ更新', description: 'タグが更新された時' },
+    { value: 'delete', label: 'タグ削除', description: 'タグが削除された時' },
+  ],
+  'staff-shifts': [
+    { value: 'create', label: 'シフト登録', description: '新しいシフトが登録された時' },
+    { value: 'update', label: 'シフト更新', description: 'シフトが更新された時' },
+    { value: 'delete', label: 'シフト削除', description: 'シフトが削除された時' },
+  ],
+};
+
+// 対象猫の選択方法
+const TARGET_SELECTION_OPTIONS = [
+  { value: 'event_target', label: 'イベント対象の猫' },
+  { value: 'specific_cats', label: '特定の猫' },
+  { value: 'all_cats', label: '全ての猫' },
 ];
 
 type AutomationMeta = {
@@ -1072,6 +1154,12 @@ export default function TagsPage() {
         kitten: {},
         adult: {},
       },
+      pageAction: {
+        page: 'cats',
+        action: 'create',
+        targetSelection: 'event_target',
+        specificCatIds: [],
+      },
     },
     validate: {
       key: (value) => {
@@ -1187,6 +1275,22 @@ export default function TagsPage() {
     
     return options;
   }, [sortedCategories]);
+
+  // 選択したページに応じたアクションオプション
+  const pageActionOptions = useMemo(() => {
+    const selectedPage = automationRuleForm.values.pageAction?.page;
+    if (!selectedPage) {
+      return [];
+    }
+    
+    const actions = PAGE_ACTIONS_MAP[selectedPage] || [];
+    return actions.map(action => ({
+      value: action.value,
+      label: action.description 
+        ? `${action.label} - ${action.description}`
+        : action.label
+    }));
+  }, [automationRuleForm.values.pageAction?.page]);
 
   const categoryOptions = useMemo(
     () => sortedCategories.map((category) => ({ value: category.id, label: category.name })),
@@ -1518,12 +1622,18 @@ export default function TagsPage() {
   const handleEditAutomationRule = (rule: TagAutomationRule) => {
     setEditingAutomationRule(rule);
     
-    // configからtagIdsと年齢閾値設定を取得
+    // configからtagIdsと年齢閾値設定、PAGE_ACTION設定を取得
     let tagIds: string[] = [];
     let ageThreshold: AutomationRuleFormValues['ageThreshold'] = {
       type: 'kitten',
       kitten: {},
       adult: {},
+    };
+    let pageAction: AutomationRuleFormValues['pageAction'] = {
+      page: 'cats',
+      action: 'create',
+      targetSelection: 'event_target',
+      specificCatIds: [],
     };
 
     if (rule.config && typeof rule.config === 'object') {
@@ -1531,6 +1641,10 @@ export default function TagsPage() {
         tagIds?: string[]; 
         kitten?: { minDays?: number; maxDays?: number };
         adult?: { minMonths?: number; maxMonths?: number };
+        page?: string;
+        action?: string;
+        targetSelection?: string;
+        specificCatIds?: string[];
       };
       tagIds = config.tagIds || [];
       
@@ -1548,6 +1662,16 @@ export default function TagsPage() {
           adult: config.adult,
         };
       }
+
+      // PAGE_ACTION設定を読み込む
+      if (config.page || config.action) {
+        pageAction = {
+          page: config.page || 'cats',
+          action: config.action || 'create',
+          targetSelection: config.targetSelection || 'event_target',
+          specificCatIds: config.specificCatIds || [],
+        };
+      }
     }
     
     automationRuleForm.setValues({
@@ -1561,6 +1685,7 @@ export default function TagsPage() {
       isActive: rule.isActive,
       tagIds,
       ageThreshold,
+      pageAction,
     });
     openAutomationRuleModal();
   };
@@ -1593,6 +1718,16 @@ export default function TagsPage() {
         config.kitten = values.ageThreshold.kitten;
       } else if (values.ageThreshold.type === 'adult' && values.ageThreshold.adult) {
         config.adult = values.ageThreshold.adult;
+      }
+    }
+
+    // PAGE_ACTIONの設定を追加
+    if (values.eventType === 'PAGE_ACTION' && values.pageAction) {
+      config.page = values.pageAction.page;
+      config.action = values.pageAction.action;
+      config.targetSelection = values.pageAction.targetSelection;
+      if (values.pageAction.targetSelection === 'specific_cats' && values.pageAction.specificCatIds) {
+        config.specificCatIds = values.pageAction.specificCatIds;
       }
     }
 
@@ -2504,6 +2639,91 @@ export default function TagsPage() {
                         ? '子猫（母猫IDが設定されている猫）に対して、指定した日数の範囲でタグを自動付与します。'
                         : '成猫に対して、指定した月数の範囲でタグを自動付与します。'
                       }
+                    </Alert>
+                  </Stack>
+                </Card>
+              )}
+
+              {/* PAGE_ACTION設定 */}
+              {automationRuleForm.values.eventType === 'PAGE_ACTION' && (
+                <Card withBorder padding="md" bg="blue.0">
+                  <Stack gap="md">
+                    <Text fw={500} size="sm">ページ・アクション設定</Text>
+                    
+                    <Select
+                      label="ページ"
+                      placeholder="アクションが発生するページを選択"
+                      description="どのページでイベントが発生するかを指定"
+                      data={PAGE_OPTIONS.map(p => ({ value: p.value, label: p.label }))}
+                      required
+                      onChange={(value) => {
+                        automationRuleForm.setFieldValue('pageAction.page', value || '');
+                        // ページ変更時にアクションをクリア
+                        automationRuleForm.setFieldValue('pageAction.action', '');
+                      }}
+                      value={automationRuleForm.values.pageAction?.page}
+                    />
+
+                    {automationRuleForm.values.pageAction?.page && (
+                      <Select
+                        label="アクション"
+                        placeholder="発生するアクションを選択"
+                        description="どのようなアクションが発生した際にタグを付与するか"
+                        data={pageActionOptions}
+                        required
+                        {...automationRuleForm.getInputProps('pageAction.action')}
+                      />
+                    )}
+
+                    <Select
+                      label="対象猫の選択方法"
+                      placeholder="タグを付与する猫の選択方法"
+                      description="どの猫にタグを付与するかを指定"
+                      data={TARGET_SELECTION_OPTIONS}
+                      required
+                      {...automationRuleForm.getInputProps('pageAction.targetSelection')}
+                    />
+
+                    {automationRuleForm.values.pageAction?.targetSelection === 'specific_cats' && (
+                      <MultiSelect
+                        label="特定の猫"
+                        placeholder="タグを付与する猫を選択"
+                        description="指定した猫にのみタグを付与します"
+                        data={[]}
+                        searchable
+                        {...automationRuleForm.getInputProps('pageAction.specificCatIds')}
+                      />
+                    )}
+
+                    <Alert icon={<IconInfoCircle size={18} />} variant="light" color="blue">
+                      <Stack gap={4}>
+                        <Text size="sm" fw={500}>現在の設定</Text>
+                        {automationRuleForm.values.pageAction?.page && (
+                          <>
+                            <Text size="xs">
+                              📄 ページ: {PAGE_OPTIONS.find(p => p.value === automationRuleForm.values.pageAction?.page)?.label}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              パス: {PAGE_OPTIONS.find(p => p.value === automationRuleForm.values.pageAction?.page)?.href}
+                            </Text>
+                          </>
+                        )}
+                        {automationRuleForm.values.pageAction?.action && pageActionOptions.length > 0 && (
+                          <Text size="xs">
+                            ⚡ アクション: {pageActionOptions.find(a => a.value === automationRuleForm.values.pageAction?.action)?.label}
+                          </Text>
+                        )}
+                        {!automationRuleForm.values.pageAction?.page && (
+                          <Text size="xs" c="dimmed">
+                            まずページを選択してください
+                          </Text>
+                        )}
+                        {automationRuleForm.values.pageAction?.page && pageActionOptions.length === 0 && (
+                          <Text size="xs" c="orange">
+                            ⚠️ 選択したページにはアクションが定義されていません
+                          </Text>
+                        )}
+                      </Stack>
                     </Alert>
                   </Stack>
                 </Card>

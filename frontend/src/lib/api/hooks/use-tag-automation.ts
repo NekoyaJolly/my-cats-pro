@@ -13,6 +13,7 @@ export type TagAutomationEventType =
   | 'PREGNANCY_CONFIRMED'
   | 'KITTEN_REGISTERED'
   | 'AGE_THRESHOLD'
+  | 'PAGE_ACTION'
   | 'CUSTOM';
 export type TagAutomationRunStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
 

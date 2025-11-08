@@ -162,7 +162,9 @@ export interface BirthPlan {
   status: BirthStatus;
   expectedKittens?: number | null;
   actualKittens?: number | null;
+  aliveCount?: number | null;
   notes?: string | null;
+  completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   mother?: { id: string; name: string | null } | null;
@@ -583,6 +585,170 @@ export function useDeleteBirthPlan() {
     onError: (error: Error) => {
       notifications.show({
         title: '出産計画の削除に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+// ========== Kitten Disposition ==========
+
+export type DispositionType = 'TRAINING' | 'SALE' | 'DECEASED';
+
+export interface SaleInfo {
+  buyer: string;
+  price: number;
+  saleDate: string;
+  notes?: string;
+}
+
+export interface KittenDisposition {
+  id: string;
+  birthRecordId: string;
+  kittenId?: string | null;
+  name: string;
+  gender: string;
+  disposition: DispositionType;
+  trainingStartDate?: string | null;
+  saleInfo?: SaleInfo | null;
+  deathDate?: string | null;
+  deathReason?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  kitten?: { id: string; name: string } | null;
+}
+
+export type CreateKittenDispositionRequest = {
+  birthRecordId: string;
+  kittenId?: string;
+  name: string;
+  gender: string;
+  disposition: DispositionType;
+  trainingStartDate?: string;
+  saleInfo?: SaleInfo;
+  deathDate?: string;
+  deathReason?: string;
+  notes?: string;
+};
+
+export type UpdateKittenDispositionRequest = Partial<Omit<CreateKittenDispositionRequest, 'birthRecordId'>>;
+
+export type KittenDispositionListResponse = ApiResponse<KittenDisposition[]>;
+
+const kittenDispositionKeys = createDomainQueryKeys<string>('kitten-dispositions');
+
+export function useGetKittenDispositions(birthRecordId: string) {
+  return useQuery<KittenDispositionListResponse>({
+    queryKey: kittenDispositionKeys.detail(birthRecordId),
+    queryFn: () => apiRequest<KittenDisposition[]>(`/breeding/kitten-dispositions/${birthRecordId}`),
+    enabled: !!birthRecordId,
+  });
+}
+
+export function useCreateKittenDisposition() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateKittenDispositionRequest) =>
+      apiRequest<KittenDisposition>('/breeding/kitten-dispositions', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: kittenDispositionKeys.all });
+      void queryClient.invalidateQueries({ queryKey: birthPlanKeys.lists() });
+      notifications.show({
+        title: '子猫処遇を登録しました',
+        message: '子猫の処遇が正常に登録されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '子猫処遇の登録に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useUpdateKittenDisposition() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateKittenDispositionRequest }) =>
+      apiRequest<KittenDisposition>(`/breeding/kitten-dispositions/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: kittenDispositionKeys.all });
+      void queryClient.invalidateQueries({ queryKey: birthPlanKeys.lists() });
+      notifications.show({
+        title: '子猫処遇を更新しました',
+        message: '最新の情報に更新されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '子猫処遇の更新に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useDeleteKittenDisposition() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<unknown>(`/breeding/kitten-dispositions/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: kittenDispositionKeys.all });
+      void queryClient.invalidateQueries({ queryKey: birthPlanKeys.lists() });
+      notifications.show({
+        title: '子猫処遇を削除しました',
+        message: 'リストから該当レコードを削除しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '子猫処遇の削除に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useCompleteBirthRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<unknown>(`/breeding/birth-plans/${id}/complete`, {
+        method: 'POST',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: birthPlanKeys.lists() });
+      notifications.show({
+        title: '出産記録を完了しました',
+        message: '出産記録が完了済みとしてマークされました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '出産記録の完了に失敗しました',
         message: error.message ?? '時間をおいて再度お試しください。',
         color: 'red',
       });

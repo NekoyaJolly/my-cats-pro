@@ -21,6 +21,7 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft, IconEdit, IconUser, IconAlertCircle, IconChevronDown } from '@tabler/icons-react';
 import { useGetCat } from '@/lib/api/hooks/use-cats';
+import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -39,6 +40,7 @@ const GENDER_LABELS: Record<string, string> = {
 export default function CatDetailClient({ catId }: Props) {
   const router = useRouter();
   const { data: cat, isLoading, error } = useGetCat(catId);
+  const { data: birthPlansResponse } = useGetBirthPlans();
 
   if (isLoading) {
     return (
@@ -271,9 +273,46 @@ export default function CatDetailClient({ catId }: Props) {
                         出産記録
                       </Accordion.Control>
                       <Accordion.Panel>
-                        <Text c="dimmed" size="sm">
-                          出産記録がここに表示されます（今後実装予定）
-                        </Text>
+                        {(() => {
+                          const completedBirthPlans = (birthPlansResponse?.data || []).filter(
+                            (bp: any) => bp.motherId === catData.id && bp.completedAt
+                          );
+
+                          if (completedBirthPlans.length === 0) {
+                            return (
+                              <Text c="dimmed" size="sm">
+                                出産記録はまだありません
+                              </Text>
+                            );
+                          }
+
+                          return (
+                            <Stack gap="md">
+                              {completedBirthPlans.map((bp: any) => (
+                                <Card key={bp.id} withBorder padding="sm">
+                                  <Stack gap="xs">
+                                    <Group justify="space-between">
+                                      <Text fw={600} size="sm">
+                                        出産日: {bp.matingDate ? format(new Date(bp.matingDate), 'yyyy年MM月dd日', { locale: ja }) : '不明'}
+                                      </Text>
+                                      <Badge color="green" size="sm">完了</Badge>
+                                    </Group>
+                                    <Group gap="md">
+                                      <Text size="sm">出産数: {bp.actualKittens || 0}頭</Text>
+                                      <Text size="sm">生存: {bp.aliveCount || 0}頭</Text>
+                                      <Text size="sm">死亡: {(bp.actualKittens || 0) - (bp.aliveCount || 0)}頭</Text>
+                                    </Group>
+                                    {bp.completedAt && (
+                                      <Text size="xs" c="dimmed">
+                                        記録完了日: {format(new Date(bp.completedAt), 'yyyy年MM月dd日', { locale: ja })}
+                                      </Text>
+                                    )}
+                                  </Stack>
+                                </Card>
+                              ))}
+                            </Stack>
+                          );
+                        })()}
                       </Accordion.Panel>
                     </Accordion.Item>
                   )}

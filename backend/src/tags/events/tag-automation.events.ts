@@ -65,6 +65,19 @@ export interface AgeThresholdEvent extends BaseAutomationEvent {
 }
 
 /**
+ * ページ・アクション駆動イベント
+ * 任意のページで任意のアクションが発生した際のイベント
+ */
+export interface PageActionEvent extends BaseAutomationEvent {
+  eventType: 'PAGE_ACTION';
+  page: string; // 'cats', 'breeding', 'health', 'care', 'pedigree' など
+  action: string; // 'create', 'update', 'delete', 'status_change' など
+  targetId: string; // 対象のリソースID（猫ID、交配記録IDなど）
+  targetType?: string; // 'cat', 'breeding', 'health_record' など
+  additionalData?: Record<string, unknown>; // アクション固有の追加データ
+}
+
+/**
  * カスタムイベント
  */
 export interface CustomEvent extends BaseAutomationEvent {
@@ -83,6 +96,7 @@ export type TagAutomationEvent =
   | PregnancyConfirmedEvent
   | KittenRegisteredEvent
   | AgeThresholdEvent
+  | PageActionEvent
   | CustomEvent;
 
 /**
@@ -94,5 +108,6 @@ export const TAG_AUTOMATION_EVENTS = {
   PREGNANCY_CONFIRMED: 'tag.automation.pregnancy.confirmed',
   KITTEN_REGISTERED: 'tag.automation.kitten.registered',
   AGE_THRESHOLD: 'tag.automation.age.threshold',
+  PAGE_ACTION: 'tag.automation.page.action',
   CUSTOM: 'tag.automation.custom',
 } as const;

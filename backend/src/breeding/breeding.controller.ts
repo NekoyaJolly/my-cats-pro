@@ -191,6 +191,50 @@ export class BreedingController {
     return this.breedingService.removeBirthPlan(id);
   }
 
+  // ========== Kitten Disposition Endpoints ==========
+
+  @Get("kitten-dispositions/:birthRecordId")
+  @ApiOperation({ summary: "出産記録の子猫処遇一覧取得" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "birthRecordId" })
+  findAllKittenDispositions(@Param("birthRecordId") birthRecordId: string) {
+    return this.breedingService.findAllKittenDispositions(birthRecordId);
+  }
+
+  @Post("kitten-dispositions")
+  @ApiOperation({ summary: "子猫処遇の登録" })
+  @ApiResponse({ status: HttpStatus.CREATED })
+  createKittenDisposition(
+    @Body() dto: any,
+    @GetUser() user?: RequestUser,
+  ) {
+    return this.breedingService.createKittenDisposition(dto, user?.userId);
+  }
+
+  @Patch("kitten-dispositions/:id")
+  @ApiOperation({ summary: "子猫処遇の更新" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  updateKittenDisposition(@Param("id") id: string, @Body() dto: any) {
+    return this.breedingService.updateKittenDisposition(id, dto);
+  }
+
+  @Delete("kitten-dispositions/:id")
+  @ApiOperation({ summary: "子猫処遇の削除" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  removeKittenDisposition(@Param("id") id: string) {
+    return this.breedingService.removeKittenDisposition(id);
+  }
+
+  @Post("birth-plans/:id/complete")
+  @ApiOperation({ summary: "出産記録の完了" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  completeBirthRecord(@Param("id") id: string) {
+    return this.breedingService.completeBirthRecord(id);
+  }
+
   // Parameterized routes for the main breeding resource.
   // These are intentionally placed after static subpaths such as
   // "pregnancy-checks" and "birth-plans" so that Express does not

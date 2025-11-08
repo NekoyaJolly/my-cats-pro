@@ -18,6 +18,7 @@ import {
   type PregnancyConfirmedEvent,
   type KittenRegisteredEvent,
   type AgeThresholdEvent,
+  type PageActionEvent,
   type CustomEvent,
 } from "./events/tag-automation.events";
 import { TagAutomationService } from "./tag-automation.service";
@@ -219,6 +220,35 @@ export class TagAutomationExecutionService {
         catIds.push((event as AgeThresholdEvent).catId);
         break;
 
+      case 'PAGE_ACTION': {
+        // PAGE_ACTIONイベントの処理
+        const pageEvent = event as PageActionEvent;
+        
+        // configから対象猫の選択方法を取得
+        const config = rule.config as Record<string, unknown> | null;
+        const targetSelection = config?.['targetSelection'] as string | undefined;
+        
+        if (targetSelection === 'event_target' && pageEvent.targetType === 'cat') {
+          // イベントで指定された猫を対象とする
+          catIds.push(pageEvent.targetId);
+        } else if (targetSelection === 'specific_cats' && config?.['specificCatIds']) {
+          // 特定の猫リストを対象とする
+          const specificCats = config['specificCatIds'] as string[];
+          catIds.push(...specificCats);
+        } else if (targetSelection === 'all_cats') {
+          // 全猫を対象とする（スコープやフィルタを適用可能）
+          const filters = config?.['filters'] as Record<string, unknown> | undefined;
+          const allCats = await this.getAllCatsMatchingFilters(filters);
+          catIds.push(...allCats.map(cat => cat.id));
+        } else {
+          // デフォルト: イベントターゲットが猫の場合はそれを使用
+          if (pageEvent.targetType === 'cat') {
+            catIds.push(pageEvent.targetId);
+          }
+        }
+        break;
+      }
+
       case 'CUSTOM':
         catIds.push((event as CustomEvent).targetId);
         break;
@@ -295,6 +325,33 @@ export class TagAutomationExecutionService {
   }
 
   /**
+   * フィルタに一致する全猫を取得
+   */
+  private async getAllCatsMatchingFilters(
+    filters?: Record<string, unknown>,
+  ): Promise<Array<{ id: string }>> {
+    const where: Prisma.CatWhereInput = {};
+
+    if (filters) {
+      // フィルタ条件を適用
+      if (filters['breedId']) {
+        where.breedId = filters['breedId'] as string;
+      }
+      if (filters['gender']) {
+        where.gender = filters['gender'] as string;
+      }
+      // 他のフィルタ条件も必要に応じて追加
+    }
+
+    const cats = await this.prisma.cat.findMany({
+      where,
+      select: { id: true },
+    });
+
+    return cats;
+  }
+
+  /**
    * イベントリスナー: 交配予定
    */
   @OnEvent(TAG_AUTOMATION_EVENTS.BREEDING_PLANNED)
@@ -336,6 +393,15 @@ export class TagAutomationExecutionService {
   @OnEvent(TAG_AUTOMATION_EVENTS.AGE_THRESHOLD)
   async handleAgeThreshold(event: AgeThresholdEvent) {
     this.logger.log(`Handling AGE_THRESHOLD event for cat: ${event.catId}`);
+    await this.executeRulesForEvent(event);
+  }
+
+  /**
+   * イベントリスナー: ページ・アクション
+   */
+  @OnEvent(TAG_AUTOMATION_EVENTS.PAGE_ACTION)
+  async handlePageAction(event: PageActionEvent) {
+    this.logger.log(`Handling PAGE_ACTION event: ${event.page}.${event.action}`);
     await this.executeRulesForEvent(event);
   }
 

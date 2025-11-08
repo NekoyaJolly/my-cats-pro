@@ -151,6 +151,7 @@ model Cat {
   tagHistory            TagAssignmentHistory[]
   pregnancyChecks PregnancyCheck[] @relation("PregnancyCheckMother")
   birthPlans      BirthPlan[]    @relation("BirthPlanMother")
+  kittenDispositions KittenDisposition[] // 子猫処遇記録
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
   @@index([breedId])
@@ -238,12 +239,16 @@ model BirthPlan {
   status          BirthStatus    @default(EXPECTED)
   expectedKittens Int?           @map("expected_kittens")
   actualKittens   Int?           @map("actual_kittens")
+  completedAt     DateTime?      @map("completed_at") // 出産記録完了日時
   notes           String?
 
   mother Cat @relation("BirthPlanMother", fields: [motherId], references: [id])
 
   recordedBy String @map("recorded_by")
   recorder   User   @relation(fields: [recordedBy], references: [id])
+
+  // Relations
+  kittenDispositions KittenDisposition[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -252,6 +257,37 @@ model BirthPlan {
   @@index([fatherId])
   @@index([expectedBirthDate])
   @@map("birth_plans")
+}
+
+model KittenDisposition {
+  id              String              @id @default(uuid())
+  birthRecordId   String              @map("birth_record_id")
+  kittenId        String?             @map("kitten_id") // 養成の場合のみ
+  name            String
+  gender          String              // MALE or FEMALE
+  disposition     DispositionType     // 処遇タイプ
+  
+  // 養成の場合
+  trainingStartDate DateTime?         @map("training_start_date")
+  
+  // 出荷の場合
+  saleInfo        Json?               @map("sale_info") // { buyer, price, saleDate, notes }
+  
+  // 死亡の場合
+  deathDate       DateTime?           @map("death_date")
+  deathReason     String?             @map("death_reason")
+  
+  notes           String?
+
+  birthRecord BirthPlan @relation(fields: [birthRecordId], references: [id], onDelete: Cascade)
+  kitten      Cat?      @relation(fields: [kittenId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([birthRecordId])
+  @@index([kittenId])
+  @@map("kitten_dispositions")
 }
 
 model CareRecord {
@@ -726,6 +762,12 @@ enum BirthStatus {
   STILLBORN
 }
 
+enum DispositionType {
+  TRAINING  // 養成
+  SALE      // 出荷
+  DECEASED  // 死亡
+}
+
 enum BreedingNgRuleType {
   TAG_COMBINATION
   INDIVIDUAL_PROHIBITION
@@ -837,6 +879,7 @@ enum TagAutomationEventType {
   PREGNANCY_CONFIRMED
   KITTEN_REGISTERED
   AGE_THRESHOLD
+  PAGE_ACTION // ページ・アクション駆動イベント（柔軟な設定が可能）
   CUSTOM
 }
 
