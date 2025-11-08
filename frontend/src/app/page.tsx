@@ -16,8 +16,10 @@ import {
   ThemeIcon,
   Box,
   Badge,
+  ActionIcon,
+  Button,
 } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
+import { useMediaQuery, useDisclosure } from '@mantine/hooks';
 import {
   IconPaw,
   IconHeart,
@@ -27,11 +29,26 @@ import {
   IconStethoscope,
   IconChevronRight,
   IconAlertCircle,
+  IconSettings,
+  IconAdjustments,
+  IconList,
+  IconBabyCarriage,
+  IconTag,
+  IconCalendarTime,
 } from '@tabler/icons-react';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { notifications } from '@mantine/notifications';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/store';
+import {
+  DashboardCardSettings,
+  DashboardCardConfig,
+} from '@/components/dashboard/DashboardCardSettings';
+import {
+  loadDashboardSettings,
+  saveDashboardSettings,
+  applyDashboardSettings,
+} from '@/lib/storage/dashboard-settings';
 
 // 猫のデータ型
 interface Cat {
@@ -78,6 +95,8 @@ export default function Home() {
   const [breedingSummary, setBreedingSummary] = useState<BreedingSummary>({ total: 0, today: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dashboardCards, setDashboardCards] = useState<DashboardCardConfig[]>([]);
+  const [settingsOpened, { open: openSettings, close: closeSettings }] = useDisclosure(false);
   const router = useRouter();
   const { setPageTitle } = usePageHeader();
   const { isAuthenticated, initialized, accessToken } = useAuth();
@@ -177,6 +196,109 @@ export default function Home() {
     fetchData();
   }, [isAuthenticated, initialized]);
 
+  // LocalStorageから設定を読み込んでカード設定を初期化
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // デフォルトのダッシュボードカード定義（サイドバーの項目と同じ）
+    const defaultDashboardCards: Omit<DashboardCardConfig, 'visible' | 'order'>[] = [
+      {
+        id: 'new-cat',
+        title: '新規猫登録',
+        description: '新しい猫を登録する',
+        icon: <IconPlus size={32} />,
+        color: 'green',
+        href: '/cats/new',
+      },
+      {
+        id: 'cats',
+        title: '在舎猫一覧',
+        description: '在舎猫の一覧・登録・編集',
+        icon: <IconList size={32} />,
+        color: 'blue',
+        href: '/cats',
+        badge: cats.length,
+        stats: `全${cats.length}頭`,
+      },
+      {
+        id: 'breeding',
+        title: '交配管理',
+        description: '交配スケジュールと記録',
+        icon: <IconHeart size={32} />,
+        color: 'pink',
+        href: '/breeding',
+        badge: breedingSummary.today > 0 ? breedingSummary.today : undefined,
+        stats: breedingSummary.today > 0 ? `今日${breedingSummary.today}件` : `全${breedingSummary.total}件`,
+      },
+      {
+        id: 'kittens',
+        title: '子猫管理',
+        description: '子猫の成長記録と管理',
+        icon: <IconBabyCarriage size={32} />,
+        color: 'cyan',
+        href: '/kittens',
+      },
+      {
+        id: 'care',
+        title: 'ケアスケジュール',
+        description: '日々のケアとタスク管理',
+        icon: <IconStethoscope size={32} />,
+        color: 'teal',
+        href: '/care',
+        badge: careSummary.pending > 0 ? careSummary.pending : undefined,
+        stats: careSummary.pending > 0 ? `未完了${careSummary.pending}件` : '完了済み',
+      },
+      {
+        id: 'tags',
+        title: 'タグ管理',
+        description: 'タグの作成と管理',
+        icon: <IconTag size={32} />,
+        color: 'yellow',
+        href: '/tags',
+      },
+      {
+        id: 'pedigree',
+        title: '血統書データ',
+        description: '血統情報の閲覧・管理',
+        icon: <IconCertificate size={32} />,
+        color: 'violet',
+        href: '/pedigrees',
+      },
+      {
+        id: 'staff-shifts',
+        title: 'スタッフシフト',
+        description: 'シフト管理とスケジュール',
+        icon: <IconCalendarTime size={32} />,
+        color: 'indigo',
+        href: '/staff/shifts',
+      },
+    ];
+    
+    const settings = loadDashboardSettings();
+    const cardsWithDefaults = defaultDashboardCards.map((card, index) => ({
+      ...card,
+      visible: true,
+      order: index,
+    }));
+    
+    const appliedCards = applyDashboardSettings(cardsWithDefaults, settings);
+    setDashboardCards(appliedCards);
+  }, [cats.length, careSummary.pending, breedingSummary.today]);
+
+  // カード設定保存ハンドラー
+  const handleSaveCardSettings = (cards: DashboardCardConfig[]) => {
+    setDashboardCards(cards);
+    saveDashboardSettings(cards);
+    notifications.show({
+      title: '保存完了',
+      message: 'ホーム画面の設定を保存しました',
+      color: 'green',
+    });
+  };
+
+  // 表示するカードのみフィルタリング
+  const visibleCards = dashboardCards.filter((card) => card.visible);
+
   // ローディング中の表示
   if (loading) {
     return (
@@ -215,74 +337,38 @@ export default function Home() {
     weekday: 'long'
   });
 
-  // ダッシュボードカードの定義
-  const dashboardCards: DashboardCard[] = [
-    {
-      id: 'cats',
-      title: '猫管理',
-      description: '在舎猫の一覧・登録・編集',
-      icon: <IconPaw size={32} />,
-      color: 'blue',
-      href: '/cats',
-      badge: cats.length,
-      stats: `全${cats.length}頭`,
-    },
-    {
-      id: 'breeding',
-      title: '交配管理',
-      description: '交配スケジュールと記録',
-      icon: <IconHeart size={32} />,
-      color: 'pink',
-      href: '/breeding',
-      badge: breedingSummary.today > 0 ? breedingSummary.today : undefined,
-      stats: breedingSummary.today > 0 ? `今日${breedingSummary.today}件` : `全${breedingSummary.total}件`,
-    },
-    {
-      id: 'schedule',
-      title: 'ケアスケジュール',
-      description: '日々のケアとタスク管理',
-      icon: <IconStethoscope size={32} />,
-      color: 'teal',
-      href: '/care',
-      badge: careSummary.pending > 0 ? careSummary.pending : undefined,
-      stats: careSummary.pending > 0 ? `未完了${careSummary.pending}件` : '完了済み',
-    },
-    {
-      id: 'pedigree',
-      title: '血統書管理',
-      description: '血統情報の閲覧・管理',
-      icon: <IconCertificate size={32} />,
-      color: 'violet',
-      href: '/pedigrees',
-      stats: '血統書データ',
-    },
-    {
-      id: 'new-cat',
-      title: '新規猫登録',
-      description: '新しい猫を登録する',
-      icon: <IconPlus size={32} />,
-      color: 'green',
-      href: '/cats/new',
-    },
-    {
-      id: 'reports',
-      title: 'レポート',
-      description: '統計とデータ分析',
-      icon: <IconChartBar size={32} />,
-      color: 'orange',
-      href: '/more',
-      stats: '近日公開',
-    },
-  ];
-
   return (
     <Container size="xl" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-      {/* ウェルカムメッセージ */}
+      {/* ウェルカムメッセージと設定ボタン */}
       <Stack gap="lg" mb="xl">
-        <Box>
-          <Title order={2} mb="xs">おかえりなさい 👋</Title>
-          <Text size="sm" c="dimmed">{today}</Text>
-        </Box>
+        <Group justify="space-between" align="flex-start">
+          <Box style={{ flex: 1 }}>
+            <Title order={2} mb="xs">おかえりなさい 👋</Title>
+            <Text size="sm" c="dimmed">{today}</Text>
+          </Box>
+          
+          {/* カスタマイズボタン */}
+          {isMobilePortrait ? (
+            <ActionIcon
+              variant="light"
+              color="gray"
+              size="lg"
+              onClick={openSettings}
+              title="ホーム画面をカスタマイズ"
+            >
+              <IconAdjustments size={20} />
+            </ActionIcon>
+          ) : (
+            <Button
+              variant="light"
+              color="gray"
+              leftSection={<IconSettings size={18} />}
+              onClick={openSettings}
+            >
+              カスタマイズ
+            </Button>
+          )}
+        </Group>
       </Stack>
 
       {/* レスポンシブレイアウト */}
@@ -296,7 +382,7 @@ export default function Home() {
             margin: '0 auto',
           }}
         >
-          {dashboardCards.map((card) => (
+          {visibleCards.map((card) => (
             <Box
               key={card.id}
               style={{
@@ -364,7 +450,7 @@ export default function Home() {
           cols={{ base: 1, xs: 2, md: 3 }}
           spacing="lg"
         >
-          {dashboardCards.map((card) => (
+          {visibleCards.map((card) => (
             <Card
               key={card.id}
               shadow="sm"
@@ -436,6 +522,14 @@ export default function Home() {
           ))}
         </SimpleGrid>
       )}
+
+      {/* カード設定モーダル */}
+      <DashboardCardSettings
+        opened={settingsOpened}
+        onClose={closeSettings}
+        cards={dashboardCards}
+        onSave={handleSaveCardSettings}
+      />
     </Container>
   );
 }

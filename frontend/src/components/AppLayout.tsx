@@ -311,7 +311,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           wrap="nowrap"
           style={{ color: 'var(--text-primary)' }}
         >
-          <Group gap="sm" wrap="nowrap" style={{ maxWidth: 'calc(100% - 200px)', flex: '1 1 auto' }}>
+          <Group gap="sm" wrap="nowrap" style={{ flex: '1 1 auto', minWidth: 0 }}>
             <Burger
               opened={mobileOpened}
               onClick={toggleMobile}
@@ -324,14 +324,14 @@ export function AppLayout({ children }: AppLayoutProps) {
               visibleFrom="sm"
               size="sm"
             />
-            <Group gap={8} wrap="nowrap">
+            <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
               <Text fw={700} style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                 <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🐈</span> MyCats
               </Text>
               {pageTitle && (
                 <>
-                  <Text c="dimmed" size="lg">›</Text>
-                  <Text fw={600} size="md" style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                  <Text c="dimmed" size="lg" visibleFrom="sm">›</Text>
+                  <Text fw={600} size="md" style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} visibleFrom="sm">
                     {pageTitle}
                   </Text>
                 </>
@@ -339,8 +339,8 @@ export function AppLayout({ children }: AppLayoutProps) {
             </Group>
           </Group>
           
-          {/* グローバル統計情報 - デスクトップのみ表示 */}
-          <Group gap="xs" visibleFrom="md" wrap="nowrap">
+          {/* グローバル統計情報 - 4つのバッジを常に表示、レスポンシブに配置 */}
+          <Group gap="xs" wrap="nowrap" style={{ flex: '0 0 auto' }}>
             <Badge variant="light" color="blue" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
               ♂ {catStats.male}
             </Badge>
