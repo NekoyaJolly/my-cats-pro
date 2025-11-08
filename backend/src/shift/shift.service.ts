@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Shift, Staff } from '@prisma/client';
+import { Shift, Staff, Prisma } from '@prisma/client';
 
 import {
   ShiftResponseDto,
@@ -207,7 +207,7 @@ export class ShiftService {
     }
 
     // 更新データを構築
-    const updateData: Prisma.ShiftUpdateInput = {};
+    const updateData: Partial<Prisma.ShiftUncheckedUpdateInput> = {};
 
     if (updateShiftDto.staffId !== undefined) {
       updateData.staffId = updateShiftDto.staffId;
