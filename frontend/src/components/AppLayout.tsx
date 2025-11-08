@@ -32,6 +32,11 @@ import {
   IconPalette,
   IconCalendarEvent,
   IconCalendarTime,
+  IconSettings,
+  IconHome,
+  IconCat,
+  IconStethoscope,
+  IconHeartHandshake,
 } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
@@ -82,6 +87,11 @@ const navigationItems = [
     icon: IconCalendarTime,
   },
   {
+    label: 'その他',
+    href: '/more',
+    icon: IconSettings,
+  },
+  {
     label: 'デザインガイド',
     href: '/demo/action-buttons',
     icon: IconPalette,
@@ -93,11 +103,11 @@ interface AppLayoutProps {
 }
 
 const bottomNavigationItems = [
-  { label: 'ホーム', href: '/', icon: '🏠' },
-  { label: '交配', href: '/breeding', icon: '🔗' },
-  { label: '子猫', href: '/kittens', icon: '🐾' },
-  { label: 'ケア', href: '/care', icon: '🩺' },
-  { label: 'その他', href: '/more', icon: '⚙️' },
+  { label: 'ホーム', href: '/', icon: IconHome },
+  { label: '在舎猫', href: '/cats', icon: IconCat },
+  { label: '交配', href: '/breeding', icon: IconHeartHandshake },
+  { label: '子猫', href: '/kittens', icon: IconPaw },
+  { label: 'ケア', href: '/care', icon: IconStethoscope },
 ];
 
 // 猫の統計情報の型
@@ -233,19 +243,39 @@ export function AppLayout({ children }: AppLayoutProps) {
           const cats = response.data;
           const today = new Date();
           
+          // 在舎猫のみをフィルタ
+          const inHouseCats = cats.filter((cat: any) => cat.isInHouse);
+          
+          // 子猫判定関数（6ヶ月未満）
+          const isKittenFunc = (cat: any) => {
+            if (!cat.birthDate) return false;
+            const birthDate = new Date(cat.birthDate);
+            const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+            return ageInMonths < 6;
+          };
+          
+          // 大人の猫（子猫以外）
+          const adultCats = inHouseCats.filter((cat: any) => !isKittenFunc(cat));
+          
+          // 子猫（90日未満で母猫IDを持つ）
+          const kittens = inHouseCats.filter((cat: any) => {
+            if (!cat.birthDate || !cat.motherId) return false;
+            const birthDate = new Date(cat.birthDate);
+            const ageInDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
+            return ageInDays < 90;
+          });
+          
+          // 卒業予定の猫（「卒業予定」タグを持つ猫）
+          const graduatedCats = inHouseCats.filter((cat: any) => 
+            cat.tags?.some((catTag: any) => catTag.tag.name === '卒業予定')
+          );
+          
           // 統計を計算
           const stats: CatStats = {
-            male: cats.filter((cat: any) => cat.gender === 'オス' || cat.gender === 'MALE').length,
-            female: cats.filter((cat: any) => cat.gender === 'メス' || cat.gender === 'FEMALE').length,
-            kittens: cats.filter((cat: any) => {
-              if (!cat.birthDate) return false;
-              const birthDate = new Date(cat.birthDate);
-              const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
-              return ageInMonths < 12;
-            }).length,
-            graduated: cats.filter((cat: any) => 
-              cat.tags?.includes('卒業予定') || cat.tags?.includes('卒業済み') || cat.status === '卒業'
-            ).length,
+            male: adultCats.filter((cat: any) => cat.gender === 'MALE').length,
+            female: adultCats.filter((cat: any) => cat.gender === 'FEMALE').length,
+            kittens: kittens.length,
+            graduated: graduatedCats.length,
           };
           
           setCatStats(stats);
@@ -341,16 +371,40 @@ export function AppLayout({ children }: AppLayoutProps) {
           
           {/* グローバル統計情報 - 4つのバッジを常に表示、レスポンシブに配置 */}
           <Group gap="xs" wrap="nowrap" style={{ flex: '0 0 auto' }}>
-            <Badge variant="light" color="blue" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
+            <Badge 
+              variant="light" 
+              color="blue" 
+              size="lg" 
+              style={{ paddingLeft: 10, paddingRight: 10, cursor: 'pointer' }}
+              onClick={() => router.push('/cats?tab=male')}
+            >
               ♂ {catStats.male}
             </Badge>
-            <Badge variant="light" color="pink" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
+            <Badge 
+              variant="light" 
+              color="pink" 
+              size="lg" 
+              style={{ paddingLeft: 10, paddingRight: 10, cursor: 'pointer' }}
+              onClick={() => router.push('/cats?tab=female')}
+            >
               ♀ {catStats.female}
             </Badge>
-            <Badge variant="light" color="orange" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
+            <Badge 
+              variant="light" 
+              color="orange" 
+              size="lg" 
+              style={{ paddingLeft: 10, paddingRight: 10, cursor: 'pointer' }}
+              onClick={() => router.push('/cats?tab=kitten')}
+            >
               🐾 {catStats.kittens}
             </Badge>
-            <Badge variant="light" color="green" size="lg" style={{ paddingLeft: 10, paddingRight: 10 }}>
+            <Badge 
+              variant="light" 
+              color="green" 
+              size="lg" 
+              style={{ paddingLeft: 10, paddingRight: 10, cursor: 'pointer' }}
+              onClick={() => router.push('/cats?tab=grad')}
+            >
               🎓 {catStats.graduated}
             </Badge>
           </Group>
@@ -471,6 +525,7 @@ function BottomNavigation({ pathname }: { pathname: string }) {
     >
   {bottomNavigationItems.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const IconComponent = item.icon;
         return (
           <Box
             key={item.href}
@@ -486,7 +541,7 @@ function BottomNavigation({ pathname }: { pathname: string }) {
               fontSize: '0.8rem',
             }}
           >
-            <Text size="xl">{item.icon}</Text>
+            <IconComponent size={24} stroke={1.5} />
             <Text
               size="xs"
               style={{

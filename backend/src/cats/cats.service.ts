@@ -316,6 +316,7 @@ export class CatsService {
       isInHouse,
       fatherId,
       motherId,
+      tagIds,
     } = updateCatDto;
 
     // Validate breed if provided
@@ -365,6 +366,25 @@ export class CatsService {
     const birth = birthDate ? new Date(birthDate) : undefined;
 
     try {
+      // タグの更新処理（tagIdsが指定されている場合）
+      if (tagIds !== undefined) {
+        // 既存のタグを全て削除
+        await this.prisma.catTag.deleteMany({
+          where: { catId: id },
+        });
+
+        // 新しいタグを追加
+        if (tagIds.length > 0) {
+          await this.prisma.catTag.createMany({
+            data: tagIds.map((tagId) => ({
+              catId: id,
+              tagId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
       return await this.prisma.cat.update({
         where: { id },
         data: {

@@ -29,12 +29,18 @@ import { GenderBadge } from '@/components/GenderBadge';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('cats');
-  const [sortBy, setSortBy] = useState('name');
-  const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setPageHeader } = usePageHeader();
+  
+  // URLパラメータからタブを取得（初期値は'cats'）
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = searchParams.get('tab');
+    return tabParam || 'cats';
+  });
+  
+  const [sortBy, setSortBy] = useState('name');
+  const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
   
   // 子猫の展開/折りたたみ状態
   const [expandedMotherIds, setExpandedMotherIds] = useState<Set<string>>(new Set());
@@ -140,45 +146,36 @@ export default function CatsPage() {
   }, [resizingColumn, handleResizeMove, handleResizeEnd]);
 
   const queryParams = useMemo<GetCatsParams>(() => {
-    const params: GetCatsParams = {};
+    const params: GetCatsParams = {
+      limit: 1000, // 全タブで十分なデータを取得
+    };
 
     if (debouncedSearch) {
       params.search = debouncedSearch;
     }
 
-    switch (activeTab) {
-      case 'male':
-        params.gender = 'MALE';
-        break;
-      case 'female':
-        params.gender = 'FEMALE';
-        break;
-      case 'raising':
-        // We need the full dataset client-side to determine which mothers are raising kittens.
-        // Request a larger limit so client can compute correctly.
-        params.limit = 1000;
-        break;
-      case 'kitten':
-        // Kitten filtering is done client-side (motherId present + <12 months old).
-        // Make sure we fetch sufficient rows to compute correctly.
-        params.limit = 1000;
-        break;
-      default:
-        // For 'cats' tab, also fetch sufficient data for accurate counts
-        params.limit = 1000;
-        break;
-    }
+    // タブに関わらず全猫を取得（フィルタリングはクライアント側で実行）
+    // これによりタブカウントが動的に変わることを防ぐ
 
     return params;
-  }, [debouncedSearch, activeTab]);
+  }, [debouncedSearch]); // activeTabを依存配列から削除
 
   // API連携でデータ取得
   const { data, isLoading, isError, error, isRefetching, refetch } = useGetCats(queryParams, {
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5分間はキャッシュを使用
   });
 
   const { data: statsData } = useGetCatStatistics();
+
+  // URLパラメータからタブを取得して反映
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['cats', 'male', 'female', 'kitten', 'raising', 'grad'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // 新規登録からの遷移を検知して自動リフレッシュ
   useEffect(() => {
@@ -213,22 +210,46 @@ export default function CatsPage() {
 
   const apiCats = data?.data || [];
 
-  // compute counts for kitten / raising
-  const kittenCount = apiCats.filter((cat: Cat) => {
+  // 在舎猫のみを対象とする
+  const inHouseCats = apiCats.filter((cat: Cat) => cat.isInHouse);
+
+  // 子猫判定関数（6ヶ月未満）を先に定義
+  const isKittenFunc = (birthDate: string): boolean => {
+    const birth = new Date(birthDate);
+    const now = new Date();
+    const ageInMonths = (now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 30);
+    return ageInMonths < 6;
+  };
+
+  // 成猫のみ（子猫を除外）
+  const adultCats = inHouseCats.filter((cat: Cat) => !isKittenFunc(cat.birthDate));
+
+  // Cats: 在舎登録されている成猫のみカウント（子猫除外）
+  const totalCount = adultCats.length;
+
+  // Male: 在舎猫登録されていて、性別がMaleの成猫のみ（子猫除外）
+  const maleCount = adultCats.filter((cat: Cat) => cat.gender === 'MALE').length;
+
+  // Female: 在舎猫登録されていて、性別がFemaleの成猫のみ（子猫除外）
+  const femaleCount = adultCats.filter((cat: Cat) => cat.gender === 'FEMALE').length;
+
+  // Kitten: 母猫名が入力されてる生後3ヶ月以内の猫
+  const kittenCount = inHouseCats.filter((cat: Cat) => {
     if (!cat.birthDate || !cat.motherId) return false;
     const birthDate = new Date(cat.birthDate);
     const today = new Date();
     const ageInDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
-    return ageInDays <= 60; // 60日以内
+    return ageInDays <= 90; // 3ヶ月(90日)以内
   }).length;
 
-  // Raising: 新規登録された生後11ヶ月以内の猫
-  const raisingCount = apiCats.filter((cat: Cat) => {
-    if (!cat.birthDate) return false;
-    const birthDate = new Date(cat.birthDate);
-    const today = new Date();
-    const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
-    return ageInMonths < 11; // 11ヶ月以内
+  // Raising: 養成中タグがついてる猫
+  const raisingCount = inHouseCats.filter((cat: Cat) => {
+    return cat.tags?.some((catTag) => catTag.tag.name === '養成中');
+  }).length;
+
+  // Grad: 卒業予定タグがついてる猫
+  const gradCount = inHouseCats.filter((cat: Cat) => {
+    return cat.tags?.some((catTag) => catTag.tag.name === '卒業予定');
   }).length;
 
   // 年齢計算関数
@@ -252,10 +273,7 @@ export default function CatsPage() {
 
   // 子猫判定関数（6ヶ月未満）
   const isKitten = (birthDate: string): boolean => {
-    const birth = new Date(birthDate);
-    const now = new Date();
-    const ageInMonths = (now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 30);
-    return ageInMonths < 6;
+    return isKittenFunc(birthDate);
   };
 
   // 子猫の展開/折りたたみトグル
@@ -316,37 +334,44 @@ export default function CatsPage() {
 
   // タブ別フィルタリングとソート
   const getFilteredCats = () => {
-    let filtered = Array.from(apiCats);
+    let filtered: Cat[] = [];
     
     switch (activeTab) {
       case 'male':
-        filtered = apiCats.filter((cat: Cat) => cat.gender === 'MALE');
+        // 在舎猫登録されていて、性別がMaleの成猫のみ（子猫除外）
+        filtered = adultCats.filter((cat: Cat) => cat.gender === 'MALE');
         break;
       case 'female':
-        filtered = apiCats.filter((cat: Cat) => cat.gender === 'FEMALE');
+        // 在舎猫登録されていて、性別がFemaleの猫（成猫+子猫、表示時に子猫は母猫に格納）
+        filtered = inHouseCats.filter((cat: Cat) => cat.gender === 'FEMALE');
         break;
       case 'kitten':
-        // 母猫の出産時に登録された生後60日以内の子猫のみ表示
-        filtered = apiCats.filter((cat: Cat) => {
+        // 母猫名が入力されてる生後3ヶ月(90日)以内の猫
+        filtered = inHouseCats.filter((cat: Cat) => {
           if (!cat.birthDate || !cat.motherId) return false;
           const birthDate = new Date(cat.birthDate);
           const today = new Date();
           const ageInDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
-          return ageInDays <= 60; // 60日以内
+          return ageInDays <= 90; // 3ヶ月(90日)以内
         });
         break;
       case 'raising':
-        // 新規登録された生後11ヶ月以内の猫（養成中の猫）
-        filtered = apiCats.filter((cat: Cat) => {
-          if (!cat.birthDate) return false;
-          const birthDate = new Date(cat.birthDate);
-          const today = new Date();
-          const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
-          return ageInMonths < 11; // 11ヶ月以内
+        // 養成中タグがついてる猫
+        filtered = inHouseCats.filter((cat: Cat) => {
+          return cat.tags?.some((catTag) => catTag.tag.name === '養成中');
         });
         break;
+      case 'grad':
+        // 卒業予定タグがついてる猫
+        filtered = inHouseCats.filter((cat: Cat) => {
+          return cat.tags?.some((catTag) => catTag.tag.name === '卒業予定');
+        });
+        break;
+      case 'cats':
       default:
-        filtered = apiCats;
+        // 在舎登録されている全ての猫（成猫+子猫、表示時に子猫は母猫に格納）
+        filtered = inHouseCats;
+        break;
     }
     
     // 検索フィルター適用
@@ -369,6 +394,21 @@ export default function CatsPage() {
           return (a.breed?.name || '').localeCompare(b.breed?.name || '');
         case 'gender':
           return a.gender.localeCompare(b.gender);
+        case 'gender-name':
+          // 性別順（メス→オス）→名前順
+          const genderCompare = a.gender.localeCompare(b.gender);
+          if (genderCompare !== 0) return genderCompare;
+          return a.name.localeCompare(b.name);
+        case 'gender-age':
+          // 性別順（メス→オス）→年齢順（新しい順）
+          const genderCompare2 = a.gender.localeCompare(b.gender);
+          if (genderCompare2 !== 0) return genderCompare2;
+          return new Date(b.birthDate).getTime() - new Date(a.birthDate).getTime();
+        case 'breed-name':
+          // 品種順→名前順
+          const breedCompare = (a.breed?.name || '').localeCompare(b.breed?.name || '');
+          if (breedCompare !== 0) return breedCompare;
+          return a.name.localeCompare(b.name);
         default:
           return 0;
       }
@@ -381,6 +421,22 @@ export default function CatsPage() {
 
   // 母猫と子猫を分類
   const { motherCatsWithKittens, adultsWithoutKittens } = useMemo(() => {
+    // Maleタブ: 成猫のオスのみ表示（子猫完全除外）
+    if (activeTab === 'male') {
+      return { motherCatsWithKittens: [], adultsWithoutKittens: filteredCats };
+    }
+    
+    // Kittenタブ: 子猫全頭を個別表示（母猫に格納しない）
+    if (activeTab === 'kitten') {
+      return { motherCatsWithKittens: [], adultsWithoutKittens: filteredCats };
+    }
+    
+    // Gradタブ: 個別表示（母猫に格納しない）
+    if (activeTab === 'grad') {
+      return { motherCatsWithKittens: [], adultsWithoutKittens: filteredCats };
+    }
+    
+    // Cats/Female/Raisingタブ: 母猫に子猫を格納して表示
     const kittens = filteredCats.filter((cat: Cat) => isKitten(cat.birthDate) && cat.motherId);
     const kittensByMother = new Map<string, Cat[]>();
     
@@ -403,7 +459,7 @@ export default function CatsPage() {
       }));
 
     return { motherCatsWithKittens, adultsWithoutKittens };
-  }, [filteredCats]);
+  }, [filteredCats, activeTab]);
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
@@ -419,11 +475,12 @@ export default function CatsPage() {
               style={{ flex: 1, minWidth: 'fit-content' }}
             >
               <Tabs.List>
-                <Tabs.Tab value="cats">Cats ({(statsData && (statsData as any).data?.total) ?? apiCats.length})</Tabs.Tab>
-                <Tabs.Tab value="male">Male ({(statsData && (statsData as any).data?.genderDistribution?.MALE) ?? apiCats.filter((c: Cat) => c.gender === 'MALE').length})</Tabs.Tab>
-                <Tabs.Tab value="female">Female ({(statsData && (statsData as any).data?.genderDistribution?.FEMALE) ?? apiCats.filter((c: Cat) => c.gender === 'FEMALE').length})</Tabs.Tab>
+                <Tabs.Tab value="cats">Cats ({totalCount})</Tabs.Tab>
+                <Tabs.Tab value="male">Male ({maleCount})</Tabs.Tab>
+                <Tabs.Tab value="female">Female ({femaleCount})</Tabs.Tab>
                 <Tabs.Tab value="kitten">Kitten ({kittenCount})</Tabs.Tab>
                 <Tabs.Tab value="raising">Raising ({raisingCount})</Tabs.Tab>
+                <Tabs.Tab value="grad">Grad ({gradCount})</Tabs.Tab>
               </Tabs.List>
             </Tabs>
 
@@ -442,11 +499,14 @@ export default function CatsPage() {
                   { value: 'name', label: '名前順' },
                   { value: 'age', label: '年齢順（新しい順）' },
                   { value: 'breed', label: '品種順' },
-                  { value: 'gender', label: '性別順' }
+                  { value: 'gender', label: '性別順' },
+                  { value: 'gender-name', label: '性別 → 名前順' },
+                  { value: 'gender-age', label: '性別 → 年齢順' },
+                  { value: 'breed-name', label: '品種 → 名前順' },
                 ]}
                 value={sortBy}
                 onChange={(value) => setSortBy(value || 'name')}
-                style={{ width: 140 }}
+                style={{ width: 180 }}
               />
             </Group>
           </Group>
