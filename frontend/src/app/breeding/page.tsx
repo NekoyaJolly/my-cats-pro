@@ -245,12 +245,8 @@ export default function BreedingPage() {
     description: '',
   });
 
-  console.log(`BreedingPage component rendered (mount count: ${mountCountRef.current}) - breedingSchedule:`, breedingSchedule);
-  console.log('BreedingPage component rendered - localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
-
   // ページヘッダーを設定
   useEffect(() => {
-    console.log('Setting page header for breeding page');
     setPageHeader(
       'breeding',
       <Group gap="sm">
@@ -265,7 +261,6 @@ export default function BreedingPage() {
     );
 
     return () => {
-      console.log('Cleaning up page header for breeding page');
       setPageHeader(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -273,41 +268,35 @@ export default function BreedingPage() {
 
   // localStorageからデータを読み込む
   useEffect(() => {
-    console.log(`Loading data from localStorage (mount count: ${mountCountRef.current})...`);
     const loadFromStorage = () => {
       try {
         const storedActiveMales = localStorage.getItem(STORAGE_KEYS.ACTIVE_MALES);
         if (storedActiveMales) {
           const parsed = JSON.parse(storedActiveMales);
-          console.log('Loaded activeMales:', parsed);
           setActiveMales(parsed);
         }
 
         const storedDefaultDuration = localStorage.getItem(STORAGE_KEYS.DEFAULT_DURATION);
         if (storedDefaultDuration) {
           const parsed = parseInt(storedDefaultDuration, 10);
-          console.log('Loaded defaultDuration:', parsed);
           setDefaultDuration(parsed);
         }
 
         const storedYear = localStorage.getItem(STORAGE_KEYS.SELECTED_YEAR);
         if (storedYear) {
           const parsed = parseInt(storedYear, 10);
-          console.log('Loaded selectedYear:', parsed);
           setSelectedYear(parsed);
         }
 
         const storedMonth = localStorage.getItem(STORAGE_KEYS.SELECTED_MONTH);
         if (storedMonth) {
           const parsed = parseInt(storedMonth, 10);
-          console.log('Loaded selectedMonth:', parsed);
           setSelectedMonth(parsed);
         }
 
         const storedBreedingSchedule = localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE);
         if (storedBreedingSchedule) {
           const parsed = JSON.parse(storedBreedingSchedule);
-          console.log('Loading breeding schedule from localStorage:', parsed);
           setBreedingSchedule(parsed);
           // すぐにlocalStorageを更新して同期を取る
           localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, storedBreedingSchedule);
@@ -316,7 +305,6 @@ export default function BreedingPage() {
         const storedMatingChecks = localStorage.getItem(STORAGE_KEYS.MATING_CHECKS);
         if (storedMatingChecks) {
           const parsed = JSON.parse(storedMatingChecks);
-          console.log('Loading mating checks from localStorage:', parsed);
           setMatingChecks(parsed);
           // すぐにlocalStorageを更新
           localStorage.setItem(STORAGE_KEYS.MATING_CHECKS, storedMatingChecks);
@@ -334,26 +322,16 @@ export default function BreedingPage() {
     }, 0);
   }, []);  // localStorageにデータを保存する
   
-  // デバッグ用: breedingSchedule の変更を監視
-  useEffect(() => {
-    console.log(`breedingSchedule state changed (mount count: ${mountCountRef.current}):`, breedingSchedule);
-    console.log('Current localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
-  }, [breedingSchedule]);
-
   // コンポーネントのマウント/アンマウントを追跡
   useEffect(() => {
     mountCountRef.current += 1;
-    console.log(`BreedingPage component mounted (count: ${mountCountRef.current})`);
     return () => {
-      console.log('BreedingPage component unmounted');
       hydratedRef.current = false; // reset hydrated state on unmount
     };
   }, []);
   
 
-  useEffect(() => {
-    console.log(`Saving data to localStorage (mount count: ${mountCountRef.current})...`);
-    const saveToStorage = () => {
+  useEffect(() => {    const saveToStorage = () => {
       // don't persist before we've hydrated from storage
       if (!hydratedRef.current) return;
 
@@ -367,14 +345,6 @@ export default function BreedingPage() {
           localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, JSON.stringify(breedingSchedule));
         }
         localStorage.setItem(STORAGE_KEYS.MATING_CHECKS, JSON.stringify(matingChecks));
-        console.log('Saved to localStorage:', {
-          breedingSchedule,
-          matingChecks,
-          activeMales,
-          defaultDuration,
-          selectedYear,
-          selectedMonth
-        });
       } catch (error) {
         console.warn('Failed to save breeding data to localStorage:', error);
       }
@@ -850,13 +820,31 @@ export default function BreedingPage() {
     }, {
       onSuccess: () => {
         // 出産予定作成成功後、妊娠確認中から削除
-        deletePregnancyCheckMutation.mutate(selectedPregnancyCheck.id);
-        closePregnancyCheckModal();
-        setSelectedPregnancyCheck(null);
-        setPregnancyChecks({
-          weightGain: false,
-          pinking: false,
-          palpation: false,
+        deletePregnancyCheckMutation.mutate(selectedPregnancyCheck.id, {
+          onSuccess: () => {
+            closePregnancyCheckModal();
+            setSelectedPregnancyCheck(null);
+            setPregnancyChecks({
+              weightGain: false,
+              pinking: false,
+              palpation: false,
+            });
+          },
+          onError: (error) => {
+            // 妊娠確認削除失敗時は通知を表示するが、出産予定作成の成功は維持
+            notifications.show({
+              title: '注意',
+              message: '出産予定は作成されましたが、妊娠確認の削除に失敗しました。ページを更新してください。',
+              color: 'orange',
+            });
+            closePregnancyCheckModal();
+            setSelectedPregnancyCheck(null);
+            setPregnancyChecks({
+              weightGain: false,
+              pinking: false,
+              palpation: false,
+            });
+          }
         });
       }
     });
@@ -2298,17 +2286,17 @@ export default function BreedingPage() {
             <Checkbox
               label="体重増加"
               checked={pregnancyChecks.weightGain}
-              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, weightGain: e.currentTarget.checked }))}
+              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, weightGain: e.target.checked }))}
             />
             <Checkbox
               label="ピンキング（乳首の色が濃くなる）"
               checked={pregnancyChecks.pinking}
-              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, pinking: e.currentTarget.checked }))}
+              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, pinking: e.target.checked }))}
             />
             <Checkbox
               label="触診（お腹が膨らんでいる）"
               checked={pregnancyChecks.palpation}
-              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, palpation: e.currentTarget.checked }))}
+              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, palpation: e.target.checked }))}
             />
           </Stack>
 

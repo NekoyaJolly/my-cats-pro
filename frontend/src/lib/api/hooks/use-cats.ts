@@ -21,11 +21,8 @@ export interface Cat {
   registrationNumber: string | null;
   description: string | null;
   isInHouse: boolean;
-  adoptedAt: string | null;
-  deathDate: string | null;
   fatherId: string | null;
   motherId: string | null;
-  ownerId: string;
   createdAt: string;
   updatedAt: string;
   // リレーション（オプショナル）

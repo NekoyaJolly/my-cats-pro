@@ -108,6 +108,11 @@ export class BreedingService {
     }
 
     const firstUser = userId ? null : await this.prisma.user.findFirst();
+    const recordedById = userId ?? firstUser?.id;
+    if (!recordedById) {
+      throw new BadRequestException('記録者情報が取得できませんでした');
+    }
+
     const result = await this.prisma.breedingRecord.create({
       data: {
         femaleId: dto.femaleId,
@@ -117,7 +122,7 @@ export class BreedingService {
           ? new Date(dto.expectedDueDate)
           : undefined,
         notes: dto.notes,
-        recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
+        recordedBy: recordedById,
       },
       include: {
         male: { select: { id: true, name: true } },
@@ -276,6 +281,11 @@ export class BreedingService {
     }
 
     const firstUser = userId ? null : await this.prisma.user.findFirst();
+    const recordedById = userId ?? firstUser?.id;
+    if (!recordedById) {
+      throw new BadRequestException('記録者情報が取得できませんでした');
+    }
+
     const result = await this.prisma.pregnancyCheck.create({
       data: {
         motherId: dto.motherId,
@@ -284,7 +294,7 @@ export class BreedingService {
         checkDate: new Date(dto.checkDate),
         status: dto.status,
         notes: dto.notes,
-        recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
+        recordedBy: recordedById,
       },
       include: {
         mother: { select: { id: true, name: true } },
@@ -322,8 +332,15 @@ export class BreedingService {
   }
 
   async removePregnancyCheck(id: string): Promise<BreedingSuccessResponse> {
-    await this.prisma.pregnancyCheck.delete({ where: { id } });
-    return { success: true };
+    try {
+      await this.prisma.pregnancyCheck.delete({ where: { id } });
+      return { success: true };
+    } catch (error) {
+      console.error(`Failed to delete pregnancy check ${id}:`, error);
+      throw new BadRequestException(
+        `妊娠確認の削除に失敗しました: ${error.message || '不明なエラー'}`
+      );
+    }
   }
 
   // Birth Plan methods
@@ -390,18 +407,24 @@ export class BreedingService {
     }
 
     const firstUser = userId ? null : await this.prisma.user.findFirst();
+    const recordedById = userId ?? firstUser?.id;
+
+    if (!recordedById) {
+      throw new BadRequestException("No user found to record the birth plan");
+    }
+
     const result = await this.prisma.birthPlan.create({
       data: {
         motherId: dto.motherId,
-        fatherId: dto.fatherId,
-        matingDate: dto.matingDate ? new Date(dto.matingDate) : null,
+        fatherId: dto.fatherId || undefined,
+        matingDate: dto.matingDate ? new Date(dto.matingDate) : undefined,
         expectedBirthDate: new Date(dto.expectedBirthDate),
         actualBirthDate: dto.actualBirthDate ? new Date(dto.actualBirthDate) : undefined,
         status: dto.status,
-        expectedKittens: dto.expectedKittens,
-        actualKittens: dto.actualKittens,
-        notes: dto.notes,
-        recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
+        expectedKittens: dto.expectedKittens || undefined,
+        actualKittens: dto.actualKittens || undefined,
+        notes: dto.notes || undefined,
+        recordedBy: recordedById,
       },
       include: {
         mother: { select: { id: true, name: true } },
@@ -412,38 +435,66 @@ export class BreedingService {
   }
 
   async updateBirthPlan(id: string, dto: UpdateBirthPlanDto): Promise<BreedingSuccessResponse> {
-    // Validate father if provided
-    if (dto.fatherId) {
-      const father = await this.prisma.cat.findUnique({
-        where: { id: dto.fatherId },
-        select: { id: true, gender: true }
-      });
+    try {
+      // Validate father if provided
+      if (dto.fatherId) {
+        const father = await this.prisma.cat.findUnique({
+          where: { id: dto.fatherId },
+          select: { id: true, gender: true }
+        });
 
-      if (!father) throw new NotFoundException("Father cat not found");
-      if (father.gender !== "MALE") {
-        throw new BadRequestException("Father must be a male cat");
+        if (!father) throw new NotFoundException("Father cat not found");
+        if (father.gender !== "MALE") {
+          throw new BadRequestException("Father must be a male cat");
+        }
       }
-    }
 
-    await this.prisma.birthPlan.update({
-      where: { id },
-      data: {
-        fatherId: dto.fatherId,
-        matingDate: dto.matingDate ? new Date(dto.matingDate) : undefined,
-        expectedBirthDate: dto.expectedBirthDate ? new Date(dto.expectedBirthDate) : undefined,
-        actualBirthDate: dto.actualBirthDate ? new Date(dto.actualBirthDate) : undefined,
-        status: dto.status,
-        expectedKittens: dto.expectedKittens,
-        actualKittens: dto.actualKittens,
-        notes: dto.notes,
-      },
-    });
-    return { success: true };
+      await this.prisma.birthPlan.update({
+        where: { id },
+        data: {
+          fatherId: dto.fatherId,
+          matingDate: dto.matingDate ? new Date(dto.matingDate) : undefined,
+          expectedBirthDate: dto.expectedBirthDate ? new Date(dto.expectedBirthDate) : undefined,
+          actualBirthDate: dto.actualBirthDate ? new Date(dto.actualBirthDate) : undefined,
+          status: dto.status,
+          expectedKittens: dto.expectedKittens,
+          actualKittens: dto.actualKittens,
+          notes: dto.notes,
+        },
+      });
+      return { success: true };
+    } catch (error) {
+      console.error(`Failed to update birth plan ${id}:`, error);
+      throw new BadRequestException(
+        `出産予定の更新に失敗しました: ${error.message || '不明なエラー'}`
+      );
+    }
   }
 
   async removeBirthPlan(id: string): Promise<BreedingSuccessResponse> {
-    await this.prisma.birthPlan.delete({ where: { id } });
-    return { success: true };
+    try {
+      // Check if birth plan has any kitten dispositions
+      const kittenDispositionsCount = await this.prisma.kittenDisposition.count({
+        where: { birthRecordId: id }
+      });
+
+      if (kittenDispositionsCount > 0) {
+        throw new BadRequestException(
+          'この出産予定には子猫処遇記録が関連付けられているため、削除できません。子猫処遇記録を先に削除してください。'
+        );
+      }
+
+      await this.prisma.birthPlan.delete({ where: { id } });
+      return { success: true };
+    } catch (error) {
+      console.error(`Failed to delete birth plan ${id}:`, error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `出産予定の削除に失敗しました: ${error.message || '不明なエラー'}`
+      );
+    }
   }
 
   // ========== Kitten Disposition Methods ==========
