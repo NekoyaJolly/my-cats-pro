@@ -30,6 +30,10 @@ import {
   CareScheduleResponseDto,
   CompleteCareDto,
   CreateCareScheduleDto,
+  CreateMedicalRecordDto,
+  MedicalRecordListResponseDto,
+  MedicalRecordQueryDto,
+  MedicalRecordResponseDto,
 } from "./dto";
 
 @ApiTags("Care")
@@ -93,5 +97,24 @@ export class CareController {
   @ApiParam({ name: "id", description: "スケジュールID" })
   deleteSchedule(@Param("id") id: string) {
     return this.careService.deleteSchedule(id);
+  }
+
+  @Get("medical-records")
+  @ApiOperation({ summary: "医療記録一覧の取得" })
+  @ApiResponse({ status: HttpStatus.OK, type: MedicalRecordListResponseDto })
+  findMedicalRecords(@Query() query: MedicalRecordQueryDto) {
+    return this.careService.findMedicalRecords(query);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post("medical-records")
+  @ApiOperation({ summary: "医療記録の追加" })
+  @ApiResponse({ status: HttpStatus.CREATED, type: MedicalRecordResponseDto })
+  addMedicalRecord(
+    @Body() dto: CreateMedicalRecordDto,
+    @GetUser() user?: RequestUser,
+  ) {
+    return this.careService.addMedicalRecord(dto, user?.userId);
   }
 }

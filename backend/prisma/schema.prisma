@@ -1,10 +1,11 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-// 自動同期テスト - 2025年8月9日
-
 generator client {
   provider   = "prisma-client-js"
   engineType = "library" // ← Node-API を明示
+}
+
+generator seed {
+  provider = "ts-node"
+  output   = "./src/prisma/seed.ts"
 }
 
 datasource db {
@@ -392,7 +393,6 @@ model CareTag {
   parent            CareTag?           @relation("CareTagHierarchy", fields: [parentId], references: [id])
   children          CareTag[]          @relation("CareTagHierarchy")
   scheduleTags      ScheduleTag[]
-  medicalRecordTags MedicalRecordTag[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -428,23 +428,40 @@ model ScheduleCat {
   @@map("schedule_cats")
 }
 
+model MedicalVisitType {
+  id          String  @id @default(uuid())
+  key         String? @unique
+  name        String
+  description String?
+  displayOrder Int    @default(0) @map("display_order")
+  isActive    Boolean @default(true) @map("is_active")
+
+  records MedicalRecord[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([displayOrder])
+  @@map("medical_visit_types")
+}
+
 model MedicalRecord {
   id               String              @id @default(uuid())
   catId            String              @map("cat_id")
   scheduleId       String?             @map("schedule_id")
   recordedBy       String              @map("recorded_by")
   visitDate        DateTime            @map("visit_date")
-  visitType        MedicalVisitType?   @map("visit_type")
-  clinicName       String?             @map("clinic_name")
-  veterinarianName String?             @map("veterinarian_name")
-  symptomSummary   String?             @map("symptom_summary")
+  visitTypeId      String?             @map("visit_type_id")
+  visitType        MedicalVisitType?   @relation(fields: [visitTypeId], references: [id])
+  hospitalName     String?             @map("hospital_name")
+  symptom          String?             @map("symptom")
   symptomDetails   Json?               @map("symptom_details")
-  diagnosis        String?
+  diseaseName      String?             @map("disease_name")
+  diagnosis        String?             @map("diagnosis")
   treatmentPlan    String?             @map("treatment_plan")
   medications      Json?               @map("medications")
-  followUpAction   String?             @map("follow_up_action")
   followUpDate     DateTime?           @map("follow_up_date")
-  status           MedicalRecordStatus @default(ACTIVE)
+  status           MedicalRecordStatus @default(TREATING)
   notes            String?
 
   cat         Cat                       @relation(fields: [catId], references: [id])
@@ -459,6 +476,7 @@ model MedicalRecord {
   @@index([catId])
   @@index([visitDate])
   @@index([scheduleId])
+  @@index([visitTypeId])
   @@map("medical_records")
 }
 
@@ -483,14 +501,14 @@ model MedicalRecordAttachment {
 
 model MedicalRecordTag {
   medicalRecordId String @map("medical_record_id")
-  careTagId       String @map("care_tag_id")
+  tagId           String @map("tag_id")
 
   medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
-  careTag       CareTag       @relation(fields: [careTagId], references: [id], onDelete: Cascade)
+  tag           Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@id([medicalRecordId, careTagId])
+  @@id([medicalRecordId, tagId])
   @@map("medical_record_tags")
 }
 
@@ -548,6 +566,7 @@ model Tag {
 
   group   TagGroup              @relation(fields: [groupId], references: [id], onDelete: Cascade)
   cats    CatTag[]
+  medicalRecordTags MedicalRecordTag[]
   history TagAssignmentHistory[]
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -841,19 +860,9 @@ enum ReminderRepeatFrequency {
   CUSTOM
 }
 
-enum MedicalVisitType {
-  CHECKUP
-  EMERGENCY
-  SURGERY
-  FOLLOW_UP
-  VACCINATION
-  OTHER
-}
-
 enum MedicalRecordStatus {
-  ACTIVE
-  RESOLVED
-  CANCELLED
+  TREATING
+  COMPLETED
 }
 
 enum TagAssignmentAction {

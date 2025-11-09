@@ -1,8 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import {
-  MedicalRecordStatus,
-  MedicalVisitType,
-} from "@prisma/client";
+import { MedicalRecordStatus } from "@prisma/client";
 
 class MedicalRecordCatDto {
   @ApiProperty({ example: "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60" })
@@ -20,21 +17,50 @@ class MedicalRecordScheduleDto {
   name!: string;
 }
 
+class MedicalRecordVisitTypeDto {
+  @ApiProperty({ example: "c4a52a14-8d93-4b87-9f8c-7a6c2ef81234" })
+  id!: string;
+
+  @ApiPropertyOptional({ example: "CHECKUP" })
+  key!: string | null;
+
+  @ApiProperty({ example: "健康診断" })
+  name!: string;
+
+  @ApiPropertyOptional({ example: "定期的な健康診断" })
+  description!: string | null;
+
+  @ApiProperty({ example: 1 })
+  displayOrder!: number;
+
+  @ApiProperty({ example: true })
+  isActive!: boolean;
+}
+
 class MedicalRecordTagDto {
   @ApiProperty({ example: "tag-123" })
   id!: string;
 
-  @ApiProperty({ example: "vaccination" })
-  slug!: string;
-
   @ApiProperty({ example: "ワクチン" })
-  label!: string;
+  name!: string;
 
-  @ApiProperty({ example: 1 })
-  level!: number;
+  @ApiPropertyOptional({ example: "#3B82F6" })
+  color!: string | null;
 
-  @ApiPropertyOptional({ example: "parent-tag" })
-  parentId!: string | null;
+  @ApiPropertyOptional({ example: "#FFFFFF" })
+  textColor!: string | null;
+
+  @ApiProperty({ example: "group-123" })
+  groupId!: string;
+
+  @ApiPropertyOptional({ example: "医療" })
+  groupName!: string | null;
+
+  @ApiPropertyOptional({ example: "category-456" })
+  categoryId!: string | null;
+
+  @ApiPropertyOptional({ example: "医療タグ" })
+  categoryName!: string | null;
 }
 
 class MedicalRecordAttachmentDto {
@@ -80,22 +106,22 @@ export class MedicalRecordItemDto {
   @ApiProperty({ example: "2025-08-10T00:00:00.000Z" })
   visitDate!: string;
 
-  @ApiProperty({ enum: MedicalVisitType, example: MedicalVisitType.CHECKUP, nullable: true })
-  visitType!: MedicalVisitType | null;
+  @ApiProperty({ type: MedicalRecordVisitTypeDto, nullable: true })
+  visitType!: MedicalRecordVisitTypeDto | null;
 
   @ApiPropertyOptional({ example: "ねこクリニック東京" })
-  clinicName!: string | null;
-
-  @ApiPropertyOptional({ example: "佐藤 獣医師" })
-  veterinarianName!: string | null;
+  hospitalName!: string | null;
 
   @ApiPropertyOptional({ example: "くしゃみが止まらない" })
-  symptomSummary!: string | null;
+  symptom!: string | null;
 
   @ApiPropertyOptional({ type: [MedicalRecordSymptomDto] })
   symptomDetails!: MedicalRecordSymptomDto[];
 
   @ApiPropertyOptional({ example: "猫風邪" })
+  diseaseName!: string | null;
+
+  @ApiPropertyOptional({ example: "猫風邪の兆候" })
   diagnosis!: string | null;
 
   @ApiPropertyOptional({ example: "抗生物質を5日間投与" })
@@ -104,13 +130,10 @@ export class MedicalRecordItemDto {
   @ApiPropertyOptional({ type: [MedicalRecordMedicationDto] })
   medications!: MedicalRecordMedicationDto[];
 
-  @ApiPropertyOptional({ example: "3日後に経過観察" })
-  followUpAction!: string | null;
-
   @ApiPropertyOptional({ example: "2025-08-13T00:00:00.000Z" })
   followUpDate!: string | null;
 
-  @ApiProperty({ enum: MedicalRecordStatus, example: MedicalRecordStatus.ACTIVE })
+  @ApiProperty({ enum: MedicalRecordStatus, example: MedicalRecordStatus.TREATING })
   status!: MedicalRecordStatus;
 
   @ApiPropertyOptional({ example: "食欲は戻ってきた" })
@@ -181,21 +204,36 @@ export type MedicalRecordMeta = {
 export type MedicalRecordData = {
   id: string;
   visitDate: string;
-  visitType: MedicalVisitType | null;
-  clinicName: string | null;
-  veterinarianName: string | null;
-  symptomSummary: string | null;
+  visitType: {
+    id: string;
+    key: string | null;
+    name: string;
+    description: string | null;
+    displayOrder: number;
+    isActive: boolean;
+  } | null;
+  hospitalName: string | null;
+  symptom: string | null;
   symptomDetails: { label: string; note: string | null }[];
+  diseaseName: string | null;
   diagnosis: string | null;
   treatmentPlan: string | null;
   medications: { name: string; dosage: string | null }[];
-  followUpAction: string | null;
   followUpDate: string | null;
   status: MedicalRecordStatus;
   notes: string | null;
   cat: { id: string; name: string };
   schedule: { id: string; name: string } | null;
-  tags: { id: string; slug: string; label: string; level: number; parentId: string | null }[];
+  tags: {
+    id: string;
+    name: string;
+    color: string | null;
+    textColor: string | null;
+    groupId: string;
+    groupName: string | null;
+    categoryId: string | null;
+    categoryName: string | null;
+  }[];
   attachments: {
     url: string;
     description: string | null;

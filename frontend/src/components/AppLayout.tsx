@@ -72,6 +72,11 @@ const navigationItems = [
     icon: IconCalendarEvent,
   },
   {
+    label: '医療データ',
+    href: '/care/medical-records',
+    icon: IconStethoscope,
+  },
+  {
     label: 'タグ管理',
     href: '/tags',
     icon: IconTag,

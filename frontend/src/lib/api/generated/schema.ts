@@ -6,6 +6,23 @@
  * 直接編集せず、OpenAPI スキーマを更新して再生成してください。
  */
 export type paths = {
+    "/api/v1/master/genders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 性別マスタデータを取得（認証不要） */
+        get: operations["MasterDataController_getGenders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -222,6 +239,23 @@ export type paths = {
         };
         /** 猫のケア履歴を取得 */
         get: operations["CatsController_getCareHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cats/genders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 性別マスタデータを取得 */
+        get: operations["CatsController_getGenders"];
         put?: never;
         post?: never;
         delete?: never;
@@ -586,6 +620,75 @@ export type paths = {
         patch: operations["BreedingController_updateBirthPlan"];
         trace?: never;
     };
+    "/api/v1/breeding/kitten-dispositions/{birthRecordId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 出産記録の子猫処遇一覧取得 */
+        get: operations["BreedingController_findAllKittenDispositions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeding/kitten-dispositions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 子猫処遇の登録 */
+        post: operations["BreedingController_createKittenDisposition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeding/kitten-dispositions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 子猫処遇の削除 */
+        delete: operations["BreedingController_removeKittenDisposition"];
+        options?: never;
+        head?: never;
+        /** 子猫処遇の更新 */
+        patch: operations["BreedingController_updateKittenDisposition"];
+        trace?: never;
+    };
+    "/api/v1/breeding/birth-plans/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 出産記録の完了 */
+        post: operations["BreedingController_completeBirthRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/care/schedules": {
         parameters: {
             query?: never;
@@ -637,6 +740,24 @@ export type paths = {
         head?: never;
         /** ケアスケジュールの更新 */
         patch: operations["CareController_updateSchedule"];
+        trace?: never;
+    };
+    "/api/v1/care/medical-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 医療記録一覧の取得 */
+        get: operations["CareController_findMedicalRecords"];
+        put?: never;
+        /** 医療記録の追加 */
+        post: operations["CareController_addMedicalRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/tags": {
@@ -918,6 +1039,102 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_findAll"];
+        put?: never;
+        post: operations["StaffController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["StaffController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["StaffController_update"];
+        trace?: never;
+    };
+    "/api/v1/staff/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["StaffController_restore"];
+        trace?: never;
+    };
+    "/api/v1/shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ShiftController_findAll"];
+        put?: never;
+        post: operations["ShiftController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shifts/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ShiftController_getCalendarData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shifts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ShiftController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["ShiftController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["ShiftController_update"];
+        trace?: never;
+    };
 };
 export type webhooks = Record<string, never>;
 export type components = {
@@ -1010,62 +1227,211 @@ export type components = {
         };
         UpdateCatDto: Record<string, never>;
         CreatePedigreeDto: {
-            /** @description 血統書番号 */
+            /**
+             * @description 血統書番号
+             * @example 700545
+             */
             pedigreeId: string;
-            /** @description 猫の名前 */
-            catName: string;
-            /** @description タイトル */
+            /**
+             * @description タイトル
+             * @example Champion
+             */
             title?: string;
-            /** @description キャッテリー名 */
+            /**
+             * @description 猫の名前
+             * @example Jolly Tokuichi
+             */
+            catName?: string;
+            /**
+             * @description キャッテリー名
+             * @example Jolly Tokuichi
+             */
             catName2?: string;
-            /** @description 性別 (1: オス, 2: メス) */
-            gender?: number;
-            /** @description 目の色 */
+            /**
+             * @description 品種コード
+             * @example 92
+             */
+            breedCode?: number;
+            /**
+             * @description 性別コード (1: オス, 2: メス)
+             * @example 1
+             */
+            genderCode?: number;
+            /**
+             * @description 目の色
+             * @example Gold
+             */
             eyeColor?: string;
-            /** @description 生年月日 */
+            /**
+             * @description 毛色コード
+             * @example 190
+             */
+            coatColorCode?: number;
+            /**
+             * @description 生年月日
+             * @example 2019-01-05
+             */
             birthDate?: string;
-            /** @description 登録年月日 */
-            registrationDate?: string;
-            /** @description ブリーダー名 */
+            /**
+             * @description ブリーダー名
+             * @example Hayato Inami
+             */
             breederName?: string;
-            /** @description オーナー名 */
+            /**
+             * @description オーナー名
+             * @example Hayato Inami
+             */
             ownerName?: string;
-            /** @description 兄弟の人数 */
+            /**
+             * @description 登録年月日
+             * @example 2022-02-22
+             */
+            registrationDate?: string;
+            /**
+             * @description 兄弟の人数
+             * @example 2
+             */
             brotherCount?: number;
-            /** @description 姉妹の人数 */
+            /**
+             * @description 姉妹の人数
+             * @example 2
+             */
             sisterCount?: number;
             /** @description 備考 */
             notes?: string;
             /** @description 備考２ */
             notes2?: string;
-            /** @description 他団体No */
+            /**
+             * @description 他団体No
+             * @example 921901-700545
+             */
             otherNo?: string;
+            /** @description 父親タイトル */
+            fatherTitle?: string;
+            /** @description 父親名 */
+            fatherCatName?: string;
+            /** @description 父親キャッテリー名 */
+            fatherCatName2?: string;
+            /** @description 父親毛色 */
+            fatherCoatColor?: string;
+            /** @description 父親目の色 */
+            fatherEyeColor?: string;
+            /** @description 父親JCU番号 */
+            fatherJCU?: string;
+            /** @description 父親他団体コード */
+            fatherOtherCode?: string;
+            /** @description 母親タイトル */
+            motherTitle?: string;
+            /** @description 母親名 */
+            motherCatName?: string;
+            /** @description 母親キャッテリー名 */
+            motherCatName2?: string;
+            /** @description 母親毛色 */
+            motherCoatColor?: string;
+            /** @description 母親目の色 */
+            motherEyeColor?: string;
+            /** @description 母親JCU番号 */
+            motherJCU?: string;
+            /** @description 母親他団体コード */
+            motherOtherCode?: string;
+            /** @description 父方祖父タイトル */
+            ffTitle?: string;
+            /** @description 父方祖父名 */
+            ffCatName?: string;
+            /** @description 父方祖父毛色 */
+            ffCatColor?: string;
+            /** @description 父方祖父JCU */
+            ffjcu?: string;
+            /** @description 父方祖母タイトル */
+            fmTitle?: string;
+            /** @description 父方祖母名 */
+            fmCatName?: string;
+            /** @description 父方祖母毛色 */
+            fmCatColor?: string;
+            /** @description 父方祖母JCU */
+            fmjcu?: string;
+            /** @description 母方祖父タイトル */
+            mfTitle?: string;
+            /** @description 母方祖父名 */
+            mfCatName?: string;
+            /** @description 母方祖父毛色 */
+            mfCatColor?: string;
+            /** @description 母方祖父JCU */
+            mfjcu?: string;
+            /** @description 母方祖母タイトル */
+            mmTitle?: string;
+            /** @description 母方祖母名 */
+            mmCatName?: string;
+            /** @description 母方祖母毛色 */
+            mmCatColor?: string;
+            /** @description 母方祖母JCU */
+            mmjcu?: string;
+            /** @description 父父父タイトル */
+            fffTitle?: string;
+            /** @description 父父父名 */
+            fffCatName?: string;
+            /** @description 父父父毛色 */
+            fffCatColor?: string;
+            /** @description 父父父JCU */
+            fffjcu?: string;
+            /** @description 父父母タイトル */
+            ffmTitle?: string;
+            /** @description 父父母名 */
+            ffmCatName?: string;
+            /** @description 父父母毛色 */
+            ffmCatColor?: string;
+            /** @description 父父母JCU */
+            ffmjcu?: string;
+            /** @description 父母父タイトル */
+            fmfTitle?: string;
+            /** @description 父母父名 */
+            fmfCatName?: string;
+            /** @description 父母父毛色 */
+            fmfCatColor?: string;
+            /** @description 父母父JCU */
+            fmfjcu?: string;
+            /** @description 父母母タイトル */
+            fmmTitle?: string;
+            /** @description 父母母名 */
+            fmmCatName?: string;
+            /** @description 父母母毛色 */
+            fmmCatColor?: string;
+            /** @description 父母母JCU */
+            fmmjcu?: string;
+            /** @description 母父父タイトル */
+            mffTitle?: string;
+            /** @description 母父父名 */
+            mffCatName?: string;
+            /** @description 母父父毛色 */
+            mffCatColor?: string;
+            /** @description 母父父JCU */
+            mffjcu?: string;
+            /** @description 母父母タイトル */
+            mfmTitle?: string;
+            /** @description 母父母名 */
+            mfmCatName?: string;
+            /** @description 母父母毛色 */
+            mfmCatColor?: string;
+            /** @description 母父母JCU */
+            mfmjcu?: string;
+            /** @description 母母父タイトル */
+            mmfTitle?: string;
+            /** @description 母母父名 */
+            mmfCatName?: string;
+            /** @description 母母父毛色 */
+            mmfCatColor?: string;
+            /** @description 母母父JCU */
+            mmfjcu?: string;
+            /** @description 母母母タイトル */
+            mmmTitle?: string;
+            /** @description 母母母名 */
+            mmmCatName?: string;
+            /** @description 母母母毛色 */
+            mmmCatColor?: string;
+            /** @description 母母母JCU */
+            mmmjcu?: string;
             /** @description 旧コード */
             oldCode?: string;
-            /** @description 関連する猫のID */
-            catId?: string;
-            /** @description 品種ID */
-            breedId?: string;
-            /** @description 毛色ID */
-            coatColorId?: string;
-            /** @description 血統書発行日 */
-            pedigreeIssueDate?: string;
-            /** @description 品種コード */
-            breedCode?: number;
-            /** @description 毛色コード */
-            coatColorCode?: number;
-            /** @description 父の血統書ID */
-            fatherPedigreeId?: string;
-            /** @description 母の血統書ID */
-            motherPedigreeId?: string;
-            /** @description 父方祖父の血統書ID */
-            paternalGrandfatherId?: string;
-            /** @description 父方祖母の血統書ID */
-            paternalGrandmotherId?: string;
-            /** @description 母方祖父の血統書ID */
-            maternalGrandfatherId?: string;
-            /** @description 母方祖母の血統書ID */
-            maternalGrandmotherId?: string;
         };
         UpdatePedigreeDto: Record<string, never>;
         CreateBreedDto: {
@@ -1149,6 +1515,10 @@ export type components = {
         CreatePregnancyCheckDto: {
             /** @description 妊娠チェック対象の猫ID */
             motherId: string;
+            /** @description 父猫のID */
+            fatherId?: string;
+            /** @description 交配日 */
+            matingDate?: string;
             /** @description 妊娠チェック日 */
             checkDate: string;
             /**
@@ -1160,6 +1530,10 @@ export type components = {
             notes?: string;
         };
         UpdatePregnancyCheckDto: {
+            /** @description 父猫のID */
+            fatherId?: string;
+            /** @description 交配日 */
+            matingDate?: string;
             /** @description 妊娠チェック日 */
             checkDate?: string;
             /**
@@ -1173,6 +1547,10 @@ export type components = {
         CreateBirthPlanDto: {
             /** @description 出産予定の母親猫ID */
             motherId: string;
+            /** @description 父猫のID */
+            fatherId?: string;
+            /** @description 交配日 */
+            matingDate?: string;
             /** @description 出産予定日 */
             expectedBirthDate: string;
             /** @description 実際の出産日 */
@@ -1190,6 +1568,10 @@ export type components = {
             notes?: string;
         };
         UpdateBirthPlanDto: {
+            /** @description 父猫のID */
+            fatherId?: string;
+            /** @description 交配日 */
+            matingDate?: string;
             /** @description 出産予定日 */
             expectedBirthDate?: string;
             /** @description 実際の出産日 */
@@ -1203,6 +1585,61 @@ export type components = {
             expectedKittens?: number;
             /** @description 実際の子猫の数 */
             actualKittens?: number;
+            /** @description メモ */
+            notes?: string;
+        };
+        SaleInfoDto: {
+            /** @description 譲渡先（個人名/業者名） */
+            buyer: string;
+            /** @description 譲渡金額 */
+            price: number;
+            /** @description 譲渡日 */
+            saleDate: string;
+            /** @description メモ */
+            notes?: string;
+        };
+        CreateKittenDispositionDto: {
+            /** @description 出産記録ID */
+            birthRecordId: string;
+            /** @description 子猫ID（養成の場合のみ） */
+            kittenId?: string;
+            /** @description 子猫名 */
+            name: string;
+            /** @description 性別 */
+            gender: string;
+            /**
+             * @description 処遇タイプ
+             * @enum {string}
+             */
+            disposition: "TRAINING" | "SALE" | "DECEASED";
+            /** @description 養成開始日（養成の場合） */
+            trainingStartDate?: string;
+            /** @description 譲渡情報（出荷の場合） */
+            saleInfo?: components["schemas"]["SaleInfoDto"];
+            /** @description 死亡日（死亡の場合） */
+            deathDate?: string;
+            /** @description 死亡理由（死亡の場合） */
+            deathReason?: string;
+            /** @description メモ */
+            notes?: string;
+        };
+        UpdateKittenDispositionDto: {
+            /** @description 子猫ID（養成の場合のみ） */
+            kittenId?: string;
+            /** @description 子猫名 */
+            name?: string;
+            /** @description 性別 */
+            gender?: string;
+            /** @description 処遇タイプ */
+            disposition?: string;
+            /** @description 養成開始日（養成の場合） */
+            trainingStartDate?: string;
+            /** @description 譲渡情報（出荷の場合） */
+            saleInfo?: components["schemas"]["SaleInfoDto"];
+            /** @description 死亡日（死亡の場合） */
+            deathDate?: string;
+            /** @description 死亡理由（死亡の場合） */
+            deathReason?: string;
             /** @description メモ */
             notes?: string;
         };
@@ -1478,6 +1915,181 @@ export type components = {
              *       "medicalRecordId": "f1234567-89ab-cdef-0123-456789abcdef"
              *     } */
             data: Record<string, never>;
+        };
+        MedicalRecordSymptomDto: {
+            /** @example くしゃみ */
+            label: string;
+            /** @example 1週間継続 */
+            note?: string;
+        };
+        MedicalRecordMedicationDto: {
+            /** @example 抗生物質 */
+            name: string;
+            /** @example 朝晩1錠 */
+            dosage?: string;
+        };
+        MedicalRecordCatDto: {
+            /** @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60 */
+            id: string;
+            /** @example ミケ */
+            name: string;
+        };
+        MedicalRecordScheduleDto: {
+            /** @example a6f7e52f-4a3b-4a76-9870-1234567890ab */
+            id: string;
+            /** @example ワクチン接種 */
+            name: string;
+        };
+        MedicalRecordTagDto: {
+            /** @example tag-123 */
+            id: string;
+            /** @example vaccination */
+            slug: string;
+            /** @example ワクチン */
+            label: string;
+            /** @example 1 */
+            level: number;
+            /** @example parent-tag */
+            parentId?: string;
+        };
+        MedicalRecordAttachmentDto: {
+            /** @example https://cdn.example.com/xray.png */
+            url: string;
+            /** @example 胸部レントゲン */
+            description?: string;
+            /** @example xray.png */
+            fileName?: string;
+            /** @example image/png */
+            fileType?: string;
+            /** @example 204800 */
+            fileSize?: number;
+            /** @example 2025-08-10T09:30:00.000Z */
+            capturedAt?: string;
+        };
+        MedicalRecordItemDto: {
+            /** @example bcdef123-4567-890a-bcde-f1234567890a */
+            id: string;
+            /** @example 2025-08-10T00:00:00.000Z */
+            visitDate: string;
+            /**
+             * @example CHECKUP
+             * @enum {string|null}
+             */
+            visitType: "CHECKUP" | "EMERGENCY" | "SURGERY" | "FOLLOW_UP" | "VACCINATION" | "OTHER" | null;
+            /** @example ねこクリニック東京 */
+            hospitalName?: string;
+            /** @example くしゃみが止まらない */
+            symptom?: string;
+            symptomDetails?: components["schemas"]["MedicalRecordSymptomDto"][];
+            /** @example 猫風邪 */
+            diseaseName?: string;
+            /** @example 猫風邪の兆候 */
+            diagnosis?: string;
+            /** @example 抗生物質を5日間投与 */
+            treatmentPlan?: string;
+            medications?: components["schemas"]["MedicalRecordMedicationDto"][];
+            /** @example 2025-08-13T00:00:00.000Z */
+            followUpDate?: string;
+            /**
+             * @example TREATING
+             * @enum {string}
+             */
+            status: "TREATING" | "COMPLETED";
+            /** @example 食欲は戻ってきた */
+            notes?: string;
+            cat: components["schemas"]["MedicalRecordCatDto"];
+            schedule?: components["schemas"]["MedicalRecordScheduleDto"] | null;
+            tags: components["schemas"]["MedicalRecordTagDto"][];
+            attachments: components["schemas"]["MedicalRecordAttachmentDto"][];
+            /** @example f3a2c1d7-1234-5678-90ab-cdef12345678 */
+            recordedBy: string;
+            /** @example 2025-08-10T09:30:00.000Z */
+            createdAt: string;
+            /** @example 2025-08-15T12:34:56.000Z */
+            updatedAt: string;
+        };
+        MedicalRecordMetaDto: {
+            /** @example 42 */
+            total: number;
+            /** @example 1 */
+            page: number;
+            /** @example 20 */
+            limit: number;
+            /** @example 3 */
+            totalPages: number;
+        };
+        MedicalRecordListResponseDto: {
+            /** @example true */
+            success: boolean;
+            data: components["schemas"]["MedicalRecordItemDto"][];
+            meta: components["schemas"]["MedicalRecordMetaDto"];
+        };
+        MedicalRecordAttachmentInputDto: {
+            /** @example https://cdn.example.com/xray.png */
+            url: string;
+            /** @example 胸部レントゲン */
+            description?: string;
+            /** @example xray.png */
+            fileName?: string;
+            /** @example image/png */
+            fileType?: string;
+            /** @example 204800 */
+            fileSize?: number;
+            /** @example 2025-08-10T09:30:00.000Z */
+            capturedAt?: string;
+        };
+        CreateMedicalRecordDto: {
+            /**
+             * @description 猫ID
+             * @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60
+             */
+            catId: string;
+            /**
+             * @description スケジュールID
+             * @example a6f7e52f-4a3b-4a76-9870-1234567890ab
+             */
+            scheduleId?: string;
+            /**
+             * @description 受診日
+             * @example 2025-08-10
+             */
+            visitDate: string;
+            /**
+             * @example CHECKUP
+             * @enum {string}
+             */
+            visitType?: "CHECKUP" | "EMERGENCY" | "SURGERY" | "FOLLOW_UP" | "VACCINATION" | "OTHER";
+            /** @example ねこクリニック東京 */
+            hospitalName?: string;
+            /** @example くしゃみが止まらない */
+            symptom?: string;
+            symptomDetails?: components["schemas"]["MedicalRecordSymptomDto"][];
+            /** @example 猫風邪 */
+            diseaseName?: string;
+            /** @example 猫風邪の兆候 */
+            diagnosis?: string;
+            /** @example 抗生物質を5日間投与 */
+            treatmentPlan?: string;
+            medications?: components["schemas"]["MedicalRecordMedicationDto"][];
+            /** @example 2025-08-13 */
+            followUpDate?: string;
+            /**
+             * @default TREATING
+             * @example TREATING
+             * @enum {string}
+             */
+            status: "TREATING" | "COMPLETED";
+            /** @example 食欲も戻りつつあり */
+            notes?: string;
+            /** @description 関連ケアタグID */
+            careTagIds?: string[];
+            /** @description 添付ファイル */
+            attachments?: components["schemas"]["MedicalRecordAttachmentInputDto"][];
+        };
+        MedicalRecordResponseDto: {
+            /** @example true */
+            success: boolean;
+            data: components["schemas"]["MedicalRecordItemDto"];
         };
         CreateTagDto: {
             /**
@@ -1791,7 +2403,7 @@ export type components = {
              * @example BREEDING_PLANNED
              * @enum {string}
              */
-            eventType: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "CUSTOM";
+            eventType: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "PAGE_ACTION" | "CUSTOM";
             /**
              * @description 適用範囲（スコープ）
              * @example breeding
@@ -1836,7 +2448,7 @@ export type components = {
              * @example BREEDING_PLANNED
              * @enum {string}
              */
-            eventType?: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "CUSTOM";
+            eventType?: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "PAGE_ACTION" | "CUSTOM";
             /**
              * @description 適用範囲（スコープ）
              * @example breeding
@@ -1863,6 +2475,10 @@ export type components = {
              */
             config?: Record<string, never>;
         };
+        CreateStaffDto: Record<string, never>;
+        UpdateStaffDto: Record<string, never>;
+        CreateShiftDto: Record<string, never>;
+        UpdateShiftDto: Record<string, never>;
     };
     responses: never;
     parameters: never;
@@ -1872,6 +2488,24 @@ export type components = {
 };
 export type $defs = Record<string, never>;
 export interface operations {
+    MasterDataController_getGenders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 性別マスタデータを返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AuthController_login: {
         parameters: {
             query?: never;
@@ -2277,6 +2911,24 @@ export interface operations {
             };
             /** @description 猫データが見つかりません */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CatsController_getGenders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 性別マスタデータを返却 */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3293,6 +3945,107 @@ export interface operations {
             };
         };
     };
+    BreedingController_findAllKittenDispositions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                birthRecordId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_createKittenDisposition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateKittenDispositionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_removeKittenDisposition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_updateKittenDisposition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateKittenDispositionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_completeBirthRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CareController_findSchedules: {
         parameters: {
             query?: {
@@ -3414,6 +4167,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CareScheduleResponseDto"];
+                };
+            };
+        };
+    };
+    CareController_findMedicalRecords: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+                /** @description 猫ID */
+                catId?: string;
+                /** @description スケジュールID */
+                scheduleId?: string;
+                visitType?: "CHECKUP" | "EMERGENCY" | "SURGERY" | "FOLLOW_UP" | "VACCINATION" | "OTHER";
+                status?: "TREATING" | "COMPLETED";
+                /** @description 受診開始日 */
+                dateFrom?: string;
+                /** @description 受診終了日 */
+                dateTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicalRecordListResponseDto"];
+                };
+            };
+        };
+    };
+    CareController_addMedicalRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMedicalRecordDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicalRecordResponseDto"];
                 };
             };
         };
@@ -3961,6 +4769,240 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStaffDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStaffDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StaffController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ShiftController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ShiftController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShiftDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ShiftController_getCalendarData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ShiftController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ShiftController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ShiftController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateShiftDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {

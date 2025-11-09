@@ -1,8 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import {
-  MedicalRecordStatus,
-  MedicalVisitType,
-} from "@prisma/client";
+import { MedicalRecordStatus } from "@prisma/client";
 import { Type } from "class-transformer";
 import {
   IsArray,
@@ -96,28 +93,22 @@ export class CreateMedicalRecordDto {
   @IsDateString()
   visitDate!: string;
 
-  @ApiPropertyOptional({ enum: MedicalVisitType, example: MedicalVisitType.CHECKUP })
+  @ApiPropertyOptional({ description: "受診種別ID", example: "c4a52a14-8d93-4b87-9f8c-7a6c2ef81234" })
   @IsOptional()
-  @IsEnum(MedicalVisitType)
-  visitType?: MedicalVisitType;
+  @IsUUID()
+  visitTypeId?: string;
 
   @ApiPropertyOptional({ example: "ねこクリニック東京" })
   @IsOptional()
   @IsString()
   @MaxLength(120)
-  clinicName?: string;
-
-  @ApiPropertyOptional({ example: "佐藤 獣医師" })
-  @IsOptional()
-  @IsString()
-  @MaxLength(120)
-  veterinarianName?: string;
+  hospitalName?: string;
 
   @ApiPropertyOptional({ example: "くしゃみが止まらない" })
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  symptomSummary?: string;
+  symptom?: string;
 
   @ApiPropertyOptional({ type: [MedicalRecordSymptomDto] })
   @IsOptional()
@@ -125,6 +116,12 @@ export class CreateMedicalRecordDto {
   @ValidateNested({ each: true })
   @Type(() => MedicalRecordSymptomDto)
   symptomDetails?: MedicalRecordSymptomDto[];
+
+  @ApiPropertyOptional({ example: "猫風邪" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  diseaseName?: string;
 
   @ApiPropertyOptional({ example: "猫風邪の兆候" })
   @IsOptional()
@@ -143,17 +140,12 @@ export class CreateMedicalRecordDto {
   @Type(() => MedicalRecordMedicationDto)
   medications?: MedicalRecordMedicationDto[];
 
-  @ApiPropertyOptional({ example: "3日後に経過観察" })
-  @IsOptional()
-  @IsString()
-  followUpAction?: string;
-
   @ApiPropertyOptional({ example: "2025-08-13" })
   @IsOptional()
   @IsDateString()
   followUpDate?: string;
 
-  @ApiPropertyOptional({ enum: MedicalRecordStatus, example: MedicalRecordStatus.ACTIVE })
+  @ApiPropertyOptional({ example: "TREATING", enum: MedicalRecordStatus, default: MedicalRecordStatus.TREATING })
   @IsOptional()
   @IsEnum(MedicalRecordStatus)
   status?: MedicalRecordStatus;
@@ -163,11 +155,11 @@ export class CreateMedicalRecordDto {
   @IsString()
   notes?: string;
 
-  @ApiPropertyOptional({ description: "関連ケアタグID", type: [String] })
+  @ApiPropertyOptional({ description: "関連タグID", type: [String] })
   @IsOptional()
   @IsArray()
   @IsUUID(undefined, { each: true })
-  careTagIds?: string[];
+  tagIds?: string[];
 
   @ApiPropertyOptional({
     description: "添付ファイル",

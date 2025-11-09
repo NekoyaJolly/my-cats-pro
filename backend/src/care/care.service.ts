@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   CareType,
   MedicalRecordStatus,
-  MedicalVisitType,
   Priority,
   Prisma,
   ReminderRepeatFrequency,
@@ -48,7 +47,28 @@ const scheduleMinimalInclude = {
 const medicalRecordInclude = {
   cat: { select: { id: true, name: true } },
   schedule: { select: { id: true, name: true } },
-  tags: { include: { careTag: true } },
+  visitType: true,
+  tags: {
+    include: {
+      tag: {
+        select: {
+          id: true,
+          name: true,
+          color: true,
+          textColor: true,
+          groupId: true,
+          group: {
+            select: {
+              id: true,
+              name: true,
+              categoryId: true,
+              category: { select: { id: true, name: true } },
+            },
+          },
+        },
+      },
+    },
+  },
   attachments: true,
 } as const;
 
@@ -70,6 +90,7 @@ type MedicalRecordCreateInput = Partial<CreateMedicalRecordDto> & {
   catId?: string;
   scheduleId?: string;
   visitDate?: string;
+  visitTypeId?: string;
 };
 
 // Extended types for scheduleCats relation
@@ -224,6 +245,7 @@ export class CareService {
 
     const followUpDate = dto.nextScheduledDate ? new Date(dto.nextScheduledDate) : undefined;
     const completedDate = dto.completedDate ? new Date(dto.completedDate) : new Date();
+    const hospitalName = this.normalizeOptionalText(dto.medicalRecord?.hospitalName);
 
     const result = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.schedule.update({
@@ -265,7 +287,7 @@ export class CareService {
           careDate: completedDate,
           nextDueDate: followUpDate,
           notes: dto.notes,
-          veterinarian: dto.medicalRecord?.veterinarianName,
+          veterinarian: hospitalName,
           recordedBy: recorderId,
         },
       });
@@ -295,12 +317,21 @@ export class CareService {
   async findMedicalRecords(
     query: MedicalRecordQueryDto,
   ): Promise<MedicalRecordListResponse> {
-    const { page = 1, limit = 20, catId, scheduleId, visitType, status, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      catId,
+      scheduleId,
+      visitTypeId,
+      status,
+      dateFrom,
+      dateTo,
+    } = query;
 
     const where: Prisma.MedicalRecordWhereInput = {};
     if (catId) where.catId = catId;
     if (scheduleId) where.scheduleId = scheduleId;
-    if (visitType) where.visitType = visitType;
+    if (visitTypeId) where.visitTypeId = visitTypeId;
     if (status) where.status = status;
     if (dateFrom || dateTo) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -534,15 +565,37 @@ export class CareService {
     const symptomDetails = this.normalizeSymptomDetails(record.symptomDetails);
     const medications = this.normalizeMedications(record.medications);
 
+    const visitType = record.visitType
+      ? {
+          id: record.visitType.id,
+          key: record.visitType.key ?? null,
+          name: record.visitType.name,
+          description: record.visitType.description ?? null,
+          displayOrder: record.visitType.displayOrder,
+          isActive: record.visitType.isActive,
+        }
+      : null;
+
     const tags = record.tags
-      .map(({ careTag }) => ({
-        id: careTag.id,
-        slug: careTag.slug,
-        label: careTag.label,
-        level: careTag.level,
-        parentId: careTag.parentId ?? null,
-      }))
-      .sort((a, b) => a.level - b.level);
+      .map(({ tag }) => {
+        if (!tag) {
+          return null;
+        }
+        const group = tag.group ?? null;
+        const category = group?.category ?? null;
+        return {
+          id: tag.id,
+          name: tag.name,
+          color: tag.color ?? null,
+          textColor: tag.textColor ?? null,
+          groupId: tag.groupId,
+          groupName: group?.name ?? null,
+          categoryId: group?.categoryId ?? null,
+          categoryName: category?.name ?? null,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null)
+      .sort((a, b) => a.name.localeCompare(b.name, "ja"));
 
     const attachments = record.attachments.map((attachment) => ({
       url: attachment.url,
@@ -556,15 +609,14 @@ export class CareService {
     return {
       id: record.id,
       visitDate: toIsoString(record.visitDate)!,
-      visitType: (record.visitType as MedicalVisitType | null) ?? null,
-      clinicName: record.clinicName ?? null,
-      veterinarianName: record.veterinarianName ?? null,
-      symptomSummary: record.symptomSummary ?? null,
+      visitType,
+      hospitalName: record.hospitalName ?? null,
+      symptom: record.symptom ?? null,
       symptomDetails,
+      diseaseName: record.diseaseName ?? null,
       diagnosis: record.diagnosis ?? null,
       treatmentPlan: record.treatmentPlan ?? null,
       medications,
-      followUpAction: record.followUpAction ?? null,
       followUpDate: toIsoString(record.followUpDate),
       status: record.status,
       notes: record.notes ?? null,
@@ -622,7 +674,7 @@ export class CareService {
     executor: PrismaExecutor,
     dto: MedicalRecordCreateInput,
     recorderId: string,
-    defaults: { catId?: string; scheduleId?: string } = {},
+    defaults: { catId?: string; scheduleId?: string; visitTypeId?: string } = {},
   ): Promise<MedicalRecordWithRelations> {
     const catId = dto.catId ?? defaults.catId;
     if (!catId) {
@@ -640,29 +692,28 @@ export class CareService {
     }));
 
     const attachments = dto.attachments ?? [];
+    const hospitalName = this.normalizeOptionalText(dto.hospitalName);
 
     const record = await executor.medicalRecord.create({
       data: {
         catId,
-        scheduleId: dto.scheduleId ?? defaults.scheduleId,
-        recordedBy: recorderId,
-        visitDate: new Date(dto.visitDate ?? dto.followUpDate ?? new Date()),
-        visitType: dto.visitType ?? null,
-        clinicName: dto.clinicName,
-        veterinarianName: dto.veterinarianName,
-        symptomSummary: dto.symptomSummary,
+    scheduleId: dto.scheduleId ?? defaults.scheduleId,
+    recordedBy: recorderId,
+    visitDate: new Date(dto.visitDate ?? dto.followUpDate ?? new Date()),
+    visitTypeId: dto.visitTypeId ?? defaults.visitTypeId,
+        hospitalName,
+        symptom: dto.symptom,
         symptomDetails: symptomDetails.length ? (symptomDetails as Prisma.JsonArray) : Prisma.DbNull,
         diagnosis: dto.diagnosis,
         treatmentPlan: dto.treatmentPlan,
         medications: medications.length ? (medications as Prisma.JsonArray) : Prisma.DbNull,
-        followUpAction: dto.followUpAction,
         followUpDate: dto.followUpDate ? new Date(dto.followUpDate) : undefined,
-        status: dto.status ?? MedicalRecordStatus.ACTIVE,
+        status: dto.status ?? MedicalRecordStatus.TREATING,
         notes: dto.notes,
-        tags: dto.careTagIds?.length
+        tags: dto.tagIds?.length
           ? {
-              create: dto.careTagIds.map((careTagId) => ({
-                careTag: { connect: { id: careTagId } },
+              create: dto.tagIds.map((tagId) => ({
+                tag: { connect: { id: tagId } },
               })),
             }
           : undefined,
@@ -683,5 +734,13 @@ export class CareService {
     });
 
     return record as MedicalRecordWithRelations;
+  }
+
+  private normalizeOptionalText(value?: string | null): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
   }
 }
