@@ -129,6 +129,9 @@ export class BreedingController {
     @Body() dto: CreatePregnancyCheckDto,
     @GetUser() user?: RequestUser,
   ) {
+    console.log('[DEBUG] createPregnancyCheck - Received DTO:', JSON.stringify(dto, null, 2));
+    console.log('[DEBUG] motherId type:', typeof dto.motherId, 'value:', dto.motherId);
+    console.log('[DEBUG] fatherId type:', typeof dto.fatherId, 'value:', dto.fatherId);
     return this.breedingService.createPregnancyCheck(dto, user?.userId);
   }
 

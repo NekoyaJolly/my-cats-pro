@@ -459,6 +459,7 @@ export default function CarePage() {
     );
   };
 
+  // @ts-expect-error - 将来的に使用予定
   const _openCompleteScheduleModal = (schedule: CareSchedule) => {
     setTargetSchedule(schedule);
     setCompleteForm({

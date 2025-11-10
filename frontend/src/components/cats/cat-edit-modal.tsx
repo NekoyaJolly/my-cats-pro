@@ -12,12 +12,10 @@ import {
   Loader,
   Center,
   Divider,
-  Text,
-  Box,
   Grid,
 } from "@mantine/core";
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
-import { useGetCat, useUpdateCat, type Cat } from "@/lib/api/hooks/use-cats";
+import { useGetCat, useUpdateCat } from "@/lib/api/hooks/use-cats";
 import { useGetBreeds } from "@/lib/api/hooks/use-breeds";
 import { useGetCoatColors } from "@/lib/api/hooks/use-coat-colors";
 import TagSelector from "@/components/TagSelector";

@@ -25,7 +25,7 @@ import {
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconPlus, IconEye, IconEdit, IconTrash, IconChevronDown, IconCalendarPlus, IconX } from '@tabler/icons-react';
+import { IconAlertCircle, IconPlus, IconEye, IconChevronDown, IconCalendarPlus, IconX } from '@tabler/icons-react';
 import { SegmentedControl } from '@mantine/core';
 import dayjs from 'dayjs';
 
@@ -37,6 +37,7 @@ import {
   useGetMedicalRecords,
 } from '@/lib/api/hooks/use-care';
 import { useGetCats } from '@/lib/api/hooks/use-cats';
+import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 const VISIT_TYPE_LABELS = {
@@ -57,19 +58,6 @@ const STATUS_COLORS = {
   TREATING: 'yellow',
   COMPLETED: 'green',
 } as const;
-
-const SYMPTOM_TAGS = [
-  '鼻水',
-  '鼻づまり',
-  '目ヤニ',
-  '咳',
-  '下痢',
-  '嘔吐',
-  '食欲不振',
-  '元気なし',
-  '発熱',
-  'その他',
-] as const;
 
 const PAGE_LIMIT = 10;
 
@@ -107,7 +95,6 @@ export default function MedicalRecordsPage() {
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const [detailModalOpened, { open: openDetailModal, close: closeDetailModal }] = useDisclosure(false);
   const [detailRecord, setDetailRecord] = useState<MedicalRecord | null>(null);
-  const [editStatus, setEditStatus] = useState<string>('');
 
   const [createForm, setCreateForm] = useState<CreateMedicalRecordFormState>({
     catId: '',
@@ -138,6 +125,17 @@ export default function MedicalRecordsPage() {
   const createMedicalRecordMutation = useCreateMedicalRecord();
 
   const catsQuery = useGetCats({ limit: 100 });
+  const tagsQuery = useGetTagCategories();
+
+  // 医療データページ用のタグを取得（健康カテゴリから症状タグを抽出）
+  const medicalTags = useMemo(() => {
+    const categories = tagsQuery.data?.data || [];
+    const healthCategory = categories.find(cat => cat.key === 'health' || cat.name.includes('健康'));
+    if (!healthCategory) return [];
+    
+    // 健康カテゴリ内の全タグを取得
+    return healthCategory.tags || [];
+  }, [tagsQuery.data]);
 
   // ページヘッダーを設定
   useEffect(() => {
@@ -602,34 +600,44 @@ export default function MedicalRecordsPage() {
             <Text size="sm" fw={500} mb="xs">
               症状タグ
             </Text>
-            <Group gap="xs" mb="sm">
-              {SYMPTOM_TAGS.map((tag) => {
-                const isSelected = createForm.symptomTags.includes(tag);
-                return (
-                  <Button
-                    key={tag}
-                    variant={isSelected ? 'filled' : 'outline'}
-                    color={isSelected ? 'blue' : 'gray'}
-                    size="xs"
-                    rightSection={isSelected ? <IconX size={12} /> : undefined}
-                    onClick={() => {
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        symptomTags: isSelected
-                          ? prev.symptomTags.filter((t) => t !== tag)
-                          : [...prev.symptomTags, tag],
-                      }));
-                    }}
-                  >
-                    {tag}
-                  </Button>
-                );
-              })}
-            </Group>
-            {createForm.symptomTags.length > 0 && (
-              <Text size="xs" c="dimmed">
-                選択されたタグ: {createForm.symptomTags.join(', ')}
-              </Text>
+            {tagsQuery.isLoading ? (
+              <Skeleton height={40} />
+            ) : medicalTags.length > 0 ? (
+              <>
+                <Group gap="xs" mb="sm">
+                  {medicalTags.map((tag) => {
+                    const isSelected = createForm.symptomTags.includes(tag.name);
+                    return (
+                      <Button
+                        key={tag.id}
+                        variant={isSelected ? 'filled' : 'outline'}
+                        color={isSelected ? tag.color || 'blue' : 'gray'}
+                        size="xs"
+                        rightSection={isSelected ? <IconX size={12} /> : undefined}
+                        onClick={() => {
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            symptomTags: isSelected
+                              ? prev.symptomTags.filter((t) => t !== tag.name)
+                              : [...prev.symptomTags, tag.name],
+                          }));
+                        }}
+                      >
+                        {tag.name}
+                      </Button>
+                    );
+                  })}
+                </Group>
+                {createForm.symptomTags.length > 0 && (
+                  <Text size="xs" c="dimmed">
+                    選択されたタグ: {createForm.symptomTags.join(', ')}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Alert color="yellow" icon={<IconAlertCircle size={16} />}>
+                タグ管理ページで「健康」カテゴリのタグを作成してください
+              </Alert>
             )}
           </Box>
 

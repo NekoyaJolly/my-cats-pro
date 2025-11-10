@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-11-09T12:38:04.837Z
+// Prisma Schema - Last Updated: 2025-11-09T23:34:22.929Z
 // Auto-generated from schema.prisma
 
 generator client {
@@ -396,7 +396,6 @@ model CareTag {
   parent            CareTag?           @relation("CareTagHierarchy", fields: [parentId], references: [id])
   children          CareTag[]          @relation("CareTagHierarchy")
   scheduleTags      ScheduleTag[]
-  medicalRecordTags MedicalRecordTag[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -432,13 +431,31 @@ model ScheduleCat {
   @@map("schedule_cats")
 }
 
+model MedicalVisitType {
+  id          String  @id @default(uuid())
+  key         String? @unique
+  name        String
+  description String?
+  displayOrder Int    @default(0) @map("display_order")
+  isActive    Boolean @default(true) @map("is_active")
+
+  records MedicalRecord[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([displayOrder])
+  @@map("medical_visit_types")
+}
+
 model MedicalRecord {
   id               String              @id @default(uuid())
   catId            String              @map("cat_id")
   scheduleId       String?             @map("schedule_id")
   recordedBy       String              @map("recorded_by")
   visitDate        DateTime            @map("visit_date")
-  visitType        MedicalVisitType?   @map("visit_type")
+  visitTypeId      String?             @map("visit_type_id")
+  visitType        MedicalVisitType?   @relation(fields: [visitTypeId], references: [id])
   hospitalName     String?             @map("hospital_name")
   symptom          String?             @map("symptom")
   symptomDetails   Json?               @map("symptom_details")
@@ -462,6 +479,7 @@ model MedicalRecord {
   @@index([catId])
   @@index([visitDate])
   @@index([scheduleId])
+  @@index([visitTypeId])
   @@map("medical_records")
 }
 
@@ -486,14 +504,14 @@ model MedicalRecordAttachment {
 
 model MedicalRecordTag {
   medicalRecordId String @map("medical_record_id")
-  careTagId       String @map("care_tag_id")
+  tagId           String @map("tag_id")
 
   medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
-  careTag       CareTag       @relation(fields: [careTagId], references: [id], onDelete: Cascade)
+  tag           Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@id([medicalRecordId, careTagId])
+  @@id([medicalRecordId, tagId])
   @@map("medical_record_tags")
 }
 
@@ -551,6 +569,7 @@ model Tag {
 
   group   TagGroup              @relation(fields: [groupId], references: [id], onDelete: Cascade)
   cats    CatTag[]
+  medicalRecordTags MedicalRecordTag[]
   history TagAssignmentHistory[]
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -842,15 +861,6 @@ enum ReminderRepeatFrequency {
   MONTHLY
   YEARLY
   CUSTOM
-}
-
-enum MedicalVisitType {
-  CHECKUP
-  EMERGENCY
-  SURGERY
-  FOLLOW_UP
-  VACCINATION
-  OTHER
 }
 
 enum MedicalRecordStatus {

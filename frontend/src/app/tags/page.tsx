@@ -1398,7 +1398,7 @@ export default function TagsPage() {
         handleEditTag(tagInfo.category, tagInfo.group, tagInfo.tag);
       }
     },
-    delete: (tag) => {
+    delete: () => {
       openOperation('delete');
     },
   });

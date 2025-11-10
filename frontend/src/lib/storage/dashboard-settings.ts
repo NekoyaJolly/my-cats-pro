@@ -69,7 +69,6 @@ export function applyDashboardSettings(
   
   // 設定を適用
   const cardsMap = new Map(defaultCards.map((card) => [card.id, card]));
-  const settingsMap = new Map(settings.cards.map((s) => [s.id, s]));
   
   // 設定に基づいてカードを再構築
   const result: DashboardCardConfig[] = [];

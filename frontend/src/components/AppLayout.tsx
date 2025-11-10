@@ -73,7 +73,7 @@ const navigationItems = [
   },
   {
     label: '医療データ',
-    href: '/care/medical-records',
+    href: '/medical-records',
     icon: IconStethoscope,
   },
   {

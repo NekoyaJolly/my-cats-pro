@@ -187,14 +187,7 @@ export default function BreedingPage() {
   const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
   const [birthInfoModalOpened, { open: openBirthInfoModal, close: closeBirthInfoModal }] = useDisclosure(false);
   const [scheduleEditModalOpened, { open: openScheduleEditModal, close: closeScheduleEditModal }] = useDisclosure(false);
-  const [pregnancyCheckModalOpened, { open: openPregnancyCheckModal, close: closePregnancyCheckModal }] = useDisclosure(false);
   const [selectedScheduleForEdit, setSelectedScheduleForEdit] = useState<BreedingScheduleEntry | null>(null);
-  const [selectedPregnancyCheck, setSelectedPregnancyCheck] = useState<PregnancyCheck | null>(null);
-  const [pregnancyChecks, setPregnancyChecks] = useState({
-    weightGain: false,
-    pinking: false,
-    palpation: false,
-  });
 
   // コンテキストメニュー for breeding schedule
   const {
@@ -245,12 +238,8 @@ export default function BreedingPage() {
     description: '',
   });
 
-  console.log(`BreedingPage component rendered (mount count: ${mountCountRef.current}) - breedingSchedule:`, breedingSchedule);
-  console.log('BreedingPage component rendered - localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
-
   // ページヘッダーを設定
   useEffect(() => {
-    console.log('Setting page header for breeding page');
     setPageHeader(
       'breeding',
       <Group gap="sm">
@@ -265,7 +254,6 @@ export default function BreedingPage() {
     );
 
     return () => {
-      console.log('Cleaning up page header for breeding page');
       setPageHeader(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -273,41 +261,35 @@ export default function BreedingPage() {
 
   // localStorageからデータを読み込む
   useEffect(() => {
-    console.log(`Loading data from localStorage (mount count: ${mountCountRef.current})...`);
     const loadFromStorage = () => {
       try {
         const storedActiveMales = localStorage.getItem(STORAGE_KEYS.ACTIVE_MALES);
         if (storedActiveMales) {
           const parsed = JSON.parse(storedActiveMales);
-          console.log('Loaded activeMales:', parsed);
           setActiveMales(parsed);
         }
 
         const storedDefaultDuration = localStorage.getItem(STORAGE_KEYS.DEFAULT_DURATION);
         if (storedDefaultDuration) {
           const parsed = parseInt(storedDefaultDuration, 10);
-          console.log('Loaded defaultDuration:', parsed);
           setDefaultDuration(parsed);
         }
 
         const storedYear = localStorage.getItem(STORAGE_KEYS.SELECTED_YEAR);
         if (storedYear) {
           const parsed = parseInt(storedYear, 10);
-          console.log('Loaded selectedYear:', parsed);
           setSelectedYear(parsed);
         }
 
         const storedMonth = localStorage.getItem(STORAGE_KEYS.SELECTED_MONTH);
         if (storedMonth) {
           const parsed = parseInt(storedMonth, 10);
-          console.log('Loaded selectedMonth:', parsed);
           setSelectedMonth(parsed);
         }
 
         const storedBreedingSchedule = localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE);
         if (storedBreedingSchedule) {
           const parsed = JSON.parse(storedBreedingSchedule);
-          console.log('Loading breeding schedule from localStorage:', parsed);
           setBreedingSchedule(parsed);
           // すぐにlocalStorageを更新して同期を取る
           localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, storedBreedingSchedule);
@@ -316,7 +298,6 @@ export default function BreedingPage() {
         const storedMatingChecks = localStorage.getItem(STORAGE_KEYS.MATING_CHECKS);
         if (storedMatingChecks) {
           const parsed = JSON.parse(storedMatingChecks);
-          console.log('Loading mating checks from localStorage:', parsed);
           setMatingChecks(parsed);
           // すぐにlocalStorageを更新
           localStorage.setItem(STORAGE_KEYS.MATING_CHECKS, storedMatingChecks);
@@ -334,25 +315,16 @@ export default function BreedingPage() {
     }, 0);
   }, []);  // localStorageにデータを保存する
   
-  // デバッグ用: breedingSchedule の変更を監視
-  useEffect(() => {
-    console.log(`breedingSchedule state changed (mount count: ${mountCountRef.current}):`, breedingSchedule);
-    console.log('Current localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
-  }, [breedingSchedule]);
-
   // コンポーネントのマウント/アンマウントを追跡
   useEffect(() => {
     mountCountRef.current += 1;
-    console.log(`BreedingPage component mounted (count: ${mountCountRef.current})`);
     return () => {
-      console.log('BreedingPage component unmounted');
       hydratedRef.current = false; // reset hydrated state on unmount
     };
   }, []);
   
 
   useEffect(() => {
-    console.log(`Saving data to localStorage (mount count: ${mountCountRef.current})...`);
     const saveToStorage = () => {
       // don't persist before we've hydrated from storage
       if (!hydratedRef.current) return;
@@ -367,14 +339,6 @@ export default function BreedingPage() {
           localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, JSON.stringify(breedingSchedule));
         }
         localStorage.setItem(STORAGE_KEYS.MATING_CHECKS, JSON.stringify(matingChecks));
-        console.log('Saved to localStorage:', {
-          breedingSchedule,
-          matingChecks,
-          activeMales,
-          defaultDuration,
-          selectedYear,
-          selectedMonth
-        });
       } catch (error) {
         console.warn('Failed to save breeding data to localStorage:', error);
       }
@@ -531,6 +495,8 @@ export default function BreedingPage() {
 
   // 交配結果処理
   const handleMatingResult = (maleId: string, femaleId: string, femaleName: string, matingDate: string, result: 'success' | 'failure') => {
+    console.log('handleMatingResult 呼び出し:', { maleId, femaleId, femaleName, matingDate, result });
+    
     const male = activeMales.find((m: Cat) => m.id === maleId);
     
     if (result === 'success') {
@@ -538,30 +504,102 @@ export default function BreedingPage() {
       const checkDate = new Date();
       checkDate.setDate(checkDate.getDate() + 21); // 21日後に妊娠確認
       
-      createPregnancyCheckMutation.mutate({
+      const payload = {
         motherId: femaleId,
         fatherId: maleId,
         matingDate: matingDate,
         checkDate: checkDate.toISOString().split('T')[0],
-        status: 'SUSPECTED',
+        status: 'SUSPECTED' as const,
         notes: `${male?.name || ''}との交配による妊娠疑い`,
+      };
+      
+      console.log('=== 妊娠確認中リスト登録 - 送信前のpayload ===');
+      console.log(JSON.stringify(payload, null, 2));
+      console.log('motherId:', typeof payload.motherId, '=', payload.motherId);
+      console.log('fatherId:', typeof payload.fatherId, '=', payload.fatherId);
+      console.log('UUID検証:', {
+        motherIdIsUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.motherId),
+        fatherIdIsUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.fatherId),
       });
-    }
-    
-    // 交配スケジュールを履歴として残す（○×どちらも）
-    setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
-      const newSchedule = { ...prev };
-      Object.keys(newSchedule).forEach(key => {
-        if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
-          newSchedule[key] = {
-            ...newSchedule[key],
-            isHistory: true,
-            result: '' // 成功・失敗問わず結果表示なし
-          };
+      
+      createPregnancyCheckMutation.mutate(payload, {
+        onSuccess: () => {
+          // API成功時のみ、交配スケジュールを履歴として残す
+          setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
+            const newSchedule = { ...prev };
+            Object.keys(newSchedule).forEach(key => {
+              if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
+                newSchedule[key] = {
+                  ...newSchedule[key],
+                  isHistory: true,
+                  result: '' // 成功・失敗問わず結果表示なし
+                };
+              }
+            });
+            return newSchedule;
+          });
+        },
+        onError: (error: any) => {
+          // エラー時は通知のみ表示し、状態は維持
+          console.error('=== 妊娠確認中リスト登録エラー ===');
+          console.error('Full error object:', error);
+          console.error('error.response:', JSON.stringify(error?.response, null, 2));
+          console.error('error.status:', error?.status);
+          console.error('error.message:', error?.message);
+          
+          // ApiErrorクラスの場合、responseプロパティに詳細が入っている
+          let errorMessage = '妊娠確認中リストへの登録に失敗しました';
+          
+          // ApiErrorのresponseプロパティから詳細を取得
+          const responseData = error?.response;
+          
+          if (responseData) {
+            console.error('レスポンスデータの詳細:', responseData);
+            
+            // エラーレスポンスの構造: { success: false, error: { details, message, ... } }
+            const errorData = responseData.error || responseData;
+            
+            // detailsフィールド（バリデーションエラーの配列）
+            if (errorData.details && Array.isArray(errorData.details)) {
+              errorMessage = errorData.details.join('\n');
+            }
+            // messageフィールド（単一メッセージまたは配列）
+            else if (errorData.message) {
+              if (Array.isArray(errorData.message)) {
+                errorMessage = errorData.message.join('\n');
+              } else if (typeof errorData.message === 'string') {
+                errorMessage = errorData.message;
+              }
+            }
+          } else if (error?.message && typeof error.message === 'string') {
+            // ApiErrorのmessageプロパティを使用
+            errorMessage = error.message;
+          }
+          
+          notifications.show({
+            title: '登録失敗',
+            message: errorMessage,
+            color: 'red',
+            autoClose: 10000, // 10秒間表示
+          });
         }
       });
-      return newSchedule;
-    });
+    } else {
+      // ×ボタン：失敗時は妊娠確認中リストへの登録なしで、即座に履歴化
+      setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
+        const newSchedule = { ...prev };
+        Object.keys(newSchedule).forEach(key => {
+          if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
+            newSchedule[key] = {
+              ...newSchedule[key],
+              isHistory: true,
+              result: '' // 成功・失敗問わず結果表示なし
+            };
+          }
+        });
+        return newSchedule;
+      });
+    }
   };
 
   // 交配チェックを追加
@@ -818,48 +856,28 @@ export default function BreedingPage() {
   // 妊娠確認
   const handlePregnancyCheck = (checkItem: PregnancyCheck, isPregnant: boolean) => {
     if (isPregnant) {
-      // 妊娠の場合：チェックリストモーダルを開く
-      setSelectedPregnancyCheck(checkItem);
-      setPregnancyChecks({
-        weightGain: false,
-        pinking: false,
-        palpation: false,
+      // 妊娠の場合：出産予定リストに追加
+      // 交配日から63日後が出産予定日
+      const expectedDate = new Date(checkItem.matingDate || checkItem.checkDate);
+      expectedDate.setDate(expectedDate.getDate() + 63);
+      
+      createBirthPlanMutation.mutate({
+        motherId: checkItem.motherId,
+        fatherId: checkItem.fatherId ?? undefined,
+        matingDate: checkItem.matingDate ?? undefined,
+        expectedBirthDate: expectedDate.toISOString().split('T')[0],
+        status: 'EXPECTED',
+        notes: '妊娠確認による出産予定',
+      }, {
+        onSuccess: () => {
+          // 出産予定作成成功後、妊娠確認中から削除
+          deletePregnancyCheckMutation.mutate(checkItem.id);
+        }
       });
-      openPregnancyCheckModal();
     } else {
       // 非妊娠の場合：妊娠チェックを削除
       deletePregnancyCheckMutation.mutate(checkItem.id);
     }
-  };
-
-  // 妊娠確認モーダルでの確定処理
-  const handleConfirmPregnancy = () => {
-    if (!selectedPregnancyCheck) return;
-
-    // 出産予定リストに追加
-    const expectedDate = new Date(selectedPregnancyCheck.checkDate);
-    expectedDate.setDate(expectedDate.getDate() + 45); // 妊娠確認から約45日後に出産予定
-    
-    createBirthPlanMutation.mutate({
-      motherId: selectedPregnancyCheck.motherId,
-      fatherId: selectedPregnancyCheck.fatherId ?? undefined,
-      matingDate: selectedPregnancyCheck.matingDate ?? undefined,
-      expectedBirthDate: expectedDate.toISOString().split('T')[0],
-      status: 'EXPECTED',
-      notes: '妊娠確認による出産予定',
-    }, {
-      onSuccess: () => {
-        // 出産予定作成成功後、妊娠確認中から削除
-        deletePregnancyCheckMutation.mutate(selectedPregnancyCheck.id);
-        closePregnancyCheckModal();
-        setSelectedPregnancyCheck(null);
-        setPregnancyChecks({
-          weightGain: false,
-          pinking: false,
-          palpation: false,
-        });
-      }
-    });
   };
 
   // 子猫処遇登録ハンドラー
@@ -1116,6 +1134,27 @@ export default function BreedingPage() {
                   onClick={openMaleModal}
                 >
                   オス追加
+                </Button>
+                <Button
+                  variant="subtle"
+                  size={isFullscreen ? "xs" : "sm"}
+                  color="gray"
+                  onClick={() => {
+                    if (window.confirm('交配管理表のデータをクリアしますか？\n（妊娠確認中・出産予定などのデータは削除されません）')) {
+                      localStorage.removeItem(STORAGE_KEYS.BREEDING_SCHEDULE);
+                      localStorage.removeItem(STORAGE_KEYS.MATING_CHECKS);
+                      setBreedingSchedule({});
+                      setMatingChecks({});
+                      notifications.show({
+                        title: 'クリア完了',
+                        message: '交配管理表のデータをクリアしました',
+                        color: 'teal',
+                      });
+                    }
+                  }}
+                  title="localStorageに保存された交配管理表のデータをクリア"
+                >
+                  データクリア
                 </Button>
               </Group>
               
@@ -1417,11 +1456,11 @@ export default function BreedingPage() {
                   ? catsResponse?.data?.find((cat: Cat) => cat.id === item.fatherId)?.name || '不明'
                   : '不明';
                 
-                // 確認予定日を計算（交配確認日の27日後）
+                // 確認予定日を計算（交配日の25日後）
                 const scheduledCheckDate = item.matingDate 
                   ? (() => {
                       const date = new Date(item.matingDate);
-                      date.setDate(date.getDate() + 27);
+                      date.setDate(date.getDate() + 25);
                       return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
                     })()
                   : '不明';
@@ -1435,10 +1474,10 @@ export default function BreedingPage() {
                         </Text>
                         <Group gap={4} wrap="nowrap">
                           <Text size="sm" c="dimmed">
-                            交配確認日: {item.matingDate ? new Date(item.matingDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '不明'}
+                            交配日: {item.matingDate ? new Date(item.matingDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '不明'}
                           </Text>
                           <Text size="sm" c="dimmed">
-                            確認予定日: {scheduledCheckDate}
+                            妊娠確認予定日: {scheduledCheckDate}
                           </Text>
                         </Group>
                       </Group>
@@ -2270,75 +2309,6 @@ export default function BreedingPage() {
       </Modal>
 
       {/* 妊娠確認モーダル */}
-      <Modal
-        opened={pregnancyCheckModalOpened}
-        onClose={() => {
-          closePregnancyCheckModal();
-          setSelectedPregnancyCheck(null);
-          setPregnancyChecks({
-            weightGain: false,
-            pinking: false,
-            palpation: false,
-          });
-        }}
-        title="妊娠確認チェック"
-        size="md"
-      >
-        <Stack gap="md">
-          {/* 母猫情報 */}
-          <TextInput
-            label="母猫"
-            value={selectedPregnancyCheck?.mother?.name || '不明'}
-            readOnly
-          />
-
-          {/* チェックリスト */}
-          <Stack gap="sm">
-            <Text size="sm" fw={500}>妊娠兆候</Text>
-            <Checkbox
-              label="体重増加"
-              checked={pregnancyChecks.weightGain}
-              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, weightGain: e.currentTarget.checked }))}
-            />
-            <Checkbox
-              label="ピンキング（乳首の色が濃くなる）"
-              checked={pregnancyChecks.pinking}
-              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, pinking: e.currentTarget.checked }))}
-            />
-            <Checkbox
-              label="触診（お腹が膨らんでいる）"
-              checked={pregnancyChecks.palpation}
-              onChange={(e) => setPregnancyChecks(prev => ({ ...prev, palpation: e.currentTarget.checked }))}
-            />
-          </Stack>
-
-          {/* アクションボタン */}
-          <Group justify="flex-end" gap="sm" mt="md">
-            <Button
-              variant="outline"
-              onClick={() => {
-                closePregnancyCheckModal();
-                setSelectedPregnancyCheck(null);
-                setPregnancyChecks({
-                  weightGain: false,
-                  pinking: false,
-                  palpation: false,
-                });
-              }}
-            >
-              キャンセル
-            </Button>
-            <Button
-              color="green"
-              onClick={handleConfirmPregnancy}
-              loading={createBirthPlanMutation.isPending || deletePregnancyCheckMutation.isPending}
-            >
-              妊娠確定
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
-
       {/* 交配スケジュール編集モーダル */}
       <BreedingScheduleEditModal
         opened={scheduleEditModalOpened}

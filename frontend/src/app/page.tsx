@@ -21,11 +21,9 @@ import {
 } from '@mantine/core';
 import { useMediaQuery, useDisclosure } from '@mantine/hooks';
 import {
-  IconPaw,
   IconHeart,
   IconCertificate,
   IconPlus,
-  IconChartBar,
   IconStethoscope,
   IconChevronRight,
   IconAlertCircle,
@@ -75,18 +73,6 @@ interface CareScheduleSummary {
 interface BreedingSummary {
   total: number;
   today: number;
-}
-
-// ダッシュボードカード型
-interface DashboardCard {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-  href: string;
-  badge?: string | number;
-  stats?: string;
 }
 
 export default function Home() {
