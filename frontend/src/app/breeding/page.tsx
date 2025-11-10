@@ -495,9 +495,19 @@ export default function BreedingPage() {
 
   // 交配結果処理
   const handleMatingResult = (maleId: string, femaleId: string, femaleName: string, matingDate: string, result: 'success' | 'failure') => {
-    console.log('handleMatingResult 呼び出し:', { maleId, femaleId, femaleName, matingDate, result });
+    console.log('=== handleMatingResult 開始 ===');
+    console.log('呼び出しパラメータ:', { maleId, femaleId, femaleName, matingDate, result });
+    
+    // デバッグ通知
+    notifications.show({
+      title: 'デバッグ: 関数開始',
+      message: `result=${result}, femaleName=${femaleName}`,
+      color: 'blue',
+      autoClose: 3000,
+    });
     
     const male = activeMales.find((m: Cat) => m.id === maleId);
+    console.log('オス猫情報:', male);
     
     if (result === 'success') {
       // ○ボタン：妊娠確認中リストに追加
@@ -513,7 +523,7 @@ export default function BreedingPage() {
         notes: `${male?.name || ''}との交配による妊娠疑い`,
       };
       
-      console.log('=== 妊娠確認中リスト登録 - 送信前のpayload ===');
+      console.log('=== 妊娠確認中リスト登録 - 送信payload ===');
       console.log(JSON.stringify(payload, null, 2));
       console.log('motherId:', typeof payload.motherId, '=', payload.motherId);
       console.log('fatherId:', typeof payload.fatherId, '=', payload.fatherId);
@@ -522,8 +532,28 @@ export default function BreedingPage() {
         fatherIdIsUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.fatherId),
       });
       
+      console.log('mutation実行直前...');
+      
+      // デバッグ通知
+      notifications.show({
+        title: 'デバッグ: API送信',
+        message: `motherId=${payload.motherId.substring(0, 8)}..., fatherId=${payload.fatherId.substring(0, 8)}...`,
+        color: 'cyan',
+        autoClose: 3000,
+      });
+      
       createPregnancyCheckMutation.mutate(payload, {
-        onSuccess: () => {
+        onSuccess: async () => {
+          console.log('=== mutation成功 ===');
+          
+          // デバッグ通知
+          notifications.show({
+            title: 'デバッグ: API成功',
+            message: '妊娠確認中リストに登録されました',
+            color: 'green',
+            autoClose: 3000,
+          });
+          
           // API成功時のみ、交配スケジュールを履歴として残す
           setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
             const newSchedule = { ...prev };
@@ -538,49 +568,61 @@ export default function BreedingPage() {
             });
             return newSchedule;
           });
+          
+          console.log('妊娠確認中クエリをリフレッシュ中...');
+          // 妊娠確認中クエリをリフレッシュ
+          await pregnancyChecksQuery.refetch();
+          console.log('リフレッシュ完了');
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
           // エラー時は通知のみ表示し、状態は維持
           console.error('=== 妊娠確認中リスト登録エラー ===');
           console.error('Full error object:', error);
-          console.error('error.response:', JSON.stringify(error?.response, null, 2));
-          console.error('error.status:', error?.status);
-          console.error('error.message:', error?.message);
           
-          // ApiErrorクラスの場合、responseプロパティに詳細が入っている
+          // ApiErrorの場合、responseプロパティから詳細を取得
           let errorMessage = '妊娠確認中リストへの登録に失敗しました';
+          let errorDetails = '';
           
-          // ApiErrorのresponseプロパティから詳細を取得
-          const responseData = error?.response;
-          
-          if (responseData) {
-            console.error('レスポンスデータの詳細:', responseData);
+          if (error instanceof Error && 'response' in error) {
+            const apiError = error as any;
+            console.error('Error response:', apiError.response);
             
-            // エラーレスポンスの構造: { success: false, error: { details, message, ... } }
-            const errorData = responseData.error || responseData;
-            
-            // detailsフィールド（バリデーションエラーの配列）
-            if (errorData.details && Array.isArray(errorData.details)) {
-              errorMessage = errorData.details.join('\n');
-            }
-            // messageフィールド（単一メッセージまたは配列）
-            else if (errorData.message) {
-              if (Array.isArray(errorData.message)) {
-                errorMessage = errorData.message.join('\n');
-              } else if (typeof errorData.message === 'string') {
-                errorMessage = errorData.message;
+            if (apiError.response) {
+              const response = apiError.response;
+              
+              // バリデーションエラーの詳細を抽出
+              if (response.error) {
+                if (response.error.message) {
+                  if (Array.isArray(response.error.message)) {
+                    errorDetails = response.error.message.join('\n');
+                  } else {
+                    errorDetails = response.error.message;
+                  }
+                }
+                if (response.error.details) {
+                  errorDetails += '\n詳細: ' + JSON.stringify(response.error.details, null, 2);
+                }
+              } else if (response.message) {
+                errorDetails = Array.isArray(response.message) 
+                  ? response.message.join('\n') 
+                  : response.message;
               }
             }
-          } else if (error?.message && typeof error.message === 'string') {
-            // ApiErrorのmessageプロパティを使用
+          }
+          
+          if (errorDetails) {
+            errorMessage = errorDetails;
+          } else if (error.message) {
             errorMessage = error.message;
           }
+          
+          console.error('解析されたエラーメッセージ:', errorMessage);
           
           notifications.show({
             title: '登録失敗',
             message: errorMessage,
             color: 'red',
-            autoClose: 10000, // 10秒間表示
+            autoClose: 15000,
           });
         }
       });
@@ -869,14 +911,23 @@ export default function BreedingPage() {
         status: 'EXPECTED',
         notes: '妊娠確認による出産予定',
       }, {
-        onSuccess: () => {
+        onSuccess: async () => {
           // 出産予定作成成功後、妊娠確認中から削除
-          deletePregnancyCheckMutation.mutate(checkItem.id);
+          await deletePregnancyCheckMutation.mutateAsync(checkItem.id);
+          // 両方のクエリをリフレッシュ
+          await Promise.all([
+            pregnancyChecksQuery.refetch(),
+            birthPlansQuery.refetch(),
+          ]);
         }
       });
     } else {
       // 非妊娠の場合：妊娠チェックを削除
-      deletePregnancyCheckMutation.mutate(checkItem.id);
+      deletePregnancyCheckMutation.mutate(checkItem.id, {
+        onSuccess: () => {
+          pregnancyChecksQuery.refetch();
+        }
+      });
     }
   };
 
@@ -2280,6 +2331,12 @@ export default function BreedingPage() {
                   }
                   
                   await Promise.all(createPromises);
+                  
+                  // データを最新に更新
+                  await Promise.all([
+                    catsQuery.refetch(),
+                    birthPlansQuery.refetch(),
+                  ]);
                   
                   notifications.show({
                     title: '出産登録完了',

@@ -232,7 +232,7 @@ importers:
         specifier: ^3.0.0
         version: 3.6.2
       prisma:
-        specifier: ^6.14.0
+        specifier: ^6.16.2
         version: 6.16.2(typescript@5.9.2)
       source-map-support:
         specifier: ^0.5.21

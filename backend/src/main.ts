@@ -110,6 +110,16 @@ async function bootstrap() {
   // Cookie parser (for refresh token, etc.)
   app.use(cookieParser());
 
+  // Debug middleware for pregnancy-checks
+  app.use('/api/v1/breeding/pregnancy-checks', (req: any, res: any, next: any) => {
+    if (req.method === 'POST') {
+      console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(req.body, null, 2));
+      console.log('[DEBUG MIDDLEWARE] motherId type:', typeof req.body?.motherId, 'value:', req.body?.motherId);
+      console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof req.body?.fatherId, 'value:', req.body?.fatherId);
+    }
+    next();
+  });
+
     // Global validation pipe
     app.useGlobalPipes(
       new ValidationPipe({

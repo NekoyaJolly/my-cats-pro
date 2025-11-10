@@ -1,12 +1,14 @@
 generator client {
-  provider   = "prisma-client-js"
-  engineType = "library" // ← Node-API を明示
+  provider = "prisma-client-js"
+  // engineType = "library" // ← Node-API を明示（一時的にコメントアウト）
 }
 
-generator seed {
-  provider = "ts-node"
-  output   = "./src/prisma/seed.ts"
-}
+// generator seed は無効（ts-nodeは正式なgeneratorではない）
+// シードはpackage.jsonの"prisma": { "seed": "ts-node prisma/seed.ts" }で定義
+// generator seed {
+//   provider = "ts-node"
+//   output   = "./src/prisma/seed.ts"
+// }
 
 datasource db {
   provider = "postgresql"
@@ -113,20 +115,20 @@ model Gender {
 
 model Cat {
   id                 String   @id @default(uuid())
-  registrationNumber   String?  @unique @map("registration_number") // 登録番号
+  registrationNumber String?  @unique @map("registration_number") // 登録番号
   name               String
-  gender             String   // MALE, FEMALE, NEUTER, SPAY
+  gender             String // MALE, FEMALE, NEUTER, SPAY
   birthDate          DateTime @map("birth_date")
 
   // Breed and Color stored by ID (for relations) but also can store names
-  breedId       String?    @map("breed_id")
-  breed         Breed?     @relation(fields: [breedId], references: [id])
-  coatColorId   String?    @map("coat_color_id")
-  coatColor     CoatColor? @relation(fields: [coatColorId], references: [id])
+  breedId     String?    @map("breed_id")
+  breed       Breed?     @relation(fields: [breedId], references: [id])
+  coatColorId String?    @map("coat_color_id")
+  coatColor   CoatColor? @relation(fields: [coatColorId], references: [id])
 
-  microchipNumber String?  @unique @map("microchip_number")
-  description     String?  @map("notes") // 説明・備考
-  isInHouse       Boolean  @default(true) @map("is_in_house") // 施設内在舎
+  microchipNumber String? @unique @map("microchip_number")
+  description     String? @map("notes") // 説明・備考
+  isInHouse       Boolean @default(true) @map("is_in_house") // 施設内在舎
 
   // Parent information
   fatherId String? @map("father_id")
@@ -150,9 +152,9 @@ model Cat {
   tags                  CatTag[]
   medicalRecords        MedicalRecord[]
   tagHistory            TagAssignmentHistory[]
-  pregnancyChecks PregnancyCheck[] @relation("PregnancyCheckMother")
-  birthPlans      BirthPlan[]    @relation("BirthPlanMother")
-  kittenDispositions KittenDisposition[] // 子猫処遇記録
+  pregnancyChecks       PregnancyCheck[]       @relation("PregnancyCheckMother")
+  birthPlans            BirthPlan[]            @relation("BirthPlanMother")
+  kittenDispositions    KittenDisposition[] // 子猫処遇記録
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
   @@index([breedId])
@@ -208,13 +210,13 @@ model BreedingNgRule {
 }
 
 model PregnancyCheck {
-  id              String            @id @default(uuid())
-  motherId        String            @map("mother_id")
-  fatherId        String?           @map("father_id")
-  matingDate      DateTime?         @map("mating_date")
-  checkDate       DateTime          @map("check_date")
-  status          PregnancyStatus   @default(SUSPECTED)
-  notes           String?
+  id         String          @id @default(uuid())
+  motherId   String          @map("mother_id")
+  fatherId   String?         @map("father_id")
+  matingDate DateTime?       @map("mating_date")
+  checkDate  DateTime        @map("check_date")
+  status     PregnancyStatus @default(SUSPECTED)
+  notes      String?
 
   mother Cat @relation("PregnancyCheckMother", fields: [motherId], references: [id])
 
@@ -231,17 +233,17 @@ model PregnancyCheck {
 }
 
 model BirthPlan {
-  id              String         @id @default(uuid())
-  motherId        String         @map("mother_id")
-  fatherId        String?        @map("father_id")
-  matingDate      DateTime?      @map("mating_date")
-  expectedBirthDate DateTime     @map("expected_birth_date")
-  actualBirthDate DateTime?      @map("actual_birth_date")
-  status          BirthStatus    @default(EXPECTED)
-  expectedKittens Int?           @map("expected_kittens")
-  actualKittens   Int?           @map("actual_kittens")
-  completedAt     DateTime?      @map("completed_at") // 出産記録完了日時
-  notes           String?
+  id                String      @id @default(uuid())
+  motherId          String      @map("mother_id")
+  fatherId          String?     @map("father_id")
+  matingDate        DateTime?   @map("mating_date")
+  expectedBirthDate DateTime    @map("expected_birth_date")
+  actualBirthDate   DateTime?   @map("actual_birth_date")
+  status            BirthStatus @default(EXPECTED)
+  expectedKittens   Int?        @map("expected_kittens")
+  actualKittens     Int?        @map("actual_kittens")
+  completedAt       DateTime?   @map("completed_at") // 出産記録完了日時
+  notes             String?
 
   mother Cat @relation("BirthPlanMother", fields: [motherId], references: [id])
 
@@ -261,24 +263,24 @@ model BirthPlan {
 }
 
 model KittenDisposition {
-  id              String              @id @default(uuid())
-  birthRecordId   String              @map("birth_record_id")
-  kittenId        String?             @map("kitten_id") // 養成の場合のみ
-  name            String
-  gender          String              // MALE or FEMALE
-  disposition     DispositionType     // 処遇タイプ
-  
+  id            String          @id @default(uuid())
+  birthRecordId String          @map("birth_record_id")
+  kittenId      String?         @map("kitten_id") // 養成の場合のみ
+  name          String
+  gender        String // MALE or FEMALE
+  disposition   DispositionType // 処遇タイプ
+
   // 養成の場合
-  trainingStartDate DateTime?         @map("training_start_date")
-  
+  trainingStartDate DateTime? @map("training_start_date")
+
   // 出荷の場合
-  saleInfo        Json?               @map("sale_info") // { buyer, price, saleDate, notes }
-  
+  saleInfo Json? @map("sale_info") // { buyer, price, saleDate, notes }
+
   // 死亡の場合
-  deathDate       DateTime?           @map("death_date")
-  deathReason     String?             @map("death_reason")
-  
-  notes           String?
+  deathDate   DateTime? @map("death_date")
+  deathReason String?   @map("death_reason")
+
+  notes String?
 
   birthRecord BirthPlan @relation(fields: [birthRecordId], references: [id], onDelete: Cascade)
   kitten      Cat?      @relation(fields: [kittenId], references: [id])
@@ -390,9 +392,9 @@ model CareTag {
   isActive    Boolean @default(true) @map("is_active")
   priority    Int?
 
-  parent            CareTag?           @relation("CareTagHierarchy", fields: [parentId], references: [id])
-  children          CareTag[]          @relation("CareTagHierarchy")
-  scheduleTags      ScheduleTag[]
+  parent       CareTag?      @relation("CareTagHierarchy", fields: [parentId], references: [id])
+  children     CareTag[]     @relation("CareTagHierarchy")
+  scheduleTags ScheduleTag[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -429,12 +431,12 @@ model ScheduleCat {
 }
 
 model MedicalVisitType {
-  id          String  @id @default(uuid())
-  key         String? @unique
-  name        String
-  description String?
-  displayOrder Int    @default(0) @map("display_order")
-  isActive    Boolean @default(true) @map("is_active")
+  id           String  @id @default(uuid())
+  key          String? @unique
+  name         String
+  description  String?
+  displayOrder Int     @default(0) @map("display_order")
+  isActive     Boolean @default(true) @map("is_active")
 
   records MedicalRecord[]
 
@@ -446,23 +448,23 @@ model MedicalVisitType {
 }
 
 model MedicalRecord {
-  id               String              @id @default(uuid())
-  catId            String              @map("cat_id")
-  scheduleId       String?             @map("schedule_id")
-  recordedBy       String              @map("recorded_by")
-  visitDate        DateTime            @map("visit_date")
-  visitTypeId      String?             @map("visit_type_id")
-  visitType        MedicalVisitType?   @relation(fields: [visitTypeId], references: [id])
-  hospitalName     String?             @map("hospital_name")
-  symptom          String?             @map("symptom")
-  symptomDetails   Json?               @map("symptom_details")
-  diseaseName      String?             @map("disease_name")
-  diagnosis        String?             @map("diagnosis")
-  treatmentPlan    String?             @map("treatment_plan")
-  medications      Json?               @map("medications")
-  followUpDate     DateTime?           @map("follow_up_date")
-  status           MedicalRecordStatus @default(TREATING)
-  notes            String?
+  id             String              @id @default(uuid())
+  catId          String              @map("cat_id")
+  scheduleId     String?             @map("schedule_id")
+  recordedBy     String              @map("recorded_by")
+  visitDate      DateTime            @map("visit_date")
+  visitTypeId    String?             @map("visit_type_id")
+  visitType      MedicalVisitType?   @relation(fields: [visitTypeId], references: [id])
+  hospitalName   String?             @map("hospital_name")
+  symptom        String?             @map("symptom")
+  symptomDetails Json?               @map("symptom_details")
+  diseaseName    String?             @map("disease_name")
+  diagnosis      String?             @map("diagnosis")
+  treatmentPlan  String?             @map("treatment_plan")
+  medications    Json?               @map("medications")
+  followUpDate   DateTime?           @map("follow_up_date")
+  status         MedicalRecordStatus @default(TREATING)
+  notes          String?
 
   cat         Cat                       @relation(fields: [catId], references: [id])
   schedule    Schedule?                 @relation(fields: [scheduleId], references: [id])
@@ -536,8 +538,8 @@ model TagGroup {
   categoryId   String  @map("category_id")
   name         String
   description  String?
-  color        String?  @default("#3B82F6")
-  textColor    String?  @default("#111827") @map("text_color")
+  color        String? @default("#3B82F6")
+  textColor    String? @default("#111827") @map("text_color")
   displayOrder Int     @default(0) @map("display_order")
   isActive     Boolean @default(true) @map("is_active")
 
@@ -564,10 +566,10 @@ model Tag {
   metadata         Json?
   isActive         Boolean @default(true) @map("is_active")
 
-  group   TagGroup              @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  cats    CatTag[]
+  group             TagGroup               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  cats              CatTag[]
   medicalRecordTags MedicalRecordTag[]
-  history TagAssignmentHistory[]
+  history           TagAssignmentHistory[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -782,9 +784,9 @@ enum BirthStatus {
 }
 
 enum DispositionType {
-  TRAINING  // 養成
-  SALE      // 出荷
-  DECEASED  // 死亡
+  TRAINING // 養成
+  SALE // 出荷
+  DECEASED // 死亡
 }
 
 enum BreedingNgRuleType {
@@ -903,75 +905,75 @@ enum TagAutomationRunStatus {
 // ==========================================
 
 model Staff {
-  id        String   @id @default(uuid())
-  userId    String?  @unique @map("user_id") // User連携（任意）
-  name      String
-  email     String?  @unique
-  role      String   @default("スタッフ") // 役職
-  color     String   @default("#4dabf7") // カレンダー表示色
-  isActive  Boolean  @default(true) @map("is_active")
-  
-  user               User?               @relation(fields: [userId], references: [id])
-  shifts             Shift[]
-  availabilities     StaffAvailability[]
-  
+  id       String  @id @default(uuid())
+  userId   String? @unique @map("user_id") // User連携（任意）
+  name     String
+  email    String? @unique
+  role     String  @default("スタッフ") // 役職
+  color    String  @default("#4dabf7") // カレンダー表示色
+  isActive Boolean @default(true) @map("is_active")
+
+  user           User?               @relation(fields: [userId], references: [id])
+  shifts         Shift[]
+  availabilities StaffAvailability[]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@index([userId])
   @@map("staff")
 }
 
 model ShiftTemplate {
   id           String  @id @default(uuid())
-  name         String  // "午前", "午後", "終日", "夜間"
+  name         String // "午前", "午後", "終日", "夜間"
   startTime    String  @map("start_time") // HH:mm 形式
-  endTime      String  @map("end_time")   // HH:mm 形式
-  duration     Int     // 分単位
+  endTime      String  @map("end_time") // HH:mm 形式
+  duration     Int // 分単位
   color        String  @default("#4dabf7")
   breakTime    Int     @default(0) @map("break_time") // 休憩時間（分）
   isActive     Boolean @default(true) @map("is_active")
   displayOrder Int     @default(0) @map("display_order")
-  
+
   shifts Shift[]
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@map("shift_templates")
 }
 
 model Shift {
-  id              String       @id @default(uuid())
-  staffId         String       @map("staff_id")
-  shiftDate       DateTime     @map("shift_date") // シフトの日付【必須】
-  
+  id        String   @id @default(uuid())
+  staffId   String   @map("staff_id")
+  shiftDate DateTime @map("shift_date") // シフトの日付【必須】
+
   // 簡易モード: ここまでで十分
-  displayName     String?      @map("display_name") // 表示名（カスタム可能）
-  
+  displayName String? @map("display_name") // 表示名（カスタム可能）
+
   // 詳細モード: 以下はオプション
-  templateId      String?      @map("template_id")
-  startTime       DateTime?    @map("start_time")  // 予定開始時刻
-  endTime         DateTime?    @map("end_time")    // 予定終了時刻
-  breakDuration   Int?         @map("break_duration") // 休憩時間（分）
-  status          ShiftStatus  @default(SCHEDULED)
-  notes           String?
-  
+  templateId    String?     @map("template_id")
+  startTime     DateTime?   @map("start_time") // 予定開始時刻
+  endTime       DateTime?   @map("end_time") // 予定終了時刻
+  breakDuration Int?        @map("break_duration") // 休憩時間（分）
+  status        ShiftStatus @default(SCHEDULED)
+  notes         String?
+
   // 実績記録（詳細モード）
-  actualStartTime DateTime?    @map("actual_start_time") // 実際の出勤時刻
-  actualEndTime   DateTime?    @map("actual_end_time")   // 実際の退勤時刻
-  
+  actualStartTime DateTime? @map("actual_start_time") // 実際の出勤時刻
+  actualEndTime   DateTime? @map("actual_end_time") // 実際の退勤時刻
+
   // メタデータ
-  metadata        Json?        // カスタムフィールド用JSON
-  mode            ShiftMode    @default(SIMPLE) // シフトの作成モード
-  
-  staff    Staff           @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  template ShiftTemplate?  @relation(fields: [templateId], references: [id])
+  metadata Json? // カスタムフィールド用JSON
+  mode     ShiftMode @default(SIMPLE) // シフトの作成モード
+
+  staff    Staff          @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  template ShiftTemplate? @relation(fields: [templateId], references: [id])
   tasks    ShiftTask[]
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@index([staffId])
   @@index([templateId])
   @@index([shiftDate])
@@ -990,12 +992,12 @@ model ShiftTask {
   startTime   DateTime?  @map("start_time")
   endTime     DateTime?  @map("end_time")
   notes       String?
-  
+
   shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@index([shiftId])
   @@index([status])
   @@map("shift_tasks")
@@ -1006,57 +1008,57 @@ model StaffAvailability {
   staffId     String  @map("staff_id")
   dayOfWeek   Int     @map("day_of_week") // 0=日曜, 1=月曜, ..., 6=土曜
   startTime   String  @map("start_time") // HH:mm 形式
-  endTime     String  @map("end_time")   // HH:mm 形式
+  endTime     String  @map("end_time") // HH:mm 形式
   isAvailable Boolean @default(true) @map("is_available")
   notes       String?
-  
+
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@index([staffId])
   @@map("staff_availabilities")
 }
 
 model ShiftSettings {
-  id                   String     @id @default(uuid())
-  organizationId       String?    @map("organization_id") // 将来の多組織対応用
-  defaultMode          ShiftMode  @default(SIMPLE) @map("default_mode")
-  enabledModes         String[]   @default(["SIMPLE", "DETAILED"]) @map("enabled_modes")
-  
+  id             String    @id @default(uuid())
+  organizationId String?   @map("organization_id") // 将来の多組織対応用
+  defaultMode    ShiftMode @default(SIMPLE) @map("default_mode")
+  enabledModes   String[]  @default(["SIMPLE", "DETAILED"]) @map("enabled_modes")
+
   // 簡易モード設定
   simpleRequireDisplayName Boolean @default(false) @map("simple_require_display_name")
-  
+
   // 詳細モード設定
-  detailedRequireTime      Boolean @default(true) @map("detailed_require_time")
-  detailedRequireTemplate  Boolean @default(false) @map("detailed_require_template")
-  detailedEnableTasks      Boolean @default(true) @map("detailed_enable_tasks")
-  detailedEnableActual     Boolean @default(true) @map("detailed_enable_actual")
-  
+  detailedRequireTime     Boolean @default(true) @map("detailed_require_time")
+  detailedRequireTemplate Boolean @default(false) @map("detailed_require_template")
+  detailedEnableTasks     Boolean @default(true) @map("detailed_enable_tasks")
+  detailedEnableActual    Boolean @default(true) @map("detailed_enable_actual")
+
   // カスタムモード設定
   customFields Json? @map("custom_fields") // カスタムフィールド定義
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@map("shift_settings")
 }
 
 // Shift Management Enums
 enum ShiftMode {
-  SIMPLE    // 簡易モード: 名前のみ
-  DETAILED  // 詳細モード: 時刻・業務管理
-  CUSTOM    // カスタムモード: 組織定義
+  SIMPLE // 簡易モード: 名前のみ
+  DETAILED // 詳細モード: 時刻・業務管理
+  CUSTOM // カスタムモード: 組織定義
 }
 
 enum ShiftStatus {
-  SCHEDULED   // 予定
-  CONFIRMED   // 確定
+  SCHEDULED // 予定
+  CONFIRMED // 確定
   IN_PROGRESS // 勤務中
-  COMPLETED   // 完了
-  CANCELLED   // キャンセル
-  ABSENT      // 欠勤
+  COMPLETED // 完了
+  CANCELLED // キャンセル
+  ABSENT // 欠勤
 }
 
 enum TaskStatus {

@@ -77,7 +77,7 @@ interface CreateMedicalRecordFormState {
   visitDate: Date | null;
   visitType: string;
   hospitalName: string;
-  symptomTags: string[];
+  symptomTags: string[]; // タグID配列
   diagnosis: string;
   treatmentPlan: string;
   status: string;
@@ -203,8 +203,8 @@ export default function MedicalRecordsPage() {
 
     setCreateError(null);
 
-    // 症状タグをカンマ区切りの文字列に変換
-    const symptomText = createForm.symptomTags.length > 0 ? createForm.symptomTags.join(', ') : undefined;
+    // 症状タグはIDの配列として送信
+    const tagIds = createForm.symptomTags.length > 0 ? createForm.symptomTags : undefined;
 
     createMedicalRecordMutation.mutate(
       {
@@ -212,12 +212,12 @@ export default function MedicalRecordsPage() {
         visitDate: dayjs(createForm.visitDate).toISOString(),
         visitType: createForm.visitType as any || undefined,
         hospitalName: trimmedHospitalName || undefined,
-        symptom: symptomText,
         diagnosis: trimmedDiagnosis || undefined,
         treatmentPlan: trimmedTreatmentPlan || undefined,
         status: createForm.status as any,
         followUpDate: createForm.followUpDate ? dayjs(createForm.followUpDate).toISOString() : undefined,
         notes: trimmedNotes || undefined,
+        tagIds, // タグIDの配列として送信
       } as CreateMedicalRecordRequest,
       {
         onSuccess: () => {
@@ -327,7 +327,7 @@ export default function MedicalRecordsPage() {
                         </Text>
                       </Table.Td>
                       <Table.Td>
-                        <Stack gap={0}>
+                        <Stack gap={4}>
                           <Text size="sm" c={record.diagnosis ? undefined : 'dimmed'}>
                             {record.diagnosis ? truncateText(record.diagnosis, 12) : '診断なし'}
                           </Text>
@@ -335,6 +335,25 @@ export default function MedicalRecordsPage() {
                             <Text size="xs" c="dimmed">
                               {truncateText(record.symptom, 12)}
                             </Text>
+                          )}
+                          {record.tags && record.tags.length > 0 && (
+                            <Group gap={4}>
+                              {record.tags.slice(0, 2).map((tag) => (
+                                <Badge
+                                  key={tag.id}
+                                  size="xs"
+                                  variant="dot"
+                                  color={tag.color || 'blue'}
+                                >
+                                  {tag.name}
+                                </Badge>
+                              ))}
+                              {record.tags.length > 2 && (
+                                <Text size="xs" c="dimmed">
+                                  +{record.tags.length - 2}
+                                </Text>
+                              )}
+                            </Group>
                           )}
                         </Stack>
                       </Table.Td>
@@ -438,6 +457,28 @@ export default function MedicalRecordsPage() {
               </Text>
               <Text>{detailRecord.symptom || '記録なし'}</Text>
             </Box>
+
+            {detailRecord.tags && detailRecord.tags.length > 0 && (
+              <Box>
+                <Text size="sm" c="dimmed" mb={8}>
+                  症状タグ
+                </Text>
+                <Group gap="xs">
+                  {detailRecord.tags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      color={tag.color || 'blue'}
+                      variant="light"
+                      size="lg"
+                    >
+                      {tag.categoryName && `${tag.categoryName} > `}
+                      {tag.groupName && `${tag.groupName} > `}
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </Group>
+              </Box>
+            )}
 
             <Box>
               <Text size="sm" c="dimmed" mb={4}>
@@ -606,7 +647,7 @@ export default function MedicalRecordsPage() {
               <>
                 <Group gap="xs" mb="sm">
                   {medicalTags.map((tag) => {
-                    const isSelected = createForm.symptomTags.includes(tag.name);
+                    const isSelected = createForm.symptomTags.includes(tag.id);
                     return (
                       <Button
                         key={tag.id}
@@ -618,8 +659,8 @@ export default function MedicalRecordsPage() {
                           setCreateForm((prev) => ({
                             ...prev,
                             symptomTags: isSelected
-                              ? prev.symptomTags.filter((t) => t !== tag.name)
-                              : [...prev.symptomTags, tag.name],
+                              ? prev.symptomTags.filter((id) => id !== tag.id)
+                              : [...prev.symptomTags, tag.id],
                           }));
                         }}
                       >
@@ -630,7 +671,10 @@ export default function MedicalRecordsPage() {
                 </Group>
                 {createForm.symptomTags.length > 0 && (
                   <Text size="xs" c="dimmed">
-                    選択されたタグ: {createForm.symptomTags.join(', ')}
+                    選択されたタグ: {createForm.symptomTags.map(id => {
+                      const tag = medicalTags.find(t => t.id === id);
+                      return tag?.name || id;
+                    }).join(', ')}
                   </Text>
                 )}
               </>

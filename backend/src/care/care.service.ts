@@ -47,7 +47,6 @@ const scheduleMinimalInclude = {
 const medicalRecordInclude = {
   cat: { select: { id: true, name: true } },
   schedule: { select: { id: true, name: true } },
-  visitType: true,
   tags: {
     include: {
       tag: {

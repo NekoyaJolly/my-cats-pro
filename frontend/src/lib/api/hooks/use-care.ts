@@ -126,10 +126,13 @@ export interface MedicalRecordAttachment {
 
 export interface MedicalRecordTag {
   id: string;
-  slug: string;
-  label: string;
-  level: number;
-  parentId?: string | null;
+  name: string;
+  color: string | null;
+  textColor: string | null;
+  groupId: string;
+  groupName: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
 }
 
 export interface MedicalRecord {
@@ -148,7 +151,7 @@ export interface MedicalRecord {
   notes?: string | null;
   cat: { id: string; name: string };
   schedule?: { id: string; name: string } | null;
-  tags?: MedicalRecordTag[];
+  tags?: MedicalRecordTag[]; // 更新された型定義
   attachments?: MedicalRecordAttachment[];
   recordedBy: string;
   createdAt: string;
@@ -162,8 +165,20 @@ export interface MedicalRecordMeta {
   totalPages: number;
 }
 
-export type MedicalRecordListResponse = ApiSuccessData<'/care/medical-records', 'get'>;
-export type MedicalRecordResponse = ApiSuccessData<'/care/medical-records', 'post'>;
+// 修正: OpenAPIスキーマから生成された型を上書き
+export interface MedicalRecordListResponse {
+  success: boolean;
+  data: MedicalRecord[];
+  meta: MedicalRecordMeta;
+}
+
+export interface MedicalRecordResponse {
+  success: boolean;
+  data: MedicalRecord;
+}
+
+// export type MedicalRecordListResponse = ApiSuccessData<'/care/medical-records', 'get'>;
+// export type MedicalRecordResponse = ApiSuccessData<'/care/medical-records', 'post'>;
 
 export type GetMedicalRecordsParams = ApiQueryParams<'/care/medical-records', 'get'>;
 export type CreateMedicalRecordRequest = ApiRequestBody<'/care/medical-records', 'post'>;
@@ -378,7 +393,7 @@ export function useCreateMedicalRecord() {
         throw new Error('医療記録の作成に失敗しました。レスポンスが不正です。');
       }
 
-      return response.data as MedicalRecordResponse;
+      return response as unknown as MedicalRecordResponse;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ 
