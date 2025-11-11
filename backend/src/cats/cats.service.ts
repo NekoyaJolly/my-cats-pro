@@ -171,6 +171,7 @@ export class CatsService {
       breedId,
       coatColorId,
       gender,
+      isInHouse,
       ageMin,
       ageMax,
       sortBy = "createdAt",
@@ -194,6 +195,9 @@ export class CatsService {
     if (coatColorId) where.coatColorId = coatColorId;
     if (gender) {
       where.gender = gender;
+    }
+    if (isInHouse !== undefined) {
+      where.isInHouse = isInHouse;
     }
 
     // Age filters

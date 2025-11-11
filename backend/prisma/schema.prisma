@@ -129,6 +129,7 @@ model Cat {
   microchipNumber String? @unique @map("microchip_number")
   description     String? @map("notes") // 説明・備考
   isInHouse       Boolean @default(true) @map("is_in_house") // 施設内在舎
+  isGraduated     Boolean @default(false) @map("is_graduated") // 卒業済み（譲渡済み）
 
   // Parent information
   fatherId String? @map("father_id")
@@ -156,6 +157,7 @@ model Cat {
   birthPlans            BirthPlan[]            @relation("BirthPlanMother")
   kittenDispositions    KittenDisposition[] // 子猫処遇記録
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
+  graduation            Graduation? // 卒業記録（譲渡情報）
 
   @@index([breedId])
   @@index([coatColorId])
@@ -1066,4 +1068,32 @@ enum TaskStatus {
   IN_PROGRESS
   COMPLETED
   SKIPPED
+}
+
+// ========== 卒業記録（譲渡情報アーカイブ） ==========
+
+model Graduation {
+  id String @id @default(uuid())
+
+  // 猫との関連（1対1）
+  catId String @unique @map("cat_id")
+  cat   Cat    @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  // 譲渡情報
+  transferDate DateTime @map("transfer_date") // 譲渡日
+  destination  String // 譲渡先
+  notes        String? // 備考
+
+  // 猫データのスナップショット（譲渡時点の状態を保存）
+  catSnapshot Json @map("cat_snapshot")
+
+  // 譲渡時の担当者
+  transferredBy String? @map("transferred_by") // ユーザーID
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([transferDate])
+  @@index([catId])
+  @@map("graduations")
 }

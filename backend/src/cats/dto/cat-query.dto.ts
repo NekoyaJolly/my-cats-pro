@@ -5,6 +5,7 @@ import {
   IsString,
   IsInt,
   IsIn,
+  IsBoolean,
   Min,
   Max,
 } from "class-validator";
@@ -55,6 +56,12 @@ export class CatQueryDto {
   @IsString()
   @IsIn(GENDER_INPUT_VALUES)
   gender?: CatGenderInput;
+
+  @ApiPropertyOptional({ description: "在舎中フィルター" })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  isInHouse?: boolean;
 
   @ApiPropertyOptional({ description: "最小年齢" })
   @IsOptional()

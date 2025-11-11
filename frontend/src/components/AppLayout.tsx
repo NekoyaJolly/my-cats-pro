@@ -37,6 +37,7 @@ import {
   IconCat,
   IconStethoscope,
   IconHeartHandshake,
+  IconPhoto,
 } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
@@ -95,6 +96,11 @@ const navigationItems = [
     label: 'その他',
     href: '/more',
     icon: IconSettings,
+  },
+  {
+    label: 'ギャラリー',
+    href: '/gallery',
+    icon: IconPhoto,
   },
   {
     label: 'デザインガイド',

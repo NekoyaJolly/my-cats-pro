@@ -26,9 +26,11 @@ import { IconArrowLeft, IconEdit, IconUser, IconAlertCircle, IconChevronDown } f
 import { useGetCat, useGetCats } from '@/lib/api/hooks/use-cats';
 import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
 import { useGetCareSchedules, useGetMedicalRecords } from '@/lib/api/hooks/use-care';
+import { useTransferCat } from '@/lib/api/hooks/use-graduation';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
+import { notifications } from '@mantine/notifications';
 
 type Props = {
   catId: string;
@@ -52,10 +54,54 @@ export default function CatDetailClient({ catId }: Props) {
   const [managementModalOpened, { open: openManagementModal, close: closeManagementModal }] = useDisclosure(false);
   const [selectedBirthPlanId, setSelectedBirthPlanId] = useState<string | undefined>();
   
+  // 譲渡機能
+  const { mutate: transferCat, isPending: isTransferring } = useTransferCat();
+  
   // 譲渡情報のステート
   const [transferDestination, setTransferDestination] = useState('');
   const [transferDate, setTransferDate] = useState('');
   const [transferNotes, setTransferNotes] = useState('');
+
+  // 譲渡処理
+  const handleTransfer = () => {
+    if (!transferDestination || !transferDate) {
+      notifications.show({
+        title: '入力エラー',
+        message: '譲渡先と譲渡日は必須項目です',
+        color: 'red',
+      });
+      return;
+    }
+
+    transferCat(
+      {
+        catId: catData.id,
+        data: {
+          transferDate: new Date(transferDate).toISOString(),
+          destination: transferDestination,
+          notes: transferNotes || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          notifications.show({
+            title: '譲渡完了',
+            message: `${catData.name}の譲渡記録を作成しました`,
+            color: 'green',
+          });
+          // ギャラリーページへリダイレクト
+          router.push('/gallery');
+        },
+        onError: (error: any) => {
+          notifications.show({
+            title: '譲渡失敗',
+            message: error.message || '譲渡処理に失敗しました',
+            color: 'red',
+          });
+        },
+      }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -517,23 +563,15 @@ export default function CatDetailClient({ catId }: Props) {
                             style={{ flex: 1 }}
                           />
                           <Button
-                            onClick={() => {
-                              // TODO: 譲渡登録API実装後に処理を追加
-                              console.log('譲渡登録:', {
-                                catId: catData.id,
-                                destination: transferDestination,
-                                date: transferDate,
-                                notes: transferNotes,
-                              });
-                              alert('譲渡登録機能は実装中です。猫はアーカイブへ移動されます。');
-                            }}
+                            onClick={handleTransfer}
                             disabled={!transferDestination || !transferDate}
+                            loading={isTransferring}
                           >
                             登録
                           </Button>
                         </Group>
                         <Text c="dimmed" size="xs">
-                          ※ 登録後、この猫はアーカイブボックスへ移動されます（未実装）
+                          ※ 登録後、この猫はギャラリーページへ移動されます
                         </Text>
                       </Stack>
                     </Accordion.Panel>
