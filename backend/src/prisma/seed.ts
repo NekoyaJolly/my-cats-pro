@@ -141,6 +141,46 @@ async function main() {
   console.log("Tag Category:", { id: category.id, key: category.key, name: category.name });
   console.log("Tag Group:", { id: group.id, name: group.name, categoryId: group.categoryId });
   console.log("Tag:", { id: tag.id, name: tag.name, groupId: tag.groupId });
+
+  // --- Additional test data: Breeding tag category/group/tags and NG rule ---
+  const breedingCategory = await prisma.tagCategory.upsert({
+    where: { key: 'breeding' },
+    update: { name: 'Breeding', description: 'Breeding related tags', scopes: ['cats'] },
+    create: { key: 'breeding', name: 'Breeding', description: 'Breeding related tags', scopes: ['cats'] },
+  });
+
+  const bodyGroup = await prisma.tagGroup.findFirst({ where: { categoryId: breedingCategory.id, name: 'Body-Type' } });
+  const tagGroupBody = bodyGroup ?? await prisma.tagGroup.create({ data: { categoryId: breedingCategory.id, name: 'Body-Type', description: 'Body type tags' } });
+
+  const shortTag = await prisma.tag.upsert({
+    where: { groupId_name: { groupId: tagGroupBody.id, name: '短足' } },
+    update: { isActive: true },
+    create: { groupId: tagGroupBody.id, name: '短足', color: '#F97316', textColor: '#FFFFFF' },
+  });
+
+  const longTag = await prisma.tag.upsert({
+    where: { groupId_name: { groupId: tagGroupBody.id, name: '長足' } },
+    update: { isActive: true },
+    create: { groupId: tagGroupBody.id, name: '長足', color: '#06B6D4', textColor: '#FFFFFF' },
+  });
+
+  // Assign tags to sample cats if they exist
+  const alpha = await prisma.cat.findUnique({ where: { id: 'a1111111-1111-4111-8111-111111111111' } });
+  const anna = await prisma.cat.findUnique({ where: { id: 'a2222222-2222-4222-8222-222222222222' } });
+  if (alpha) {
+    await prisma.catTag.upsert({ where: { catId_tagId: { catId: alpha.id, tagId: shortTag.id } }, update: {}, create: { catId: alpha.id, tagId: shortTag.id } });
+  }
+  if (anna) {
+    await prisma.catTag.upsert({ where: { catId_tagId: { catId: anna.id, tagId: longTag.id } }, update: {}, create: { catId: anna.id, tagId: longTag.id } });
+  }
+
+  // Create breeding NG rule if not exists
+  const ngRule = await prisma.breedingNgRule.findFirst({ where: { name: '短足×長足禁止' } });
+  if (!ngRule) {
+    await prisma.breedingNgRule.create({ data: { name: '短足×長足禁止', description: '短足(オス) と 長足(メス) の組合せを禁止 (テスト)', type: 'TAG_COMBINATION', maleConditions: [shortTag.name], femaleConditions: [longTag.name], active: true } });
+  }
+
+  console.log('✅ Added breeding tags and NG rule (短足/長足)');
 }
 
 main()

@@ -33,7 +33,6 @@ import {
   IconPaw,
   IconSettings,
   IconTrash,
-  IconEdit,
   IconBabyCarriage,
   IconRainbow,
   IconChevronDown,
@@ -41,14 +40,13 @@ import {
 } from '@tabler/icons-react';
 
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
-import { KittenDispositionModal } from '@/components/breeding/kitten-disposition-modal';
+import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
 import { ContextMenuProvider, useContextMenu } from '@/components/context-menu';
 import { TagDisplay } from '@/components/TagSelector';
 
 import {
   useGetBreedingNgRules,
   useCreateBreedingNgRule,
-  useUpdateBreedingNgRule,
   useDeleteBreedingNgRule,
   type BreedingNgRuleType,
   type CreateBreedingNgRuleRequest,
@@ -62,8 +60,6 @@ import {
   useUpdateBirthPlan,
   type BirthPlan,
   useCompleteBirthRecord,
-  useCreateKittenDisposition,
-  type CreateKittenDispositionRequest,
 } from '@/lib/api/hooks/use-breeding';
 import { useGetCats, useCreateCat, type Cat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
@@ -183,7 +179,7 @@ export default function BreedingPage() {
   const [availableFemales, setAvailableFemales] = useState<Cat[]>([]);
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [maleModalOpened, { open: openMaleModal, close: closeMaleModal }] = useDisclosure(false);
-  const [rulesModalOpened, { close: closeRulesModal }] = useDisclosure(false);
+  const [rulesModalOpened, { open: openRulesModal, close: closeRulesModal }] = useDisclosure(false);
   const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
   const [birthInfoModalOpened, { open: openBirthInfoModal, close: closeBirthInfoModal }] = useDisclosure(false);
   const [scheduleEditModalOpened, { open: openScheduleEditModal, close: closeScheduleEditModal }] = useDisclosure(false);
@@ -216,10 +212,9 @@ export default function BreedingPage() {
   const [birthDate, setBirthDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [expandedRaisingCats, setExpandedRaisingCats] = useState<Set<string>>(new Set());
 
-  // 子猫処遇モーダルの状態
-  const [dispositionModalOpened, { open: openDispositionModal, close: closeDispositionModal }] = useDisclosure(false);
-  const [selectedKitten, setSelectedKitten] = useState<Cat | null>(null);
-  const [selectedDispositionType, setSelectedDispositionType] = useState<'TRAINING' | 'SALE' | 'DECEASED'>('TRAINING');
+  // 子猫管理モーダルの状態
+  const [managementModalOpened, { open: openManagementModal, close: closeManagementModal }] = useDisclosure(false);
+  const [selectedMotherIdForModal, setSelectedMotherIdForModal] = useState<string | undefined>();
 
   // 出産記録完了確認モーダルの状態
   const [completeConfirmModalOpened, { open: openCompleteConfirmModal, close: closeCompleteConfirmModal }] = useDisclosure(false);
@@ -247,6 +242,7 @@ export default function BreedingPage() {
           variant="light"
           leftSection={<IconSettings size={16} />}
           size="sm"
+          onClick={openRulesModal}
         >
           NG設定
         </Button>
@@ -367,8 +363,7 @@ export default function BreedingPage() {
   const updateBirthPlanMutation = useUpdateBirthPlan();
   const createCatMutation = useCreateCat();
 
-  // Kitten Disposition hooks
-  const createKittenDispositionMutation = useCreateKittenDisposition();
+  // Birth record completion
   const completeBirthRecordMutation = useCompleteBirthRecord();
 
   useEffect(() => {
@@ -388,7 +383,6 @@ export default function BreedingPage() {
     }
   }, [ngRulesError]);
   const createNgRuleMutation = useCreateBreedingNgRule();
-  const updateNgRuleMutation = useUpdateBreedingNgRule();
   const deleteNgRuleMutation = useDeleteBreedingNgRule();
 
   // 次のルール番号を生成する関数
@@ -931,7 +925,8 @@ export default function BreedingPage() {
     }
   };
 
-  // 子猫処遇登録ハンドラー
+  // 子猫処遇登録ハンドラー（統合モーダルに移行したためコメントアウト）
+  /*
   const handleKittenDispositionSubmit = async (data: {
     disposition: 'TRAINING' | 'SALE' | 'DECEASED';
     trainingStartDate?: string;
@@ -942,9 +937,9 @@ export default function BreedingPage() {
   }) => {
     if (!selectedKitten) return;
 
-    // BirthPlanを取得（子猫のmotherIdから）
+    // BirthPlanを取得（子猫のmotherIdから、まだ完了していないもの）
     const birthPlan = (birthPlansResponse?.data || []).find(
-      (bp: BirthPlan) => bp.motherId === selectedKitten.motherId && bp.status === 'BORN'
+      (bp: BirthPlan) => bp.motherId === selectedKitten.motherId && bp.status === 'BORN' && !bp.completedAt
     );
 
     if (!birthPlan) {
@@ -958,27 +953,55 @@ export default function BreedingPage() {
 
     const payload: CreateKittenDispositionRequest = {
       birthRecordId: birthPlan.id,
-      kittenId: selectedKitten.id,
       name: selectedKitten.name,
       gender: selectedKitten.gender,
       disposition: data.disposition,
-      trainingStartDate: data.trainingStartDate,
-      saleInfo: data.saleInfo,
-      deathDate: data.deathDate,
-      deathReason: data.deathReason,
       notes: data.notes,
     };
+
+    // オプショナルフィールドを条件付きで追加
+    if (selectedKitten.id) {
+      payload.kittenId = selectedKitten.id;
+    }
+    
+    if (data.disposition === 'TRAINING' && data.trainingStartDate) {
+      payload.trainingStartDate = data.trainingStartDate;
+    }
+    
+    if (data.disposition === 'SALE' && data.saleInfo) {
+      payload.saleInfo = data.saleInfo;
+    }
+    
+    if (data.disposition === 'DECEASED') {
+      if (data.deathDate) payload.deathDate = data.deathDate;
+      if (data.deathReason) payload.deathReason = data.deathReason;
+    }
+
+    console.log('🐱 Creating kitten disposition with payload:', JSON.stringify(payload, null, 2));
 
     try {
       await createKittenDispositionMutation.mutateAsync(payload);
       
+      notifications.show({
+        title: '子猫処遇を登録しました',
+        message: '子猫の処遇が正常に登録されました。',
+        color: 'green',
+      });
+      
       closeDispositionModal();
       setSelectedKitten(null);
       catsQuery.refetch();
+      birthPlansQuery.refetch();
     } catch (error) {
       console.error('Failed to create kitten disposition:', error);
+      notifications.show({
+        title: '子猫処遇の登録に失敗しました',
+        message: error instanceof Error ? error.message : '不明なエラー',
+        color: 'red',
+      });
     }
   };
+  */
 
   // NGルール管理機能
   const addNewRule = () => {
@@ -1028,15 +1051,6 @@ export default function BreedingPage() {
     });
   };
 
-  // 新規ルールモーダルを開く時にルール名を自動生成
-  const openNewRuleModalWithName = () => {
-    setNewRule((prev: NewRuleState) => ({
-      ...prev,
-      name: getNextRuleName()
-    }));
-    openNewRuleModal();
-  };
-
   // 新規ルールのバリデーション
   const isNewRuleValid = () => {
     // ルール名は必須
@@ -1054,40 +1068,6 @@ export default function BreedingPage() {
     }
 
     return false;
-  };
-
-  const deleteRule = (ruleId: string) => {
-    const previousRules = [...ngPairingRules];
-    setRulesError(null);
-    setNgPairingRules((prev: NgPairingRule[]) => prev.filter((rule: NgPairingRule) => rule.id !== ruleId));
-    deleteNgRuleMutation.mutate(ruleId, {
-      onError: (error: unknown) => {
-        setRulesError(error instanceof Error ? error.message : 'NGルールの削除に失敗しました');
-        setNgPairingRules(previousRules);
-      },
-    });
-  };
-
-  const toggleRule = (ruleId: string) => {
-    const previousRules = ngPairingRules.map((rule: NgPairingRule) => ({ ...rule }));
-    const target = previousRules.find((rule: NgPairingRule) => rule.id === ruleId);
-    if (!target) return;
-
-    const nextActive = !target.active;
-    setRulesError(null);
-    setNgPairingRules((prev: NgPairingRule[]) =>
-      prev.map((rule: NgPairingRule) => (rule.id === ruleId ? { ...rule, active: nextActive } : rule)),
-    );
-
-    updateNgRuleMutation.mutate(
-      { id: ruleId, payload: { active: nextActive } },
-      {
-        onError: (error: unknown) => {
-          setRulesError(error instanceof Error ? error.message : 'NGルールの更新に失敗しました');
-          setNgPairingRules(previousRules);
-        },
-      },
-    );
   };
 
   return (
@@ -1805,11 +1785,10 @@ export default function BreedingPage() {
                                       color="blue"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setSelectedKitten(kitten);
-                                        setSelectedDispositionType('TRAINING');
-                                        openDispositionModal();
+                                        setSelectedMotherIdForModal(mother.id);
+                                        openManagementModal();
                                       }}
-                                      title="養成開始"
+                                      title="処遇管理"
                                     >
                                       🎓
                                     </ActionIcon>
@@ -1819,11 +1798,10 @@ export default function BreedingPage() {
                                       color="green"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setSelectedKitten(kitten);
-                                        setSelectedDispositionType('SALE');
-                                        openDispositionModal();
+                                        setSelectedMotherIdForModal(mother.id);
+                                        openManagementModal();
                                       }}
-                                      title="出荷"
+                                      title="処遇管理"
                                     >
                                       💰
                                     </ActionIcon>
@@ -1833,11 +1811,10 @@ export default function BreedingPage() {
                                       color="gray"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setSelectedKitten(kitten);
-                                        setSelectedDispositionType('DECEASED');
-                                        openDispositionModal();
+                                        setSelectedMotherIdForModal(mother.id);
+                                        openManagementModal();
                                       }}
-                                      title="死亡登録"
+                                      title="処遇管理"
                                     >
                                       🌈
                                     </ActionIcon>
@@ -1985,227 +1962,6 @@ export default function BreedingPage() {
         </Stack>
       </Modal>
 
-      {/* NGペアルール設定モーダル */}
-      <Modal
-        opened={rulesModalOpened}
-        onClose={closeRulesModal}
-        title="NGペアルール設定"
-        size="lg"
-      >
-        <Stack gap="md">
-          <Group justify="space-between">
-            <Text size="sm" c="dimmed">
-              交配時に警告を表示するルールを設定できます
-            </Text>
-            <Button
-              leftSection={<IconPlus size={16} />}
-              onClick={openNewRuleModalWithName}
-              size="sm"
-            >
-              新規ルール作成
-            </Button>
-          </Group>
-
-          {(isNgRulesLoading || isNgRulesFetching) && (
-            <Text size="sm" c="dimmed">
-              NGルールを読み込み中です...
-            </Text>
-          )}
-
-          {rulesError && (
-            <Text size="sm" c="red">
-              {rulesError}
-            </Text>
-          )}
-
-          {ngPairingRules.map((rule: NgPairingRule) => (
-            <Card key={rule.id} shadow="sm" padding="md" radius="md" withBorder>
-              <Group justify="space-between" mb="xs">
-                <Text fw={600}>{rule.name}</Text>
-                <Group gap="xs">
-                  <Badge color={rule.active ? 'green' : 'gray'}>
-                    {rule.active ? '有効' : '無効'}
-                  </Badge>
-                  <ActionIcon
-                    variant="light"
-                    color="blue"
-                    size="sm"
-                    onClick={() => toggleRule(rule.id)}
-                  >
-                    <IconEdit size={14} />
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="light"
-                    color="red"
-                    size="sm"
-                    onClick={() => deleteRule(rule.id)}
-                  >
-                    <IconTrash size={14} />
-                  </ActionIcon>
-                </Group>
-              </Group>
-              <Text size="sm" c="dimmed" mb="xs">
-                {rule.description ?? '説明が設定されていません'}
-              </Text>
-
-              {/* ルールタイプ別の詳細表示 */}
-              {rule.type === 'TAG_COMBINATION' && rule.maleConditions && rule.femaleConditions && (
-                <Group gap="xs">
-                  <Text size="xs">オス条件:</Text>
-                  {rule.maleConditions.map((condition: string) => (
-                    <Badge key={condition} variant="outline" size="xs" color="blue">
-                      {condition}
-                    </Badge>
-                  ))}
-                  <Text size="xs">メス条件:</Text>
-                  {rule.femaleConditions.map((condition: string) => (
-                    <Badge key={condition} variant="outline" size="xs" color="pink">
-                      {condition}
-                    </Badge>
-                  ))}
-                </Group>
-              )}
-
-              {rule.type === 'INDIVIDUAL_PROHIBITION' && rule.maleNames && rule.femaleNames && (
-                <Group gap="xs">
-                  <Text size="xs">禁止ペア:</Text>
-                  {rule.maleNames.map((maleName: string, _index: number) => 
-                    rule.femaleNames!.map((femaleName: string) => (
-                      <Badge key={`${maleName}-${femaleName}`} variant="outline" size="xs" color="red">
-                        {maleName} × {femaleName}
-                      </Badge>
-                    ))
-                  )}
-                </Group>
-              )}
-
-              {rule.type === 'GENERATION_LIMIT' && (
-                <Text size="xs" c="dimmed">
-                  近親係数制限: {rule.generationLimit}親等まで禁止
-                </Text>
-              )}
-            </Card>
-          ))}
-
-          {ngPairingRules.length === 0 && (
-            <Text ta="center" c="dimmed" py="md">
-              NGルールが設定されていません
-            </Text>
-          )}
-        </Stack>
-      </Modal>
-
-      {/* 新規ルール作成モーダル */}
-      <Modal
-        opened={newRuleModalOpened}
-        onClose={closeNewRuleModal}
-        title="NGルール新規作成"
-        size="lg"
-      >
-        <Stack gap="md">
-          <TextInput
-            label="ルール名"
-            placeholder="例: 大型×小型禁止"
-            value={newRule.name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewRule((prev: NewRuleState) => ({ ...prev, name: e.target.value }))}
-            required
-          />
-
-          <Radio.Group
-            label="ルールタイプ"
-            value={newRule.type}
-            onChange={(value: string) =>
-              setNewRule((prev: NewRuleState) => ({ ...prev, type: (value as NgRuleType) ?? prev.type }))
-            }
-            required
-          >
-            <Stack gap="xs">
-              <Radio value="TAG_COMBINATION" label="タグ組み合わせ禁止" />
-              <Radio value="INDIVIDUAL_PROHIBITION" label="個別ペア禁止" />
-              <Radio value="GENERATION_LIMIT" label="近親係数制限" />
-            </Stack>
-          </Radio.Group>
-
-          {newRule.type === 'TAG_COMBINATION' && (
-            <>
-              <MultiSelect
-                label="オス猫の条件タグ"
-                data={availableTags.length > 0 ? availableTags : []}
-                value={newRule.maleConditions}
-                onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, maleConditions: value }))}
-                placeholder="禁止するオス猫のタグを選択"
-                required
-              />
-              <MultiSelect
-                label="メス猫の条件タグ"
-                data={availableTags.length > 0 ? availableTags : []}
-                value={newRule.femaleConditions}
-                onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, femaleConditions: value }))}
-                placeholder="禁止するメス猫のタグを選択"
-                required
-              />
-            </>
-          )}
-
-          {newRule.type === 'INDIVIDUAL_PROHIBITION' && (
-            <>
-              <MultiSelect
-                label="禁止するオス猫"
-                data={maleCats.filter((cat: Cat) => cat.name).map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
-                value={newRule.maleNames}
-                onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, maleNames: value }))}
-                placeholder="禁止するオス猫を選択"
-                required
-              />
-              <MultiSelect
-                label="禁止するメス猫"
-                data={femaleCats.filter((cat: Cat) => cat.name).map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
-                value={newRule.femaleNames}
-                onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, femaleNames: value }))}
-                placeholder="禁止するメス猫を選択"
-                required
-              />
-            </>
-          )}
-
-          {newRule.type === 'GENERATION_LIMIT' && (
-            <NumberInput
-              label="親等制限"
-              description="指定した親等以内の近親交配を禁止します"
-              value={newRule.generationLimit ?? 3}
-              onChange={(value: string | number) =>
-                setNewRule((prev: NewRuleState) => ({
-                  ...prev,
-                  generationLimit: typeof value === 'number' ? value : prev.generationLimit,
-                }))
-              }
-              min={1}
-              max={10}
-              suffix="親等"
-              required
-            />
-          )}
-
-          <TextInput
-            label="説明"
-            placeholder="このルールの詳細説明（任意）"
-            value={newRule.description}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewRule((prev: NewRuleState) => ({ ...prev, description: e.target.value }))}
-          />
-
-          <Group justify="flex-end" gap="sm">
-            <Button variant="outline" onClick={closeNewRuleModal}>
-              キャンセル
-            </Button>
-            <Button 
-              onClick={addNewRule}
-              disabled={!isNewRuleValid() || createNgRuleMutation.isPending}
-            >
-              {createNgRuleMutation.isPending ? '作成中…' : 'ルール作成'}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
 
       {/* 出産情報入力モーダル */}
       <Modal
@@ -2380,17 +2136,16 @@ export default function BreedingPage() {
         onDelete={handleDeleteSchedule}
       />
 
-      {/* 子猫処遇登録モーダル */}
-      <KittenDispositionModal
-        opened={dispositionModalOpened}
-        onClose={() => {
-          closeDispositionModal();
-          setSelectedKitten(null);
+      {/* 子猫管理モーダル */}
+      <KittenManagementModal
+        opened={managementModalOpened}
+        onClose={closeManagementModal}
+        motherId={selectedMotherIdForModal}
+        onSuccess={() => {
+          // データを再取得
+          if (catsQuery.refetch) catsQuery.refetch();
+          if (birthPlansQuery.refetch) birthPlansQuery.refetch();
         }}
-        kitten={selectedKitten}
-        dispositionType={selectedDispositionType}
-        onSubmit={handleKittenDispositionSubmit}
-        loading={createKittenDispositionMutation.isPending}
       />
 
       {/* 出産記録完了確認モーダル */}
@@ -2430,6 +2185,310 @@ export default function BreedingPage() {
               loading={completeBirthRecordMutation.isPending}
             >
               完了する
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* 交配NG設定モーダル */}
+      <Modal
+        opened={rulesModalOpened}
+        onClose={closeRulesModal}
+        title="交配NG設定"
+        size="xl"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            交配を禁止するルールを設定できます。設定したルールに該当する組み合わせを選択すると警告が表示されます。
+          </Text>
+          
+          <Button
+            leftSection={<IconPlus size={16} />}
+            onClick={openNewRuleModal}
+            variant="light"
+            fullWidth
+          >
+            新しいルールを追加
+          </Button>
+
+          {isNgRulesLoading || isNgRulesFetching ? (
+            <Text size="sm" c="dimmed" ta="center">
+              読み込み中...
+            </Text>
+          ) : rulesError ? (
+            <Text size="sm" c="red" ta="center">
+              {rulesError}
+            </Text>
+          ) : ngPairingRules.length === 0 ? (
+            <Text size="sm" c="dimmed" ta="center">
+              登録されているルールはありません
+            </Text>
+          ) : (
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>
+                登録済みルール ({ngPairingRules.length}件)
+              </Text>
+              {ngPairingRules.map((rule) => (
+                <Card key={rule.id} p="sm" withBorder>
+                  <Group justify="space-between" wrap="nowrap">
+                    <Stack gap={4} style={{ flex: 1 }}>
+                      <Group gap="xs">
+                        <Text size="sm" fw={500}>
+                          {rule.name}
+                        </Text>
+                        <Badge 
+                          size="sm" 
+                          variant={rule.active ? 'filled' : 'outline'}
+                          color={rule.active ? 'blue' : 'gray'}
+                        >
+                          {rule.active ? '有効' : '無効'}
+                        </Badge>
+                        <Badge size="sm" variant="light">
+                          {rule.type === 'TAG_COMBINATION' ? 'タグ組合せ' : 
+                           rule.type === 'INDIVIDUAL_PROHIBITION' ? '個体禁止' : 
+                           rule.type === 'GENERATION_LIMIT' ? '世代制限' : rule.type}
+                        </Badge>
+                      </Group>
+                      {rule.description && (
+                        <Text size="xs" c="dimmed">
+                          {rule.description}
+                        </Text>
+                      )}
+                      {rule.type === 'INDIVIDUAL_PROHIBITION' && (
+                        <Group gap="xs">
+                          {rule.maleNames && rule.maleNames.length > 0 && (
+                            <Text size="xs" c="dimmed">
+                              オス: {rule.maleNames.join(', ')}
+                            </Text>
+                          )}
+                          {rule.femaleNames && rule.femaleNames.length > 0 && (
+                            <Text size="xs" c="dimmed">
+                              メス: {rule.femaleNames.join(', ')}
+                            </Text>
+                          )}
+                        </Group>
+                      )}
+                      {rule.type === 'GENERATION_LIMIT' && rule.generationLimit && (
+                        <Text size="xs" c="dimmed">
+                          世代制限: {rule.generationLimit}世代
+                        </Text>
+                      )}
+                    </Stack>
+                    <Group gap="xs" wrap="nowrap">
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        onClick={() => {
+                          if (confirm(`ルール「${rule.name}」を削除しますか？`)) {
+                            deleteNgRuleMutation.mutate(rule.id, {
+                              onSuccess: () => {
+                                notifications.show({
+                                  title: 'ルール削除成功',
+                                  message: `${rule.name}を削除しました`,
+                                  color: 'green',
+                                });
+                              },
+                              onError: (error) => {
+                                notifications.show({
+                                  title: 'エラー',
+                                  message: error instanceof Error ? error.message : 'ルールの削除に失敗しました',
+                                  color: 'red',
+                                });
+                              },
+                            });
+                          }
+                        }}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Group>
+                  </Group>
+                </Card>
+              ))}
+            </Stack>
+          )}
+        </Stack>
+      </Modal>
+
+      {/* 新規ルール作成モーダル */}
+      <Modal
+        opened={newRuleModalOpened}
+        onClose={() => {
+          closeNewRuleModal();
+          setNewRule({
+            name: '',
+            type: 'TAG_COMBINATION',
+            maleNames: [],
+            femaleNames: [],
+            maleConditions: [],
+            femaleConditions: [],
+            generationLimit: 3,
+            description: '',
+          });
+        }}
+        title="新規NGルール作成"
+        size="lg"
+        centered
+      >
+        <Stack gap="md">
+          <TextInput
+            label="ルール名"
+            placeholder="例: 同血統禁止"
+            value={newRule.name}
+            onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
+            required
+          />
+
+          <Radio.Group
+            label="ルールタイプ"
+            value={newRule.type}
+            onChange={(value) => setNewRule({ ...newRule, type: value as BreedingNgRuleType })}
+          >
+            <Stack gap="xs" mt="xs">
+              <Radio value="TAG_COMBINATION" label="タグ組合せ禁止" />
+              <Radio value="INDIVIDUAL_PROHIBITION" label="個体間禁止" />
+              <Radio value="GENERATION_LIMIT" label="世代制限" />
+            </Stack>
+          </Radio.Group>
+
+          {newRule.type === 'TAG_COMBINATION' && (
+            <>
+              <MultiSelect
+                label="オス猫の条件タグ"
+                placeholder="禁止するオス猫のタグを選択"
+                data={availableTags}
+                value={newRule.maleConditions}
+                onChange={(values) => setNewRule({ ...newRule, maleConditions: values })}
+                searchable
+              />
+              <MultiSelect
+                label="メス猫の条件タグ"
+                placeholder="禁止するメス猫のタグを選択"
+                data={availableTags}
+                value={newRule.femaleConditions}
+                onChange={(values) => setNewRule({ ...newRule, femaleConditions: values })}
+                searchable
+              />
+            </>
+          )}
+
+          {newRule.type === 'INDIVIDUAL_PROHIBITION' && (
+            <>
+              <MultiSelect
+                label="禁止するオス猫"
+                placeholder="オス猫を選択"
+                data={(catsResponse?.data ?? [])
+                  .filter((cat: Cat) => cat.gender === 'MALE' && cat.isInHouse)
+                  .map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
+                value={newRule.maleNames}
+                onChange={(values) => setNewRule({ ...newRule, maleNames: values })}
+                searchable
+              />
+              <MultiSelect
+                label="禁止するメス猫"
+                placeholder="メス猫を選択"
+                data={(catsResponse?.data ?? [])
+                  .filter((cat: Cat) => cat.gender === 'FEMALE' && cat.isInHouse)
+                  .map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
+                value={newRule.femaleNames}
+                onChange={(values) => setNewRule({ ...newRule, femaleNames: values })}
+                searchable
+              />
+            </>
+          )}
+
+          {newRule.type === 'GENERATION_LIMIT' && (
+            <NumberInput
+              label="世代制限"
+              placeholder="例: 3"
+              value={newRule.generationLimit ?? 3}
+              onChange={(value) => setNewRule({ ...newRule, generationLimit: typeof value === 'number' ? value : 3 })}
+              min={1}
+              max={10}
+            />
+          )}
+
+          <TextInput
+            label="説明（任意）"
+            placeholder="このルールの詳細説明"
+            value={newRule.description}
+            onChange={(e) => setNewRule({ ...newRule, description: e.target.value })}
+          />
+
+          <Group justify="flex-end" gap="sm" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => {
+                closeNewRuleModal();
+                setNewRule({
+                  name: '',
+                  type: 'TAG_COMBINATION',
+                  maleNames: [],
+                  femaleNames: [],
+                  maleConditions: [],
+                  femaleConditions: [],
+                  generationLimit: 3,
+                  description: '',
+                });
+              }}
+            >
+              キャンセル
+            </Button>
+            <Button
+              onClick={() => {
+                if (!newRule.name.trim()) {
+                  notifications.show({
+                    title: 'エラー',
+                    message: 'ルール名を入力してください',
+                    color: 'red',
+                  });
+                  return;
+                }
+
+                const ruleData: CreateBreedingNgRuleRequest = {
+                  name: newRule.name.trim(),
+                  type: newRule.type,
+                  description: newRule.description.trim() || undefined,
+                  maleNames: newRule.maleNames,
+                  femaleNames: newRule.femaleNames,
+                  maleConditions: newRule.maleConditions,
+                  femaleConditions: newRule.femaleConditions,
+                  generationLimit: newRule.type === 'GENERATION_LIMIT' ? (newRule.generationLimit ?? undefined) : undefined,
+                  active: true,
+                };
+
+                createNgRuleMutation.mutate(ruleData, {
+                  onSuccess: () => {
+                    notifications.show({
+                      title: 'ルール作成成功',
+                      message: `${newRule.name}を作成しました`,
+                      color: 'green',
+                    });
+                    closeNewRuleModal();
+                    setNewRule({
+                      name: '',
+                      type: 'TAG_COMBINATION',
+                      maleNames: [],
+                      femaleNames: [],
+                      maleConditions: [],
+                      femaleConditions: [],
+                      generationLimit: 3,
+                      description: '',
+                    });
+                  },
+                  onError: (error) => {
+                    notifications.show({
+                      title: 'エラー',
+                      message: error instanceof Error ? error.message : 'ルールの作成に失敗しました',
+                      color: 'red',
+                    });
+                  },
+                });
+              }}
+              loading={createNgRuleMutation.isPending}
+            >
+              作成
             </Button>
           </Group>
         </Stack>

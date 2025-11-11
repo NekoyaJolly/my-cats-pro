@@ -60,6 +60,97 @@ async function main() {
   }
 
   console.log(`✅ ${cats.length} cats created`);
+
+  // --- Tag category / group / tags for testing ---
+  // Create TagCategory 'Breeding' (key: 'breeding')
+  const tagCategory = await prisma.tagCategory.upsert({
+    where: { key: 'breeding' },
+    update: { name: 'Breeding' },
+    create: {
+      key: 'breeding',
+      name: 'Breeding',
+      description: 'Breeding related tags',
+      scopes: ['cats'],
+    },
+  });
+
+  // Create TagGroup 'Body-Type' under the category
+  let tagGroup = await prisma.tagGroup.findFirst({
+    where: { categoryId: tagCategory.id, name: 'Body-Type' },
+  });
+  if (!tagGroup) {
+    tagGroup = await prisma.tagGroup.create({
+      data: {
+        categoryId: tagCategory.id,
+        name: 'Body-Type',
+        description: 'Body type related tags (短足/長足)',
+      },
+    });
+  }
+
+  // Create Tags '短足' and '長足'
+  let tagShort = await prisma.tag.findFirst({ where: { groupId: tagGroup.id, name: '短足' } });
+  if (!tagShort) {
+    tagShort = await prisma.tag.create({
+      data: {
+        groupId: tagGroup.id,
+        name: '短足',
+        color: '#F97316',
+        textColor: '#FFFFFF',
+      },
+    });
+  }
+
+  let tagLong = await prisma.tag.findFirst({ where: { groupId: tagGroup.id, name: '長足' } });
+  if (!tagLong) {
+    tagLong = await prisma.tag.create({
+      data: {
+        groupId: tagGroup.id,
+        name: '長足',
+        color: '#06B6D4',
+        textColor: '#FFFFFF',
+      },
+    });
+  }
+
+  console.log('✅ Tag category/group/tags created:', tagCategory.key, tagGroup.name, tagShort.name, tagLong.name);
+
+  // --- Assign tags to sample cats ---
+  // Use Alpha (male) and Anna (female) created above
+  const maleCatId = 'a1111111-1111-4111-8111-111111111111'; // Alpha
+  const femaleCatId = 'a2222222-2222-4222-8222-222222222222'; // Anna
+
+  await prisma.catTag.upsert({
+    where: { catId_tagId: { catId: maleCatId, tagId: tagShort.id } },
+    update: {},
+    create: { catId: maleCatId, tagId: tagShort.id },
+  });
+
+  await prisma.catTag.upsert({
+    where: { catId_tagId: { catId: femaleCatId, tagId: tagLong.id } },
+    update: {},
+    create: { catId: femaleCatId, tagId: tagLong.id },
+  });
+
+  console.log('✅ Assigned tags to sample cats');
+
+  // --- Create a Breeding NG rule (タグ組合せ禁止) ---
+  const existingRule = await prisma.breedingNgRule.findFirst({ where: { name: '短足×長足禁止' } });
+  if (!existingRule) {
+    await prisma.breedingNgRule.create({
+      data: {
+        name: '短足×長足禁止',
+        description: '短足（オス）と長足（メス）の組合せを禁止します（テスト）',
+        type: 'TAG_COMBINATION',
+        maleConditions: [tagShort.name],
+        femaleConditions: [tagLong.name],
+        active: true,
+      },
+    });
+    console.log('✅ Created Breeding NG rule: 短足×長足禁止');
+  } else {
+    console.log('ℹ️ Breeding NG rule already exists:', existingRule.name);
+  }
 }
 
 main()

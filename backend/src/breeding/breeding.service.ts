@@ -345,6 +345,7 @@ export class BreedingService {
         where,
         include: {
           mother: { select: { id: true, name: true } },
+          kittenDispositions: true,
         },
         orderBy: { expectedBirthDate: "desc" },
         skip: (page - 1) * limit,

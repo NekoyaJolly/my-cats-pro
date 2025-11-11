@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -18,12 +19,16 @@ import {
   Alert,
   Accordion,
   Divider,
+  TextInput,
 } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { IconArrowLeft, IconEdit, IconUser, IconAlertCircle, IconChevronDown } from '@tabler/icons-react';
-import { useGetCat } from '@/lib/api/hooks/use-cats';
+import { useGetCat, useGetCats } from '@/lib/api/hooks/use-cats';
 import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
+import { useGetCareSchedules, useGetMedicalRecords } from '@/lib/api/hooks/use-care';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
 
 type Props = {
   catId: string;
@@ -40,7 +45,17 @@ const GENDER_LABELS: Record<string, string> = {
 export default function CatDetailClient({ catId }: Props) {
   const router = useRouter();
   const { data: cat, isLoading, error } = useGetCat(catId);
+  const { data: catsResponse } = useGetCats();
   const { data: birthPlansResponse } = useGetBirthPlans();
+  const { data: careSchedulesResponse } = useGetCareSchedules({ catId } as any);
+  const { data: medicalRecordsResponse } = useGetMedicalRecords({ catId } as any);
+  const [managementModalOpened, { open: openManagementModal, close: closeManagementModal }] = useDisclosure(false);
+  const [selectedBirthPlanId, setSelectedBirthPlanId] = useState<string | undefined>();
+  
+  // 譲渡情報のステート
+  const [transferDestination, setTransferDestination] = useState('');
+  const [transferDate, setTransferDate] = useState('');
+  const [transferNotes, setTransferNotes] = useState('');
 
   if (isLoading) {
     return (
@@ -230,42 +245,6 @@ export default function CatDetailClient({ catId }: Props) {
 
                 {/* アコーディオンセクション */}
                 <Accordion variant="contained">
-                  {/* ケアノート */}
-                  <Accordion.Item value="care">
-                    <Accordion.Control icon={<IconChevronDown size={16} />}>
-                      ケアノート
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Text c="dimmed" size="sm">
-                        ケアスケジュールからのメモがここに表示されます（今後実装予定）
-                      </Text>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-
-                  {/* 医療記録 */}
-                  <Accordion.Item value="medical">
-                    <Accordion.Control icon={<IconChevronDown size={16} />}>
-                      医療記録
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Text c="dimmed" size="sm">
-                        医療記録機能は今後実装予定です
-                      </Text>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-
-                  {/* 譲渡情報 */}
-                  <Accordion.Item value="transfer">
-                    <Accordion.Control icon={<IconChevronDown size={16} />}>
-                      譲渡情報
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Text c="dimmed" size="sm">
-                        譲渡情報がここに表示されます（今後実装予定）
-                      </Text>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-
                   {/* 出産記録（メスの場合のみ） */}
                   {(catData.gender === 'FEMALE' || catData.gender === 'SPAY') && (
                     <Accordion.Item value="births">
@@ -275,7 +254,7 @@ export default function CatDetailClient({ catId }: Props) {
                       <Accordion.Panel>
                         {(() => {
                           const completedBirthPlans = (birthPlansResponse?.data || []).filter(
-                            (bp: any) => bp.motherId === catData.id && bp.completedAt
+                            (bp: any) => bp.motherId === catData.id && bp.status === 'BORN'
                           );
 
                           if (completedBirthPlans.length === 0) {
@@ -286,36 +265,279 @@ export default function CatDetailClient({ catId }: Props) {
                             );
                           }
 
+                          // 全子猫データを取得
+                          const allKittens = catsResponse?.data || [];
+
                           return (
                             <Stack gap="md">
-                              {completedBirthPlans.map((bp: any) => (
-                                <Card key={bp.id} withBorder padding="sm">
-                                  <Stack gap="xs">
-                                    <Group justify="space-between">
-                                      <Text fw={600} size="sm">
-                                        出産日: {bp.matingDate ? format(new Date(bp.matingDate), 'yyyy年MM月dd日', { locale: ja }) : '不明'}
-                                      </Text>
-                                      <Badge color="green" size="sm">完了</Badge>
-                                    </Group>
-                                    <Group gap="md">
-                                      <Text size="sm">出産数: {bp.actualKittens || 0}頭</Text>
-                                      <Text size="sm">生存: {bp.aliveCount || 0}頭</Text>
-                                      <Text size="sm">死亡: {(bp.actualKittens || 0) - (bp.aliveCount || 0)}頭</Text>
-                                    </Group>
-                                    {bp.completedAt && (
-                                      <Text size="xs" c="dimmed">
-                                        記録完了日: {format(new Date(bp.completedAt), 'yyyy年MM月dd日', { locale: ja })}
-                                      </Text>
-                                    )}
-                                  </Stack>
-                                </Card>
-                              ))}
+                              {completedBirthPlans.map((bp: any) => {
+                                // 処遇登録されている子猫を基準にする
+                                const dispositions = bp.kittenDispositions || [];
+                                
+                                // 同じ子猫に対して複数の処遇がある場合、最新のものを使用
+                                const latestDispositions = dispositions.reduce((acc: any[], d: any) => {
+                                  const existing = acc.find((item: any) => item.kittenId === d.kittenId);
+                                  if (!existing) {
+                                    acc.push(d);
+                                  } else {
+                                    // createdAtが新しい方を使用
+                                    if (new Date(d.createdAt) > new Date(existing.createdAt)) {
+                                      acc[acc.indexOf(existing)] = d;
+                                    }
+                                  }
+                                  return acc;
+                                }, []);
+                                
+                                // 処遇ごとの集計（最新の処遇のみで集計）
+                                const trainingCount = latestDispositions.filter((d: any) => d.disposition === 'TRAINING').length;
+                                const saleCount = latestDispositions.filter((d: any) => d.disposition === 'SALE').length;
+                                const deceasedCount = latestDispositions.filter((d: any) => d.disposition === 'DECEASED').length;
+                                
+                                // 出産頭数は処遇登録されたユニークな子猫の数
+                                const totalKittens = latestDispositions.length;
+                                
+                                // 詳細表示用に子猫の完全な情報を取得
+                                const kittens = latestDispositions
+                                  .map((d: any) => {
+                                    const kitten = allKittens.find((k: any) => k.id === d.kittenId);
+                                    return kitten ? { ...kitten, disposition: d.disposition } : null;
+                                  })
+                                  .filter((k: any) => k !== null);
+
+                                return (
+                                  <Card key={bp.id} withBorder padding="md">
+                                    <Stack gap="sm">
+                                      {/* 概要行 */}
+                                      <Group justify="space-between" wrap="nowrap">
+                                        <Group gap="md" wrap="wrap">
+                                          <Text size="sm" fw={600}>
+                                            父: {bp.father?.name || '不明'}
+                                          </Text>
+                                          <Text size="sm">
+                                            出産日: {bp.matingDate ? format(new Date(bp.matingDate), 'yyyy/MM/dd', { locale: ja }) : '不明'}
+                                          </Text>
+                                          <Text size="sm">
+                                            出産: {totalKittens}頭
+                                          </Text>
+                                          <Text size="sm" c="red">
+                                            死亡: {deceasedCount}頭
+                                          </Text>
+                                          <Text size="sm" c="green">
+                                            出荷: {saleCount}頭
+                                          </Text>
+                                          <Text size="sm" c="blue">
+                                            養成: {trainingCount}頭
+                                          </Text>
+                                        </Group>
+                                        <Button
+                                          size="xs"
+                                          variant="light"
+                                          onClick={() => {
+                                            setSelectedBirthPlanId(bp.id);
+                                            openManagementModal();
+                                          }}
+                                        >
+                                          修正
+                                        </Button>
+                                      </Group>
+
+                                      {/* 子猫詳細（アコーディオン） */}
+                                      {kittens.length > 0 && (
+                                        <Accordion variant="separated">
+                                          <Accordion.Item value="kittens">
+                                            <Accordion.Control>
+                                              <Text size="sm">子猫情報 ({kittens.length}頭)</Text>
+                                            </Accordion.Control>
+                                            <Accordion.Panel>
+                                              <Stack gap="xs">
+                                                {kittens.map((kitten: any) => {
+                                                  // kittens配列に既に処遇情報が含まれている
+                                                  const dispositionIcon = 
+                                                    kitten.disposition === 'TRAINING' ? '🎓' :
+                                                    kitten.disposition === 'SALE' ? '💰' :
+                                                    kitten.disposition === 'DECEASED' ? '🌈' : '';
+
+                                                  return (
+                                                    <Group key={kitten.id} justify="space-between" wrap="nowrap">
+                                                      <Group gap="md" wrap="wrap">
+                                                        <Text size="sm" fw={500} style={{ minWidth: '80px' }}>
+                                                          {kitten.name}
+                                                        </Text>
+                                                        <Badge size="sm" color={kitten.gender === 'MALE' ? 'blue' : 'pink'}>
+                                                          {kitten.gender === 'MALE' ? 'オス' : 'メス'}
+                                                        </Badge>
+                                                        <Text size="sm" c="dimmed">
+                                                          {kitten.coatColor?.name || '色柄未登録'}
+                                                        </Text>
+                                                        {dispositionIcon && (
+                                                          <Badge size="sm" variant="light">
+                                                            {dispositionIcon} {
+                                                              kitten.disposition === 'TRAINING' ? '養成中' :
+                                                              kitten.disposition === 'SALE' ? '出荷済' :
+                                                              '死亡'
+                                                            }
+                                                          </Badge>
+                                                        )}
+                                                      </Group>
+                                                    </Group>
+                                                  );
+                                                })}
+                                              </Stack>
+                                            </Accordion.Panel>
+                                          </Accordion.Item>
+                                        </Accordion>
+                                      )}
+                                    </Stack>
+                                  </Card>
+                                );
+                              })}
                             </Stack>
                           );
                         })()}
                       </Accordion.Panel>
                     </Accordion.Item>
                   )}
+
+                  {/* ケアノート */}
+                  <Accordion.Item value="care">
+                    <Accordion.Control icon={<IconChevronDown size={16} />}>
+                      ケアノート
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      {(() => {
+                        const careSchedules = careSchedulesResponse?.data || [];
+                        const catCareSchedules = careSchedules.filter(
+                          (schedule: any) => 
+                            schedule.cat?.id === catData.id || 
+                            schedule.cats?.some((c: any) => c.id === catData.id)
+                        );
+
+                        if (catCareSchedules.length === 0) {
+                          return (
+                            <Text c="dimmed" size="sm">
+                              ケアスケジュールの記録はまだありません
+                            </Text>
+                          );
+                        }
+
+                        return (
+                          <Stack gap="xs">
+                            {catCareSchedules.map((schedule: any) => (
+                              <Group key={schedule.id} gap="md" wrap="nowrap">
+                                <Text size="sm" fw={500} style={{ minWidth: '120px' }}>
+                                  {schedule.name || schedule.title}
+                                </Text>
+                                <Text size="sm" c="dimmed">
+                                  {format(new Date(schedule.scheduleDate), 'yyyy/MM/dd', { locale: ja })}
+                                </Text>
+                                <Text size="sm" style={{ flex: 1 }}>
+                                  {schedule.description || 'メモなし'}
+                                </Text>
+                              </Group>
+                            ))}
+                          </Stack>
+                        );
+                      })()}
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* 医療記録 */}
+                  <Accordion.Item value="medical">
+                    <Accordion.Control icon={<IconChevronDown size={16} />}>
+                      医療記録
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      {(() => {
+                        const medicalRecords = medicalRecordsResponse?.data || [];
+                        const catMedicalRecords = medicalRecords.filter(
+                          (record: any) => record.cat?.id === catData.id
+                        );
+
+                        if (catMedicalRecords.length === 0) {
+                          return (
+                            <Text c="dimmed" size="sm">
+                              医療記録はまだありません
+                            </Text>
+                          );
+                        }
+
+                        return (
+                          <Stack gap="xs">
+                            {catMedicalRecords.map((record: any) => (
+                              <Card key={record.id} withBorder padding="sm">
+                                <Group gap="md" wrap="wrap">
+                                  <Text size="sm" fw={500}>
+                                    {format(new Date(record.visitDate), 'yyyy/MM/dd', { locale: ja })}
+                                  </Text>
+                                  <Text size="sm">
+                                    症状: {record.symptom || '記載なし'}
+                                  </Text>
+                                  <Text size="sm">
+                                    治療結果: {record.diagnosis || '記載なし'}
+                                  </Text>
+                                  <Badge size="sm" color={record.status === 'COMPLETED' ? 'green' : 'orange'}>
+                                    {record.status === 'COMPLETED' ? '完了' : '治療中'}
+                                  </Badge>
+                                </Group>
+                              </Card>
+                            ))}
+                          </Stack>
+                        );
+                      })()}
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* 譲渡情報 */}
+                  <Accordion.Item value="transfer">
+                    <Accordion.Control icon={<IconChevronDown size={16} />}>
+                      譲渡情報
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <Group align="flex-end" wrap="nowrap">
+                          <TextInput
+                            label="譲渡先"
+                            placeholder="譲渡先を入力"
+                            value={transferDestination}
+                            onChange={(e) => setTransferDestination(e.currentTarget.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <TextInput
+                            label="譲渡日"
+                            type="date"
+                            value={transferDate}
+                            onChange={(e) => setTransferDate(e.currentTarget.value)}
+                            style={{ width: '180px' }}
+                          />
+                          <TextInput
+                            label="備考"
+                            placeholder="備考を入力"
+                            value={transferNotes}
+                            onChange={(e) => setTransferNotes(e.currentTarget.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <Button
+                            onClick={() => {
+                              // TODO: 譲渡登録API実装後に処理を追加
+                              console.log('譲渡登録:', {
+                                catId: catData.id,
+                                destination: transferDestination,
+                                date: transferDate,
+                                notes: transferNotes,
+                              });
+                              alert('譲渡登録機能は実装中です。猫はアーカイブへ移動されます。');
+                            }}
+                            disabled={!transferDestination || !transferDate}
+                          >
+                            登録
+                          </Button>
+                        </Group>
+                        <Text c="dimmed" size="xs">
+                          ※ 登録後、この猫はアーカイブボックスへ移動されます（未実装）
+                        </Text>
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
                 </Accordion>
               </Stack>
             </Card>
@@ -323,15 +545,27 @@ export default function CatDetailClient({ catId }: Props) {
 
           <Tabs.Panel value="family" pt="md">
             <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Stack gap="md">
-                <Text fw={600} size="lg">子猫</Text>
-                <Text c="dimmed" size="sm">
-                  子猫の一覧がここに表示されます（今後実装予定）
-                </Text>
-              </Stack>
+              <Text c="dimmed" size="sm">
+                家族情報は基本情報タブの出産記録をご覧ください
+              </Text>
             </Card>
           </Tabs.Panel>
         </Tabs>
+
+        {/* 子猫管理モーダル */}
+        {(catData.gender === 'FEMALE' || catData.gender === 'SPAY') && (
+          <KittenManagementModal
+            opened={managementModalOpened}
+            onClose={closeManagementModal}
+            motherId={catData.id}
+            onSuccess={() => {
+              // データ再取得
+              if (catsResponse) {
+                window.location.reload();
+              }
+            }}
+          />
+        )}
       </Container>
     </Box>
   );
