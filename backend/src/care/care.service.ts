@@ -47,6 +47,7 @@ const scheduleMinimalInclude = {
 const medicalRecordInclude = {
   cat: { select: { id: true, name: true } },
   schedule: { select: { id: true, name: true } },
+  visitType: true,
   tags: {
     include: {
       tag: {
@@ -71,8 +72,10 @@ type ScheduleCatRelation = {
   cat: { id: string; name: string };
 };
 
-// Type workaround for Prisma include structure
-type MedicalRecordWithRelations = any;
+// Properly typed MedicalRecord with relations
+type MedicalRecordWithRelations = Prisma.MedicalRecordGetPayload<{
+  include: typeof medicalRecordInclude;
+}>;
 
 type PrismaExecutor = Prisma.TransactionClient | PrismaService;
 
@@ -271,7 +274,7 @@ export class CareService {
 
       const careRecord = await tx.careRecord.create({
         data: {
-          catId: existing.catId ?? undefined,
+          catId: existing.catId ?? '',
           careType: (existing.careType as CareType | null) ?? CareType.OTHER,
           description: existing.name,
           careDate: completedDate,
@@ -284,8 +287,9 @@ export class CareService {
 
       let medicalRecordId: string | null = null;
       if (dto.medicalRecord) {
+        const catId = existing.catId ?? '';
         const record = await this.createMedicalRecordEntity(tx, dto.medicalRecord, recorderId, {
-          catId: existing.catId ?? undefined,
+          catId: catId,
           scheduleId: existing.id,
         });
         medicalRecordId = record.id;
@@ -321,7 +325,7 @@ export class CareService {
     const where: Prisma.MedicalRecordWhereInput = {};
     if (catId) where.catId = catId;
     if (scheduleId) where.scheduleId = scheduleId;
-    if (visitTypeId) (where as any).visitTypeId = visitTypeId;
+    if (visitTypeId) where.visitTypeId = visitTypeId;
     if (status) where.status = status;
     if (dateFrom || dateTo) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -334,7 +338,7 @@ export class CareService {
       this.prisma.medicalRecord.count({ where }),
       this.prisma.medicalRecord.findMany({
         where,
-        include: medicalRecordInclude as any,
+        include: medicalRecordInclude,
         orderBy: { visitDate: "desc" },
         skip: (page - 1) * limit,
         take: limit,
@@ -350,7 +354,7 @@ export class CareService {
 
     return {
       success: true,
-      data: records.map((record) => this.mapMedicalRecordToResponse(record as any)),
+      data: records.map((record) => this.mapMedicalRecordToResponse(record)),
       meta,
     };
   }
@@ -557,17 +561,17 @@ export class CareService {
 
     const visitType = record.visitType
       ? {
-          id: (record.visitType as any).id,
-          key: (record.visitType as any).key ?? null,
-          name: (record.visitType as any).name,
-          description: (record.visitType as any).description ?? null,
-          displayOrder: (record.visitType as any).displayOrder,
-          isActive: (record.visitType as any).isActive,
+          id: record.visitType.id,
+          key: record.visitType.key ?? null,
+          name: record.visitType.name,
+          description: record.visitType.description ?? null,
+          displayOrder: record.visitType.displayOrder,
+          isActive: record.visitType.isActive,
         }
       : null;
 
-    const tags = (record.tags as any[])
-      .map((medicalRecordTag: any) => {
+    const tags = record.tags
+      .map((medicalRecordTag) => {
         const tag = medicalRecordTag.tag;
         if (!tag) {
           return null;
@@ -702,11 +706,11 @@ export class CareService {
         status: dto.status ?? MedicalRecordStatus.TREATING,
         notes: dto.notes,
         tags: dto.tagIds?.length
-          ? ({
+          ? {
               create: dto.tagIds.map((tagId) => ({
                 tagId: tagId,
               })),
-            } as any)
+            }
           : undefined,
         attachments: attachments.length
           ? {
@@ -720,11 +724,11 @@ export class CareService {
               })),
             }
           : undefined,
-      } as any,
-      include: medicalRecordInclude as any,
+      },
+      include: medicalRecordInclude,
     });
 
-    return record as any as MedicalRecordWithRelations;
+    return record;
   }
 
   private normalizeOptionalText(value?: string | null): string | undefined {

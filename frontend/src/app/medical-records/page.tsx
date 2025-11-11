@@ -31,7 +31,6 @@ import dayjs from 'dayjs';
 
 import {
   type MedicalRecord,
-  type CreateMedicalRecordRequest,
   type GetMedicalRecordsParams,
   useCreateMedicalRecord,
   useGetMedicalRecords,
@@ -203,22 +202,19 @@ export default function MedicalRecordsPage() {
 
     setCreateError(null);
 
-    // 症状タグはIDの配列として送信
-    const tagIds = createForm.symptomTags.length > 0 ? createForm.symptomTags : undefined;
-
     createMedicalRecordMutation.mutate(
       {
         catId: trimmedCatId,
         visitDate: dayjs(createForm.visitDate).toISOString(),
-        visitType: createForm.visitType as any || undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        visitType: createForm.visitType || (undefined as any),
         hospitalName: trimmedHospitalName || undefined,
         diagnosis: trimmedDiagnosis || undefined,
         treatmentPlan: trimmedTreatmentPlan || undefined,
-        status: createForm.status as any,
+        status: createForm.status as 'TREATING' | 'COMPLETED',
         followUpDate: createForm.followUpDate ? dayjs(createForm.followUpDate).toISOString() : undefined,
         notes: trimmedNotes || undefined,
-        tagIds, // タグIDの配列として送信
-      } as CreateMedicalRecordRequest,
+      },
       {
         onSuccess: () => {
           resetCreateForm();

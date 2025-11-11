@@ -47,7 +47,17 @@ export function CatEditModal({
   const { data: coatColorsData, isLoading: isCoatColorsLoading } = useGetCoatColors({ limit: 1000 });
   const updateCat = useUpdateCat(catId);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    gender: 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY';
+    breedId: string;
+    coatColorId: string;
+    birthDate: string;
+    microchipNumber: string;
+    registrationNumber: string;
+    description: string;
+    tagIds: string[];
+  }>({
     name: "",
     gender: "MALE",
     breedId: "",
@@ -56,7 +66,7 @@ export function CatEditModal({
     microchipNumber: "",
     registrationNumber: "",
     description: "",
-    tagIds: [] as string[],
+    tagIds: [],
   });
 
   // データ取得後にフォームを初期化
@@ -90,7 +100,7 @@ export function CatEditModal({
     try {
       await updateCat.mutateAsync({
         name: form.name,
-        gender: form.gender as any,
+        gender: form.gender,
         breedId: form.breedId || null,
         coatColorId: form.coatColorId || null,
         birthDate: form.birthDate,

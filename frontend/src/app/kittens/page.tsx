@@ -2,17 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
   Tabs,
   Button,
   Group,
   Card,
   Text,
   Badge,
-  ActionIcon,
   Grid,
   Stack,
-  Divider,
   Container,
   Table,
 } from '@mantine/core';
@@ -22,7 +19,6 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconEdit,
-  IconDeviceFloppy,
   IconCalendar,
   IconPaw,
 } from '@tabler/icons-react';
@@ -81,8 +77,8 @@ export default function KittensPage() {
   const catsQuery = useGetCats({ limit: 1000 });
   const deleteCatMutation = useDeleteCat();
   const tagCategoriesQuery = useGetTagCategories();
-  const careSchedulesQuery = useGetCareSchedules({ limit: 100 } as any);
-  const birthPlansQuery = useGetBirthPlans({ status: 'BORN', limit: 1000 } as any);
+  const careSchedulesQuery = useGetCareSchedules({});
+  const birthPlansQuery = useGetBirthPlans({ status: 'BORN', limit: 1000 });
 
   // コンテキストメニュー
   const {

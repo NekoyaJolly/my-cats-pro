@@ -122,6 +122,7 @@ export default function Home() {
         
         // 猫データを取得
         const catsResponse = await apiClient.get('/cats', {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           query: { limit: 1000 } as any,
         });
         

@@ -578,7 +578,7 @@ export default function BreedingPage() {
           let errorDetails = '';
           
           if (error instanceof Error && 'response' in error) {
-            const apiError = error as any;
+            const apiError = error as Error & { response?: { error?: { message?: string | string[] } } };
             console.error('Error response:', apiError.response);
             
             if (apiError.response) {
@@ -2496,3 +2496,4 @@ export default function BreedingPage() {
     </Box>
   );
 }
+
