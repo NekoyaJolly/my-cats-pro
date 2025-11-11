@@ -14,7 +14,7 @@ import { useState, type ReactNode } from 'react';
 const defaultQueryClientOptions = {
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5分間データを新鮮とみなす
+      staleTime: 0, // データを常に新鮮とみなす
       gcTime: 1000 * 60 * 10, // 10分間キャッシュを保持
       refetchOnWindowFocus: false, // ウィンドウフォーカス時の自動再フェッチを無効化
       refetchOnReconnect: true, // 再接続時に再フェッチ
