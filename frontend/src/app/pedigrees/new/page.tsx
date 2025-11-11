@@ -483,7 +483,7 @@ export default function NewPedigreePage() {
           setLoading(false);
           return;
         }
-      } catch (error) {
+      } catch {
         // 404の場合は存在しないので登録可能
       }
 

@@ -121,7 +121,7 @@ export class CatsService {
         });
 
         // Fetch the cat again with tags
-        cat = await this.prisma.cat.findUnique({
+        const updatedCat = await this.prisma.cat.findUnique({
           where: { id: cat.id },
           include: {
             breed: true,
@@ -135,6 +135,9 @@ export class CatsService {
             },
           },
         });
+        if (updatedCat) {
+          cat = updatedCat;
+        }
       }
 
       // 子猫登録イベントを発火（母猫または父猫が設定されている場合）
@@ -531,7 +534,7 @@ export class CatsService {
       }
     }
 
-    const breedIds = breedStats.map((stat) => stat.breedId).filter(Boolean);
+    const breedIds = breedStats.map((stat) => stat.breedId).filter((id): id is string => id !== null);
     const breeds = await this.prisma.breed.findMany({
       where: { id: { in: breedIds } },
     });

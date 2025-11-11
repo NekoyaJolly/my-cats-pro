@@ -53,7 +53,7 @@ export default function CatDetailClient({ catId }: Props) {
   const { data: careSchedulesResponse } = useGetCareSchedules({});
   const { data: medicalRecordsResponse } = useGetMedicalRecords({});
   const [managementModalOpened, { open: openManagementModal, close: closeManagementModal }] = useDisclosure(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const [_selectedBirthPlanId, setSelectedBirthPlanId] = useState<string | undefined>();
   
   // 譲渡機能

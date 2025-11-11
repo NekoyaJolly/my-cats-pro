@@ -70,7 +70,7 @@ class ScheduleReminderDto {
 
   @ApiPropertyOptional({ description: "繰り返し間隔", example: 1 })
   @ValidateIf((o: ScheduleReminderDto) =>
-    o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE,
+    Boolean(o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE),
   )
   @IsInt()
   @IsPositive()
@@ -78,7 +78,7 @@ class ScheduleReminderDto {
 
   @ApiPropertyOptional({ description: "繰り返し回数", example: 5 })
   @ValidateIf((o: ScheduleReminderDto) =>
-    o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE,
+    Boolean(o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE),
   )
   @IsInt()
   @IsPositive()
@@ -86,7 +86,7 @@ class ScheduleReminderDto {
 
   @ApiPropertyOptional({ description: "繰り返し終了日時", example: "2025-12-31T00:00:00.000Z" })
   @ValidateIf((o: ScheduleReminderDto) =>
-    o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE,
+    Boolean(o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE),
   )
   @IsDateString()
   repeatUntil?: string;

@@ -244,8 +244,8 @@ export class TagAutomationController {
         eventName = TAG_AUTOMATION_EVENTS.PAGE_ACTION;
         eventPayload = {
           eventType: "PAGE_ACTION" as const,
-          page: testPayload?.page || rule.config?.['page'] || "cats",
-          action: testPayload?.action || rule.config?.['action'] || "create",
+          page: testPayload?.page || (typeof rule.config === 'object' && rule.config !== null && 'page' in rule.config ? rule.config['page'] as string : "cats"),
+          action: testPayload?.action || (typeof rule.config === 'object' && rule.config !== null && 'action' in rule.config ? rule.config['action'] as string : "create"),
           targetId: testPayload?.targetId || "test-target-id",
           targetType: testPayload?.targetType as string | undefined,
           additionalData: testPayload?.additionalData as Record<string, unknown> | undefined,
