@@ -47,18 +47,40 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
       bufferLogs: true,
       cors: {
-        origin:
-          process.env.NODE_ENV === "production"
-            ? process.env.CORS_ORIGIN?.split(",") || ["https://yourdomain.com"]
-            : [
-                "http://localhost:3000",
-                "http://localhost:3002",
-                "http://localhost:3003",
-                "http://localhost:3005",
-                "http://192.168.2.119:3000", // モバイル確認用（PCのIPアドレス）
-                /^http:\/\/192\.168\.\d+\.\d+:3000$/, // 同一ネットワーク内の全デバイス
-                /^http:\/\/100\.\d+\.\d+\.\d+:3000$/, // Tailscale経由のアクセス
-              ],
+        origin: (origin, callback) => {
+          const allowedOrigins =
+            process.env.NODE_ENV === 'production'
+              ? (process.env.CORS_ORIGIN || '').split(',')
+              : [
+                  'http://localhost:3000',
+                  'http://localhost:3002',
+                  'http://localhost:3003',
+                  'http://localhost:3005',
+                  'http://192.168.2.119:3000',
+                  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+                  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+                ];
+
+          if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+            return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
+          }
+
+          const isAllowed = allowedOrigins.some((allowedOrigin) => {
+            if (typeof allowedOrigin === 'string') {
+              return allowedOrigin === origin;
+            }
+            if (allowedOrigin instanceof RegExp) {
+              return allowedOrigin.test(origin);
+            }
+            return false;
+          });
+
+          if (isAllowed || !origin) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'), false);
+          }
+        },
         credentials: true,
       },
     });
@@ -223,6 +245,9 @@ async function bootstrap() {
       SwaggerModule.setup("api/docs", app, document);
     }
 
+  if (!process.env.PORT && process.env.NODE_ENV === 'production') {
+    throw new Error('PORT environment variable is not set in production environment.');
+  }
   const port = process.env.PORT || 3004;
   await app.listen(port, '0.0.0.0');
 
