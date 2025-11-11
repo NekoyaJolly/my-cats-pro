@@ -22,7 +22,7 @@ import { IconTrash, IconPlus, IconDeviceFloppy, IconX } from '@tabler/icons-reac
 import { notifications } from '@mantine/notifications';
 import { useGetCats, useCreateCat, useUpdateCat, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetCoatColors, type CoatColor } from '@/lib/api/hooks/use-coat-colors';
-import { useGetBirthPlans, useCreateKittenDisposition, type BirthPlan, type KittenDisposition } from '@/lib/api/hooks/use-breeding';
+import { useGetBirthPlans, useCreateKittenDisposition, type BirthPlan } from '@/lib/api/hooks/use-breeding';
 
 interface KittenData {
   id?: string; // 既存の子猫の場合はID、新規の場合はundefined

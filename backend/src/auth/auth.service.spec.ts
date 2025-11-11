@@ -34,7 +34,7 @@ describe('AuthService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              const config = {
+              const config: Record<string, string> = {
                 JWT_SECRET: 'test-secret',
                 ARGON2_MEMORY_COST: '65536',
                 ARGON2_TIME_COST: '3',

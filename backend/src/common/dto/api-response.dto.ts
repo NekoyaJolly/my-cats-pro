@@ -47,7 +47,7 @@ export class ApiResponse<T> {
    * エラーレスポンスを生成
    */
   static error<T>(error: string, details?: unknown): ApiResponse<T> {
-    return new ApiResponse(false, undefined, error, details);
+    return new ApiResponse(false, undefined as T, error, details);
   }
 }
 

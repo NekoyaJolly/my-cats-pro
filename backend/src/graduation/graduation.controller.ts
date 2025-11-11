@@ -16,8 +16,9 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { GraduationService } from './graduation.service';
+
 import { TransferCatDto } from './dto';
+import { GraduationService } from './graduation.service';
 
 @ApiTags('Graduation')
 @Controller('graduations')
