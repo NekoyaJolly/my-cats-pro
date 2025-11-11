@@ -62,6 +62,38 @@ export default function CatDetailClient({ catId }: Props) {
   const [transferDate, setTransferDate] = useState('');
   const [transferNotes, setTransferNotes] = useState('');
 
+  if (isLoading) {
+    return (
+      <Center style={{ minHeight: '100vh' }}>
+        <Loader size="lg" />
+      </Center>
+    );
+  }
+
+  if (error || !cat) {
+    return (
+      <Container size="lg" style={{ paddingTop: '2rem' }}>
+        <Alert icon={<IconAlertCircle size={16} />} title="エラー" color="red">
+          猫の情報を読み込めませんでした。
+        </Alert>
+        <Button
+          mt="md"
+          variant="light"
+          leftSection={<IconArrowLeft size={16} />}
+          onClick={() => router.push('/cats')}
+        >
+          一覧へ戻る
+        </Button>
+      </Container>
+    );
+  }
+
+  const catData = cat.data;
+  
+  if (!catData) {
+    return null;
+  }
+
   // 譲渡処理
   const handleTransfer = () => {
     if (!transferDestination || !transferDate) {
@@ -102,38 +134,6 @@ export default function CatDetailClient({ catId }: Props) {
       }
     );
   };
-
-  if (isLoading) {
-    return (
-      <Center style={{ minHeight: '100vh' }}>
-        <Loader size="lg" />
-      </Center>
-    );
-  }
-
-  if (error || !cat) {
-    return (
-      <Container size="lg" style={{ paddingTop: '2rem' }}>
-        <Alert icon={<IconAlertCircle size={16} />} title="エラー" color="red">
-          猫の情報を読み込めませんでした。
-        </Alert>
-        <Button
-          mt="md"
-          variant="light"
-          leftSection={<IconArrowLeft size={16} />}
-          onClick={() => router.push('/cats')}
-        >
-          一覧へ戻る
-        </Button>
-      </Container>
-    );
-  }
-
-  const catData = cat.data;
-  
-  if (!catData) {
-    return null;
-  }
 
   return (
   <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
