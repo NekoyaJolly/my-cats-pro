@@ -37,6 +37,7 @@ import {
   IconCat,
   IconStethoscope,
   IconHeartHandshake,
+  IconPhoto,
 } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
@@ -72,6 +73,11 @@ const navigationItems = [
     icon: IconCalendarEvent,
   },
   {
+    label: '医療データ',
+    href: '/medical-records',
+    icon: IconStethoscope,
+  },
+  {
     label: 'タグ管理',
     href: '/tags',
     icon: IconTag,
@@ -90,6 +96,11 @@ const navigationItems = [
     label: 'その他',
     href: '/more',
     icon: IconSettings,
+  },
+  {
+    label: 'ギャラリー',
+    href: '/gallery',
+    icon: IconPhoto,
   },
   {
     label: 'デザインガイド',
@@ -236,6 +247,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       try {
         const response = await apiClient.get('/cats', {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           query: { limit: 1000 } as any,
         });
 

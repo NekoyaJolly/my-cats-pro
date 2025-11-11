@@ -100,6 +100,93 @@ const careScheduleKeys = createDomainQueryKeys<string, GetCareSchedulesParams>('
 
 export { careScheduleKeys };
 
+// ========== Medical Records ==========
+
+export type MedicalVisitType = 'CHECKUP' | 'EMERGENCY' | 'SURGERY' | 'FOLLOW_UP' | 'VACCINATION' | 'OTHER';
+export type MedicalRecordStatus = 'TREATING' | 'COMPLETED';
+
+export interface MedicalRecordSymptom {
+  label: string;
+  note?: string | null;
+}
+
+export interface MedicalRecordMedication {
+  name: string;
+  dosage?: string | null;
+}
+
+export interface MedicalRecordAttachment {
+  url: string;
+  description?: string | null;
+  fileName?: string | null;
+  fileType?: string | null;
+  fileSize?: number | null;
+  capturedAt?: string | null;
+}
+
+export interface MedicalRecordTag {
+  id: string;
+  name: string;
+  color: string | null;
+  textColor: string | null;
+  groupId: string;
+  groupName: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+}
+
+export interface MedicalRecord {
+  id: string;
+  visitDate: string;
+  visitType?: MedicalVisitType | null;
+  hospitalName?: string | null;
+  symptom?: string | null;
+  symptomDetails?: MedicalRecordSymptom[];
+  diseaseName?: string | null;
+  diagnosis?: string | null;
+  treatmentPlan?: string | null;
+  medications?: MedicalRecordMedication[];
+  followUpDate?: string | null;
+  status: MedicalRecordStatus;
+  notes?: string | null;
+  cat: { id: string; name: string };
+  schedule?: { id: string; name: string } | null;
+  tags?: MedicalRecordTag[]; // 更新された型定義
+  attachments?: MedicalRecordAttachment[];
+  recordedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MedicalRecordMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// 修正: OpenAPIスキーマから生成された型を上書き
+export interface MedicalRecordListResponse {
+  success: boolean;
+  data: MedicalRecord[];
+  meta: MedicalRecordMeta;
+}
+
+export interface MedicalRecordResponse {
+  success: boolean;
+  data: MedicalRecord;
+}
+
+// export type MedicalRecordListResponse = ApiSuccessData<'/care/medical-records', 'get'>;
+// export type MedicalRecordResponse = ApiSuccessData<'/care/medical-records', 'post'>;
+
+export type GetMedicalRecordsParams = ApiQueryParams<'/care/medical-records', 'get'>;
+export type CreateMedicalRecordRequest = ApiRequestBody<'/care/medical-records', 'post'>;
+
+const medicalRecordKeys = createDomainQueryKeys<string, GetMedicalRecordsParams>('medical-records');
+
+export { medicalRecordKeys };
+
 export function useGetCareSchedules(
   params: GetCareSchedulesParams = {},
   options?: Omit<UseQueryOptions<CareScheduleListResponse>, 'queryKey' | 'queryFn'>,
@@ -255,6 +342,77 @@ export function useCompleteCareSchedule() {
       notifications.show({
         title: 'ケア完了処理に失敗しました',
         message: error.message ?? '入力内容をご確認ください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+// ========== Medical Records Hooks ==========
+
+export function useGetMedicalRecords(
+  params: GetMedicalRecordsParams = {},
+  options?: Omit<UseQueryOptions<MedicalRecordListResponse>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: medicalRecordKeys.list(params),
+    queryFn: async () => {
+      const response = await apiClient.get('/care/medical-records', {
+        query: params,
+        init: {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        },
+      });
+
+      if (!response.data) {
+        throw new Error('医療記録のレスポンスが不正です');
+      }
+
+      return response as unknown as MedicalRecordListResponse;
+    },
+    staleTime: 0,
+    gcTime: 0,
+    ...options,
+  });
+}
+
+export function useCreateMedicalRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: CreateMedicalRecordRequest) => {
+      const response = await apiClient.post('/care/medical-records', {
+        body: payload,
+      });
+
+      if (!response.data) {
+        throw new Error('医療記録の作成に失敗しました。レスポンスが不正です。');
+      }
+
+      return response as unknown as MedicalRecordResponse;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ 
+        queryKey: medicalRecordKeys.lists(),
+        refetchType: 'all' 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: medicalRecordKeys.lists() 
+      });
+      notifications.show({
+        title: '医療記録を登録しました',
+        message: '医療記録を追加しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '医療記録の登録に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
         color: 'red',
       });
     },

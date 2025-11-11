@@ -19,7 +19,7 @@ import {
   Table,
 } from '@mantine/core';
 import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
-import { useGetCats, useGetCatStatistics, useUpdateCat, useDeleteCat, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
+import { useGetCats, useGetCatStatistics, useDeleteCat, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { CatEditModal } from '@/components/cats/cat-edit-modal';
@@ -288,7 +288,6 @@ export default function CatsPage() {
   };
 
   // 猫情報の更新
-  const updateCatMutation = useUpdateCat(selectedCatForEdit?.id || '');
   const deleteCatMutation = useDeleteCat();
 
   // コンテキストメニューからの操作確認

@@ -21,11 +21,9 @@ import {
 } from '@mantine/core';
 import { useMediaQuery, useDisclosure } from '@mantine/hooks';
 import {
-  IconPaw,
   IconHeart,
   IconCertificate,
   IconPlus,
-  IconChartBar,
   IconStethoscope,
   IconChevronRight,
   IconAlertCircle,
@@ -77,18 +75,6 @@ interface BreedingSummary {
   today: number;
 }
 
-// ダッシュボードカード型
-interface DashboardCard {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-  href: string;
-  badge?: string | number;
-  stats?: string;
-}
-
 export default function Home() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [careSummary, setCareSummary] = useState<CareScheduleSummary>({ total: 0, completed: 0, pending: 0 });
@@ -136,6 +122,7 @@ export default function Home() {
         
         // 猫データを取得
         const catsResponse = await apiClient.get('/cats', {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           query: { limit: 1000 } as any,
         });
         

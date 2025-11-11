@@ -16,6 +16,7 @@ import { AppThrottlerGuard } from "./common/guards/app-throttler.guard";
 import { CorsMiddleware } from "./common/middleware/cors.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
+import { GraduationModule } from "./graduation/graduation.module";
 import { HealthModule } from "./health/health.module";
 import { PedigreeModule } from "./pedigree/pedigree.module";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -102,6 +103,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     HealthModule,
     StaffModule,
     ShiftModule,
+    GraduationModule,
   ],
   controllers: [MasterDataController],
   providers: [

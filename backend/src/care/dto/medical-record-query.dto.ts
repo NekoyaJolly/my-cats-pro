@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { MedicalRecordStatus, MedicalVisitType } from "@prisma/client";
+import { MedicalRecordStatus } from "@prisma/client";
 import { Type } from "class-transformer";
 import {
   IsDateString,
@@ -36,12 +36,12 @@ export class MedicalRecordQueryDto {
   @IsUUID()
   scheduleId?: string;
 
-  @ApiPropertyOptional({ enum: MedicalVisitType, example: MedicalVisitType.CHECKUP })
+  @ApiPropertyOptional({ description: "受診種別ID", example: "c4a52a14-8d93-4b87-9f8c-7a6c2ef81234" })
   @IsOptional()
-  @IsEnum(MedicalVisitType)
-  visitType?: MedicalVisitType;
+  @IsUUID()
+  visitTypeId?: string;
 
-  @ApiPropertyOptional({ enum: MedicalRecordStatus, example: MedicalRecordStatus.ACTIVE })
+  @ApiPropertyOptional({ enum: MedicalRecordStatus, example: MedicalRecordStatus.TREATING })
   @IsOptional()
   @IsEnum(MedicalRecordStatus)
   status?: MedicalRecordStatus;

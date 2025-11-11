@@ -29,7 +29,16 @@ export default function CatEditClient({ catId }: Props) {
   const updateCat = useUpdateCat(catId);
   const deleteCat = useDeleteCat();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    gender: 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY';
+    breedId: string;
+    coatColorId: string;
+    birthDate: string;
+    microchipNumber: string;
+    registrationNumber: string;
+    description: string;
+  }>({
     name: "",
     gender: "MALE",
     breedId: "",
@@ -70,7 +79,7 @@ export default function CatEditClient({ catId }: Props) {
     try {
       await updateCat.mutateAsync({
         name: form.name,
-        gender: form.gender as any,
+        gender: form.gender,
         breedId: form.breedId || null,
         coatColorId: form.coatColorId || null,
         birthDate: form.birthDate,

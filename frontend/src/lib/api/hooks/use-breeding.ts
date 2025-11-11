@@ -169,6 +169,7 @@ export interface BirthPlan {
   updatedAt: string;
   mother?: { id: string; name: string | null } | null;
   father?: { id: string; name: string | null } | null;
+  kittenDispositions?: KittenDisposition[] | null;
 }
 
 export interface BirthPlanListResponse {

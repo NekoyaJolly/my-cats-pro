@@ -12,12 +12,10 @@ import {
   Loader,
   Center,
   Divider,
-  Text,
-  Box,
   Grid,
 } from "@mantine/core";
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
-import { useGetCat, useUpdateCat, type Cat } from "@/lib/api/hooks/use-cats";
+import { useGetCat, useUpdateCat } from "@/lib/api/hooks/use-cats";
 import { useGetBreeds } from "@/lib/api/hooks/use-breeds";
 import { useGetCoatColors } from "@/lib/api/hooks/use-coat-colors";
 import TagSelector from "@/components/TagSelector";
@@ -49,7 +47,17 @@ export function CatEditModal({
   const { data: coatColorsData, isLoading: isCoatColorsLoading } = useGetCoatColors({ limit: 1000 });
   const updateCat = useUpdateCat(catId);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    gender: 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY';
+    breedId: string;
+    coatColorId: string;
+    birthDate: string;
+    microchipNumber: string;
+    registrationNumber: string;
+    description: string;
+    tagIds: string[];
+  }>({
     name: "",
     gender: "MALE",
     breedId: "",
@@ -58,7 +66,7 @@ export function CatEditModal({
     microchipNumber: "",
     registrationNumber: "",
     description: "",
-    tagIds: [] as string[],
+    tagIds: [],
   });
 
   // データ取得後にフォームを初期化
@@ -92,7 +100,7 @@ export function CatEditModal({
     try {
       await updateCat.mutateAsync({
         name: form.name,
-        gender: form.gender as any,
+        gender: form.gender,
         breedId: form.breedId || null,
         coatColorId: form.coatColorId || null,
         birthDate: form.birthDate,

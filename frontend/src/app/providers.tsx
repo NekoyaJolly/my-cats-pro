@@ -1,6 +1,7 @@
 'use client'
 
 import { MantineProvider, type MantineColorsTuple, type MantineThemeOverride } from '@mantine/core'
+import { ModalsProvider } from '@mantine/modals'
 import { useBootstrapAuth } from '@/lib/auth/useBootstrapAuth'
 import { QueryClientProvider } from '@/lib/api/query-client'
 import { Notifications } from '@mantine/notifications'
@@ -62,10 +63,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider>
       <MantineProvider defaultColorScheme="light" theme={theme}>
-        <PageHeaderProvider>
-          <Notifications position="top-right" zIndex={1000} />
-          {children}
-        </PageHeaderProvider>
+        <ModalsProvider>
+          <PageHeaderProvider>
+            <Notifications position="top-right" zIndex={1000} />
+            {children}
+          </PageHeaderProvider>
+        </ModalsProvider>
       </MantineProvider>
     </QueryClientProvider>
   )

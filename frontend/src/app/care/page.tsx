@@ -459,6 +459,7 @@ export default function CarePage() {
     );
   };
 
+  // @ts-expect-error - 将来的に使用予定
   const _openCompleteScheduleModal = (schedule: CareSchedule) => {
     setTargetSchedule(schedule);
     setCompleteForm({
@@ -681,7 +682,7 @@ export default function CarePage() {
                       </Table.Td>
                       <Table.Td>
                         <Text size="sm" fw={500}>
-                          {(schedule as any).cats && (schedule as any).cats.length > 0 ? `${(schedule as any).cats.length}頭` : schedule.cat ? '1頭' : '未設定'}
+                          {schedule.cats && schedule.cats.length > 0 ? `${schedule.cats.length}頭` : schedule.cat ? '1頭' : '未設定'}
                         </Text>
                       </Table.Td>
                       <Table.Td>
@@ -700,7 +701,7 @@ export default function CarePage() {
                             color="gray"
                             size="sm"
                             onClick={() => {
-                              setDetailSchedule(schedule as any);
+                              setDetailSchedule(schedule);
                               openDetailModal();
                             }}
                           >
@@ -757,12 +758,12 @@ export default function CarePage() {
               <Text size="sm" c="dimmed" mb={4}>
                 対象猫
               </Text>
-              {(detailSchedule as any).cats && (detailSchedule as any).cats.length > 0 ? (
+              {detailSchedule.cats && detailSchedule.cats.length > 0 ? (
                 <Stack gap="xs">
-                  {(detailSchedule as any).cats.map((cat: any) => (
+                  {detailSchedule.cats.map((cat) => (
                     <Text key={cat.id} fw={500}>{cat.name}</Text>
                   ))}
-                  <Text size="xs" c="dimmed">計 {(detailSchedule as any).cats.length}頭</Text>
+                  <Text size="xs" c="dimmed">計 {detailSchedule.cats.length}頭</Text>
                 </Stack>
               ) : (
                 <Text fw={500}>{detailSchedule.cat?.name ?? '未設定'}</Text>
@@ -990,7 +991,7 @@ export default function CarePage() {
             value={createForm.schedule?.type || null}
             onChange={(value) => setCreateForm((prev) => ({
               ...prev,
-              schedule: value ? { type: value as any } : null
+              schedule: value ? { type: value as 'daily' | 'weekly' | 'monthly' | 'period' | 'birthday' | 'single' } : null
             }))}
           />
 
@@ -1382,7 +1383,7 @@ export default function CarePage() {
             value={createForm.schedule?.type || null}
             onChange={(value) => setCreateForm((prev) => ({
               ...prev,
-              schedule: value ? { type: value as any } : null
+              schedule: value ? { type: value as 'daily' | 'weekly' | 'monthly' | 'period' | 'birthday' | 'single' } : null
             }))}
           />
 
@@ -1583,4 +1584,5 @@ export default function CarePage() {
     </Container>
   );
 }
+
 

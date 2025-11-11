@@ -27,7 +27,7 @@ export function KittenDispositionModal({
   opened,
   onClose,
   kitten,
-  birthRecordId,
+  birthRecordId: _birthRecordId,
   dispositionType,
   onSuccess,
   onSubmit,

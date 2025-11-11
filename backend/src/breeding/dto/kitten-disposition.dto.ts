@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { DispositionType } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsEnum, IsOptional, IsString, IsUUID, IsDateString, IsObject, ValidateNested } from "class-validator";
+import { IsEnum, IsOptional, IsString, IsUUID, IsDateString, IsObject, ValidateNested, IsNumber } from "class-validator";
 
 class SaleInfoDto {
   @ApiProperty({ description: "譲渡先（個人名/業者名）" })
@@ -9,6 +9,7 @@ class SaleInfoDto {
   buyer: string;
 
   @ApiProperty({ description: "譲渡金額" })
+  @IsNumber()
   price: number;
 
   @ApiProperty({ description: "譲渡日" })
