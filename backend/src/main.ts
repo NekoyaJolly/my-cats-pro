@@ -125,22 +125,43 @@ async function bootstrap() {
       tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
       profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 0.1),
       integrations: [nodeProfilingIntegration()],
+      beforeSend(event) {
+        // Redact sensitive headers before sending to Sentry
+        if (event.request?.headers) {
+          const headers = event.request.headers as Record<string, string>;
+          if (headers.authorization) {
+            headers.authorization = '[REDACTED]';
+          }
+          if (headers.cookie) {
+            headers.cookie = '[REDACTED]';
+          }
+          if (headers.Authorization) {
+            headers.Authorization = '[REDACTED]';
+          }
+          if (headers.Cookie) {
+            headers.Cookie = '[REDACTED]';
+          }
+        }
+        return event;
+      },
     });
-    logger.log('Sentry initialized');
+    logger.log('Sentry initialized with security redaction');
   }
 
   // Cookie parser (for refresh token, etc.)
   app.use(cookieParser());
 
-  // Debug middleware for pregnancy-checks
-  app.use('/api/v1/breeding/pregnancy-checks', (req: any, res: any, next: any) => {
-    if (req.method === 'POST') {
-      console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(req.body, null, 2));
-      console.log('[DEBUG MIDDLEWARE] motherId type:', typeof req.body?.motherId, 'value:', req.body?.motherId);
-      console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof req.body?.fatherId, 'value:', req.body?.fatherId);
-    }
-    next();
-  });
+  // Debug middleware for pregnancy-checks (development only)
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/v1/breeding/pregnancy-checks', (req: any, res: any, next: any) => {
+      if (req.method === 'POST') {
+        console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(req.body, null, 2));
+        console.log('[DEBUG MIDDLEWARE] motherId type:', typeof req.body?.motherId, 'value:', req.body?.motherId);
+        console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof req.body?.fatherId, 'value:', req.body?.fatherId);
+      }
+      next();
+    });
+  }
 
     // Global validation pipe
     app.useGlobalPipes(

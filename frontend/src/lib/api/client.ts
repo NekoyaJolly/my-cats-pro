@@ -323,6 +323,22 @@ function deleteCookie(name: string): void {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 }
 
+/**
+ * Set authentication tokens
+ * 
+ * ⚠️ SECURITY WARNING: Current implementation stores tokens in localStorage
+ * which is vulnerable to XSS attacks. This is a known security issue that needs
+ * to be addressed.
+ * 
+ * TODO (P1 - High Priority):
+ * - Migrate to HttpOnly cookies for refresh tokens
+ * - Consider HttpOnly cookies for access tokens with CSRF protection
+ * - Remove localStorage storage completely
+ * - See: docs/IMPROVEMENT_ACTION_PLAN.md for migration steps
+ * 
+ * @param access - Access token
+ * @param refresh - Optional refresh token
+ */
 export function setTokens(access: string | null, refresh?: string | null): void {
   accessToken = access ?? null;
 
@@ -332,6 +348,7 @@ export function setTokens(access: string | null, refresh?: string | null): void 
 
   if (typeof window !== 'undefined') {
     if (access) {
+      // TODO: Remove localStorage storage in favor of HttpOnly cookies
       localStorage.setItem('accessToken', access);
       setCookie('accessToken', access, 7);
     } else {
@@ -341,6 +358,7 @@ export function setTokens(access: string | null, refresh?: string | null): void 
 
     if (refresh !== undefined) {
       if (refresh) {
+        // TODO: Remove localStorage storage in favor of HttpOnly cookies
         localStorage.setItem('refreshToken', refresh);
         setCookie('refreshToken', refresh, 7);
       } else {
