@@ -49,7 +49,10 @@ async function fetchCsrfToken(): Promise<string> {
       throw new Error(`Failed to fetch CSRF token: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      success: boolean;
+      data?: { csrfToken: string };
+    };
 
     if (data.success && data.data?.csrfToken) {
       return data.data.csrfToken;

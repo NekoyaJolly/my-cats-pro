@@ -28,7 +28,7 @@ export class CsrfController {
   })
   getCsrfToken(@Req() req: Request): { success: boolean; data: { csrfToken: string } } {
     // csurfミドルウェアがreq.csrfToken()関数を追加
-    const csrfToken = (req as any).csrfToken?.() || '';
+    const csrfToken = (req as Request & { csrfToken?: () => string }).csrfToken?.() || '';
     
     return {
       success: true,
