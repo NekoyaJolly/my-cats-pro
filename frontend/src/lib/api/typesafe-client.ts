@@ -57,7 +57,7 @@ class TypeSafeApiClient {
         },
       });
 
-      const data: ApiResponse<T> = await response.json();
+      const data = await response.json() as ApiResponse<T>;
 
       if (!response.ok) {
         throw new ApiError(

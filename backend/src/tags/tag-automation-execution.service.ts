@@ -2,8 +2,8 @@ import { Injectable, Logger } from "@nestjs/common";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import type { Prisma } from "@prisma/client";
 import {
-  TagAutomationEventType,
-  TagAutomationRunStatus,
+  // TagAutomationEventType, // Unused - keeping import for future use
+  // TagAutomationRunStatus, // Unused - keeping import for future use
   TagAssignmentAction,
   TagAssignmentSource,
 } from "@prisma/client";

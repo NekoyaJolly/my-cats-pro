@@ -337,8 +337,9 @@ export class BreedingService {
       return { success: true };
     } catch (error) {
       console.error(`Failed to delete pregnancy check ${id}:`, error);
+      const errorMessage = error instanceof Error ? error.message : '不明なエラー';
       throw new BadRequestException(
-        `妊娠確認の削除に失敗しました: ${error.message || '不明なエラー'}`
+        `妊娠確認の削除に失敗しました: ${errorMessage}`
       );
     }
   }
@@ -466,8 +467,9 @@ export class BreedingService {
       return { success: true };
     } catch (error) {
       console.error(`Failed to update birth plan ${id}:`, error);
+      const errorMessage = error instanceof Error ? error.message : '不明なエラー';
       throw new BadRequestException(
-        `出産予定の更新に失敗しました: ${error.message || '不明なエラー'}`
+        `出産予定の更新に失敗しました: ${errorMessage}`
       );
     }
   }
@@ -492,8 +494,9 @@ export class BreedingService {
       if (error instanceof BadRequestException) {
         throw error;
       }
+      const errorMessage = error instanceof Error ? error.message : '不明なエラー';
       throw new BadRequestException(
-        `出産予定の削除に失敗しました: ${error.message || '不明なエラー'}`
+        `出産予定の削除に失敗しました: ${errorMessage}`
       );
     }
   }

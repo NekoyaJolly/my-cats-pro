@@ -384,19 +384,14 @@ export class PedigreeService {
   }
 
   /**
-   * 家系図取得用のincludeオブジェクトを再帰的に構築
-   * N+1クエリを防ぐため、必要な世代数分のincludeを一度に定義
+   * 家系図取得用のincludeオブジェクトを構築
+   * Note: Pedigreeモデルには親へのリレーションが存在しないため、
+   * breed, coatColor, genderのみを含める
    */
-  private buildFamilyInclude(generations: number): Prisma.PedigreeInclude | undefined {
-    if (generations <= 0) {
-      return undefined;
-    }
-
-    const childInclude = this.buildFamilyInclude(generations - 1);
-
+  private buildFamilyInclude(_generations: number): Prisma.PedigreeInclude | undefined {
+    // 親子関係はstring型フィールド（fatherCatName, motherCatNameなど）で保存されているため、
+    // リレーションのincludeは不可能。基本的なリレーションのみ含める
     return {
-      fatherPedigree: childInclude ? { include: childInclude } : true,
-      motherPedigree: childInclude ? { include: childInclude } : true,
       breed: true,
       coatColor: true,
       gender: true,

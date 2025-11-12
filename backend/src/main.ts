@@ -154,11 +154,12 @@ async function bootstrap() {
 
   // Debug middleware for pregnancy-checks (development only)
   if (process.env.NODE_ENV !== 'production') {
-    app.use('/api/v1/breeding/pregnancy-checks', (req: any, res: any, next: any) => {
+    app.use('/api/v1/breeding/pregnancy-checks', (req: Request, res: Response, next: NextFunction) => {
       if (req.method === 'POST') {
-        console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(req.body, null, 2));
-        console.log('[DEBUG MIDDLEWARE] motherId type:', typeof req.body?.motherId, 'value:', req.body?.motherId);
-        console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof req.body?.fatherId, 'value:', req.body?.fatherId);
+        const body = req.body as Record<string, unknown>;
+        console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(body, null, 2));
+        console.log('[DEBUG MIDDLEWARE] motherId type:', typeof body?.motherId, 'value:', body?.motherId);
+        console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof body?.fatherId, 'value:', body?.fatherId);
       }
       next();
     });
