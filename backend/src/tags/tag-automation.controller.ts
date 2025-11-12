@@ -161,9 +161,9 @@ export class TagAutomationController {
     type: Number,
   })
   async findRuns(
-    @Query("ruleId") ruleId?: string,
-    @Query("status") status?: string,
-    @Query("limit") limit?: string,
+    @Query("ruleId") _ruleId?: string,
+    @Query("status") _status?: string,
+    @Query("limit") _limit?: string,
   ) {
     // 実行履歴取得のロジックは後で実装
     // とりあえず基本的な構造を返す

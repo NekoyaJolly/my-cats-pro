@@ -64,11 +64,11 @@ export function useTransferCat() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { message?: string };
         throw new Error(errorData.message || 'Failed to transfer cat');
       }
 
-      return response.json();
+      return response.json() as Promise<TransferCatResponse>;
     },
     onSuccess: () => {
       // キャッシュを無効化
@@ -93,7 +93,7 @@ export function useGetGraduations(page = 1, limit = 50) {
         throw new Error('Failed to fetch graduations');
       }
 
-      return response.json();
+      return response.json() as Promise<GraduationsResponse>;
     },
   });
 }
@@ -113,7 +113,7 @@ export function useGetGraduationDetail(id: string | null) {
         throw new Error('Failed to fetch graduation detail');
       }
 
-      return response.json();
+      return response.json() as Promise<GraduationDetailResponse>;
     },
     enabled: !!id, // idがnullの場合はクエリを実行しない
   });
@@ -132,11 +132,11 @@ export function useCancelGraduation() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { message?: string };
         throw new Error(errorData.message || 'Failed to cancel graduation');
       }
 
-      return response.json();
+      return response.json() as Promise<{ success: boolean; message: string }>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cats'] });
