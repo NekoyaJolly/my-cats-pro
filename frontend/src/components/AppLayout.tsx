@@ -247,7 +247,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       try {
         const response = await apiClient.get('/cats', {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           query: { limit: 1000 } as any,
         });
 

@@ -82,8 +82,8 @@ export class AuthController {
       userId: userRaw.id,
       email: userRaw.email,
       role: toUserRole(userRaw.role),
-      firstName: userRaw.firstName,
-      lastName: userRaw.lastName,
+      firstName: userRaw.firstName ?? undefined,
+      lastName: userRaw.lastName ?? undefined,
     };
     const storedRefreshToken = await this.auth.getStoredRefreshToken(userRaw.id);
     if (storedRefreshToken) {
@@ -124,7 +124,7 @@ export class AuthController {
   @ApiOperation({ summary: "パスワード設定/変更（要JWT）" })
   @ApiResponse({ status: HttpStatus.OK })
   setPassword(@GetUser() user: RequestUser | undefined, @Body() dto: LoginDto) {
-    return this.auth.setPassword(user.userId, dto.password);
+    return this.auth.setPassword(user!.userId, dto.password);
   }
 
   @ApiBearerAuth()
@@ -137,7 +137,7 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ) {
     return this.auth.changePassword(
-      user.userId,
+      user!.userId,
       dto.currentPassword,
       dto.newPassword,
     );
@@ -178,8 +178,8 @@ export class AuthController {
       userId: user.id,
       email: user.email,
       role: toUserRole(user.role),
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
     };
     this.setRefreshCookie(res, result.refresh_token);
     return { success: true, data: { access_token: result.access_token, user: requestUser } };
@@ -193,7 +193,7 @@ export class AuthController {
   logout(@GetUser() user: RequestUser | undefined, @Res({ passthrough: true }) res: Response) {
     // Cookie 無効化
     res.cookie(REFRESH_COOKIE_NAME, '', { httpOnly: true, secure: isSecureEnv(), sameSite: REFRESH_COOKIE_SAMESITE, path: '/', maxAge: 0 });
-    return this.auth.logout(user.userId);
+    return this.auth.logout(user!.userId);
   }
 
   private getCookieValue(res: Response, key: string): string | undefined {

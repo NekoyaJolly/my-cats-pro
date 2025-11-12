@@ -385,7 +385,7 @@ export default function BreedingPage() {
   const createNgRuleMutation = useCreateBreedingNgRule();
   const deleteNgRuleMutation = useDeleteBreedingNgRule();
 
-  // 次のルール番号を生成する関数
+  /* 次のルール番号を生成する関数 (future feature)
   const getNextRuleName = () => {
     const existingNumbers = ngPairingRules
       .map((rule: NgPairingRule) => {
@@ -397,6 +397,7 @@ export default function BreedingPage() {
     const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
     return `NG${maxNumber + 1}`;
   };
+  */
   
   const availableTags: string[] = [...new Set(
     (catsResponse?.data ?? [])
@@ -404,9 +405,6 @@ export default function BreedingPage() {
       .filter((name: string) => name)
   )];
   
-  const maleCats = (catsResponse?.data ?? []).filter((cat: Cat) => cat.gender === 'MALE');
-  const femaleCats = (catsResponse?.data ?? []).filter((cat: Cat) => cat.gender === 'FEMALE');
-
   const monthDates = generateMonthDates(selectedYear, selectedMonth);
 
   // NGペアチェック関数
@@ -578,7 +576,7 @@ export default function BreedingPage() {
           let errorDetails = '';
           
           if (error instanceof Error && 'response' in error) {
-            const apiError = error as Error & { response?: { error?: { message?: string | string[] } } };
+            const apiError = error as Error & { response?: { error?: { message?: string | string[]; details?: unknown }; message?: string | string[] } };
             console.error('Error response:', apiError.response);
             
             if (apiError.response) {
@@ -1003,7 +1001,7 @@ export default function BreedingPage() {
   };
   */
 
-  // NGルール管理機能
+  /* NGルール管理機能 (future feature)
   const addNewRule = () => {
     if (createNgRuleMutation.isPending) {
       return;
@@ -1037,7 +1035,9 @@ export default function BreedingPage() {
       },
     });
   };
+  */
 
+  /* Helper function for NGルール管理機能 (future feature)
   const resetNewRuleForm = () => {
     setNewRule({
       name: getNextRuleName(),
@@ -1050,8 +1050,9 @@ export default function BreedingPage() {
       description: '',
     });
   };
+  */
 
-  // 新規ルールのバリデーション
+  /* 新規ルールのバリデーション (future feature)
   const isNewRuleValid = () => {
     // ルール名は必須
     if (!newRule.name.trim()) {
@@ -1069,6 +1070,7 @@ export default function BreedingPage() {
 
     return false;
   };
+  */
 
   return (
     <Box 

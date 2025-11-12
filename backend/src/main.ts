@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import cookieParser from 'cookie-parser';
 import { config as loadEnv } from 'dotenv';
+import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { Logger as PinoLogger } from 'nestjs-pino';
 

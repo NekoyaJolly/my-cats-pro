@@ -15,6 +15,7 @@ import {
   Modal,
   Pagination,
   Select,
+  SegmentedControl,
   Skeleton,
   Stack,
   Table,
@@ -26,7 +27,6 @@ import {
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconPlus, IconEye, IconChevronDown, IconCalendarPlus, IconX } from '@tabler/icons-react';
-import { SegmentedControl } from '@mantine/core';
 import dayjs from 'dayjs';
 
 import {
@@ -206,7 +206,7 @@ export default function MedicalRecordsPage() {
       {
         catId: trimmedCatId,
         visitDate: dayjs(createForm.visitDate).toISOString(),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         visitType: createForm.visitType || (undefined as any),
         hospitalName: trimmedHospitalName || undefined,
         diagnosis: trimmedDiagnosis || undefined,
