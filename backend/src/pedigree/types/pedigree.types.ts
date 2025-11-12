@@ -51,21 +51,15 @@ export interface PedigreeListResponse {
 }
 
 // Type for family tree structure
-export interface PedigreeTreeNode {
-  id: string;
-  pedigreeId: string;
-  catName: string;
-  title?: string;
-  gender?: number;
-  eyeColor?: string;
-  birthDate?: string;  // PedigreeスキーマではbirthDateはstring型
-  breed?: { name: string };
-  color?: { name: string };
-  fatherPedigreeId?: string;
-  motherPedigreeId?: string;
-  father?: PedigreeTreeNode;
-  mother?: PedigreeTreeNode;
-}
+// Pedigreeモデルは血統情報を文字列フィールドとして保持しているため、
+// リレーションではなくフラットな構造
+export type PedigreeTreeNode = Prisma.PedigreeGetPayload<{
+  include: {
+    breed: true;
+    coatColor: true;
+    gender: true;
+  };
+}>;
 
 export interface PedigreeSuccessResponse {
   success: true;
