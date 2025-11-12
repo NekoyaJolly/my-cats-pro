@@ -1,8 +1,3 @@
-function toUserRole(val: string): RequestUser["role"] {
-  if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
-  return "USER";
-}
-
 import {
   Body,
   Controller,
@@ -21,10 +16,18 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Request, Response } from "express";
 
+import { RateLimit } from "../common/decorators/rate-limit.decorator";
+import { RateLimitConfig } from "../common/config/rate-limit.config";
 import { RateLimiterService } from "../common/services/rate-limiter.service";
+
+function toUserRole(val: string): RequestUser["role"] {
+  if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
+  return "USER";
+}
+
 
 import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_MAX_AGE_MS, REFRESH_COOKIE_SAMESITE, isSecureEnv } from './auth.constants';
 import { AuthService } from "./auth.service";
@@ -144,7 +147,7 @@ export class AuthController {
   }
 
   @Post("request-password-reset")
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @RateLimit(RateLimitConfig.auth.requestReset)
   @ApiOperation({ summary: "パスワードリセット要求" })
   @ApiResponse({ status: HttpStatus.OK, description: 'リセット手順をメールで送信' })
   requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
@@ -152,7 +155,7 @@ export class AuthController {
   }
 
   @Post("reset-password")
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @RateLimit(RateLimitConfig.auth.resetPassword)
   @ApiOperation({ summary: "パスワードリセット実行" })
   @ApiResponse({ status: HttpStatus.OK, description: 'パスワードがリセットされました' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '無効または期限切れのトークン' })
@@ -161,7 +164,7 @@ export class AuthController {
   }
 
   @Post("refresh")
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @RateLimit(RateLimitConfig.auth.refresh)
   @ApiOperation({ summary: "リフレッシュトークンでアクセストークン再取得" })
   @ApiResponse({ status: HttpStatus.OK })
   async refresh(@Body() dto: RefreshTokenDto, @Res({ passthrough: true }) res: Response): Promise<{ success: boolean; data: { access_token: string; user: RequestUser } }> {

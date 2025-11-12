@@ -4,6 +4,7 @@
  */
 
 import type { operations, paths } from './generated/schema';
+import { getCsrfToken, clearCsrfToken } from './csrf';
 
 // NOTE: generated/schema.ts は最初の型生成後にインポート可能になります
 async function parseJson(response: Response): Promise<unknown> {
@@ -386,6 +387,7 @@ export function getRefreshToken(): string | null {
 export function clearTokens(): void {
   accessToken = null;
   refreshToken = null;
+  clearCsrfToken(); // CSRF トークンもクリア
   
   if (typeof window !== 'undefined') {
     localStorage.removeItem('accessToken');
@@ -471,9 +473,22 @@ export async function apiRequest<T = unknown>(
     headers.set('Content-Type', 'application/json');
   }
 
+  // アクセストークンを追加
   const token = getAccessToken();
   if (token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  // POST/PUT/PATCH/DELETE リクエストにはCSRFトークンを追加
+  const method = (options.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    try {
+      const csrfToken = await getCsrfToken();
+      headers.set('X-CSRF-Token', csrfToken);
+    } catch (error) {
+      console.error('Failed to get CSRF token:', error);
+      // CSRF トークン取得失敗時もリクエストは続行（サーバー側で拒否される）
+    }
   }
 
   const requestInit: RequestInit = {

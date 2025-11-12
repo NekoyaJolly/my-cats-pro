@@ -11,9 +11,11 @@ import { BreedsModule } from "./breeds/breeds.module";
 import { CareModule } from "./care/care.module";
 import { CatsModule } from "./cats/cats.module";
 import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { CsrfController } from "./common/controllers/csrf.controller";
 import { MasterDataController } from "./common/controllers/master-data.controller";
 import { AppThrottlerGuard } from "./common/guards/app-throttler.guard";
 import { CorsMiddleware } from "./common/middleware/cors.middleware";
+import { CsrfMiddleware } from "./common/middleware/csrf.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { GraduationModule } from "./graduation/graduation.module";
@@ -106,7 +108,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     ShiftModule,
     GraduationModule,
   ],
-  controllers: [MasterDataController],
+  controllers: [MasterDataController, CsrfController],
   providers: [
     {
       provide: APP_GUARD,
@@ -117,7 +119,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(CorsMiddleware, RequestIdMiddleware, SecurityMiddleware)
+      .apply(CorsMiddleware, RequestIdMiddleware, SecurityMiddleware, CsrfMiddleware)
       .forRoutes('*');
   }
 }

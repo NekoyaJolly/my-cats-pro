@@ -14,7 +14,7 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 
 
 import { AppModule } from "./app.module";
-import { validateProductionEnvironment, logEnvironmentInfo } from "./common/environment.validation";
+import { validateProductionEnvironment, logEnvironmentInfo } from "./common/config/env.validation";
 import { EnhancedGlobalExceptionFilter } from "./common/filters/enhanced-global-exception.filter";
 import { PerformanceMonitoringInterceptor } from "./common/interceptors/performance-monitoring.interceptor";
 import { TransformResponseInterceptor } from "./common/interceptors/transform-response.interceptor";
