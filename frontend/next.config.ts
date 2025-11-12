@@ -41,9 +41,10 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../"),
   // Memory optimization for CI/CD
   webpack: (config, { dev, isServer }) => {
-    if (!dev && !isServer) {
+    if (!dev && !isServer && config.optimization?.splitChunks?.cacheGroups) {
+      const cg = config.optimization.splitChunks.cacheGroups;
       config.optimization.splitChunks.cacheGroups = {
-        ...config.optimization.splitChunks.cacheGroups,
+        ...cg,
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name: 'vendors',

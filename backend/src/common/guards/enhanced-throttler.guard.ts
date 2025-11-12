@@ -1,7 +1,8 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerStorage } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModuleOptions, ThrottlerStorage } from '@nestjs/throttler';
 import { Request } from 'express';
+
 import { RATE_LIMIT_KEY, RateLimitOptions } from '../decorators/rate-limit.decorator';
 
 /**
@@ -15,7 +16,7 @@ import { RATE_LIMIT_KEY, RateLimitOptions } from '../decorators/rate-limit.decor
 @Injectable()
 export class EnhancedThrottlerGuard extends ThrottlerGuard {
   constructor(
-    protected readonly options: any,
+    protected readonly options: ThrottlerModuleOptions,
     protected readonly storageService: ThrottlerStorage,
     protected readonly reflector: Reflector,
   ) {
@@ -26,16 +27,23 @@ export class EnhancedThrottlerGuard extends ThrottlerGuard {
    * リクエストのトラッカーIDを生成
    * IPアドレスとユーザーIDを組み合わせる
    */
-  protected async getTracker(req: Record<string, any>): Promise<string> {
+  protected async getTracker(req: Request): Promise<string> {
+    // 型アサーションで追加プロパティにアクセス
+    const reqWithUser = req as Request & {
+      user?: { userId?: string; id?: string };
+      path?: string;
+      connection?: { remoteAddress?: string };
+    };
+    
     // IPアドレスを取得
-    const ip = this.getIpAddress(req);
+    const ip = this.getIpAddress(reqWithUser);
     
     // ユーザーIDがある場合は組み合わせる
-    const userId = req.user?.userId || req.user?.id || 'anonymous';
+    const userId = reqWithUser.user?.userId || reqWithUser.user?.id || 'anonymous';
     
     // エンドポイント情報を追加
-    const path = req.path || req.url || '';
-    const method = req.method || '';
+    const path = reqWithUser.path || reqWithUser.url || '';
+    const method = reqWithUser.method || '';
     
     return `${ip}:${userId}:${method}:${path}`;
   }
@@ -43,16 +51,16 @@ export class EnhancedThrottlerGuard extends ThrottlerGuard {
   /**
    * IPアドレスを取得
    */
-  private getIpAddress(req: Record<string, any>): string {
+  private getIpAddress(req: Request & { connection?: { remoteAddress?: string } }): string {
     // X-Forwarded-For ヘッダーをチェック（プロキシ経由の場合）
-    const forwardedFor = req.headers?.['x-forwarded-for'];
+    const forwardedFor = req.headers['x-forwarded-for'];
     if (typeof forwardedFor === 'string') {
       const ips = forwardedFor.split(',');
       return ips[0].trim();
     }
     
     // X-Real-IP ヘッダーをチェック
-    const realIp = req.headers?.['x-real-ip'];
+    const realIp = req.headers['x-real-ip'];
     if (typeof realIp === 'string') {
       return realIp.trim();
     }

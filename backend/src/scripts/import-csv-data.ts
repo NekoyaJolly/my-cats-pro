@@ -117,7 +117,7 @@ async function importBreeds() {
   console.log("🐱 Importing breed data...");
 
   const breeds: BreedData[] = [];
-  const csvPath = path.join(
+  const _csvPath = path.join(
     __dirname,
     "../../NewPedigree/猫種データUTF8Ver.csv",
   );
@@ -169,7 +169,7 @@ async function importCoatColors() {
   console.log("🎨 Importing coat color data...");
 
   const colors: CoatColorData[] = [];
-  const csvPath = path.join(
+  const _csvPath = path.join(
     __dirname,
     "../../NewPedigree/色柄データUTF8Ver.csv",
   );
@@ -331,12 +331,12 @@ async function importPedigrees() {
   await assertCsvHeaders(csvPath, headers);
   // Additional fields...
   return new Promise<void>((resolve, reject) => {
-    let rowCount = 0;
+    let _rowCount = 0;
 
     fs.createReadStream(absoluteCsvPath)
       .pipe(csv({ headers }))
       .on("data", (data: PedigreeData) => {
-        rowCount++;
+        _rowCount++;
         if (data.PedigreeID) {
           // Skip empty rows
           pedigrees.push(data);
@@ -591,7 +591,7 @@ async function importPedigrees() {
   });
 }
 
-function parseDate(dateStr: string): Date | null {
+function _parseDate(dateStr: string): Date | null {
   if (!dateStr || dateStr.trim() === "") return null;
 
   // Handle different date formats
