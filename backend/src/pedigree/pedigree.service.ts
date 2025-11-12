@@ -370,32 +370,23 @@ export class PedigreeService {
   }
 
   async getFamily(id: string, generations: number = 3): Promise<PedigreeTreeNode> {
-    // 最適化: includeを使用して一度に家系図データを取得
+    // Pedigreeモデルは血統情報を文字列フィールドとして保持しているため、
+    // リレーションではなく直接データを取得
     const pedigree = await this.prisma.pedigree.findUnique({
       where: { id },
-      include: this.buildFamilyInclude(generations),
+      include: {
+        breed: true,
+        coatColor: true,
+        gender: true,
+      },
     });
 
     if (!pedigree) {
       throw new NotFoundException(`Pedigree with ID ${id} not found`);
     }
 
-    return pedigree as PedigreeTreeNode;
-  }
-
-  /**
-   * 家系図取得用のincludeオブジェクトを構築
-   * Note: Pedigreeモデルには親へのリレーションが存在しないため、
-   * breed, coatColor, genderのみを含める
-   */
-  private buildFamilyInclude(_generations: number): Prisma.PedigreeInclude | undefined {
-    // 親子関係はstring型フィールド（fatherCatName, motherCatNameなど）で保存されているため、
-    // リレーションのincludeは不可能。基本的なリレーションのみ含める
-    return {
-      breed: true,
-      coatColor: true,
-      gender: true,
-    };
+    // 血統情報は既にフィールドに含まれているため、そのまま返す
+    return pedigree;
   }
 
   async getFamilyTree(id: string, generations: number = 3): Promise<PedigreeTreeNode> {

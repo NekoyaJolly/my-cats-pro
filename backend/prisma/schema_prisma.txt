@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-11-11T11:28:07.223Z
+// Prisma Schema - Last Updated: 2025-11-12T22:06:15.486Z
 // Auto-generated from schema.prisma
 
 generator client {
@@ -47,6 +47,16 @@ model User {
   staff           Staff? // Staff management relation
   // cats            Cat[]  // Removed: not using user relation for cats
 
+  // シングルカラムインデックス
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@index([lastLoginAt])
+  
+  // 複合インデックス（ユーザー検索パターン）
+  @@index([role, isActive]) // ロール別アクティブユーザー検索
+  @@index([isActive, lastLoginAt]) // アクティブユーザーのログイン履歴
+  
   @@map("users")
 }
 
@@ -63,6 +73,17 @@ model LoginAttempt {
   // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // シングルカラムインデックス
+  @@index([userId])
+  @@index([email])
+  @@index([success])
+  @@index([createdAt])
+  
+  // 複合インデックス（ログイン試行分析パターン）
+  @@index([email, createdAt]) // メール別時系列検索
+  @@index([userId, createdAt]) // ユーザー別ログイン履歴
+  @@index([success, createdAt]) // 成功/失敗別時系列
+  
   @@map("login_attempts")
 }
 
@@ -79,6 +100,11 @@ model Breed {
   // Relations
   cats      Cat[]
   pedigrees Pedigree[]
+
+  // シングルカラムインデックス
+  @@index([code])
+  @@index([name])
+  @@index([isActive])
 
   @@map("breeds")
 }
@@ -97,6 +123,11 @@ model CoatColor {
   cats      Cat[]
   pedigrees Pedigree[]
 
+  // シングルカラムインデックス
+  @@index([code])
+  @@index([name])
+  @@index([isActive])
+
   @@map("coat_colors")
 }
 
@@ -112,6 +143,10 @@ model Gender {
 
   // Relations
   pedigrees Pedigree[]
+
+  // シングルカラムインデックス
+  @@index([code])
+  @@index([name])
 
   @@map("genders")
 }
@@ -162,11 +197,23 @@ model Cat {
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
   graduation            Graduation? // 卒業記録（譲渡情報）
 
+  // シングルカラムインデックス（検索頻度の高いフィールド）
   @@index([breedId])
   @@index([coatColorId])
   @@index([fatherId])
   @@index([motherId])
   @@index([birthDate])
+  @@index([name]) // 名前検索
+  @@index([gender]) // 性別フィルター
+  @@index([isInHouse]) // 在舎状態フィルター
+  @@index([isGraduated]) // 卒業済みフィルター
+  @@index([registrationNumber]) // 登録番号検索
+  
+  // 複合インデックス（複合検索パターン）
+  @@index([breedId, name]) // 品種別名前検索
+  @@index([isInHouse, isGraduated]) // 在舎・卒業状態の組み合わせ
+  @@index([birthDate, gender]) // 誕生日・性別での検索
+  
   @@map("cats")
 }
 
@@ -190,10 +237,19 @@ model BreedingRecord {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([maleId])
   @@index([femaleId])
   @@index([breedingDate])
   @@index([status])
+  @@index([recordedBy]) // 記録者フィルター
+  
+  // 複合インデックス（交配記録検索パターン）
+  @@index([maleId, femaleId]) // ペア検索
+  @@index([maleId, breedingDate]) // オス別時系列
+  @@index([femaleId, breedingDate]) // メス別時系列
+  @@index([breedingDate, status]) // 日付・ステータスフィルター
+  
   @@map("breeding_records")
 }
 
@@ -231,9 +287,17 @@ model PregnancyCheck {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([motherId])
   @@index([fatherId])
   @@index([checkDate])
+  @@index([status]) // ステータスフィルター
+  @@index([recordedBy]) // 記録者フィルター
+  
+  // 複合インデックス
+  @@index([motherId, checkDate]) // 母猫別時系列
+  @@index([status, checkDate]) // ステータス別時系列
+  
   @@map("pregnancy_checks")
 }
 
@@ -261,9 +325,19 @@ model BirthPlan {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([motherId])
   @@index([fatherId])
   @@index([expectedBirthDate])
+  @@index([status]) // ステータスフィルター
+  @@index([recordedBy]) // 記録者フィルター
+  @@index([actualBirthDate]) // 実際の出産日検索
+  
+  // 複合インデックス
+  @@index([motherId, expectedBirthDate]) // 母猫別予定日
+  @@index([status, expectedBirthDate]) // ステータス別予定日
+  @@index([expectedBirthDate, status]) // 予定日・ステータスフィルター
+  
   @@map("birth_plans")
 }
 
@@ -317,9 +391,19 @@ model CareRecord {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([catId])
   @@index([careDate])
   @@index([careType])
+  @@index([recordedBy]) // 記録者フィルター
+  @@index([nextDueDate]) // 次回予定日検索
+  
+  // 複合インデックス（ケア記録検索パターン）
+  @@index([catId, careDate]) // 猫別時系列検索
+  @@index([catId, careType]) // 猫別ケアタイプ
+  @@index([careType, careDate]) // ケアタイプ別時系列
+  @@index([nextDueDate, careType]) // 次回予定の検索
+  
   @@map("care_records")
 }
 
@@ -353,12 +437,23 @@ model Schedule {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([scheduleDate])
   @@index([endDate])
   @@index([status])
   @@index([catId])
   @@index([assignedTo])
   @@index([careType])
+  @@index([scheduleType]) // スケジュールタイプフィルター
+  @@index([priority]) // 優先度フィルター
+  
+  // 複合インデックス（スケジュール検索パターン）
+  @@index([scheduleDate, status]) // 日付・ステータスフィルター
+  @@index([catId, scheduleDate]) // 猫別スケジュール
+  @@index([assignedTo, scheduleDate]) // 担当者別スケジュール
+  @@index([scheduleType, scheduleDate]) // タイプ別時系列
+  @@index([status, priority]) // ステータス・優先度フィルター
+  
   @@map("schedules")
 }
 
@@ -480,10 +575,19 @@ model MedicalRecord {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([catId])
   @@index([visitDate])
   @@index([scheduleId])
   @@index([visitTypeId])
+  @@index([status]) // ステータスフィルター
+  @@index([recordedBy]) // 記録者フィルター
+  
+  // 複合インデックス
+  @@index([catId, visitDate]) // 猫別時系列
+  @@index([visitTypeId, visitDate]) // 診療タイプ別時系列
+  @@index([status, visitDate]) // ステータス別時系列
+  
   @@map("medical_records")
 }
 
@@ -675,10 +779,16 @@ model Pedigree {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([breedCode])
   @@index([genderCode])
   @@index([coatColorCode])
   @@index([catName])
+  @@index([pedigreeId]) // pedigreeId検索用（追加）
+  
+  // 複合インデックス（血統検索パターン）
+  @@index([breedCode, catName]) // 品種別名前検索
+  
   @@map("pedigrees")
 }
 
@@ -925,7 +1035,15 @@ model Staff {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([userId])
+  @@index([name])
+  @@index([email])
+  @@index([isActive])
+  
+  // 複合インデックス（スタッフ検索パターン）
+  @@index([isActive, role]) // アクティブスタッフの役職フィルター
+  
   @@map("staff")
 }
 
@@ -945,6 +1063,10 @@ model ShiftTemplate {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
+  @@index([name])
+  @@index([displayOrder])
+  
   @@map("shift_templates")
 }
 
@@ -979,11 +1101,18 @@ model Shift {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([staffId])
   @@index([templateId])
   @@index([shiftDate])
   @@index([status])
   @@index([mode])
+  
+  // 複合インデックス（シフト検索パターン）
+  @@index([staffId, shiftDate]) // スタッフ別日付検索
+  @@index([shiftDate, status]) // 日付・ステータスフィルター
+  @@index([status, shiftDate]) // ステータス別時系列
+  
   @@map("shifts")
 }
 
@@ -1022,7 +1151,15 @@ model StaffAvailability {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // シングルカラムインデックス
   @@index([staffId])
+  @@index([dayOfWeek])
+  @@index([isAvailable])
+  
+  // 複合インデックス（利用可能時間検索パターン）
+  @@index([staffId, dayOfWeek]) // スタッフ別曜日検索
+  @@index([dayOfWeek, isAvailable]) // 曜日別利用可能性
+  
   @@map("staff_availabilities")
 }
 
