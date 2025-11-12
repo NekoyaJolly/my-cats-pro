@@ -19,8 +19,8 @@ import {
 import { SkipThrottle } from '@nestjs/throttler';
 import { Request, Response } from "express";
 
-import { RateLimit } from "../common/decorators/rate-limit.decorator";
 import { RateLimitConfig } from "../common/config/rate-limit.config";
+import { RateLimit } from "../common/decorators/rate-limit.decorator";
 import { RateLimiterService } from "../common/services/rate-limiter.service";
 
 function toUserRole(val: string): RequestUser["role"] {
