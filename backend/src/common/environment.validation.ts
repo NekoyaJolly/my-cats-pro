@@ -6,6 +6,7 @@
 export interface ProductionConfig {
   DATABASE_URL: string;
   JWT_SECRET: string;
+  JWT_REFRESH_SECRET: string;
   NODE_ENV: string;
   PORT: number;
   CORS_ORIGIN: string;
@@ -18,6 +19,7 @@ export function validateProductionEnvironment(): ProductionConfig {
   const requiredVars = {
     DATABASE_URL: process.env.DATABASE_URL,
     JWT_SECRET: process.env.JWT_SECRET,
+    JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
     NODE_ENV: process.env.NODE_ENV,
     PORT: process.env.PORT,
     CORS_ORIGIN: process.env.CORS_ORIGIN,
@@ -33,6 +35,17 @@ export function validateProductionEnvironment(): ProductionConfig {
   // Validate JWT secret length (should be at least 256 bits / 32 characters)
   if (requiredVars.JWT_SECRET && requiredVars.JWT_SECRET.length < 32) {
     errors.push("JWT_SECRET must be at least 32 characters long for security");
+  }
+
+  // Validate JWT refresh secret length
+  if (requiredVars.JWT_REFRESH_SECRET && requiredVars.JWT_REFRESH_SECRET.length < 32) {
+    errors.push("JWT_REFRESH_SECRET must be at least 32 characters long for security");
+  }
+
+  // Ensure JWT_REFRESH_SECRET is different from JWT_SECRET
+  if (requiredVars.JWT_SECRET && requiredVars.JWT_REFRESH_SECRET && 
+      requiredVars.JWT_SECRET === requiredVars.JWT_REFRESH_SECRET) {
+    errors.push("JWT_REFRESH_SECRET must be different from JWT_SECRET for security");
   }
 
   // Validate NODE_ENV
@@ -70,6 +83,7 @@ export function validateProductionEnvironment(): ProductionConfig {
   return {
     DATABASE_URL: requiredVars.DATABASE_URL!,
     JWT_SECRET: requiredVars.JWT_SECRET!,
+    JWT_REFRESH_SECRET: requiredVars.JWT_REFRESH_SECRET!,
     NODE_ENV: requiredVars.NODE_ENV!,
     PORT: Number(requiredVars.PORT!),
     CORS_ORIGIN: requiredVars.CORS_ORIGIN!,
@@ -82,5 +96,6 @@ export function logEnvironmentInfo(): void {
   console.log(`  PORT: ${process.env.PORT}`);
   console.log(`  Database: ${process.env.DATABASE_URL ? "✓ Configured" : "✗ Missing"}`);
   console.log(`  JWT Secret: ${process.env.JWT_SECRET ? "✓ Configured" : "✗ Missing"}`);
+  console.log(`  JWT Refresh Secret: ${process.env.JWT_REFRESH_SECRET ? "✓ Configured" : "✗ Missing"}`);
   console.log(`  CORS Origins: ${process.env.CORS_ORIGIN || "default"}`);
 }

@@ -84,7 +84,8 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60000, // 1 minute
+        name: 'default',
+        ttl: 60000, // 1 minute in milliseconds
         limit: 100, // 100 requests per minute
       },
     ]),

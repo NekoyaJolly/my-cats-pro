@@ -48,18 +48,40 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
       bufferLogs: true,
       cors: {
-        origin:
-          process.env.NODE_ENV === "production"
-            ? process.env.CORS_ORIGIN?.split(",") || ["https://yourdomain.com"]
-            : [
-                "http://localhost:3000",
-                "http://localhost:3002",
-                "http://localhost:3003",
-                "http://localhost:3005",
-                "http://192.168.2.119:3000", // モバイル確認用（PCのIPアドレス）
-                /^http:\/\/192\.168\.\d+\.\d+:3000$/, // 同一ネットワーク内の全デバイス
-                /^http:\/\/100\.\d+\.\d+\.\d+:3000$/, // Tailscale経由のアクセス
-              ],
+        origin: (origin, callback) => {
+          const allowedOrigins =
+            process.env.NODE_ENV === 'production'
+              ? (process.env.CORS_ORIGIN || '').split(',')
+              : [
+                  'http://localhost:3000',
+                  'http://localhost:3002',
+                  'http://localhost:3003',
+                  'http://localhost:3005',
+                  'http://192.168.2.119:3000',
+                  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+                  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+                ];
+
+          if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+            return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
+          }
+
+          const isAllowed = allowedOrigins.some((allowedOrigin) => {
+            if (typeof allowedOrigin === 'string') {
+              return allowedOrigin === origin;
+            }
+            if (allowedOrigin instanceof RegExp) {
+              return allowedOrigin.test(origin);
+            }
+            return false;
+          });
+
+          if (isAllowed || !origin) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'), false);
+          }
+        },
         credentials: true,
       },
     });
@@ -104,22 +126,43 @@ async function bootstrap() {
       tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
       profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 0.1),
       integrations: [nodeProfilingIntegration()],
+      beforeSend(event) {
+        // Redact sensitive headers before sending to Sentry
+        if (event.request?.headers) {
+          const headers = event.request.headers as Record<string, string>;
+          if (headers.authorization) {
+            headers.authorization = '[REDACTED]';
+          }
+          if (headers.cookie) {
+            headers.cookie = '[REDACTED]';
+          }
+          if (headers.Authorization) {
+            headers.Authorization = '[REDACTED]';
+          }
+          if (headers.Cookie) {
+            headers.Cookie = '[REDACTED]';
+          }
+        }
+        return event;
+      },
     });
-    logger.log('Sentry initialized');
+    logger.log('Sentry initialized with security redaction');
   }
 
   // Cookie parser (for refresh token, etc.)
   app.use(cookieParser());
 
-  // Debug middleware for pregnancy-checks
-  app.use('/api/v1/breeding/pregnancy-checks', (req: Request, res: Response, next: NextFunction) => {
-    if (req.method === 'POST') {
-      console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(req.body, null, 2));
-      console.log('[DEBUG MIDDLEWARE] motherId type:', typeof req.body?.motherId, 'value:', req.body?.motherId);
-      console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof req.body?.fatherId, 'value:', req.body?.fatherId);
-    }
-    next();
-  });
+  // Debug middleware for pregnancy-checks (development only)
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/v1/breeding/pregnancy-checks', (req: any, res: any, next: any) => {
+      if (req.method === 'POST') {
+        console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(req.body, null, 2));
+        console.log('[DEBUG MIDDLEWARE] motherId type:', typeof req.body?.motherId, 'value:', req.body?.motherId);
+        console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof req.body?.fatherId, 'value:', req.body?.fatherId);
+      }
+      next();
+    });
+  }
 
     // Global validation pipe
     app.useGlobalPipes(
@@ -224,6 +267,9 @@ async function bootstrap() {
       SwaggerModule.setup("api/docs", app, document);
     }
 
+  if (!process.env.PORT && process.env.NODE_ENV === 'production') {
+    throw new Error('PORT environment variable is not set in production environment.');
+  }
   const port = process.env.PORT || 3004;
   await app.listen(port, '0.0.0.0');
 
