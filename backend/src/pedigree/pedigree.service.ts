@@ -370,41 +370,37 @@ export class PedigreeService {
   }
 
   async getFamily(id: string, generations: number = 3): Promise<PedigreeTreeNode> {
-    const pedigree = await this.findOne(id);
+    // 最適化: includeを使用して一度に家系図データを取得
+    const pedigree = await this.prisma.pedigree.findUnique({
+      where: { id },
+      include: this.buildFamilyInclude(generations),
+    });
 
-    // Build family tree recursively
-    const buildFamilyTree = async (
-      pedigreeData: PedigreeTreeNode,
-      currentGeneration: number,
-    ): Promise<PedigreeTreeNode> => {
-      if (currentGeneration >= generations) {
-        return pedigreeData;
-      }
+    if (!pedigree) {
+      throw new NotFoundException(`Pedigree with ID ${id} not found`);
+    }
 
-      const result: PedigreeTreeNode = { ...pedigreeData };
+    return pedigree as PedigreeTreeNode;
+  }
 
-      if (pedigreeData.fatherPedigreeId) {
-        const father = await this.prisma.pedigree.findUnique({
-          where: { id: pedigreeData.fatherPedigreeId },
-        });
-        if (father) {
-          result.father = father as PedigreeTreeNode;
-        }
-      }
+  /**
+   * 家系図取得用のincludeオブジェクトを再帰的に構築
+   * N+1クエリを防ぐため、必要な世代数分のincludeを一度に定義
+   */
+  private buildFamilyInclude(generations: number): Prisma.PedigreeInclude | undefined {
+    if (generations <= 0) {
+      return undefined;
+    }
 
-      if (pedigreeData.motherPedigreeId) {
-        const mother = await this.prisma.pedigree.findUnique({
-          where: { id: pedigreeData.motherPedigreeId },
-        });
-        if (mother) {
-          result.mother = mother as PedigreeTreeNode;
-        }
-      }
+    const childInclude = this.buildFamilyInclude(generations - 1);
 
-      return result;
+    return {
+      fatherPedigree: childInclude ? { include: childInclude } : true,
+      motherPedigree: childInclude ? { include: childInclude } : true,
+      breed: true,
+      coatColor: true,
+      gender: true,
     };
-
-    return buildFamilyTree(pedigree as PedigreeTreeNode, 0);
   }
 
   async getFamilyTree(id: string, generations: number = 3): Promise<PedigreeTreeNode> {
