@@ -51,8 +51,8 @@ CREATE INDEX IF NOT EXISTS "cats_is_in_house_idx" ON "public"."cats"("is_in_hous
 CREATE INDEX IF NOT EXISTS "cats_is_graduated_idx" ON "public"."cats"("is_graduated");
 CREATE INDEX IF NOT EXISTS "cats_registration_number_idx" ON "public"."cats"("registration_number");
 CREATE INDEX IF NOT EXISTS "cats_coat_color_id_idx" ON "public"."cats"("coat_color_id");
-CREATE INDEX IF NOT EXISTS "cats_birth_place_idx" ON "public"."cats"("birth_place");
-CREATE INDEX IF NOT EXISTS "cats_chip_number_idx" ON "public"."cats"("chip_number");
+-- Removed: cats_birth_place_idx (column does not exist in schema)
+-- Removed: cats_chip_number_idx (column name is microchip_number, not chip_number)
 CREATE INDEX IF NOT EXISTS "cats_breed_id_birth_date_idx" ON "public"."cats"("breed_id", "birth_date");
 CREATE INDEX IF NOT EXISTS "cats_gender_birth_date_idx" ON "public"."cats"("gender", "birth_date");
 CREATE INDEX IF NOT EXISTS "cats_is_in_house_is_graduated_idx" ON "public"."cats"("is_in_house", "is_graduated");
@@ -61,9 +61,10 @@ CREATE INDEX IF NOT EXISTS "cats_is_in_house_is_graduated_idx" ON "public"."cats
 -- Pedigree テーブル
 -- ==========================================
 CREATE INDEX IF NOT EXISTS "pedigrees_pedigree_id_idx" ON "public"."pedigrees"("pedigree_id");
-CREATE INDEX IF NOT EXISTS "pedigrees_breed_id_idx" ON "public"."pedigrees"("breed_id");
-CREATE INDEX IF NOT EXISTS "pedigrees_coat_color_id_idx" ON "public"."pedigrees"("coat_color_id");
-CREATE INDEX IF NOT EXISTS "pedigrees_gender_id_idx" ON "public"."pedigrees"("gender_id");
+-- Fixed: Use correct column names (breed_code, coat_color_code, gender_code instead of breed_id, coat_color_id, gender_id)
+CREATE INDEX IF NOT EXISTS "pedigrees_breed_code_idx" ON "public"."pedigrees"("breed_code");
+CREATE INDEX IF NOT EXISTS "pedigrees_coat_color_code_idx" ON "public"."pedigrees"("coat_color_code");
+CREATE INDEX IF NOT EXISTS "pedigrees_gender_code_idx" ON "public"."pedigrees"("gender_code");
 CREATE INDEX IF NOT EXISTS "pedigrees_birth_date_idx" ON "public"."pedigrees"("birth_date");
 CREATE INDEX IF NOT EXISTS "pedigrees_pedigree_id_birth_date_idx" ON "public"."pedigrees"("pedigree_id", "birth_date");
 
@@ -71,11 +72,11 @@ CREATE INDEX IF NOT EXISTS "pedigrees_pedigree_id_birth_date_idx" ON "public"."p
 -- BreedingRecord テーブル
 -- ==========================================
 CREATE INDEX IF NOT EXISTS "breeding_records_recorded_by_idx" ON "public"."breeding_records"("recorded_by");
-CREATE INDEX IF NOT EXISTS "breeding_records_pregnancy_status_idx" ON "public"."breeding_records"("pregnancy_status");
+-- Removed: breeding_records_pregnancy_status_idx (column does not exist in schema)
 CREATE INDEX IF NOT EXISTS "breeding_records_male_id_breeding_date_idx" ON "public"."breeding_records"("male_id", "breeding_date");
 CREATE INDEX IF NOT EXISTS "breeding_records_female_id_breeding_date_idx" ON "public"."breeding_records"("female_id", "breeding_date");
 CREATE INDEX IF NOT EXISTS "breeding_records_status_breeding_date_idx" ON "public"."breeding_records"("status", "breeding_date");
-CREATE INDEX IF NOT EXISTS "breeding_records_pregnancy_status_breeding_date_idx" ON "public"."breeding_records"("pregnancy_status", "breeding_date");
+-- Removed: breeding_records_pregnancy_status_breeding_date_idx (column does not exist in schema)
 
 -- ==========================================
 -- CareRecord テーブル
@@ -92,22 +93,24 @@ CREATE INDEX IF NOT EXISTS "care_records_next_due_date_care_type_idx" ON "public
 -- ==========================================
 CREATE INDEX IF NOT EXISTS "schedules_schedule_type_idx" ON "public"."schedules"("schedule_type");
 CREATE INDEX IF NOT EXISTS "schedules_priority_idx" ON "public"."schedules"("priority");
-CREATE INDEX IF NOT EXISTS "schedules_is_recurring_idx" ON "public"."schedules"("is_recurring");
-CREATE INDEX IF NOT EXISTS "schedules_recurrence_pattern_idx" ON "public"."schedules"("recurrence_pattern");
-CREATE INDEX IF NOT EXISTS "schedules_is_completed_idx" ON "public"."schedules"("is_completed");
-CREATE INDEX IF NOT EXISTS "schedules_completed_at_idx" ON "public"."schedules"("completed_at");
+-- Removed: schedules_is_recurring_idx (column does not exist in schema)
+-- Removed: schedules_recurrence_pattern_idx (column does not exist in schema)
+-- Removed: schedules_is_completed_idx (column does not exist in schema)
+-- Removed: schedules_completed_at_idx (column does not exist in schema)
 CREATE INDEX IF NOT EXISTS "schedules_schedule_date_status_idx" ON "public"."schedules"("schedule_date", "status");
 CREATE INDEX IF NOT EXISTS "schedules_assigned_to_schedule_date_idx" ON "public"."schedules"("assigned_to", "schedule_date");
 CREATE INDEX IF NOT EXISTS "schedules_status_priority_idx" ON "public"."schedules"("status", "priority");
 CREATE INDEX IF NOT EXISTS "schedules_schedule_type_schedule_date_idx" ON "public"."schedules"("schedule_type", "schedule_date");
-CREATE INDEX IF NOT EXISTS "schedules_is_completed_schedule_date_idx" ON "public"."schedules"("is_completed", "schedule_date");
+-- Removed: schedules_is_completed_schedule_date_idx (column does not exist in schema)
 
 -- ==========================================
 -- PregnancyCheck テーブル
 -- ==========================================
 CREATE INDEX IF NOT EXISTS "pregnancy_checks_status_idx" ON "public"."pregnancy_checks"("status");
 CREATE INDEX IF NOT EXISTS "pregnancy_checks_recorded_by_idx" ON "public"."pregnancy_checks"("recorded_by");
-CREATE INDEX IF NOT EXISTS "pregnancy_checks_breeding_record_id_check_date_idx" ON "public"."pregnancy_checks"("breeding_record_id", "check_date");
+-- Removed: pregnancy_checks_breeding_record_id_check_date_idx (breeding_record_id column does not exist)
+-- Fixed: Use mother_id instead
+CREATE INDEX IF NOT EXISTS "pregnancy_checks_mother_id_check_date_idx" ON "public"."pregnancy_checks"("mother_id", "check_date");
 CREATE INDEX IF NOT EXISTS "pregnancy_checks_status_check_date_idx" ON "public"."pregnancy_checks"("status", "check_date");
 
 -- ==========================================
@@ -116,7 +119,9 @@ CREATE INDEX IF NOT EXISTS "pregnancy_checks_status_check_date_idx" ON "public".
 CREATE INDEX IF NOT EXISTS "birth_plans_status_idx" ON "public"."birth_plans"("status");
 CREATE INDEX IF NOT EXISTS "birth_plans_recorded_by_idx" ON "public"."birth_plans"("recorded_by");
 CREATE INDEX IF NOT EXISTS "birth_plans_actual_birth_date_idx" ON "public"."birth_plans"("actual_birth_date");
-CREATE INDEX IF NOT EXISTS "birth_plans_breeding_record_id_expected_birth_date_idx" ON "public"."birth_plans"("breeding_record_id", "expected_birth_date");
+-- Removed: birth_plans_breeding_record_id_expected_birth_date_idx (breeding_record_id column does not exist)
+-- Fixed: Use mother_id instead
+CREATE INDEX IF NOT EXISTS "birth_plans_mother_id_expected_birth_date_idx" ON "public"."birth_plans"("mother_id", "expected_birth_date");
 CREATE INDEX IF NOT EXISTS "birth_plans_status_expected_birth_date_idx" ON "public"."birth_plans"("status", "expected_birth_date");
 CREATE INDEX IF NOT EXISTS "birth_plans_actual_birth_date_status_idx" ON "public"."birth_plans"("actual_birth_date", "status");
 
