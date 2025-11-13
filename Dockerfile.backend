@@ -8,7 +8,7 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
-RUN pnpm install --frozen-lockfile --filter backend
+RUN pnpm install --filter backend
 
 # ---- Build Stage ----
 FROM base AS build
