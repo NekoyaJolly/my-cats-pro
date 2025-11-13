@@ -45,23 +45,34 @@ steps:
       - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest'
     waitFor: ['Build Frontend']
 
-  # 5. Apply database migrations
-  # This step uses the newly built backend image to run 'prisma migrate deploy'.
-  # It requires the DATABASE_URL to be passed as a secret.
+  # 4-1. Start Cloud SQL Proxy
+  - name: 'gcr.io/cloud-sql-connectors/cloud-sql-proxy'
+    id: 'Start Cloud SQL Proxy'
+    args:
+      - '--project=${PROJECT_ID}'
+      - '${_CLOUD_SQL_CONNECTION_NAME}'
+      - '--port=5432'
+
+  # 4-2. Migrate database
   - name: 'gcr.io/google-appengine/exec-wrapper'
     id: 'Migrate Database'
+    waitFor:
+      - 'Start Cloud SQL Proxy' # Wait for proxy to be ready
     args:
       - '-i'
-      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest'
+      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/backend:latest'
       - '-e'
-      - 'DATABASE_URL' # This will be populated from the secret below
+      # Override DATABASE_URL to connect via proxy
+      - 'DATABASE_URL=postgresql://${_DB_USER}:${_DB_PASS}@127.0.0.1:5432/${_DB_NAME}'
       - '--'
       - 'npx'
       - 'prisma'
       - 'migrate'
       - 'deploy'
-    secretEnv: ['DATABASE_URL']
-    waitFor: ['Push Backend']
+    secretEnv:
+      - _DB_USER
+      - _DB_PASS
+      - _DB_NAME
 
   # 6. Deploy Backend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
