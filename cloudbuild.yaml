@@ -65,6 +65,8 @@ steps:
       - '--add-cloudsql-instances=${_CLOUD_SQL_CONNECTION_NAME}'
       - '--max-instances=3'
       - '--min-instances=0'
+      - '--memory=512Mi'
+      - '--cpu=1'
       - '--timeout=300'
     waitFor: ['Push Backend']
 

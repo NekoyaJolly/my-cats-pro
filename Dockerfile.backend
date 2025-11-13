@@ -23,11 +23,22 @@ RUN pnpm build
 # ---- Production Stage ----
 FROM node:20-alpine AS production
 WORKDIR /app
+
+# Install required dependencies for Prisma on Alpine
+RUN apk add --no-cache openssl libc6-compat
+
+# Install pnpm for prisma commands
+RUN npm install -g pnpm
+
 COPY --from=build /app/backend/dist ./dist
 COPY --from=build /app/backend/node_modules ./node_modules
 COPY --from=build /app/backend/package.json ./package.json
 # Copy entire prisma directory including migrations
 COPY backend/prisma ./prisma/
+
+# Ensure Prisma Client is generated for production
+RUN npx prisma generate
+
 # Copy entrypoint script
 COPY backend/docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
