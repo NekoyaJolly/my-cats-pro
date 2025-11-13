@@ -25,15 +25,19 @@ export class CsrfMiddleware implements NestMiddleware {
   }
 
   use(req: Request, res: Response, next: NextFunction) {
+  // Normalize the request URL because NestJS strips the global prefix from req.path
+  const originalUrl = (req.originalUrl || req.url || req.path || '').toLowerCase();
+  const isCsrfTokenEndpoint = originalUrl.startsWith('/api/v1/csrf-token') || originalUrl.startsWith('/csrf-token');
+
     // CSRF トークン取得エンドポイントは常にトークンを生成
-    if (req.path === '/api/v1/csrf-token' && req.method === 'GET') {
+    if (isCsrfTokenEndpoint && req.method === 'GET') {
       const protection = this.initializeCsrf();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       return protection(req as any, res as any, next);
     }
 
     // GET, HEAD, OPTIONS は CSRF チェックをスキップ
-    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    if (!isCsrfTokenEndpoint && ['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       return next();
     }
 
