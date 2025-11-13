@@ -19,6 +19,11 @@ Welcome to the MyCats Pro documentation! This directory contains comprehensive t
 
 **Overall Assessment:** 74/100 (Good) - Nearly production-ready with minor security enhancements needed
 
+**🔄 ドキュメント統合履歴（2025-11-13）:**
+- `docs/troubleshooting.md` → `../TROUBLESHOOTING.md` に統合（本番環境・パフォーマンス対応追加）
+- `frontend/README.md` をプロジェクト固有の内容に更新
+- `frontend/src/app/# Code Citations.md` → `CodeCitations.md` にリネーム
+
 ---
 
 ### 🏗️ Architecture & Design

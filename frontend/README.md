@@ -1,36 +1,237 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MyCats Pro - フロントエンド
 
-## Getting Started
+猫生体管理システムのフロントエンドアプリケーション。Next.js 15とMantine UIを使用した最新のWebアプリケーションです。
 
-First, run the development server:
+## 🛠 技術スタック
+
+- **フレームワーク**: Next.js 15.5.3 (App Router)
+- **ライブラリ**: React 19.1.0
+- **UI**: Mantine UI 8.2.4 + Tailwind CSS 4.x
+- **言語**: TypeScript 5.x
+- **状態管理**: Zustand + TanStack Query
+- **API通信**: 型安全なAPIクライアント（OpenAPI生成型）
+- **日付処理**: Day.js
+- **アイコン**: Tabler Icons
+
+## 🚀 開発環境のセットアップ
+
+### 前提条件
+
+- Node.js 20.x 以上
+- pnpm 9.x 以上
+
+### インストール
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# フロントエンドディレクトリに移動
+cd frontend
+
+# 依存関係のインストール
+pnpm install
+
+# 環境変数の設定
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 環境変数
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`.env.local` ファイルを作成し、以下の環境変数を設定してください:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+# バックエンドAPI URL（必須）
+NEXT_PUBLIC_API_URL=http://localhost:3004/api/v1
 
-## Learn More
+# 環境識別子
+NEXT_PUBLIC_ENV=development
 
-To learn more about Next.js, take a look at the following resources:
+# 認証バイパス（開発環境のみ、セキュリティリスクあり）
+# NEXT_PUBLIC_AUTH_DISABLED=0
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> ⚠️ **重要**: `NEXT_PUBLIC_API_URL`には必ず`/api/v1`を含めてください。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📝 開発コマンド
 
-## Deploy on Vercel
+```bash
+# 開発サーバー起動（ポート3000）
+pnpm dev
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# プロダクションビルド
+pnpm build
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# プロダクションサーバー起動
+pnpm start
+
+# Lint実行
+pnpm lint
+
+# 型チェック
+pnpm type-check
+
+# OpenAPI型定義の生成
+pnpm generate:api-types
+```
+
+## 📁 ディレクトリ構造
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── layout.tsx         # ルートレイアウト
+│   ├── page.tsx           # ホーム画面
+│   ├── cats/              # 猫管理ページ
+│   ├── pedigrees/         # 血統書管理ページ
+│   ├── breeding/          # 交配管理ページ
+│   ├── care/              # ケア管理ページ
+│   ├── kittens/           # 子猫管理ページ
+│   ├── tags/              # タグ管理ページ
+│   └── more/              # その他機能
+├── components/            # 再利用可能コンポーネント
+│   ├── AppLayout.tsx      # アプリケーション共通レイアウト
+│   ├── PageTitle.tsx      # ページタイトルコンポーネント
+│   ├── GenderBadge.tsx    # 性別バッジ
+│   ├── TagSelector.tsx    # タグ選択UI
+│   └── forms/             # フォームコンポーネント
+├── lib/                   # ユーティリティ・ライブラリ
+│   ├── api/               # API通信レイヤー
+│   │   ├── client.ts      # APIクライアント
+│   │   ├── hooks/         # React Query フック
+│   │   └── generated/     # OpenAPI生成型
+│   └── utils/             # ユーティリティ関数
+└── styles/                # グローバルスタイル
+```
+
+## 🎨 コンポーネント設計
+
+### 共通コンポーネント
+
+- **AppLayout**: サイドバー・ヘッダー付き共通レイアウト
+- **PageTitle**: 統一されたページタイトル（18px/700）
+- **GenderBadge**: 性別バッジ（オス/メス/去勢/避妊）
+- **TagDisplay**: タグ表示コンポーネント
+- **TagSelector**: タグ選択UI
+
+詳細は [src/components/README.md](src/components/README.md) を参照してください。
+
+## 🔌 API統合
+
+### APIクライアント
+
+型安全なAPIクライアントを使用:
+
+```typescript
+import { apiClient } from '@/lib/api/client';
+
+// GET リクエスト
+const response = await apiClient.get('/cats', {
+  query: { limit: 20, page: 1 }
+});
+
+// POST リクエスト
+const result = await apiClient.post('/cats', {
+  body: { name: 'Fluffy', breed_id: 'breed-001' }
+});
+```
+
+### React Query フック
+
+```typescript
+import { useGetCats, useCreateCat } from '@/lib/api/hooks/use-cats';
+
+function CatList() {
+  const { data, isLoading } = useGetCats({ limit: 20 });
+  const createCat = useCreateCat();
+
+  // ...
+}
+```
+
+### OpenAPI型定義の更新
+
+バックエンドのAPIが更新された場合:
+
+```bash
+# 1. バックエンドでOpenAPIスキーマを生成
+cd ../backend
+pnpm swagger:gen
+
+# 2. フロントエンドで型定義を生成
+cd ../frontend
+pnpm generate:api-types
+```
+
+## 🧪 テスト
+
+```bash
+# テスト実行
+pnpm test
+
+# テストウォッチモード
+pnpm test:watch
+
+# カバレッジ
+pnpm test:coverage
+```
+
+テスト構造の詳細は [src/__tests__/README.md](src/__tests__/README.md) を参照してください。
+
+## 🎯 主要機能
+
+### 実装済み機能
+
+- ✅ ホーム画面 / ダッシュボード
+- ✅ 猫管理（一覧・詳細・登録・編集）
+- ✅ 血統書管理（一覧・詳細・家系図）
+- ✅ 子猫管理（グループ表示・成長記録）
+- ✅ 交配管理（記録・予定）
+- ✅ ケアスケジュール（ワクチン・駆虫・健康診断）
+- ✅ タグ管理（作成・編集・カテゴリ別）
+- ✅ レスポンシブデザイン
+
+### 開発中・計画中
+
+- 🚧 画像アップロード機能
+- 🚧 データエクスポート/インポート
+- 🚧 詳細な統計・レポート機能
+- 🚧 通知機能
+- 🚧 多言語対応
+
+## 🔐 認証
+
+JWT Bearer Tokenによる認証を実装。`apiClient`が自動的にトークンを管理します。
+
+```typescript
+// ログイン
+await apiClient.post('/auth/login', {
+  body: { email, password }
+});
+// トークンは自動保存
+
+// 自動的にトークンが付与される
+await apiClient.get('/cats'); // Authorization: Bearer <token>
+
+// ログアウト
+await apiClient.post('/auth/logout');
+// トークンは自動削除
+```
+
+## 📚 関連ドキュメント
+
+- **プロジェクト全体**: [../README.md](../README.md)
+- **セットアップガイド**: [../SETUP_GUIDE.md](../SETUP_GUIDE.md)
+- **トラブルシューティング**: [../TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+- **API仕様**: [../docs/api-specification.md](../docs/api-specification.md)
+- **機能ブループリント**: [../docs/functional-blueprint.md](../docs/functional-blueprint.md)
+
+## 🤝 開発への参加
+
+プルリクエストを歓迎します！以下を確認してください:
+
+1. ESLintとTypeScriptの型チェックを通すこと
+2. 既存のコンポーネント設計に従うこと
+3. 命名規則ガイドラインに準拠すること（[../docs/naming_convention_guidelines_v2.md](../docs/naming_convention_guidelines_v2.md)）
+
+---
+
+**最終更新**: 2025年11月13日  
+**フロントエンドバージョン**: Next.js 15.5.3 + React 19.1.0 + Mantine 8.2.4

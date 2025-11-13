@@ -56,7 +56,7 @@ steps:
       - '-e'
       - 'DATABASE_URL' # This will be populated from the secret below
       - '--'
-      - 'pnpm'
+      - 'npx'
       - 'prisma'
       - 'migrate'
       - 'deploy'

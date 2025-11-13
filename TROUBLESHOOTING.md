@@ -419,6 +419,184 @@ bash scripts/setup-dev-docker.sh
 
 ---
 
+## パフォーマンス問題
+
+### 1. APIレスポンスが遅い
+
+**診断:**
+
+```bash
+# レスポンス時間測定
+curl -w "\n\nTotal time: %{time_total}s\n" -o /dev/null -s "http://localhost:3004/api/v1/cats"
+
+# データベースクエリ分析（要pg_stat_statements拡張）
+psql $DATABASE_URL -c "SELECT query, calls, total_exec_time FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 10;"
+```
+
+**最適化:**
+
+```bash
+# インデックス確認
+psql $DATABASE_URL -c "\d+ cats"
+
+# 不足しているインデックスを追加
+# 例: cats テーブルの owner_id にインデックスを作成
+psql $DATABASE_URL -c "CREATE INDEX idx_cats_owner_id ON cats(owner_id);"
+```
+
+### 2. フロントエンドが重い
+
+**最適化手順:**
+
+```bash
+# バンドルサイズ分析
+cd frontend
+pnpm run build
+# ビルド出力でページサイズを確認
+
+# Next.js Bundle Analyzer（要インストール）
+# pnpm add -D @next/bundle-analyzer
+```
+
+### 3. メモリリーク
+
+**診断:**
+
+```bash
+# メモリ使用量監視
+free -h
+ps aux --sort=-%mem | head -10
+
+# Node.jsプロセスのメモリ確認
+ps -p <PID> -o pid,vsz,rss,comm
+```
+
+---
+
+## 本番環境の問題
+
+### 1. アプリケーションが起動しない
+
+**診断手順:**
+
+```bash
+# ログの確認（systemd使用時）
+journalctl -u mycats-api -n 50 --no-pager
+
+# 環境変数の確認
+env | grep -E "(DATABASE_URL|JWT_SECRET|NODE_ENV|PORT)"
+
+# ポートの確認
+netstat -tlnp | grep :3004
+# または
+lsof -i :3004
+
+# ディスク容量の確認
+df -h
+```
+
+**解決方法:**
+
+```bash
+# プロセス確認
+ps aux | grep node
+
+# 手動起動してエラー確認
+cd /path/to/mycats
+NODE_ENV=production node backend/dist/main.js
+
+# サービス再起動（systemd使用時）
+sudo systemctl restart mycats-api
+sudo systemctl status mycats-api
+```
+
+### 2. 502 Bad Gateway エラー
+
+**原因と解決:**
+
+```bash
+# 1. バックエンドサービス確認
+curl -f http://localhost:3004/health
+# または
+curl -v http://localhost:3004/api/v1/health
+
+# 2. Nginxエラーログ確認
+sudo tail -f /var/log/nginx/error.log
+
+# 3. プロキシ設定確認
+sudo nginx -t
+sudo systemctl reload nginx
+
+# 4. バックエンドプロセス確認
+ps aux | grep "node.*backend"
+```
+
+### 3. データベース接続プール枯渇
+
+**診断:**
+
+```bash
+# 接続数確認
+psql $DATABASE_URL -c "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
+
+# 最大接続数確認
+psql $DATABASE_URL -c "SHOW max_connections;"
+
+# アクティブな接続詳細
+psql $DATABASE_URL -c "SELECT pid, usename, application_name, client_addr, state, query FROM pg_stat_activity WHERE state != 'idle';"
+```
+
+**解決:**
+
+```bash
+# 1. アプリケーション再起動
+sudo systemctl restart mycats-api
+
+# 2. 必要に応じてデッドロック解除
+psql $DATABASE_URL -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle in transaction' AND state_change < now() - interval '5 minutes';"
+
+# 3. PostgreSQL再起動（最終手段）
+sudo systemctl restart postgresql
+```
+
+---
+
+## 🆘 緊急時対応
+
+### システム完全停止時
+
+1. **即座にロールバック**:
+
+   ```bash
+   # 前の安定バージョンに戻す
+   git checkout <previous_stable_commit>
+   pnpm install --frozen-lockfile
+   pnpm run build
+   sudo systemctl restart mycats-api
+   ```
+
+2. **データベースバックアップから復旧**:
+
+   ```bash
+   # バックアップリスト確認
+   ls -lh /path/to/backups/
+
+   # 復旧実行
+   psql $DATABASE_URL < /path/to/backups/backup_latest.sql
+   ```
+
+3. **ステータスページ更新**:
+   - 利用者への通知
+   - 復旧予定時間の共有
+
+### 連絡先・エスカレーション
+
+- **緊急時対応**: GitHub Issues
+- **技術サポート**: [開発チーム連絡先]
+- **セキュリティインシデント**: [セキュリティ担当連絡先]
+
+---
+
 ## よくある質問 (FAQ)
 
 ### Q: データベースのデータを完全に削除するには?
@@ -454,18 +632,43 @@ pnpm prisma:studio
 docker-compose logs -f postgres
 ```
 
+### Q: 本番環境のログはどこで確認できますか?
+
+```bash
+# アプリケーションログ（systemd使用時）
+journalctl -u mycats-api -f
+
+# Nginxログ
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
+
+# PostgreSQLログ
+sudo tail -f /var/log/postgresql/postgresql-15-main.log
+```
+
+---
+
+## 関連ドキュメント
+
+- **本番デプロイ**: [docs/production-deployment.md](docs/production-deployment.md)
+- **運用手順書**: [docs/operations.md](docs/operations.md)
+- **セキュリティ**: [docs/security-auth.md](docs/security-auth.md)
+- **データベース**: [docs/DATABASE_DEPLOYMENT_GUIDE.md](docs/DATABASE_DEPLOYMENT_GUIDE.md)
+
 ---
 
 ## サポート
 
-問題が解決しない場合は、以下の情報を含めて [GitHub Issues](https://github.com/NekoyaJolly/mycats/issues) に報告してください:
+問題が解決しない場合は、以下の情報を含めて [GitHub Issues](https://github.com/NekoyaJolly/mycats-pro/issues) に報告してください:
 
 - エラーメッセージの全文
 - 実行したコマンド
 - 環境情報（OS、Node.jsバージョン、Docker バージョン）
-- `docker-compose ps` の出力
-- `docker logs mycats_postgres` の出力
+- `docker-compose ps` の出力（Docker使用時）
+- `docker logs mycats_postgres` の出力（Docker使用時）
+- `journalctl -u mycats-api -n 50` の出力（本番環境）
 
 ---
 
-**最終更新**: 2025年10月31日
+**最終更新**: 2025年11月13日  
+**バージョン**: 2.0（本番環境・パフォーマンス対応追加）
