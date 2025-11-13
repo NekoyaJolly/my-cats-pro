@@ -59,14 +59,18 @@ steps:
       - '${_LOCATION}'
       - '--platform'
       - 'managed'
+      - '--execution-environment=gen2'
+      - '--service-account=${_BACKEND_SERVICE_ACCOUNT}'
       - '--allow-unauthenticated' # Or configure authentication as needed
-      - '--set-secrets=DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest'
-      - '--set-env-vars=NODE_ENV=production,CORS_ORIGIN=${_CORS_ORIGIN}'
+      - '--set-secrets=DATABASE_URL=DATABASE_URL:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=JWT_SECRET:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:${_JWT_REFRESH_SECRET_VERSION}'
+      - '--set-env-vars=NODE_ENV=production,CORS_ORIGIN=${_CORS_ORIGIN},INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_CONNECTION_NAME}'
       - '--add-cloudsql-instances=${_CLOUD_SQL_CONNECTION_NAME}'
+      - '--concurrency=20'
       - '--max-instances=3'
       - '--min-instances=0'
       - '--memory=512Mi'
       - '--cpu=1'
+      - '--cpu-boost'
       - '--timeout=300'
     waitFor: ['Push Backend']
 
@@ -86,6 +90,10 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars=NODE_ENV=production,NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}'
+      - '--execution-environment=gen2'
+      - '--service-account=${_FRONTEND_SERVICE_ACCOUNT}'
+      - '--concurrency=50'
+      - '--cpu-boost'
     waitFor: ['Push Frontend']
 
 # Define images to be pushed to Artifact Registry
@@ -103,6 +111,11 @@ substitutions:
   _NEXT_PUBLIC_API_URL: 'https://mycats-pro-backend-XXXXXXXXXX-an.a.run.app/api/v1'
   _CORS_ORIGIN: 'https://mycats-pro-frontend-XXXXXXXXXX-an.a.run.app'
   _CLOUD_SQL_CONNECTION_NAME: 'my-cats-pro:asia-northeast1:mycats-prod-db'
+  _BACKEND_SERVICE_ACCOUNT: 'cloud-run-backend@my-cats-pro.iam.gserviceaccount.com'
+  _FRONTEND_SERVICE_ACCOUNT: 'cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com'
+  _DATABASE_URL_SECRET_VERSION: '1'
+  _JWT_SECRET_VERSION: '1'
+  _JWT_REFRESH_SECRET_VERSION: '1'
 
 options:
   logging: CLOUD_LOGGING_ONLY
