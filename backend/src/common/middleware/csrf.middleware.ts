@@ -28,7 +28,7 @@ export class CsrfMiddleware implements NestMiddleware {
     // CSRF トークン取得エンドポイントは常にトークンを生成
     if (req.path === '/api/v1/csrf-token' && req.method === 'GET') {
       const protection = this.initializeCsrf();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       return protection(req as any, res as any, next);
     }
 
@@ -44,7 +44,7 @@ export class CsrfMiddleware implements NestMiddleware {
 
     // その他の POST/PUT/DELETE/PATCH リクエストはCSRFトークンをチェック
     const protection = this.initializeCsrf();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
     protection(req as any, res as any, next);
   }
 }
