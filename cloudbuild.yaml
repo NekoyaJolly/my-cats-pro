@@ -93,12 +93,13 @@ images:
 
 # Define substitution variables that can be passed at build time
 substitutions:
-  _LOCATION: 'asia-northeast1' # Example: Tokyo region
+  _LOCATION: 'asia-northeast1' # Tokyo region
   _REPO_NAME: 'mycats-pro'
   _BACKEND_SERVICE_NAME: 'mycats-pro-backend'
   _FRONTEND_SERVICE_NAME: 'mycats-pro-frontend'
-  _NEXT_PUBLIC_API_URL: 'https://your-backend-service-url' # This should be the URL of the deployed backend
-  _CORS_ORIGIN: 'https://your-frontend-service-url' # This should be the URL of the deployed frontend
+  # These will be auto-generated after first deploy, update after initial deployment
+  _NEXT_PUBLIC_API_URL: 'https://mycats-pro-backend-XXXXXXXXXX-an.a.run.app/api/v1'
+  _CORS_ORIGIN: 'https://mycats-pro-frontend-XXXXXXXXXX-an.a.run.app'
   _CLOUD_SQL_CONNECTION_NAME: 'my-cats-pro:asia-northeast1:mycats-prod-db'
 
 options:

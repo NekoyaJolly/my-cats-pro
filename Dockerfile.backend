@@ -26,11 +26,11 @@ WORKDIR /app
 COPY --from=build /app/backend/dist ./dist
 COPY --from=build /app/backend/node_modules ./node_modules
 COPY --from=build /app/backend/package.json ./package.json
-# Prisma schema for runtime access
-COPY backend/prisma/schema.prisma ./prisma/
+# Copy entire prisma directory including migrations
+COPY backend/prisma ./prisma/
 # Copy entrypoint script
 COPY backend/docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
-EXPOSE 3004
+EXPOSE 8080
 CMD ["./docker-entrypoint.sh"]
