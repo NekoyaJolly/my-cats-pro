@@ -8,7 +8,9 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
+COPY backend/prisma ./backend/prisma
 RUN pnpm install --filter backend
+RUN cd backend && pnpm prisma generate
 
 # ---- Build Stage ----
 FROM base AS build
