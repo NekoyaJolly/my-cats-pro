@@ -8,7 +8,9 @@ steps:
     args:
       - 'build'
       - '-t'
-      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:$COMMIT_SHA'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:${SHORT_SHA}'
+      - '-t'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest'
       - '-f'
       - 'Dockerfile.backend'
       - '.'
@@ -20,7 +22,9 @@ steps:
     args:
       - 'build'
       - '-t'
-      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:$COMMIT_SHA'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${SHORT_SHA}'
+      - '-t'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest'
       # Pass the public API URL as a build argument for the frontend
       - '--build-arg'
       - 'NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}'
@@ -32,13 +36,19 @@ steps:
   # 3. Push the backend image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Push Backend'
-    args: ['push', '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:$COMMIT_SHA']
+    args: 
+      - 'push'
+      - '--all-tags'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend'
     waitFor: ['Build Backend']
 
   # 4. Push the frontend image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Push Frontend'
-    args: ['push', '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:$COMMIT_SHA']
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend'
     waitFor: ['Build Frontend']
 
   # 5. Apply database migrations
@@ -48,7 +58,7 @@ steps:
     id: 'Migrate Database'
     args:
       - '-i'
-      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:$COMMIT_SHA'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:${SHORT_SHA}'
       - '-e'
       - 'DATABASE_URL' # This will be populated from the secret below
       - '--'
@@ -68,7 +78,7 @@ steps:
       - 'deploy'
       - '${_BACKEND_SERVICE_NAME}'
       - '--image'
-      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:$COMMIT_SHA'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:${SHORT_SHA}'
       - '--region'
       - '${_LOCATION}'
       - '--platform'
@@ -88,7 +98,7 @@ steps:
       - 'deploy'
       - '${_FRONTEND_SERVICE_NAME}'
       - '--image'
-      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:$COMMIT_SHA'
+      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${SHORT_SHA}'
       - '--region'
       - '${_LOCATION}'
       - '--platform'
@@ -99,8 +109,10 @@ steps:
 
 # Define images to be pushed to Artifact Registry
 images:
-  - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:$COMMIT_SHA'
-  - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:$COMMIT_SHA'
+  - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:${SHORT_SHA}'
+  - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest'
+  - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${SHORT_SHA}'
+  - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest'
 
 # Define secrets to be accessed from Secret Manager
 availableSecrets:
