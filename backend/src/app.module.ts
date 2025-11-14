@@ -17,6 +17,7 @@ import { AppThrottlerGuard } from "./common/guards/app-throttler.guard";
 import { CookieParserMiddleware } from "./common/middleware/cookie-parser.middleware";
 import { CorsMiddleware } from "./common/middleware/cors.middleware";
 import { CsrfMiddleware } from "./common/middleware/csrf.middleware";
+import { CsrfTokenService } from "./common/services/csrf-token.service";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { GraduationModule } from "./graduation/graduation.module";
@@ -111,6 +112,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
   ],
   controllers: [MasterDataController, CsrfController],
   providers: [
+    CsrfTokenService,
     {
       provide: APP_GUARD,
       useClass: AppThrottlerGuard,

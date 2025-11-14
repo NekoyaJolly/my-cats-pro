@@ -48,18 +48,35 @@ describe('CSRF Protection (e2e)', () => {
   });
 
   describe('POST requests without CSRF protection', () => {
-    it('should allow login without CSRF token (initial implementation)', async () => {
-      // 注: 実際の本番環境では、この動作は将来変更される可能性があります
+    it('should reject login without CSRF token', async () => {
       const response = await supertest(app.getHttpServer())
         .post('/api/v1/auth/login')
-        .send({ 
-          email: 'test@example.com', 
-          password: 'Test123!' 
+        .send({
+          email: 'test@example.com',
+          password: 'Test123!',
         });
 
-      // ログインエンドポイントは認証情報の検証で失敗する可能性がありますが、
-      // CSRF エラー (403) ではなく、認証エラー (401) を返すことを確認
+      expect(response.status).toBe(403);
+    });
+
+    it('should accept login request when CSRF token is provided', async () => {
+      const tokenResponse = await supertest(app.getHttpServer())
+        .get('/api/v1/csrf-token')
+        .expect(200);
+
+      const csrfToken = tokenResponse.body.data?.csrfToken;
+      expect(typeof csrfToken).toBe('string');
+
+      const response = await supertest(app.getHttpServer())
+        .post('/api/v1/auth/login')
+        .set('X-CSRF-Token', csrfToken)
+        .send({
+          email: 'test@example.com',
+          password: 'Test123!',
+        });
+
       expect([200, 401, 429]).toContain(response.status);
+      expect(response.status).not.toBe(403);
     });
   });
 

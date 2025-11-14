@@ -11,6 +11,7 @@
 - [Docker関連の問題](#docker関連の問題)
 - [環境変数の問題](#環境変数の問題)
 - [ビルドエラー](#ビルドエラー)
+- [モバイルだけ403になる](#モバイルだけ403になる)
 
 ---
 
@@ -558,6 +559,42 @@ psql $DATABASE_URL -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WH
 # 3. PostgreSQL再起動（最終手段）
 sudo systemctl restart postgresql
 ```
+
+---
+
+## モバイルだけ403になる
+
+### 問題: デスクトップではログインできるがモバイルでは 403 Forbidden になる
+
+#### 症状
+
+- `/api/v1/auth/login` や `/api/v1/auth/register` がモバイルブラウザのみ 403。
+- レスポンス本文（`error.message`）に `Invalid or missing CSRF token` が含まれる。
+
+#### 原因
+
+- 2025/11 のリリースで CSRF 保護を Cookie ベースから `X-CSRF-Token` ヘッダー方式へ移行しました。
+- モバイルブラウザはトラッキング防止やサードパーティ Cookie 制限により CSRF Cookie が保存されず、ログイン POST が拒否されていたケースがありました。
+
+#### 解決方法
+
+1. ログインや登録など `POST/PUT/PATCH/DELETE` を呼び出す前に `GET /api/v1/csrf-token` を実行してトークンを取得する。
+   - `frontend/src/lib/api/csrf.ts` の `getCsrfToken()` / `refreshCsrfToken()` を利用すると並列取得が抑制されます。
+2. API リクエスト時に取得したトークンを `X-CSRF-Token` ヘッダーへ追加する。
+   - 標準の `frontend/src/lib/api/client.ts` は自動で追加します。独自 fetch 実装がある場合はヘッダーを必ず付与してください。
+3. `403` が続く場合は `localStorage` / `IndexedDB` をクリアして CSRF トークンを再取得する。
+4. 端末の時計が大きくズレているとトークン期限チェックに失敗するため、時刻同期（NTP）を確認する。
+
+#### 関連ファイル
+
+- `backend/src/common/middleware/csrf.middleware.ts` — `X-CSRF-Token` を検証するミドルウェア。
+- `backend/src/common/controllers/csrf.controller.ts` — トークン発行 API。レスポンスは JSON で返るため Cookie を必要としません。
+- `backend/src/common/services/csrf-token.service.ts` — JWT でトークンを生成し、環境変数による TTL/シークレット設定をサポート。
+- `frontend/src/lib/api/csrf.ts` — フロントエンドのトークン管理ユーティリティ。
+
+#### 環境変数
+
+- `CSRF_TOKEN_SECRET` / `CSRF_TOKEN_TTL_SECONDS` でサーバー側のシークレットと有効期限を調整できます。
 
 ---
 

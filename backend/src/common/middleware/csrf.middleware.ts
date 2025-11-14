@@ -1,6 +1,8 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import csurf from 'csurf';
 import { Request, Response, NextFunction } from 'express';
+
+import { CsrfValidationError } from '../errors/csrf-validation.error';
+import { CsrfTokenService } from '../services/csrf-token.service';
 
 /**
  * CSRF保護ミドルウェア
@@ -8,47 +10,67 @@ import { Request, Response, NextFunction } from 'express';
  */
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware {
-  private csrfProtection: ReturnType<typeof csurf> | null = null;
+  constructor(private readonly csrfTokenService: CsrfTokenService) {}
 
-  private initializeCsrf() {
-    if (!this.csrfProtection) {
-      this.csrfProtection = csurf({
-        cookie: {
-          key: '_csrf',
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-        },
-      });
+  use(req: Request, _res: Response, next: NextFunction) {
+    const originalUrl = (req.originalUrl || req.url || req.path || '').toLowerCase();
+    const isCsrfTokenEndpoint =
+      originalUrl.startsWith('/api/v1/csrf-token') || originalUrl.startsWith('/csrf-token');
+
+    if (this.shouldSkipValidation(req, isCsrfTokenEndpoint)) {
+      return next();
     }
-    return this.csrfProtection;
+
+    const token = this.extractToken(req);
+    if (!token) {
+      return next(new CsrfValidationError('Missing CSRF token'));
+    }
+
+    const isValid = this.csrfTokenService.validateToken(token);
+    if (!isValid) {
+      return next(new CsrfValidationError('Invalid or expired CSRF token'));
+    }
+
+    return next();
   }
 
-  use(req: Request, res: Response, next: NextFunction) {
-  // Normalize the request URL because NestJS strips the global prefix from req.path
-  const originalUrl = (req.originalUrl || req.url || req.path || '').toLowerCase();
-  const isCsrfTokenEndpoint = originalUrl.startsWith('/api/v1/csrf-token') || originalUrl.startsWith('/csrf-token');
-
-    // CSRF トークン取得エンドポイントは常にトークンを生成
+  private shouldSkipValidation(req: Request, isCsrfTokenEndpoint: boolean): boolean {
     if (isCsrfTokenEndpoint && req.method === 'GET') {
-      const protection = this.initializeCsrf();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
-      return protection(req as any, res as any, next);
+      return true;
     }
 
-    // GET, HEAD, OPTIONS は CSRF チェックをスキップ
     if (!isCsrfTokenEndpoint && ['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-      return next();
+      return true;
     }
 
-    // ヘルスチェックエンドポイントはスキップ
     if (req.path === '/health' || req.path === '/api/v1/health') {
-      return next();
+      return true;
     }
 
-    // その他の POST/PUT/DELETE/PATCH リクエストはCSRFトークンをチェック
-    const protection = this.initializeCsrf();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
-    protection(req as any, res as any, next);
+    return false;
+  }
+
+  private extractToken(req: Request): string | null {
+    const headerNames = ['x-csrf-token', 'x-xsrf-token', 'csrf-token'];
+    for (const name of headerNames) {
+      const value = req.get(name);
+      if (value && typeof value === 'string' && value.trim().length > 0) {
+        return value;
+      }
+    }
+
+    if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
+      const candidate = (req.body as Record<string, unknown>)._csrf;
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate;
+      }
+    }
+
+    const queryCandidate = req.query?._csrf;
+    if (typeof queryCandidate === 'string' && queryCandidate.trim().length > 0) {
+      return queryCandidate;
+    }
+
+    return null;
   }
 }

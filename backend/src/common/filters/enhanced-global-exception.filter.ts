@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/node';
 import { Request, Response } from 'express';
 
 import type { RequestUser } from '../../auth/auth.types';
+import { CsrfValidationError } from '../errors/csrf-validation.error';
 
 /**
  * エラー監視を強化したグローバル例外フィルター
@@ -146,6 +147,10 @@ export class EnhancedGlobalExceptionFilter implements ExceptionFilter {
    * Check if the exception is a CSRF error
    */
   private isCsrfError(exception: unknown): boolean {
+    if (exception instanceof CsrfValidationError) {
+      return true;
+    }
+
     if (exception instanceof Error) {
       // Check for csurf-specific error codes
       const err = exception as Error & { code?: string };

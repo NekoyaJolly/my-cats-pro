@@ -1,6 +1,8 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { Response } from 'express';
+
+import { CsrfTokenService } from '../services/csrf-token.service';
 
 /**
  * CSRFトークン取得コントローラー
@@ -8,6 +10,8 @@ import { Request } from 'express';
 @ApiTags('Security')
 @Controller('csrf-token')
 export class CsrfController {
+  constructor(private readonly csrfTokenService: CsrfTokenService) {}
+
   @Get()
   @ApiOperation({ summary: 'CSRFトークンを取得' })
   @ApiResponse({ 
@@ -26,10 +30,14 @@ export class CsrfController {
       }
     }
   })
-  getCsrfToken(@Req() req: Request): { success: boolean; data: { csrfToken: string } } {
-    // csurfミドルウェアがreq.csrfToken()関数を追加
-    const csrfToken = (req as Request & { csrfToken?: () => string }).csrfToken?.() || '';
-    
+  getCsrfToken(
+    @Res({ passthrough: true }) res: Response,
+  ): { success: boolean; data: { csrfToken: string } } {
+    const csrfToken = this.csrfTokenService.createToken();
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Pragma', 'no-cache');
+
     return {
       success: true,
       data: {
