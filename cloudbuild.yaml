@@ -108,8 +108,8 @@ substitutions:
   _BACKEND_SERVICE_NAME: 'mycats-pro-backend'
   _FRONTEND_SERVICE_NAME: 'mycats-pro-frontend'
   # These will be auto-generated after first deploy, update after initial deployment
-  _NEXT_PUBLIC_API_URL: 'https://mycats-pro-backend-XXXXXXXXXX-an.a.run.app/api/v1'
-  _CORS_ORIGIN: 'https://mycats-pro-frontend-XXXXXXXXXX-an.a.run.app'
+  _NEXT_PUBLIC_API_URL: 'https://mycats-pro-backend-518939509282.asia-northeast1.run.app/api/v1'
+  _CORS_ORIGIN: 'https://mycats-pro-frontend-518939509282.asia-northeast1.run.app'
   _CLOUD_SQL_CONNECTION_NAME: 'my-cats-pro:asia-northeast1:mycats-prod-db'
   _BACKEND_SERVICE_ACCOUNT: 'cloud-run-backend@my-cats-pro.iam.gserviceaccount.com'
   _FRONTEND_SERVICE_ACCOUNT: 'cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com'
