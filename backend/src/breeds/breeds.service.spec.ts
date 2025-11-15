@@ -1,11 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { BreedsService } from './breeds.service';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { PrismaService } from '../prisma/prisma.service';
+
+import { BreedsService } from './breeds.service';
+
 
 describe('BreedsService', () => {
   let service: BreedsService;
-  let prismaService: PrismaService;
+  let _prismaService: PrismaService;
 
   const mockPrismaService = {
     breed: {
@@ -30,7 +33,7 @@ describe('BreedsService', () => {
     }).compile();
 
     service = module.get<BreedsService>(BreedsService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    _prismaService = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
   });

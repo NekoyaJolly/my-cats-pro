@@ -1,14 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CatsService } from './cats.service';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { PrismaService } from '../prisma/prisma.service';
+
+import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto';
 
 describe('CatsService', () => {
   let service: CatsService;
-  let prismaService: PrismaService;
-  let eventEmitter: EventEmitter2;
+  let _prismaService: PrismaService;
+  let _eventEmitter: EventEmitter2;
 
   const mockPrismaService = {
     cat: {
@@ -52,8 +54,8 @@ describe('CatsService', () => {
     }).compile();
 
     service = module.get<CatsService>(CatsService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    eventEmitter = module.get<EventEmitter2>(EventEmitter2);
+    _prismaService = module.get<PrismaService>(PrismaService);
+    _eventEmitter = module.get<EventEmitter2>(EventEmitter2);
 
     jest.clearAllMocks();
   });

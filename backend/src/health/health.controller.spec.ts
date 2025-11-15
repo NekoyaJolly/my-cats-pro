@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HealthController } from './health.controller';
+
 import { RateLimiterService } from '../common/services/rate-limiter.service';
+
+import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
   let controller: HealthController;

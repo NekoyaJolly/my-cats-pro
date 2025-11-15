@@ -1,11 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { CareService } from './care.service';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { PrismaService } from '../prisma/prisma.service';
+
+import { CareService } from './care.service';
+
 
 describe('CareService', () => {
   let service: CareService;
-  let prismaService: PrismaService;
+  let _prismaService: PrismaService;
 
   const mockPrismaService = {
     careSchedule: {
@@ -41,7 +44,7 @@ describe('CareService', () => {
     }).compile();
 
     service = module.get<CareService>(CareService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    _prismaService = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
   });
