@@ -270,9 +270,9 @@ export default function CatsPage() {
   };
 
   // 子猫判定関数（6ヶ月未満）
-  const isKitten = (birthDate: string): boolean => {
+  const isKitten = useCallback((birthDate: string): boolean => {
     return isKittenFunc(birthDate);
-  };
+  }, []);
 
   // 子猫の展開/折りたたみトグル
   const toggleExpanded = (motherId: string) => {
@@ -443,7 +443,7 @@ export default function CatsPage() {
     const displayCats = filteredCats.filter((cat: Cat) => !kittenIds.has(cat.id));
 
     return { displayCats, kittensByMother: kittensByMotherMap };
-  }, [filteredCats, activeTab]);
+  }, [filteredCats, activeTab, isKitten]);
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>

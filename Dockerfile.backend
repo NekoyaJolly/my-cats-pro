@@ -1,7 +1,7 @@
 # ---- Base Stage ----
 FROM node:20-alpine AS base
 WORKDIR /app
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9.15.9
 
 # ---- Dependencies Stage ----
 FROM base AS deps
@@ -10,7 +10,8 @@ COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY backend/prisma ./backend/prisma
 RUN pnpm install --filter backend
-RUN cd backend && pnpm prisma generate
+WORKDIR /app/backend
+RUN pnpm prisma generate
 
 # ---- Build Stage ----
 FROM base AS build
@@ -28,13 +29,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Install required dependencies for Prisma on Alpine
-RUN apk add --no-cache openssl libc6-compat
-
-# Install pnpm for prisma commands
-RUN npm install -g pnpm
-
-RUN addgroup -S nodejs && adduser -S nodeapp -G nodejs
+# Install required dependencies for Prisma on Alpine and pnpm, create user
+RUN apk add --no-cache openssl=3.3.2-r4 libc6-compat=1.2.5-r8 && \
+    npm install -g pnpm@9.15.9 && \
+    addgroup -S nodejs && adduser -S nodeapp -G nodejs
 
 COPY --from=build /app/backend/dist ./dist
 COPY --from=build /app/backend/node_modules ./node_modules
@@ -43,11 +41,9 @@ COPY pnpm-lock.yaml ./pnpm-lock.yaml
 # Copy entire prisma directory including migrations
 COPY backend/prisma ./prisma/
 
-# Remove development dependencies after copying workspace artifacts
-RUN pnpm prune --prod
-
-# Ensure Prisma Client is generated for production
-RUN npx prisma generate
+# Remove development dependencies and ensure Prisma Client is generated for production
+RUN pnpm prune --prod && \
+    npx prisma generate
 
 # Copy entrypoint script
 COPY backend/docker-entrypoint.sh ./

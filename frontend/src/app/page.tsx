@@ -270,7 +270,7 @@ export default function Home() {
     
     const appliedCards = applyDashboardSettings(cardsWithDefaults, settings);
     setDashboardCards(appliedCards);
-  }, [cats.length, careSummary.pending, breedingSummary.today]);
+  }, [cats.length, careSummary.pending, breedingSummary.today, breedingSummary.total]);
 
   // カード設定保存ハンドラー
   const handleSaveCardSettings = (cards: DashboardCardConfig[]) => {
