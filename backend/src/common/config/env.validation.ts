@@ -50,6 +50,10 @@ const envSchema = z.object({
   THROTTLE_TTL: z.coerce.number().default(60000),
   THROTTLE_LIMIT: z.coerce.number().default(100),
 
+  // CSRF保護
+  CSRF_TOKEN_SECRET: z.string().min(32, 'CSRF_TOKEN_SECRET は最低32文字必要です').optional(),
+  CSRF_TOKEN_TTL_SECONDS: z.coerce.number().default(600),
+
   // ヘルスチェック
   HEALTH_CHECK_DATABASE: z
     .string()
@@ -109,6 +113,7 @@ export function validateProductionEnvironment(): void {
     { key: 'CORS_ORIGIN', value: env.CORS_ORIGIN },
     { key: 'JWT_SECRET', value: env.JWT_SECRET },
     { key: 'JWT_REFRESH_SECRET', value: env.JWT_REFRESH_SECRET },
+    { key: 'CSRF_TOKEN_SECRET', value: env.CSRF_TOKEN_SECRET },
   ];
 
   const missingConfigs = requiredForProduction.filter(
@@ -132,6 +137,10 @@ export function validateProductionEnvironment(): void {
 
   if (typeof env.JWT_REFRESH_SECRET === 'string' && (env.JWT_REFRESH_SECRET.includes('changeme') || env.JWT_REFRESH_SECRET.includes('local'))) {
     insecureDefaults.push('JWT_REFRESH_SECRET に開発用の値が設定されています');
+  }
+
+  if (typeof env.CSRF_TOKEN_SECRET === 'string' && (env.CSRF_TOKEN_SECRET.includes('changeme') || env.CSRF_TOKEN_SECRET.includes('local') || env.CSRF_TOKEN_SECRET.includes('dev'))) {
+    insecureDefaults.push('CSRF_TOKEN_SECRET に開発用の値が設定されています');
   }
 
   if (env.AUTH_DISABLED === 1) {
