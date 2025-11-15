@@ -373,15 +373,17 @@ export class AuthService {
 
     let matchedUser: { id: string; email: string } | null = null;
 
+    // Timing attack prevention: always check all candidates
+    // to ensure constant-time operation regardless of token position
     for (const user of candidates) {
       if (!user.resetPasswordToken) continue;
       const isValidToken = await this.passwordService.verifyPassword(
         token,
         user.resetPasswordToken,
       );
-      if (isValidToken) {
+      if (isValidToken && !matchedUser) {
         matchedUser = { id: user.id, email: user.email };
-        break;
+        // Continue checking remaining users to prevent timing attacks
       }
     }
 

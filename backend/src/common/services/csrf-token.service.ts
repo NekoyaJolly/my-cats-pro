@@ -19,10 +19,19 @@ export class CsrfTokenService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {
-    this.secret =
-      this.configService.get<string>('CSRF_TOKEN_SECRET') ||
-      this.configService.get<string>('JWT_SECRET') ||
-      'mycats-dev-csrf-secret';
+    // Require CSRF_TOKEN_SECRET in production, fallback to JWT_SECRET in development only
+    const csrfSecret = this.configService.get<string>('CSRF_TOKEN_SECRET');
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    
+    if (process.env.NODE_ENV === 'production' && !csrfSecret) {
+      throw new Error('CSRF_TOKEN_SECRET must be set in production environment');
+    }
+    
+    this.secret = csrfSecret || jwtSecret || '';
+    
+    if (!this.secret) {
+      throw new Error('CSRF_TOKEN_SECRET or JWT_SECRET must be configured');
+    }
 
     const ttlFromEnv = Number(this.configService.get<string>('CSRF_TOKEN_TTL_SECONDS') ?? '600');
     this.ttlSeconds = Number.isFinite(ttlFromEnv) && ttlFromEnv > 0 ? ttlFromEnv : 600;
