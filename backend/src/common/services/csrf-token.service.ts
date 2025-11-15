@@ -1,7 +1,8 @@
+import { randomBytes } from 'crypto';
+
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions, JwtVerifyOptions } from '@nestjs/jwt';
-import { randomBytes } from 'crypto';
 
 interface CsrfJwtPayload {
   purpose: 'csrf';

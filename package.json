@@ -62,7 +62,10 @@
   "private": true,
   "pnpm": {
     "overrides": {
-      "axios": ">=1.12.0"
+      "axios": ">=1.12.0",
+      "js-yaml": ">=4.1.1",
+      "validator": ">=13.15.20",
+      "cookie": ">=0.7.0"
     }
   }
 }
