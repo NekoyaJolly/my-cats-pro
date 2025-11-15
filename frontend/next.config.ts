@@ -41,8 +41,11 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../"),
   // Memory optimization for CI/CD
   webpack: (config, { dev, isServer }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (!dev && !isServer && config.optimization?.splitChunks?.cacheGroups) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const cg = config.optimization.splitChunks.cacheGroups;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       config.optimization.splitChunks.cacheGroups = {
         ...cg,
         vendor: {
@@ -53,6 +56,7 @@ const nextConfig: NextConfig = {
         },
       };
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return config;
   },
   // Remove rewrites and headers as they don't work with static export

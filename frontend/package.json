@@ -7,7 +7,7 @@
     "build": "next build",
     "analyze": "ANALYZE=true next build",
   "start": "next start",
-    "lint": "eslint --max-warnings 20 .",
+    "lint": "eslint --max-warnings 0 .",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
