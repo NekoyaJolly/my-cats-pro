@@ -369,7 +369,7 @@ export class PedigreeService {
     return { success: true };
   }
 
-  async getFamily(id: string, generations: number = 3): Promise<PedigreeTreeNode> {
+  async getFamily(id: string, _generations: number = 3): Promise<PedigreeTreeNode> {
     // Pedigreeモデルは血統情報を文字列フィールドとして保持しているため、
     // リレーションではなく直接データを取得
     const pedigree = await this.prisma.pedigree.findUnique({
