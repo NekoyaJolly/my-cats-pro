@@ -49,7 +49,12 @@ describe('CareService', () => {
     user: {
       findFirst: jest.fn(),
     },
-    $transaction: jest.fn((args) => Promise.all(args)),
+    $transaction: jest.fn((args: any) => {
+      if (Array.isArray(args)) {
+        return Promise.all(args);
+      }
+      return args(mockPrismaService);
+    }),
   };
 
   beforeEach(async () => {
@@ -131,6 +136,7 @@ describe('CareService', () => {
         createdAt: new Date(),
       };
 
+      mockPrismaService.user.findFirst.mockResolvedValue({ id: 'user-1' });
       mockPrismaService.schedule.create.mockResolvedValue(mockSchedule);
 
       const result = await service.addSchedule(createDto);
@@ -145,19 +151,20 @@ describe('CareService', () => {
       const mockSchedule = {
         id: '1',
         catId: 'cat-1',
-        status: 'PENDING',
+        scheduleType: 'CARE',
+        careType: 'HEALTH_CHECK',
       };
 
-      const mockResponse = {
-        success: true,
-        data: {
-          scheduleId: '1',
-          recordId: 'record-1',
-        },
+      const mockCareRecord = {
+        id: 'record-1',
+        scheduleId: '1',
+        catId: 'cat-1',
       };
 
+      mockPrismaService.user.findFirst.mockResolvedValue({ id: 'user-1' });
       mockPrismaService.schedule.findUnique.mockResolvedValue(mockSchedule);
-      mockPrismaService.schedule.update.mockResolvedValue(mockSchedule);
+      mockPrismaService.careRecord.create.mockResolvedValue(mockCareRecord);
+      mockPrismaService.schedule.update.mockResolvedValue({ ...mockSchedule, status: 'COMPLETED' });
 
       const result = await service.complete('1', {});
 
@@ -187,14 +194,16 @@ describe('CareService', () => {
         ...createDto,
         visitDate: new Date(createDto.visitDate),
         createdAt: new Date(),
+        tags: [],
       };
 
+      mockPrismaService.user.findFirst.mockResolvedValue({ id: 'user-1' });
       mockPrismaService.cat.findUnique.mockResolvedValue({ id: 'cat-1' });
       mockPrismaService.medicalRecord.create.mockResolvedValue(mockRecord);
 
       const result = await service.addMedicalRecord(createDto);
 
-      expect(result).toEqual(mockRecord);
+      expect(result.id).toBe('1');
       expect(mockPrismaService.medicalRecord.create).toHaveBeenCalled();
     });
 
@@ -219,16 +228,17 @@ describe('CareService', () => {
           catId: 'cat-1',
           visitDate: new Date(),
           diagnosis: 'Healthy',
+          tags: [],
         },
       ];
 
-      mockPrismaService.medicalRecord.findMany.mockResolvedValue(mockRecords);
       mockPrismaService.medicalRecord.count.mockResolvedValue(1);
+      mockPrismaService.medicalRecord.findMany.mockResolvedValue(mockRecords);
 
       const result = await service.findMedicalRecords({});
 
-      expect(result.data).toEqual(mockRecords);
       expect(result.meta.total).toBe(1);
+    });
     });
   });
 

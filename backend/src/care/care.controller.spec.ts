@@ -50,10 +50,10 @@ describe('CareController', () => {
 
       mockCareService.addSchedule.mockResolvedValue(mockSchedule);
 
-      const result = await controller.addSchedule(createDto);
+      const result = await controller.addSchedule(createDto, undefined);
 
       expect(result).toEqual(mockSchedule);
-      expect(service.addSchedule).toHaveBeenCalledWith(createDto);
+      expect(service.addSchedule).toHaveBeenCalledWith(createDto, undefined);
     });
   });
 
