@@ -227,6 +227,10 @@ describe('CatsService', () => {
 
       expect(mockPrismaService.cat.delete).toHaveBeenCalledWith({
         where: { id: '1' },
+        include: {
+          breed: true,
+          coatColor: true,
+        },
       });
     });
 

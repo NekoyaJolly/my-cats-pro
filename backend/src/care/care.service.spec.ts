@@ -46,6 +46,9 @@ describe('CareService', () => {
     cat: {
       findUnique: jest.fn(),
     },
+    user: {
+      findFirst: jest.fn(),
+    },
     $transaction: jest.fn((args) => Promise.all(args)),
   };
 
@@ -82,8 +85,8 @@ describe('CareService', () => {
         },
       ];
 
-      mockPrismaService.careSchedule.findMany.mockResolvedValue(mockSchedules);
-      mockPrismaService.careSchedule.count.mockResolvedValue(1);
+      mockPrismaService.schedule.findMany.mockResolvedValue(mockSchedules);
+      mockPrismaService.schedule.count.mockResolvedValue(1);
 
       const result = await service.findSchedules({});
 
@@ -101,8 +104,8 @@ describe('CareService', () => {
         },
       ];
 
-      mockPrismaService.careSchedule.findMany.mockResolvedValue(mockSchedules);
-      mockPrismaService.careSchedule.count.mockResolvedValue(1);
+      mockPrismaService.schedule.findMany.mockResolvedValue(mockSchedules);
+      mockPrismaService.schedule.count.mockResolvedValue(1);
 
       const result = await service.findSchedules({ catId: 'cat-1' });
 
@@ -128,12 +131,12 @@ describe('CareService', () => {
         createdAt: new Date(),
       };
 
-      mockPrismaService.careSchedule.create.mockResolvedValue(mockSchedule);
+      mockPrismaService.schedule.create.mockResolvedValue(mockSchedule);
 
       const result = await service.addSchedule(createDto);
 
       expect(result).toEqual(mockSchedule);
-      expect(mockPrismaService.careSchedule.create).toHaveBeenCalled();
+      expect(mockPrismaService.schedule.create).toHaveBeenCalled();
     });
   });
 
@@ -153,8 +156,8 @@ describe('CareService', () => {
         },
       };
 
-      mockPrismaService.careSchedule.findUnique.mockResolvedValue(mockSchedule);
-      mockPrismaService.careSchedule.update.mockResolvedValue(mockSchedule);
+      mockPrismaService.schedule.findUnique.mockResolvedValue(mockSchedule);
+      mockPrismaService.schedule.update.mockResolvedValue(mockSchedule);
 
       const result = await service.complete('1', {});
 
@@ -163,7 +166,7 @@ describe('CareService', () => {
     });
 
     it('should throw NotFoundException for invalid schedule', async () => {
-      mockPrismaService.careSchedule.findUnique.mockResolvedValue(null);
+      mockPrismaService.schedule.findUnique.mockResolvedValue(null);
 
       await expect(service.complete('invalid', {})).rejects.toThrow(NotFoundException);
     });
@@ -233,19 +236,19 @@ describe('CareService', () => {
     it('should delete a schedule successfully', async () => {
       const mockSchedule = { id: '1', name: 'Vaccine' };
 
-      mockPrismaService.careSchedule.findUnique.mockResolvedValue(mockSchedule);
-      mockPrismaService.careSchedule.delete.mockResolvedValue(mockSchedule);
+      mockPrismaService.schedule.findUnique.mockResolvedValue(mockSchedule);
+      mockPrismaService.schedule.delete.mockResolvedValue(mockSchedule);
 
       const result = await service.deleteSchedule('1');
 
       expect(result.success).toBe(true);
-      expect(mockPrismaService.careSchedule.delete).toHaveBeenCalledWith({
+      expect(mockPrismaService.schedule.delete).toHaveBeenCalledWith({
         where: { id: '1' },
       });
     });
 
     it('should throw NotFoundException for invalid schedule', async () => {
-      mockPrismaService.careSchedule.findUnique.mockResolvedValue(null);
+      mockPrismaService.schedule.findUnique.mockResolvedValue(null);
 
       await expect(service.deleteSchedule('invalid')).rejects.toThrow(NotFoundException);
     });

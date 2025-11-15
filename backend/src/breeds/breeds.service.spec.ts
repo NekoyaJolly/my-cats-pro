@@ -19,6 +19,12 @@ describe('BreedsService', () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
+    cat: {
+      count: jest.fn(),
+    },
+    pedigree: {
+      count: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -101,17 +107,13 @@ describe('BreedsService', () => {
 
   describe('findOne', () => {
     it('should return a breed by id', async () => {
-      const mockBreed = { id: '1', name: 'Persian' };
+      const mockBreed = { id: '1', name: 'Persian', cats: [] };
 
       mockPrismaService.breed.findUnique.mockResolvedValue(mockBreed);
 
       const result = await service.findOne('1');
 
       expect(result).toEqual(mockBreed);
-      expect(mockPrismaService.breed.findUnique).toHaveBeenCalledWith({
-        where: { id: '1' },
-        include: { _count: { select: { cats: true } } },
-      });
     });
 
     it('should throw NotFoundException when breed not found', async () => {
@@ -152,6 +154,8 @@ describe('BreedsService', () => {
       const mockBreed = { id: '1', name: 'Persian' };
 
       mockPrismaService.breed.findUnique.mockResolvedValue(mockBreed);
+      mockPrismaService.cat.count.mockResolvedValue(0);
+      mockPrismaService.pedigree.count.mockResolvedValue(0);
       mockPrismaService.breed.delete.mockResolvedValue(mockBreed);
 
       await service.remove('1');

@@ -38,6 +38,9 @@ describe('BreedingService', () => {
       findMany: jest.fn(),
       delete: jest.fn(),
     },
+    user: {
+      findFirst: jest.fn(),
+    },
     $transaction: jest.fn((args) => Promise.all(args)),
   };
 
@@ -91,12 +94,14 @@ describe('BreedingService', () => {
         .mockResolvedValueOnce(mockMother) // First call for female
         .mockResolvedValueOnce(mockFather); // Second call for male
       mockPrismaService.breedingNgRule.findMany.mockResolvedValue([]);
-      mockPrismaService.breeding.create.mockResolvedValue(mockBreeding);
+      mockPrismaService.user.findFirst.mockResolvedValue({ id: 'user-1', email: 'test@test.com' });
+      mockPrismaService.breedingRecord.create.mockResolvedValue(mockBreeding);
 
       const result = await service.create(createDto);
 
-      expect(result).toEqual(mockBreeding);
-      expect(mockPrismaService.breeding.create).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockBreeding);
+      expect(mockPrismaService.breedingRecord.create).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException for invalid father', async () => {

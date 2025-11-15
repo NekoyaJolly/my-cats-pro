@@ -63,7 +63,8 @@ describe('PedigreeService', () => {
 
       const result = await service.create(createDto);
 
-      expect(result).toEqual(mockPedigree);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockPedigree);
       expect(mockPrismaService.pedigree.create).toHaveBeenCalled();
     });
 
@@ -138,7 +139,8 @@ describe('PedigreeService', () => {
 
       const result = await service.update('1', updateDto);
 
-      expect(result).toEqual(mockPedigree);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockPedigree);
     });
   });
 

@@ -134,7 +134,8 @@ describe('GraduationService', () => {
 
       const result = await service.findOneGraduation('1');
 
-      expect(result).toEqual(mockGraduation);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockGraduation);
     });
 
     it('should throw NotFoundException for invalid graduation', async () => {
