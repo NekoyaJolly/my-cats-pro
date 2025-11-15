@@ -81,7 +81,7 @@ describe('CoatColorsService', () => {
       const result = await service.findAll({});
 
       expect(result.data).toEqual(mockColors);
-      expect(result.pagination.total).toBe(2);
+      expect(result.meta.total).toBe(2);
     });
   });
 

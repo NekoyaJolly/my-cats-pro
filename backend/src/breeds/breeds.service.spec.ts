@@ -81,7 +81,7 @@ describe('BreedsService', () => {
       const result = await service.findAll({});
 
       expect(result.data).toEqual(mockBreeds);
-      expect(result.pagination.total).toBe(2);
+      expect(result.meta.total).toBe(2);
       expect(mockPrismaService.breed.findMany).toHaveBeenCalled();
       expect(mockPrismaService.breed.count).toHaveBeenCalled();
     });
@@ -95,7 +95,7 @@ describe('BreedsService', () => {
       const result = await service.findAll({ search: 'Persian' });
 
       expect(result.data).toEqual(mockBreeds);
-      expect(result.pagination.total).toBe(1);
+      expect(result.meta.total).toBe(1);
     });
   });
 

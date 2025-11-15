@@ -20,10 +20,12 @@ describe('CatsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
+      groupBy: jest.fn(),
     },
     breed: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
+      findMany: jest.fn(),
     },
     coatColor: {
       findUnique: jest.fn(),
@@ -237,19 +239,27 @@ describe('CatsService', () => {
 
   describe('getStatistics', () => {
     it('should return cat statistics', async () => {
-      mockPrismaService.cat.count.mockImplementation(({ where }) => {
-        if (where.gender === 'FEMALE') return Promise.resolve(10);
-        if (where.gender === 'MALE') return Promise.resolve(8);
-        if (where.isInHouse === true) return Promise.resolve(15);
-        return Promise.resolve(18);
-      });
+      mockPrismaService.cat.count.mockResolvedValue(18);
+      mockPrismaService.cat.groupBy
+        .mockResolvedValueOnce([
+          { gender: 'MALE', _count: 8 },
+          { gender: 'FEMALE', _count: 10 },
+        ])
+        .mockResolvedValueOnce([
+          { breedId: 'breed-1', _count: 10 },
+          { breedId: 'breed-2', _count: 8 },
+        ]);
+
+      mockPrismaService.breed.findMany.mockResolvedValue([
+        { id: 'breed-1', name: 'Persian', code: 1 },
+        { id: 'breed-2', name: 'Siamese', code: 2 },
+      ]);
 
       const result = await service.getStatistics();
 
       expect(result.total).toBe(18);
-      expect(result.female).toBe(10);
-      expect(result.male).toBe(8);
-      expect(result.inHouse).toBe(15);
+      expect(result.genderDistribution.MALE).toBe(8);
+      expect(result.genderDistribution.FEMALE).toBe(10);
     });
   });
 });

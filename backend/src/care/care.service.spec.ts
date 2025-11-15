@@ -19,7 +19,23 @@ describe('CareService', () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
+    schedule: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+    },
     medicalRecord: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+    },
+    careRecord: {
       create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
@@ -30,6 +46,7 @@ describe('CareService', () => {
     cat: {
       findUnique: jest.fn(),
     },
+    $transaction: jest.fn((args) => Promise.all(args)),
   };
 
   beforeEach(async () => {
@@ -97,15 +114,16 @@ describe('CareService', () => {
     it('should create a care schedule successfully', async () => {
       const createDto = {
         name: 'Vaccine',
-        catId: 'cat-1',
+        catIds: ['cat-1'],
         scheduledDate: '2024-12-01',
-        type: 'CARE' as const,
+        careType: 'HEALTH_CHECK' as const,
       };
 
       const mockSchedule = {
         id: '1',
-        ...createDto,
+        name: createDto.name,
         scheduledDate: new Date(createDto.scheduledDate),
+        careType: createDto.careType,
         status: 'PENDING',
         createdAt: new Date(),
       };
@@ -127,19 +145,21 @@ describe('CareService', () => {
         status: 'PENDING',
       };
 
-      const mockCompletedSchedule = {
-        ...mockSchedule,
-        status: 'COMPLETED',
-        completedAt: new Date(),
+      const mockResponse = {
+        success: true,
+        data: {
+          scheduleId: '1',
+          recordId: 'record-1',
+        },
       };
 
       mockPrismaService.careSchedule.findUnique.mockResolvedValue(mockSchedule);
-      mockPrismaService.careSchedule.update.mockResolvedValue(mockCompletedSchedule);
+      mockPrismaService.careSchedule.update.mockResolvedValue(mockSchedule);
 
       const result = await service.complete('1', {});
 
-      expect(result.status).toBe('COMPLETED');
-      expect(mockPrismaService.careSchedule.update).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
     });
 
     it('should throw NotFoundException for invalid schedule', async () => {

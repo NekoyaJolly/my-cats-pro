@@ -9,8 +9,9 @@ describe('GraduationController', () => {
 
   const mockGraduationService = {
     transferCat: jest.fn(),
-    findAllGraduationRecords: jest.fn(),
-    getGraduatedCats: jest.fn(),
+    findAllGraduations: jest.fn(),
+    findOneGraduation: jest.fn(),
+    cancelGraduation: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -36,50 +37,61 @@ describe('GraduationController', () => {
 
   describe('transferCat', () => {
     it('should transfer a cat', async () => {
+      const catId = 'cat-1';
       const transferDto = {
-        catId: 'cat-1',
         transferDate: '2024-01-15',
         destination: 'New Home',
       };
-      const mockRecord = { id: '1', ...transferDto };
+      const mockRecord = { success: true, data: { id: '1', catId, ...transferDto } };
 
       mockGraduationService.transferCat.mockResolvedValue(mockRecord);
 
-      const result = await controller.transferCat(transferDto);
+      const result = await controller.transferCat(catId, transferDto);
 
       expect(result).toEqual(mockRecord);
-      expect(service.transferCat).toHaveBeenCalledWith(transferDto);
+      expect(service.transferCat).toHaveBeenCalledWith(catId, transferDto);
     });
   });
 
-  describe('findAllGraduationRecords', () => {
+  describe('findAllGraduations', () => {
     it('should return graduation records', async () => {
       const mockResponse = {
         data: [{ id: '1', catId: 'cat-1' }],
-        meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
+        meta: { page: 1, limit: 50, total: 1, totalPages: 1 },
       };
 
-      mockGraduationService.findAllGraduationRecords.mockResolvedValue(mockResponse);
+      mockGraduationService.findAllGraduations.mockResolvedValue(mockResponse);
 
-      const result = await controller.findAllGraduationRecords({});
+      const result = await controller.findAllGraduations('1', '50');
 
       expect(result).toEqual(mockResponse);
-      expect(service.findAllGraduationRecords).toHaveBeenCalledWith({});
+      expect(service.findAllGraduations).toHaveBeenCalledWith(1, 50);
     });
   });
 
-  describe('getGraduatedCats', () => {
-    it('should return graduated cats', async () => {
-      const mockResponse = {
-        data: [{ id: 'cat-1', name: 'Graduated Cat' }],
-      };
+  describe('findOneGraduation', () => {
+    it('should return a graduation record', async () => {
+      const mockGraduation = { id: '1', catId: 'cat-1', transferDate: new Date() };
 
-      mockGraduationService.getGraduatedCats.mockResolvedValue(mockResponse);
+      mockGraduationService.findOneGraduation.mockResolvedValue(mockGraduation);
 
-      const result = await controller.getGraduatedCats({});
+      const result = await controller.findOneGraduation('1');
+
+      expect(result).toEqual(mockGraduation);
+      expect(service.findOneGraduation).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('cancelGraduation', () => {
+    it('should cancel a graduation', async () => {
+      const mockResponse = { success: true, message: 'Graduation cancelled' };
+
+      mockGraduationService.cancelGraduation.mockResolvedValue(mockResponse);
+
+      const result = await controller.cancelGraduation('1');
 
       expect(result).toEqual(mockResponse);
-      expect(service.getGraduatedCats).toHaveBeenCalledWith({});
+      expect(service.cancelGraduation).toHaveBeenCalledWith('1');
     });
   });
 });

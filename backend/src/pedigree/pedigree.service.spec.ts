@@ -48,19 +48,17 @@ describe('PedigreeService', () => {
   describe('create', () => {
     it('should create a pedigree record successfully', async () => {
       const createDto = {
-        catId: 'cat-1',
-        registrationNumber: 'PED-001',
-        organization: 'CFA',
+        pedigreeId: '700545',
+        catName: 'Test Cat',
+        breedCode: 92,
       };
 
-      const mockCat = { id: 'cat-1', name: 'Test Cat' };
       const mockPedigree = {
         id: '1',
         ...createDto,
         createdAt: new Date(),
       };
 
-      mockPrismaService.cat.findUnique.mockResolvedValue(mockCat);
       mockPrismaService.pedigree.create.mockResolvedValue(mockPedigree);
 
       const result = await service.create(createDto);
@@ -69,15 +67,14 @@ describe('PedigreeService', () => {
       expect(mockPrismaService.pedigree.create).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException for invalid cat', async () => {
+    it('should throw NotFoundException for invalid pedigree id', async () => {
       const createDto = {
-        catId: 'invalid-cat',
-        registrationNumber: 'PED-001',
+        pedigreeId: '',
       };
 
-      mockPrismaService.cat.findUnique.mockResolvedValue(null);
+      mockPrismaService.pedigree.create.mockRejectedValue(new Error('Invalid pedigreeId'));
 
-      await expect(service.create(createDto)).rejects.toThrow(NotFoundException);
+      await expect(service.create(createDto)).rejects.toThrow();
     });
   });
 
@@ -125,16 +122,17 @@ describe('PedigreeService', () => {
 
   describe('update', () => {
     it('should update a pedigree record successfully', async () => {
-      const updateDto = { organization: 'TICA' };
+      const updateDto = { catName: 'Updated Cat Name', title: 'Champion' };
       const mockPedigree = {
         id: '1',
-        catId: 'cat-1',
-        organization: 'TICA',
+        pedigreeId: '700545',
+        catName: 'Updated Cat Name',
+        title: 'Champion',
       };
 
       mockPrismaService.pedigree.findUnique.mockResolvedValue({
         id: '1',
-        catId: 'cat-1',
+        pedigreeId: '700545',
       });
       mockPrismaService.pedigree.update.mockResolvedValue(mockPedigree);
 

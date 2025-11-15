@@ -40,9 +40,9 @@ describe('PedigreeController', () => {
   describe('create', () => {
     it('should create a pedigree record', async () => {
       const createDto = {
-        catId: 'cat-1',
-        registrationNumber: 'PED-001',
-        organization: 'CFA',
+        pedigreeId: '700545',
+        catName: 'Test Cat',
+        breedCode: 92,
       };
       const mockPedigree = { id: '1', ...createDto };
 
@@ -86,8 +86,8 @@ describe('PedigreeController', () => {
 
   describe('update', () => {
     it('should update a pedigree record', async () => {
-      const updateDto = { organization: 'TICA' };
-      const mockPedigree = { id: '1', organization: 'TICA' };
+      const updateDto = { catName: 'Updated Cat Name', title: 'Champion' };
+      const mockPedigree = { id: '1', ...updateDto };
 
       mockPedigreeService.update.mockResolvedValue(mockPedigree);
 
