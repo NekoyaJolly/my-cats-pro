@@ -17,7 +17,7 @@
 - [ ] `EXPOSE` ポートを指定（推奨: 8080）
 - [ ] アプリケーションが`process.env.PORT`を読み取る実装になっている
 - [ ] 本番環境で必要な依存関係が全てインストールされている
-- [ ] Alpine Linuxの場合、必要なシステムライブラリ（openssl, libc6-compatなど）がインストールされている
+- [ ] Alpine Linuxの場合、必要なシステムライブラリ（openssl, libc6-compatなど）がインストールされている（バージョン指定なしで自動解決を推奨）
 
 ### Backend (Prisma)
 - [ ] `prisma` パッケージが `dependencies` に含まれている（devDependenciesではない）
@@ -116,6 +116,23 @@ curl https://FRONTEND_URL
 #### 5. `Migration directory not found`
 **原因:** migrationsディレクトリがイメージにコピーされていない  
 **解決:** `COPY backend/prisma ./prisma/` で全体をコピー
+
+#### 6. Alpine Linuxパッケージバージョン競合エラー
+**エラー例:**
+```
+gcompat-1.1.0-r4: breaks: world[libc6-compat=1.2.5-r8]
+openssl-3.5.4-r0: breaks: world[openssl=3.3.2-r4]
+```
+**原因:** Dockerfileでopensslやlibc6-compatのバージョンを固定している  
+**解決:** バージョン指定を削除してAlpineの自動解決に任せる
+```dockerfile
+# ❌ 避けるべき
+RUN apk add --no-cache openssl=3.3.2-r4 libc6-compat=1.2.5-r8
+
+# ✅ 推奨
+RUN apk add --no-cache openssl libc6-compat
+```
+Alpine Linuxは定期的にパッケージを更新するため、特定バージョンの固定は非推奨です。
 
 ## 🚀 推奨フロー
 
