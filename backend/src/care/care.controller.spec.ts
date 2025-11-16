@@ -41,19 +41,19 @@ describe('CareController', () => {
   describe('addSchedule', () => {
     it('should create a care schedule', async () => {
       const createDto = {
-        catId: 'cat-1',
+        catIds: ['cat-1'],
         name: 'Vaccine',
         scheduledDate: '2024-12-01',
-        type: 'CARE' as const,
+        careType: 'HEALTH_CHECK' as const,
       };
       const mockSchedule = { id: '1', ...createDto };
 
       mockCareService.addSchedule.mockResolvedValue(mockSchedule);
 
-      const result = await controller.addSchedule(createDto);
+      const result = await controller.addSchedule(createDto, undefined);
 
       expect(result).toEqual(mockSchedule);
-      expect(service.addSchedule).toHaveBeenCalledWith(createDto);
+      expect(service.addSchedule).toHaveBeenCalledWith(createDto, undefined);
     });
   });
 
@@ -76,14 +76,14 @@ describe('CareController', () => {
   describe('complete', () => {
     it('should complete a care schedule', async () => {
       const completeDto = { notes: 'Completed successfully' };
-      const mockSchedule = { id: '1', status: 'COMPLETED' };
+      const mockSchedule = { success: true, data: { scheduleId: '1', recordId: 'record-1' } };
 
       mockCareService.complete.mockResolvedValue(mockSchedule);
 
-      const result = await controller.complete('1', completeDto);
+      const result = await controller.complete('1', completeDto, undefined);
 
       expect(result).toEqual(mockSchedule);
-      expect(service.complete).toHaveBeenCalledWith('1', completeDto);
+      expect(service.complete).toHaveBeenCalledWith('1', completeDto, undefined);
     });
   });
 
@@ -98,10 +98,10 @@ describe('CareController', () => {
 
       mockCareService.addMedicalRecord.mockResolvedValue(mockRecord);
 
-      const result = await controller.addMedicalRecord(createDto);
+      const result = await controller.addMedicalRecord(createDto, undefined);
 
       expect(result).toEqual(mockRecord);
-      expect(service.addMedicalRecord).toHaveBeenCalledWith(createDto);
+      expect(service.addMedicalRecord).toHaveBeenCalledWith(createDto, undefined);
     });
   });
 

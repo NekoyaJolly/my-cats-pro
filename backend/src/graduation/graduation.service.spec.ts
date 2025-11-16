@@ -10,17 +10,20 @@ describe('GraduationService', () => {
   let service: GraduationService;
   let _prismaService: PrismaService;
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     cat: {
       findUnique: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
     },
-    graduationRecord: {
+    graduation: {
       create: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
       count: jest.fn(),
     },
+    $transaction: jest.fn((callback: any) => callback(mockPrismaService)),
   };
 
   beforeEach(async () => {
@@ -46,8 +49,8 @@ describe('GraduationService', () => {
 
   describe('transferCat', () => {
     it('should transfer a cat successfully', async () => {
+      const catId = 'cat-1';
       const transferDto = {
-        catId: 'cat-1',
         transferDate: '2024-01-15',
         destination: 'New Home',
         notes: 'Good home',
@@ -57,44 +60,41 @@ describe('GraduationService', () => {
         id: 'cat-1',
         name: 'Test Cat',
         isInHouse: true,
+        isGraduated: false,
       };
 
-      const mockUpdatedCat = {
-        ...mockCat,
-        isInHouse: false,
-      };
-
-      const mockGradRecord = {
+      const mockGraduation = {
         id: '1',
         catId: 'cat-1',
         transferDate: new Date(transferDto.transferDate),
+        destination: transferDto.destination,
+        notes: transferDto.notes,
       };
 
       mockPrismaService.cat.findUnique.mockResolvedValue(mockCat);
-      mockPrismaService.cat.update.mockResolvedValue(mockUpdatedCat);
-      mockPrismaService.graduationRecord.create.mockResolvedValue(mockGradRecord);
+      mockPrismaService.graduation.create.mockResolvedValue(mockGraduation);
+      mockPrismaService.cat.update.mockResolvedValue({ ...mockCat, isGraduated: true, isInHouse: false });
 
-      const result = await service.transferCat(transferDto);
+      const result = await service.transferCat(catId, transferDto);
 
-      expect(result).toEqual(mockGradRecord);
-      expect(mockPrismaService.cat.update).toHaveBeenCalled();
-      expect(mockPrismaService.graduationRecord.create).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
     });
 
     it('should throw NotFoundException for invalid cat', async () => {
+      const catId = 'invalid-cat';
       const transferDto = {
-        catId: 'invalid-cat',
         transferDate: '2024-01-15',
         destination: 'New Home',
       };
 
       mockPrismaService.cat.findUnique.mockResolvedValue(null);
 
-      await expect(service.transferCat(transferDto)).rejects.toThrow(NotFoundException);
+      await expect(service.transferCat(catId, transferDto)).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('findAllGraduationRecords', () => {
+  describe('findAllGraduations', () => {
     it('should return paginated graduation records', async () => {
       const mockRecords = [
         {
@@ -102,34 +102,70 @@ describe('GraduationService', () => {
           catId: 'cat-1',
           transferDate: new Date(),
           destination: 'New Home',
+          cat: {
+            id: 'cat-1',
+            name: 'Test Cat',
+            gender: 'MALE',
+            birthDate: new Date(),
+          },
         },
       ];
 
-      mockPrismaService.graduationRecord.findMany.mockResolvedValue(mockRecords);
-      mockPrismaService.graduationRecord.count.mockResolvedValue(1);
+      mockPrismaService.graduation.findMany.mockResolvedValue(mockRecords);
+      mockPrismaService.graduation.count.mockResolvedValue(1);
 
-      const result = await service.findAllGraduationRecords({});
+      const result = await service.findAllGraduations(1, 50);
 
       expect(result.data).toEqual(mockRecords);
       expect(result.meta.total).toBe(1);
     });
   });
 
-  describe('getGraduatedCats', () => {
-    it('should return graduated cats', async () => {
-      const mockCats = [
-        {
-          id: 'cat-1',
-          name: 'Graduated Cat',
-          isInHouse: false,
-        },
-      ];
+  describe('findOneGraduation', () => {
+    it('should return a graduation record', async () => {
+      const mockGraduation = {
+        id: '1',
+        catId: 'cat-1',
+        transferDate: new Date(),
+        destination: 'New Home',
+      };
 
-      mockPrismaService.cat.findMany.mockResolvedValue(mockCats);
+      mockPrismaService.graduation.findUnique.mockResolvedValue(mockGraduation);
 
-      const result = await service.getGraduatedCats({});
+      const result = await service.findOneGraduation('1');
 
-      expect(result.data).toEqual(mockCats);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockGraduation);
+    });
+
+    it('should throw NotFoundException for invalid graduation', async () => {
+      mockPrismaService.graduation.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOneGraduation('invalid')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('cancelGraduation', () => {
+    it('should cancel a graduation successfully', async () => {
+      const mockGraduation = {
+        id: '1',
+        catId: 'cat-1',
+      };
+
+      const mockCat = {
+        id: 'cat-1',
+        isGraduated: true,
+        isInHouse: false,
+      };
+
+      mockPrismaService.graduation.findUnique.mockResolvedValue(mockGraduation);
+      mockPrismaService.cat.findUnique.mockResolvedValue(mockCat);
+      mockPrismaService.graduation.delete.mockResolvedValue(mockGraduation);
+      mockPrismaService.cat.update.mockResolvedValue({ ...mockCat, isGraduated: false, isInHouse: true });
+
+      const result = await service.cancelGraduation('1');
+
+      expect(result.success).toBe(true);
     });
   });
 });

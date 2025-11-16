@@ -95,6 +95,10 @@
 - **ORM**: Prisma 6.14.0
 - **キャッシュ**: Redis (予定)
 - **Node.js**: 20.x (推奨)
+- **コンテナ**: Docker + Alpine Linux 3.22 (node:20-alpine3.22 ベース)
+  - Prisma動作に必要な依存関係（openssl, libc6-compat）は自動解決
+  - ベースイメージを固定することで再現可能なビルドを保証
+  - hadolintベストプラクティスに準拠
 
 ## 📁 プロジェクト構造
 

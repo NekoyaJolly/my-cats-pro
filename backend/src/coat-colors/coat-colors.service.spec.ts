@@ -19,6 +19,12 @@ describe('CoatColorsService', () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
+    cat: {
+      count: jest.fn(),
+    },
+    pedigree: {
+      count: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -81,7 +87,7 @@ describe('CoatColorsService', () => {
       const result = await service.findAll({});
 
       expect(result.data).toEqual(mockColors);
-      expect(result.pagination.total).toBe(2);
+      expect(result.meta.total).toBe(2);
     });
   });
 
@@ -126,6 +132,8 @@ describe('CoatColorsService', () => {
       const mockColor = { id: '1', name: 'Black' };
 
       mockPrismaService.coatColor.findUnique.mockResolvedValue(mockColor);
+      mockPrismaService.cat.count.mockResolvedValue(0);
+      mockPrismaService.pedigree.count.mockResolvedValue(0);
       mockPrismaService.coatColor.delete.mockResolvedValue(mockColor);
 
       await service.remove('1');
