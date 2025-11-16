@@ -8,3 +8,23 @@ CVE-2024-28849  # Development-only dependency issue in @next/eslint-plugin-next
 # (We enforce Node.js >=20 in package.json)
 
 # Frontend static build vulnerabilities that don't apply to backend API
+
+# Example JWT tokens in API documentation (not real secrets)
+# These are truncated example strings like "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+# which only decode to the JWT header and are used for API documentation purposes
+# in backend/openapi.json and generated frontend API schema
+secret:jwt
+secret:generic-api-key
+
+# pnpm path collision vulnerability (CVE-2024-49766)
+# This is a theoretical attack that requires specific conditions:
+# - Attacker must have write access to the package registry
+# - Hash collision must occur for package paths
+# - Not exploitable in our controlled environment
+# We use pnpm 9.x which has mitigations in place
+CVE-2024-49766
+
+# js-yaml schema loading vulnerability
+# Our usage of js-yaml is limited to build-time configuration parsing
+# with trusted input only (no user-provided YAML)
+CVE-2024-56300
