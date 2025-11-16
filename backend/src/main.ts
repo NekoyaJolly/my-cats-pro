@@ -35,6 +35,7 @@ async function bootstrap() {
   const logger = new Logger("Bootstrap");
 
   try {
+    // Starting the application server
     logger.log("Starting Cat Management System API...");
 
     // Validate environment configuration
