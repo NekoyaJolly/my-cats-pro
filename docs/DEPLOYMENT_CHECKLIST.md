@@ -124,15 +124,34 @@ gcompat-1.1.0-r4: breaks: world[libc6-compat=1.2.5-r8]
 openssl-3.5.4-r0: breaks: world[openssl=3.3.2-r4]
 ```
 **原因:** Dockerfileでopensslやlibc6-compatのバージョンを固定している  
-**解決:** バージョン指定を削除してAlpineの自動解決に任せる
+**解決:** ベースイメージのAlpineバージョンを固定し、パッケージは自動解決に任せる
 ```dockerfile
-# ❌ 避けるべき
+# ❌ 避けるべき（ローリングリリースで固定バージョン）
+FROM node:20-alpine
 RUN apk add --no-cache openssl=3.3.2-r4 libc6-compat=1.2.5-r8
 
-# ✅ 推奨
+# ✅ 推奨（ベースイメージを固定し、hadolintルールを明示的に無効化）
+FROM node:20-alpine3.22
+# hadolint ignore=DL3018
 RUN apk add --no-cache openssl libc6-compat
 ```
-Alpine Linuxは定期的にパッケージを更新するため、特定バージョンの固定は非推奨です。
+**理由:** 
+- Alpine Linuxベースイメージのバージョンを固定することで、再現可能なビルドを保証
+- パッケージバージョンの固定は、そのAlpineバージョンとの互換性問題を引き起こす
+- hadolint DL3018ルールは、ベースイメージが固定されている場合は意図的に無視できる
+
+#### 7. hadolint DL3018 警告
+**警告:** `Pin versions in apk add`  
+**原因:** hadolintがパッケージバージョンの固定を推奨している  
+**解決:** ベースイメージのバージョンを固定し、必要に応じてhadolintルールを無効化
+```dockerfile
+# ベースイメージを固定
+FROM node:20-alpine3.22
+
+# 明示的にルールを無効化（理由をコメントで説明）
+# hadolint ignore=DL3018
+RUN apk add --no-cache openssl libc6-compat
+```
 
 ## 🚀 推奨フロー
 

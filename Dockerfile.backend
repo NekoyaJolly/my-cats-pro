@@ -1,5 +1,5 @@
 # ---- Base Stage ----
-FROM node:20-alpine AS base
+FROM node:20-alpine3.22 AS base
 WORKDIR /app
 RUN npm install -g pnpm@9.15.9
 
@@ -22,7 +22,7 @@ WORKDIR /app/backend
 RUN pnpm build
 
 # ---- Production Stage ----
-FROM node:20-alpine AS production
+FROM node:20-alpine3.22 AS production
 WORKDIR /app
 
 # Run backend container with restricted privileges and production-friendly defaults
@@ -30,6 +30,7 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Install required dependencies for Prisma on Alpine and pnpm, create user
+# hadolint ignore=DL3018
 RUN apk add --no-cache openssl libc6-compat && \
     npm install -g pnpm@9.15.9 && \
     addgroup -S nodejs && adduser -S nodeapp -G nodejs
