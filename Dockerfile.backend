@@ -30,7 +30,7 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Install required dependencies for Prisma on Alpine and pnpm, create user
-RUN apk add --no-cache openssl=3.3.2-r4 libc6-compat=1.2.5-r8 && \
+RUN apk add --no-cache openssl libc6-compat && \
     npm install -g pnpm@9.15.9 && \
     addgroup -S nodejs && adduser -S nodeapp -G nodejs
 
