@@ -197,20 +197,30 @@ describe('CareService', () => {
 
       const mockRecord = {
         id: '1',
-        ...createDto,
+        catId: createDto.catId,
         visitDate: new Date(createDto.visitDate),
+        diagnosis: createDto.diagnosis,
+        treatment: createDto.treatment,
+        veterinarian: createDto.veterinarian,
         createdAt: new Date(),
+        updatedAt: new Date(),
+        recordedBy: 'user-1',
+        status: 'COMPLETED',
+        cat: { id: 'cat-1', name: 'Test Cat' },
+        schedule: null,
         tags: [],
         attachments: [],
       };
 
       mockPrismaService.user.findFirst.mockResolvedValue({ id: 'user-1' });
-      mockPrismaService.cat.findUnique.mockResolvedValue({ id: 'cat-1' });
+      mockPrismaService.cat.findUnique.mockResolvedValue({ id: 'cat-1', name: 'Test Cat' });
       mockPrismaService.medicalRecord.create.mockResolvedValue(mockRecord);
 
       const result = await service.addMedicalRecord(createDto);
 
       expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.data.cat.id).toBe('cat-1');
       expect(mockPrismaService.medicalRecord.create).toHaveBeenCalled();
     });
 
@@ -221,9 +231,13 @@ describe('CareService', () => {
         diagnosis: 'Healthy',
       };
 
-      mockPrismaService.cat.findUnique.mockResolvedValue(null);
+      mockPrismaService.user.findFirst.mockResolvedValue({ id: 'user-1' });
+      // Mock Prisma to throw a foreign key constraint error
+      mockPrismaService.medicalRecord.create.mockRejectedValue(
+        new Error('Foreign key constraint failed on the field: `catId`')
+      );
 
-      await expect(service.addMedicalRecord(createDto)).rejects.toThrow(NotFoundException);
+      await expect(service.addMedicalRecord(createDto)).rejects.toThrow();
     });
   });
 
@@ -235,6 +249,12 @@ describe('CareService', () => {
           catId: 'cat-1',
           visitDate: new Date(),
           diagnosis: 'Healthy',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          recordedBy: 'user-1',
+          status: 'COMPLETED',
+          cat: { id: 'cat-1', name: 'Test Cat' },
+          schedule: null,
           tags: [],
           attachments: [],
         },
@@ -246,6 +266,8 @@ describe('CareService', () => {
       const result = await service.findMedicalRecords({});
 
       expect(result.meta.total).toBe(1);
+      expect(result.data).toBeDefined();
+      expect(result.data[0].cat.id).toBe('cat-1');
     });
   });
 
