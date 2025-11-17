@@ -37,7 +37,7 @@ await post('/cats', { body: { name: 'Fluffy' } });
 **実装内容:**
 - ✅ Zodによる環境変数バリデーション (`src/common/config/env.validation.ts`)
 - ✅ 本番環境用の厳格な検証
-- ✅ シークレット生成スクリプト (`scripts/generate-secrets.mjs`)
+- ✅ シークレット生成スクリプト (`scripts/generate-secrets.ts`)
 - ✅ `.env.example` の最小化・セキュリティガイド追加
 - ✅ 起動時の環境変数検証とログ出力
 
@@ -56,7 +56,7 @@ await post('/cats', { body: { name: 'Fluffy' } });
 **使用方法:**
 ```bash
 # シークレット生成
-pnpm generate-secrets
+pnpm run generate-secrets
 
 # 環境変数は起動時に自動検証される
 pnpm start:prod
@@ -119,7 +119,7 @@ async login() { ... }
 
 - [ ] **JWT_SECRET** を強力なランダム値に変更
   ```bash
-  pnpm generate-secrets
+   pnpm run generate-secrets
   # 生成された値を環境変数に設定
   ```
 

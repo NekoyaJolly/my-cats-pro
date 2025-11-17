@@ -166,6 +166,18 @@ NEXT_PUBLIC_ENV=development
 
 ## 🔐 本番環境への注意
 
+### シークレット値の生成
+
+JWT や CSRF 用のシークレットを作成する際は、以下のコマンドで安全な値を生成してください。
+
+```bash
+pnpm run generate-secrets
+```
+
+表示された値を `.env` にコピーし、Git には絶対にコミットしないようにしてください。
+
+---
+
 - `mycats_dev_password` などの開発用パスワードは**本番環境では使用しないでください**
 - JWT_SECRET などは本番環境では強力なランダム文字列に変更してください
 - 環境変数は `.env.production` を別途作成して管理してください

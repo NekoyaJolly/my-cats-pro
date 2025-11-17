@@ -114,6 +114,8 @@
 | **モーダル** | Mantine `ModalsProvider` を活用し、`modals.openContextModal` で状態管理を一元化。 |
 | **通知** | Mantine `notifications.show` を使い、成功/失敗メッセージを日本語で表示。 |
 | **レスポンシブ対応** | Tailwind の `md:` ブレークポイントか Mantine の `useMediaQuery` を使用し、Figma 指示があれば `docs/ui-button-design-guide.md` を参照。 |
+| **デザインルール** |　猫情報を表示する時は、1行＝1頭の原則
+詳細ページなどの例外を除いて、猫の概要を表示するときは1行に1頭のレコードをまとめることが理想。 |
 
 ## 14. フロントエンド向け依頼テンプレ（推奨）
 

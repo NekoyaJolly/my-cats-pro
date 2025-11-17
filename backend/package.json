@@ -32,7 +32,7 @@
     "prisma:sync:once": "node src/scripts/sync-prisma.mjs --once",
     "prisma:sync:watch": "node src/scripts/sync-prisma.mjs",
     "seed": "ts-node src/prisma/seed.ts",
-    "generate-secrets": "node scripts/generate-secrets.mjs",
+  "generate-secrets": "pnpm -C .. run generate-secrets",
     "csv:preview": "ts-node src/scripts/selective-csv-import.ts --preview --start 701606 --end 701630",
     "csv:import": "ts-node src/scripts/selective-csv-import.ts",
     "csv:sample": "ts-node src/scripts/selective-csv-import.ts --start 701606 --end 701630 --max 25",

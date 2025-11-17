@@ -115,7 +115,7 @@
 - HTTP ヘッダー: `helmet` を全ルートに適用し、`crossOriginResourcePolicy` を `same-site`。
 - 認証情報: `argon2` をデフォルトハッシュに使用。`bcryptjs` は互換用レガシーのみ。
 - CSRF: Cookie ベース認証パスは `csurf` のトークンを hidden input で往復。
-- Secrets 管理: `scripts/generate-secrets.mjs` で環境依存のキーを生成し、`.env` との差分を `git update-index --assume-unchanged` で保護。
+- Secrets 管理: ルートの `pnpm run generate-secrets` で環境依存のキーを生成し、`.env` との差分を `git update-index --assume-unchanged` で保護。
 - 入力ファイル: `multer` を使う場合、ファイル種別ホワイトリスト + アップロードサイズ制限を必須。
 
 ---

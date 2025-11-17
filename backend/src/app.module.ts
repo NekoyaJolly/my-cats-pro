@@ -11,6 +11,7 @@ import { BreedsModule } from "./breeds/breeds.module";
 import { CareModule } from "./care/care.module";
 import { CatsModule } from "./cats/cats.module";
 import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { envSchema } from "./common/config/env.validation";
 import { CsrfController } from "./common/controllers/csrf.controller";
 import { MasterDataController } from "./common/controllers/master-data.controller";
 import { AppThrottlerGuard } from "./common/guards/app-throttler.guard";
@@ -76,6 +77,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     }),
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: (config) => envSchema.parse(config),
     }),
     EventEmitterModule.forRoot({
       // イベントの非同期処理を有効化
