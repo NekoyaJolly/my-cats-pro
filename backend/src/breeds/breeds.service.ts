@@ -5,6 +5,11 @@ import { PrismaService } from "../prisma/prisma.service";
 
 import { CreateBreedDto, UpdateBreedDto, BreedQueryDto } from "./dto";
 
+export type BreedMasterRecord = {
+  code: number;
+  name: string;
+};
+
 @Injectable()
 export class BreedsService {
   constructor(private prisma: PrismaService) {}
@@ -175,5 +180,13 @@ export class BreedsService {
       mostPopularBreeds,
       breedDistribution,
     };
+  }
+
+  async getMasterData(): Promise<BreedMasterRecord[]> {
+    return this.prisma.breed.findMany({
+      select: { code: true, name: true },
+      where: { isActive: true },
+      orderBy: { code: "asc" },
+    });
   }
 }

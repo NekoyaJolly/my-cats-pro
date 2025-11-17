@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { DisplayPreferencesService } from '../display-preferences/display-preferences.service';
+
 import { CoatColorsController } from './coat-colors.controller';
 import { CoatColorsService } from './coat-colors.service';
 
@@ -13,6 +15,11 @@ describe('CoatColorsController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    getMasterData: jest.fn(),
+  };
+  const mockDisplayPreferencesService = {
+    getPreferences: jest.fn(),
+    buildPersonalizedCoatColorRecords: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -22,6 +29,10 @@ describe('CoatColorsController', () => {
         {
           provide: CoatColorsService,
           useValue: mockCoatColorsService,
+        },
+        {
+          provide: DisplayPreferencesService,
+          useValue: mockDisplayPreferencesService,
         },
       ],
     }).compile();
@@ -100,6 +111,18 @@ describe('CoatColorsController', () => {
       await controller.remove('1');
 
       expect(service.remove).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('getMasterData', () => {
+    it('should return master data via service', async () => {
+      const mockMaster = [{ code: 1, name: 'White' }];
+      mockCoatColorsService.getMasterData.mockResolvedValue(mockMaster);
+
+      const result = await controller.getMasterData(undefined);
+
+      expect(result).toEqual(mockMaster);
+      expect(service.getMasterData).toHaveBeenCalled();
     });
   });
 });

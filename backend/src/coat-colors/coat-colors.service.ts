@@ -9,6 +9,11 @@ import {
   CoatColorQueryDto,
 } from "./dto";
 
+export type CoatColorMasterRecord = {
+  code: number;
+  name: string;
+};
+
 @Injectable()
 export class CoatColorsService {
   constructor(private prisma: PrismaService) {}
@@ -180,5 +185,13 @@ export class CoatColorsService {
       mostPopularColors,
       colorDistribution,
     };
+  }
+
+  async getMasterData(): Promise<CoatColorMasterRecord[]> {
+    return this.prisma.coatColor.findMany({
+      select: { code: true, name: true },
+      where: { isActive: true },
+      orderBy: { code: "asc" },
+    });
   }
 }

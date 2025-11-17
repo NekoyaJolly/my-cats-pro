@@ -4,7 +4,7 @@
  */
 
 import type { operations, paths } from './generated/schema';
-import { getCsrfToken, clearCsrfToken } from './csrf';
+import { getCsrfToken, clearCsrfToken, refreshCsrfToken } from './csrf';
 
 // NOTE: generated/schema.ts は最初の型生成後にインポート可能になります
 async function parseJson(response: Response): Promise<unknown> {
@@ -30,6 +30,8 @@ async function parseJson(response: Response): Promise<unknown> {
  * API基底URL
  */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';
+
+const CSRF_PROTECTED_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
  * APIレスポンスの共通型
@@ -479,9 +481,11 @@ export async function apiRequest<T = unknown>(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  // POST/PUT/PATCH/DELETE リクエストにはCSRFトークンを追加
   const method = (options.method || 'GET').toUpperCase();
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+  const shouldAttachCsrf = CSRF_PROTECTED_METHODS.has(method);
+
+  // POST/PUT/PATCH/DELETE リクエストにはCSRFトークンを追加
+  if (shouldAttachCsrf) {
     try {
       const csrfToken = await getCsrfToken();
       headers.set('X-CSRF-Token', csrfToken);
@@ -493,28 +497,46 @@ export async function apiRequest<T = unknown>(
 
   const requestInit: RequestInit = {
     ...options,
+    method,
     headers,
     credentials: options.credentials ?? 'include',
   };
 
   try {
-    const response = await fetch(fullUrl, requestInit);
+    let response = await fetch(fullUrl, requestInit);
 
     if (response.status === 401 && retryOnUnauthorized) {
       const newToken = await refreshAccessToken();
       if (newToken) {
         headers.set('Authorization', `Bearer ${newToken}`);
-        const retryResponse = await fetch(fullUrl, {
+        response = await fetch(fullUrl, {
           ...requestInit,
           headers,
         });
-        return handleResponse<T>(retryResponse);
+      } else {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new ApiError('認証が必要です', 401);
       }
+    }
 
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+    const csrfRetryAvailable = shouldAttachCsrf;
+    if (response.status === 403 && csrfRetryAvailable) {
+      try {
+        await refreshCsrfToken();
+        const freshToken = await getCsrfToken();
+        headers.set('X-CSRF-Token', freshToken);
+        response = await fetch(fullUrl, {
+          ...requestInit,
+          headers,
+        });
+      } catch (error) {
+        throw new ApiError(
+          error instanceof Error ? error.message : 'CSRFトークンの更新に失敗しました',
+          403,
+        );
       }
-      throw new ApiError('認証が必要です', 401);
     }
 
     return handleResponse<T>(response);

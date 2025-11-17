@@ -1,7 +1,85 @@
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
 
+import { BREED_MASTER_DATA } from '../src/breeds/breed-master.data';
+import { COAT_COLOR_MASTER_DATA } from '../src/coat-colors/coat-color-master.data';
+import { GENDER_MASTER } from '../src/cats/constants/gender';
+
 const prisma = new PrismaClient();
+
+async function syncBreedMasterData() {
+  console.log('➡️ Syncing breed master data...');
+  for (const record of BREED_MASTER_DATA) {
+    await prisma.breed.upsert({
+      where: { code: record.code },
+      update: {
+        name: record.name ?? '',
+        description: null,
+        isActive: true,
+      },
+      create: {
+        code: record.code,
+        name: record.name ?? '',
+        description: null,
+        isActive: true,
+      },
+    });
+  }
+  console.log(`✅ Synced ${BREED_MASTER_DATA.length} breed records`);
+}
+
+async function syncCoatColorMasterData() {
+  console.log('➡️ Syncing coat color master data...');
+  for (const record of COAT_COLOR_MASTER_DATA) {
+    await prisma.coatColor.upsert({
+      where: { code: record.code },
+      update: {
+        name: record.name ?? '',
+        description: null,
+        isActive: true,
+      },
+      create: {
+        code: record.code,
+        name: record.name ?? '',
+        description: null,
+        isActive: true,
+      },
+    });
+  }
+  console.log(`✅ Synced ${COAT_COLOR_MASTER_DATA.length} coat color records`);
+}
+
+async function syncGenderMasterData() {
+  console.log('➡️ Syncing gender master data...');
+  for (const record of GENDER_MASTER) {
+    const code = Number.parseInt(record.key, 10);
+    if (Number.isNaN(code)) {
+      continue;
+    }
+
+    await prisma.gender.upsert({
+      where: { code },
+      update: {
+        name: record.name,
+        description: record.canonical,
+        isActive: true,
+      },
+      create: {
+        code,
+        name: record.name,
+        description: record.canonical,
+        isActive: true,
+      },
+    });
+  }
+  console.log(`✅ Synced ${GENDER_MASTER.length} gender records`);
+}
+
+async function syncMasterData() {
+  await syncBreedMasterData();
+  await syncCoatColorMasterData();
+  await syncGenderMasterData();
+}
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -27,6 +105,8 @@ async function main() {
   });
 
   console.log('✅ Admin user created:', admin.email);
+
+  await syncMasterData();
 
   // Cats
   const cats = [

@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-11-12T22:06:15.486Z
+// Prisma Schema - Last Updated: 2025-11-17T21:58:01.369Z
 // Auto-generated from schema.prisma
 
 generator client {
@@ -47,6 +47,8 @@ model User {
   staff           Staff? // Staff management relation
   // cats            Cat[]  // Removed: not using user relation for cats
 
+  displayPreference DisplayPreference?
+
   // シングルカラムインデックス
   @@index([email])
   @@index([role])
@@ -58,6 +60,27 @@ model User {
   @@index([isActive, lastLoginAt]) // アクティブユーザーのログイン履歴
   
   @@map("users")
+}
+
+enum DisplayNameMode {
+  CANONICAL
+  CODE_AND_NAME
+  CUSTOM
+}
+
+model DisplayPreference {
+  id                    String           @id @default(uuid())
+  userId                String           @unique @map("user_id")
+  breedNameMode         DisplayNameMode  @default(CANONICAL) @map("breed_name_mode")
+  coatColorNameMode     DisplayNameMode  @default(CANONICAL) @map("coat_color_name_mode")
+  breedNameOverrides    Json?            @map("breed_name_overrides")
+  coatColorNameOverrides Json?           @map("coat_color_name_overrides")
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("display_preferences")
 }
 
 model LoginAttempt {
@@ -112,7 +135,7 @@ model Breed {
 model CoatColor {
   id          String  @id @default(uuid())
   code        Int     @unique // キー from CSV
-  name        String  @unique // 毛色名称 from CSV
+  name        String  // 毛色名称 from CSV
   description String?
   isActive    Boolean @default(true) @map("is_active")
 

@@ -20,6 +20,7 @@ import { CsrfMiddleware } from "./common/middleware/csrf.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { CsrfTokenService } from "./common/services/csrf-token.service";
+import { DisplayPreferencesModule } from "./display-preferences/display-preferences.module";
 import { GraduationModule } from "./graduation/graduation.module";
 import { HealthModule } from "./health/health.module";
 import { PedigreeModule } from "./pedigree/pedigree.module";
@@ -100,7 +101,8 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     PedigreeModule,
     BreedsModule,
     CoatColorsModule,
-    BreedingModule,
+  BreedingModule,
+  DisplayPreferencesModule,
     CareModule,
     ScheduleModule,
     UploadModule,
