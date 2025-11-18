@@ -214,10 +214,7 @@ export class CatsService {
       [sortBy as Sortable]: sortOrder,
     } as Prisma.CatOrderByWithRelationInput;
 
-    const [cats, total] = await Promise.all<[
-      CatWithRelations[],
-      number,
-    ]>([
+    const [cats, total] = (await Promise.all([
       this.prisma.cat.findMany({
         where,
         skip,
@@ -226,7 +223,7 @@ export class CatsService {
         orderBy,
       }),
       this.prisma.cat.count({ where }),
-    ]);
+    ])) as [CatWithRelations[], number];
 
     return {
       data: cats,

@@ -48,52 +48,61 @@ steps:
   # 5. Deploy Backend to Cloud Run (migration will run on startup)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Deploy Backend'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - 'run'
-      - 'deploy'
-      - '${_BACKEND_SERVICE_NAME}'
-      - '--image'
-      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest'
-      - '--region'
-      - '${_LOCATION}'
-      - '--platform'
-      - 'managed'
-      - '--execution-environment=gen2'
-      - '--service-account=${_BACKEND_SERVICE_ACCOUNT}'
-      - '--allow-unauthenticated' # Or configure authentication as needed
-      - '--set-secrets=DATABASE_URL=DATABASE_URL:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=JWT_SECRET:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:${_JWT_REFRESH_SECRET_VERSION}'
-      - '--set-env-vars=NODE_ENV=production,CORS_ORIGIN=${_CORS_ORIGIN},INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_CONNECTION_NAME}'
-      - '--add-cloudsql-instances=${_CLOUD_SQL_CONNECTION_NAME}'
-      - '--concurrency=20'
-      - '--max-instances=3'
-      - '--min-instances=0'
-      - '--memory=512Mi'
-      - '--cpu=1'
-      - '--cpu-boost'
-      - '--timeout=300'
+      - '-c'
+      - |
+          set -euo pipefail
+          EXTRA_FLAGS=()
+          if [[ -n "${_BACKEND_DEPLOY_FLAGS}" ]]; then
+            # _BACKEND_DEPLOY_FLAGS may contain multiple flags separated by spaces.
+            read -r -a EXTRA_FLAGS <<< "${_BACKEND_DEPLOY_FLAGS}"
+          fi
+
+          gcloud run deploy "${_BACKEND_SERVICE_NAME}" \
+            --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest" \
+            --region "${_LOCATION}" \
+            --platform managed \
+            --execution-environment=gen2 \
+            --service-account "${_BACKEND_SERVICE_ACCOUNT}" \
+            --allow-unauthenticated \
+            --set-secrets "DATABASE_URL=DATABASE_URL:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=JWT_SECRET:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:${_JWT_REFRESH_SECRET_VERSION},CSRF_TOKEN_SECRET=CSRF_TOKEN_SECRET:${_CSRF_TOKEN_SECRET_VERSION}" \
+            --set-env-vars "NODE_ENV=production,CORS_ORIGIN=${_CORS_ORIGIN},INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_CONNECTION_NAME}" \
+            --add-cloudsql-instances "${_CLOUD_SQL_CONNECTION_NAME}" \
+            --concurrency 20 \
+            --max-instances 3 \
+            --min-instances 0 \
+            --memory 512Mi \
+            --cpu 1 \
+            --cpu-boost \
+            --timeout 300 \
+            "${EXTRA_FLAGS[@]}"
     waitFor: ['Push Backend']
 
   # 6. Deploy Frontend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Deploy Frontend'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - 'run'
-      - 'deploy'
-      - '${_FRONTEND_SERVICE_NAME}'
-      - '--image'
-      - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest'
-      - '--region'
-      - '${_LOCATION}'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--set-env-vars=NODE_ENV=production,NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}'
-      - '--execution-environment=gen2'
-      - '--service-account=${_FRONTEND_SERVICE_ACCOUNT}'
-      - '--concurrency=50'
-      - '--cpu-boost'
+      - '-c'
+      - |
+          set -euo pipefail
+          EXTRA_FLAGS=()
+          if [[ -n "${_FRONTEND_DEPLOY_FLAGS}" ]]; then
+            read -r -a EXTRA_FLAGS <<< "${_FRONTEND_DEPLOY_FLAGS}"
+          fi
+
+          gcloud run deploy "${_FRONTEND_SERVICE_NAME}" \
+            --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest" \
+            --region "${_LOCATION}" \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars "NODE_ENV=production,NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}" \
+            --execution-environment=gen2 \
+            --service-account "${_FRONTEND_SERVICE_ACCOUNT}" \
+            --concurrency 50 \
+            --cpu-boost \
+            "${EXTRA_FLAGS[@]}"
     waitFor: ['Push Frontend']
 
 # Define images to be pushed to Artifact Registry
@@ -116,6 +125,9 @@ substitutions:
   _DATABASE_URL_SECRET_VERSION: '1'
   _JWT_SECRET_VERSION: '1'
   _JWT_REFRESH_SECRET_VERSION: '1'
+  _CSRF_TOKEN_SECRET_VERSION: '1'
+  _BACKEND_DEPLOY_FLAGS: ''
+  _FRONTEND_DEPLOY_FLAGS: ''
 
 options:
   logging: CLOUD_LOGGING_ONLY

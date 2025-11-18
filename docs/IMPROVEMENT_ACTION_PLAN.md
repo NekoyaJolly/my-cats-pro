@@ -1,13 +1,13 @@
 # MyCats Pro - 改善実装アクションプラン（Week 47 更新）
 
 **初版:** 2025-11-11  
-**最終更新:** 2025-11-18  
+**最終更新:** 2025-11-19  
 **目的:** コードレビュー指摘を最新実装状況と照合し、優先度・担当・期限を明示する。PWA 公開と医療/血統系機能の品質確保に必要なタスクを段階的に完了させる。
 
 ---
 
 - ✅ **基盤タスク完了:** マスターデータ seed/同期、UI Combobox 改修は 11/17 完了。Lint/Build/Test もグリーン。
-- 🚧 **公開条件アップデート:** H1（レート制限）は Guard/テストまで完了済み。現在は H2 の DB 最適化（索引用マイグレーション + verify SQL + N+1 解消）を進行中。
+- 🚧 **公開条件アップデート:** H1（レート制限）は Guard/テストまで完了済み。H2 は 11/19 時点で `verify-indexes.sql` を実行し EXPLAIN ログを取得済み、残タスクは CI 組み込みと報告整理。
 - 🎯 **今週(Week47) ゴール:** CSRF ミドルウェアとフロント実装、ENV バリデーションとシークレット生成導入。H1 の仕様固めまで実施。
 - 🔜 **Week48-49:** DB パフォーマンス (H2) + 型安全性 (H3) を並行。Pedigree/Medical 型同期と API チューニングを含む。
 - 📅 **Week50 以降:** アクセシビリティ (M1)、テスト強化 (M2)、パフォーマンス/Docs (M3/L1/L2) を段階実施。
@@ -27,11 +27,13 @@
 ---
 
 ## 2. 完了済みタスク（最新 2 週間）
+
 | 日付 | タスク | 成果 |
 | --- | --- | --- |
 | 2025-11-15 | Prisma Seed/マスタ同期を cron 化 | 新規環境で猫種・毛色マスタが自動投入。DB 差分事故を防止。|
 | 2025-11-17 | Combobox UX 改修 | 空レコード除外、検索レスポンス改善。|
 | 2025-11-17 | Frontend lint/build/test 実行 | 既存変更に対する品質ゲート通過を確認。|
+| 2025-11-19 | verify-indexes.sql 実行 | Cats/Pedigrees 代表クエリの EXPLAIN を取得し、索引用インデックスの利用状況を確認。|
 | 進行中 | Medical Records UI 実装 | React Query 化済。API 型とのズレ解消が残タスク。|
 
 ---
@@ -39,19 +41,22 @@
 ## 3. 優先度別タスク（ステータス付き）
 
 ### 🔴 CRITICAL（Week47 完了必須）
+
 | ID | ゴール | 所要時間 | Owner | 状態 | 次アクション |
 | --- | --- | --- | --- | --- | --- |
 | C1 | CSRF 保護（サーバー + クライアント + E2E）| 4h | Backend/Frontend | 🟢 Done | `csurf` 導入、`/csrf-token` GET、`apiClient` 自動添付、E2E を 2025-11-18 に完了。|
 | C2 | ENV バリデーション + シークレット管理 | 8h | DevOps/Backend | 🟢 Done | `validateEnv()` + `.env.example` 最小化 + `scripts/generate-secrets.ts` を 2025-11-18 に完了。|
 
 ### 🟠 HIGH（Week48-49 で並行）
+
 | ID | ゴール | 所要時間 | Owner | 状態 | 備考 |
 | --- | --- | --- | --- | --- | --- |
 | H1 | API レート制限強化（エンドポイント別）| 4h | Backend | 🟢 Done | Enhanced Guard + Decorator + integration test を 11/18 に完了。|
-| H2 | DB インデックス/N+1 最適化 | 4h | Backend | 🟡 In Progress | Prisma インデックス追加 + `verify-indexes.sql` + Cats/Pedigree include 整備を実装済み。|
+| H2 | DB インデックス/N+1 最適化 | 4h | Backend | 🟡 In Progress | Prisma インデックス追加済み。11/19 に `psql -f backend/prisma/seed/verify-indexes.sql` を実行して EXPLAIN 成果を採取。CI 組み込みと記録共有が残タスク。|
 | H3 | Front 型安全性（ESLint+Zod+RHF）| 16h | Frontend | 未着手 | Cats フォーム→Medical へ段階移行。|
 
 ### 🟡 MEDIUM（Week49-50 予定）
+
 | ID | ゴール | 所要時間 | Owner | 状態 |
 | --- | --- | --- | --- | --- |
 | M1 | アクセシビリティ改善 (WCAG 2.1 AA) | 32h | Frontend | 未着手 |
@@ -146,12 +151,16 @@ Week 52+ :                       [M3][L1][L2]
 1. Prisma schema に必要なインデックスを追加し `pnpm prisma migrate dev --name add_performance_indexes` 実行。
 2. `prisma/seed/verify-indexes.sql` を作成し、CI で EXPLAIN をログ出力。
 3. Pedigree/Cats API の N+1 を `include/select` で解消し、API 応答型を再利用。
+4. 2025-11-19 に下記コマンドで代表クエリの EXPLAIN を取得済み。CI でも同コマンドを流し、成果をアーティファクト化する。
+   - `psql -f backend/prisma/seed/verify-indexes.sql "$DATABASE_URL"`
+5. `backend/src/cats/types/cat.types.ts` と `backend/src/pedigree/types/pedigree.types.ts` に include 定数を切り出し、サービスレイヤーから単一クエリで関連を取得する実装へ統一した（N+1 解消メモ）。
 
 ### H3: 型安全性
 
-1. Frontend ESLint を厳格設定（`no-explicit-any`, `no-non-null-assertion` など）。
-2. `src/lib/schemas` に Zod 定義を移設、`react-hook-form` と `zodResolver` を組み合わせ。
-3. Cats フォームを先行リファクタし、Medical/Pedigree へ波及。
+1. Frontend ESLint を `frontend/eslint.config.mjs` で再確認し、`no-explicit-any`, `no-non-null-assertion`, `@typescript-eslint/return-await` など AGENTS 記載の厳格ルールを有効化。`pnpm --filter frontend lint` を品質ゲートに組み込む。
+2. `frontend/src/lib/schemas` を Zod 定義の集約ポイントにし、App Router Server Action でも同じスキーマを再利用できる構成へ見直す（AGENTS.md 5章のタイプファースト手順に準拠）。
+3. Cats フォームから `react-hook-form` + `@hookform/resolvers/zod` を適用し、入力エラーを日本語表示に統一。成功後は Medical/Pedigree も同じパターンへ展開。
+4. `frontend/AGENTS.md` で定義された「Server Components 優先」「API クライアント一元化」の原則を確認しつつ、型安全タスクをスプリント毎に分割（ESLint 設定→Zod 整備→フォーム移行）してスケジュール化する。
 
 ---
 
