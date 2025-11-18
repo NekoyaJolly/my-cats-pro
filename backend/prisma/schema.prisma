@@ -215,6 +215,7 @@ model Cat {
   birthPlans            BirthPlan[]            @relation("BirthPlanMother")
   kittenDispositions    KittenDisposition[] // 子猫処遇記録
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
+  pedigree              Pedigree?              @relation("CatPedigree", fields: [pedigreeId], references: [pedigreeId])
   graduation            Graduation? // 卒業記録（譲渡情報）
 
   // シングルカラムインデックス（検索頻度の高いフィールド）
@@ -228,6 +229,8 @@ model Cat {
   @@index([isInHouse]) // 在舎状態フィルター
   @@index([isGraduated]) // 卒業済みフィルター
   @@index([registrationNumber]) // 登録番号検索
+  @@index([createdAt])
+  @@index([updatedAt])
   
   // 複合インデックス（複合検索パターン）
   @@index([breedId, name]) // 品種別名前検索
@@ -795,6 +798,7 @@ model Pedigree {
   breed     Breed?     @relation(fields: [breedCode], references: [code])
   coatColor CoatColor? @relation(fields: [coatColorCode], references: [code])
   gender    Gender?    @relation(fields: [genderCode], references: [code])
+  cats      Cat[]      @relation("CatPedigree")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -805,6 +809,14 @@ model Pedigree {
   @@index([coatColorCode])
   @@index([catName])
   @@index([pedigreeId]) // pedigreeId検索用（追加）
+  @@index([catName2])
+  @@index([eyeColor])
+  @@index([breederName])
+  @@index([ownerName])
+  @@index([birthDate])
+  @@index([registrationDate])
+  @@index([createdAt])
+  @@index([updatedAt])
   
   // 複合インデックス（血統検索パターン）
   @@index([breedCode, catName]) // 品種別名前検索

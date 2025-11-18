@@ -2,9 +2,12 @@ import { SetMetadata } from '@nestjs/common';
 
 export const RATE_LIMIT_KEY = 'rate_limit';
 
+export type RateLimitTracker = (req: Record<string, unknown>) => string | Promise<string>;
+
 export interface RateLimitOptions {
   ttl: number;
   limit: number;
+  tracker?: RateLimitTracker;
 }
 
 /**

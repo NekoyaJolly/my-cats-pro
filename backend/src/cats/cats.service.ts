@@ -11,6 +11,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";
 
 import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
+import { catWithRelationsInclude, CatWithRelations } from "./types/cat.types";
 
 @Injectable()
 export class CatsService {
@@ -97,17 +98,7 @@ export class CatsService {
           ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
           ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
         },
-        include: {
-          breed: true,
-          coatColor: true,
-          father: true,
-          mother: true,
-          tags: {
-            include: {
-              tag: true,
-            },
-          },
-        },
+        include: catWithRelationsInclude,
       });
 
       // Handle tag assignments if provided
@@ -123,17 +114,7 @@ export class CatsService {
         // Fetch the cat again with tags
         const updatedCat = await this.prisma.cat.findUnique({
           where: { id: cat.id },
-          include: {
-            breed: true,
-            coatColor: true,
-            father: true,
-            mother: true,
-            tags: {
-              include: {
-                tag: true,
-              },
-            },
-          },
+          include: catWithRelationsInclude,
         });
         if (updatedCat) {
           cat = updatedCat;
@@ -233,28 +214,15 @@ export class CatsService {
       [sortBy as Sortable]: sortOrder,
     } as Prisma.CatOrderByWithRelationInput;
 
-    const [cats, total] = await Promise.all([
+    const [cats, total] = await Promise.all<[
+      CatWithRelations[],
+      number,
+    ]>([
       this.prisma.cat.findMany({
         where,
         skip,
         take: limit,
-        include: {
-          breed: true,
-          coatColor: true,
-          tags: {
-            include: {
-              tag: {
-                include: {
-                  group: {
-                    include: {
-                      category: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+        include: catWithRelationsInclude,
         orderBy,
       }),
       this.prisma.cat.count({ where }),
@@ -274,25 +242,7 @@ export class CatsService {
   async findOne(id: string) {
     const cat = await this.prisma.cat.findUnique({
       where: { id },
-      include: {
-        breed: true,
-        coatColor: true,
-        father: true,
-        mother: true,
-        tags: {
-          include: {
-            tag: {
-              include: {
-                group: {
-                  include: {
-                    category: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: catWithRelationsInclude,
     });
 
     if (!cat) {
@@ -407,15 +357,7 @@ export class CatsService {
           ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
           ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
         },
-        include: {
-          breed: true,
-          coatColor: true,
-          tags: {
-            include: {
-              tag: true,
-            },
-          },
-        },
+        include: catWithRelationsInclude,
       });
     } catch (error) {
       if (
@@ -443,10 +385,7 @@ export class CatsService {
 
     return this.prisma.cat.delete({
       where: { id },
-      include: {
-        breed: true,
-        coatColor: true,
-      },
+      include: catWithRelationsInclude,
     });
   }
 

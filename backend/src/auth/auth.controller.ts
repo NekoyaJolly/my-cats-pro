@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  HttpException,
   HttpStatus,
   Post,
   UseGuards,
@@ -16,12 +15,10 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { SkipThrottle } from '@nestjs/throttler';
 import { Request, Response } from "express";
 
 import { RateLimitConfig } from "../common/config/rate-limit.config";
 import { RateLimit } from "../common/decorators/rate-limit.decorator";
-import { RateLimiterService } from "../common/services/rate-limiter.service";
 
 function toUserRole(val: string): RequestUser["role"] {
   if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
@@ -45,11 +42,10 @@ import { JwtAuthGuard } from "./jwt-auth.guard";
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
-    private readonly rateLimiter: RateLimiterService,
   ) {}
 
   @Post("login")
-  @SkipThrottle()
+  @RateLimit(RateLimitConfig.auth.login)
   @ApiOperation({ summary: "ログイン（JWT発行）" })
   @ApiResponse({ status: HttpStatus.OK })
   async login(
@@ -58,17 +54,6 @@ export class AuthController {
     @Ip() ip: string,
     @Res({ passthrough: true }) res: Response
   ): Promise<{ success: boolean; data: { access_token: string; user: RequestUser } }> {
-    const normalizedEmail = dto.email.trim().toLowerCase();
-    const clientIp = ip || req.ip || 'unknown';
-  const rateKey = `login:${clientIp}:${normalizedEmail}`;
-  const registerRateKey = this.buildRegisterRateKey(dto.email, clientIp);
-    const rate = this.rateLimiter.consume(rateKey, 20, 60_000);
-    if (!rate.allowed) {
-      this.applyRateLimitHeaders(res, 20, rate.remaining, rate.retryAfter, true);
-      throw new HttpException('ログイン試行回数が上限に達しました。しばらくしてから再試行してください。', HttpStatus.TOO_MANY_REQUESTS);
-    }
-    this.applyRateLimitHeaders(res, 20, rate.remaining, rate.retryAfter, false);
-
     let userAgent: string = "";
     const ua = req.headers["user-agent"];
     if (typeof ua === "string") {
@@ -77,9 +62,6 @@ export class AuthController {
       userAgent = (ua as string[]).join(",");
     }
     const result = await this.auth.login(dto.email, dto.password, ip, userAgent);
-    if (result.success) {
-      this.rateLimiter.reset(registerRateKey);
-    }
     const userRaw = result.data.user;
     const requestUser: RequestUser = {
       userId: userRaw.id,
@@ -96,24 +78,13 @@ export class AuthController {
   }
 
   @Post("register")
-  @SkipThrottle()
+  @RateLimit(RateLimitConfig.auth.register)
   @ApiOperation({ summary: "ユーザー登録（メール＋パスワード）" })
   @ApiResponse({ status: HttpStatus.OK })
   async register(
     @Body() dto: LoginDto,
-    @Ip() ip: string,
-    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const clientIp = ip || req.ip || 'unknown';
-    const rateKey = this.buildRegisterRateKey(dto.email, clientIp);
-    const rate = this.rateLimiter.consume(rateKey, 5, 60_000);
-    if (!rate.allowed) {
-      this.applyRateLimitHeaders(res, 5, rate.remaining, rate.retryAfter, true);
-      throw new HttpException('登録試行が制限されています。しばらくしてから再試行してください。', HttpStatus.TOO_MANY_REQUESTS);
-    }
-    this.applyRateLimitHeaders(res, 5, rate.remaining, rate.retryAfter, false);
-
     const result = await this.auth.register(dto.email, dto.password);
     if (result.data.refresh_token) {
       this.setRefreshCookie(res, result.data.refresh_token);
@@ -224,33 +195,4 @@ export class AuthController {
     });
   }
 
-  private applyRateLimitHeaders(
-    res: Response,
-    limit: number,
-    remaining: number,
-    retryAfterSeconds: number,
-    exceeded: boolean,
-  ) {
-    if (!res) return;
-    res.header('X-RateLimit-Limit', limit.toString());
-    res.header('X-RateLimit-Remaining', Math.max(0, remaining).toString());
-    res.header('X-RateLimit-Reset', retryAfterSeconds.toString());
-    if (exceeded) {
-      res.header('Retry-After', retryAfterSeconds.toString());
-    }
-  }
-
-  private buildRegisterRateKey(email: string | undefined, clientIp: string): string {
-    const normalizedIp = clientIp || 'unknown';
-    const normalizedEmail = (email ?? '').trim().toLowerCase();
-
-    if (process.env.NODE_ENV === 'test' && normalizedEmail.includes('@')) {
-      const localPart = normalizedEmail.split('@')[0];
-      const match = localPart.match(/(.+)_\d+$/);
-      const namespace = match ? match[1] : localPart;
-      return `register:${normalizedIp}:${namespace}`;
-    }
-
-    return `register:${normalizedIp}`;
-  }
 }

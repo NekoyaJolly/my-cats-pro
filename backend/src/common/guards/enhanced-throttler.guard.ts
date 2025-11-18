@@ -1,7 +1,15 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModuleOptions, ThrottlerStorage } from '@nestjs/throttler';
-import { Request } from 'express';
+import {
+  ThrottlerGuard,
+  ThrottlerModuleOptions,
+  ThrottlerOptions,
+  ThrottlerStorage,
+  ThrottlerGetTrackerFunction,
+  ThrottlerGenerateKeyFunction,
+  ThrottlerException,
+} from '@nestjs/throttler';
+import { Request, Response } from 'express';
 
 import { RATE_LIMIT_KEY, RateLimitOptions } from '../decorators/rate-limit.decorator';
 
@@ -28,23 +36,17 @@ export class EnhancedThrottlerGuard extends ThrottlerGuard {
    * IPアドレスとユーザーIDを組み合わせる
    */
   protected async getTracker(req: Request): Promise<string> {
-    // 型アサーションで追加プロパティにアクセス
     const reqWithUser = req as Request & {
       user?: { userId?: string; id?: string };
       path?: string;
       connection?: { remoteAddress?: string };
     };
-    
-    // IPアドレスを取得
+
     const ip = this.getIpAddress(reqWithUser);
-    
-    // ユーザーIDがある場合は組み合わせる
     const userId = reqWithUser.user?.userId || reqWithUser.user?.id || 'anonymous';
-    
-    // エンドポイント情報を追加
     const path = reqWithUser.path || reqWithUser.url || '';
     const method = reqWithUser.method || '';
-    
+
     return `${ip}:${userId}:${method}:${path}`;
   }
 
@@ -88,18 +90,57 @@ export class EnhancedThrottlerGuard extends ThrottlerGuard {
   /**
    * カスタムレート制限設定を取得
    */
-  protected async getThrottlerConfig(context: ExecutionContext): Promise<{ ttl: number; limit: number } | null> {
-    // デコレータから設定を取得
-    const customLimit = this.reflector.get<RateLimitOptions>(
+  protected async getThrottlerConfig(context: ExecutionContext): Promise<RateLimitOptions | null> {
+    const customLimit = this.reflector.getAllAndOverride<RateLimitOptions>(
       RATE_LIMIT_KEY,
-      context.getHandler(),
+      [context.getHandler(), context.getClass()],
     );
 
-    if (customLimit) {
-      return customLimit;
+    return customLimit ?? null;
+  }
+
+  protected async handleRequest(
+    context: ExecutionContext,
+    limit: number,
+    ttl: number,
+    throttler: ThrottlerOptions,
+    getTracker: ThrottlerGetTrackerFunction,
+    generateKey: ThrottlerGenerateKeyFunction,
+  ): Promise<boolean> {
+    const customConfig = await this.getThrottlerConfig(context);
+    const effectiveLimit = customConfig?.limit ?? limit;
+    const effectiveTtl = customConfig?.ttl ?? ttl;
+    const trackerFn = customConfig?.tracker ?? getTracker;
+
+    const { req, res } = this.getRequestResponse(context);
+    const request = req as Request;
+    const response = res as Response;
+    const ignoreUserAgents = throttler.ignoreUserAgents ?? this.commonOptions.ignoreUserAgents;
+    if (Array.isArray(ignoreUserAgents)) {
+      for (const pattern of ignoreUserAgents) {
+        const userAgent = request.headers['user-agent'];
+        if (typeof userAgent === 'string' && pattern.test(userAgent)) {
+          return true;
+        }
+      }
     }
 
-    // デフォルト設定を使用
-    return null;
+    const throttlerName = throttler.name ?? 'default';
+    const tracker = await trackerFn(request as unknown as Record<string, unknown>);
+    const key = generateKey(context, tracker, throttlerName);
+    const { totalHits, timeToExpire } = await this.storageService.increment(key, effectiveTtl);
+    const suffix = throttlerName === 'default' ? '' : `-${throttlerName}`;
+    const remaining = Math.max(0, effectiveLimit - totalHits);
+
+    response.header(`${this.headerPrefix}-Limit${suffix}`, effectiveLimit.toString());
+    response.header(`${this.headerPrefix}-Remaining${suffix}`, remaining.toString());
+    response.header(`${this.headerPrefix}-Reset${suffix}`, timeToExpire.toString());
+
+    if (totalHits > effectiveLimit) {
+      response.header(`Retry-After${suffix}`, timeToExpire.toString());
+      throw new ThrottlerException('リクエストが集中しています。しばらく待ってから再試行してください。');
+    }
+
+    return true;
   }
 }

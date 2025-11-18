@@ -1,18 +1,7 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@prisma/client";
 
-// Interface for dynamic where conditions with proper typing
-export interface PedigreeWhereInput {
-  OR?: Array<{
-    [key: string]: {
-      contains?: string;
-      mode?: 'insensitive';
-    };
-  }>;
-  breedCode?: number;  // breedIdからbreedCodeに変更
-  coatColorCode?: number;  // colorIdからcoatColorCodeに変更
-  genderCode?: number;  // genderからgenderCodeに変更
-  eyeColor?: string;
-}
+// Prisma の正規 where 型をそのまま利用し、柔軟なフィルタに対応
+export type PedigreeWhereInput = Prisma.PedigreeWhereInput;
 
 // Type for query building without any
 export interface QueryFilterInput {
@@ -24,14 +13,34 @@ export interface FieldMapping {
   [dtoField: string]: string; // Maps DTO field to database field
 }
 
+export const pedigreeWithRelationsInclude = Prisma.validator<Prisma.PedigreeInclude>()({
+  breed: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+    },
+  },
+  coatColor: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+    },
+  },
+  gender: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+    },
+  },
+});
+
 // Pedigree with relationships for responses
 export type PedigreeWithRelations = Prisma.PedigreeGetPayload<{
-  include: {
-    breed: true;
-    coatColor: true;
-    gender: true;
-  };
-}> | Prisma.PedigreeGetPayload<Record<string, never>>;
+  include: typeof pedigreeWithRelationsInclude;
+}>;
 
 // API Response types
 export interface PedigreeCreateResponse {
@@ -54,11 +63,7 @@ export interface PedigreeListResponse {
 // Pedigreeモデルは血統情報を文字列フィールドとして保持しているため、
 // リレーションではなくフラットな構造
 export type PedigreeTreeNode = Prisma.PedigreeGetPayload<{
-  include: {
-    breed: true;
-    coatColor: true;
-    gender: true;
-  };
+  include: typeof pedigreeWithRelationsInclude;
 }>;
 
 export interface PedigreeSuccessResponse {

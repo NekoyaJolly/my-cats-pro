@@ -13,6 +13,7 @@ import {
   PedigreeListResponse,
   PedigreeSuccessResponse,
   PedigreeTreeNode,
+  pedigreeWithRelationsInclude,
 } from "./types/pedigree.types";
 
 @Injectable()
@@ -127,6 +128,7 @@ export class PedigreeService {
 
     const result = await this.prisma.pedigree.create({
       data: createData,
+      include: pedigreeWithRelationsInclude,
     });
 
     return { success: true, data: result };
@@ -160,10 +162,16 @@ export class PedigreeService {
     }
 
     // Filters
-    if (breedId) where.breedCode = parseInt(breedId);
-    if (coatColorId) where.coatColorCode = parseInt(coatColorId);
-    if (gender) where.genderCode = parseInt(gender);
+    if (breedId) where.breedCode = parseInt(breedId, 10);
+    if (coatColorId) where.coatColorCode = parseInt(coatColorId, 10);
+    if (gender) where.genderCode = parseInt(gender, 10);
     if (eyeColor) where.eyeColor = eyeColor;
+    if (_catName2) {
+      where.catName2 = {
+        contains: _catName2,
+        mode: "insensitive",
+      };
+    }
 
     const [pedigrees, total] = await Promise.all([
       this.prisma.pedigree.findMany({
@@ -173,11 +181,7 @@ export class PedigreeService {
         orderBy: {
           [sortBy]: sortOrder,
         },
-        include: {
-          breed: true,
-          coatColor: true,
-          gender: true,
-        },
+        include: pedigreeWithRelationsInclude,
       }),
       this.prisma.pedigree.count({ where }),
     ]);
@@ -197,6 +201,7 @@ export class PedigreeService {
   async findOne(id: string) {
     const pedigree = await this.prisma.pedigree.findUnique({
       where: { id },
+      include: pedigreeWithRelationsInclude,
     });
 
     if (!pedigree) {
@@ -209,6 +214,7 @@ export class PedigreeService {
   async findByPedigreeId(pedigreeId: string) {
     const pedigree = await this.prisma.pedigree.findUnique({
       where: { pedigreeId },
+      include: pedigreeWithRelationsInclude,
     });
 
     if (!pedigree) {
@@ -348,6 +354,7 @@ export class PedigreeService {
     const result = await this.prisma.pedigree.update({
       where: { id },
       data: updateData,
+      include: pedigreeWithRelationsInclude,
     });
 
     return { success: true, data: result };
@@ -374,11 +381,7 @@ export class PedigreeService {
     // リレーションではなく直接データを取得
     const pedigree = await this.prisma.pedigree.findUnique({
       where: { id },
-      include: {
-        breed: true,
-        coatColor: true,
-        gender: true,
-      },
+      include: pedigreeWithRelationsInclude,
     });
 
     if (!pedigree) {
@@ -408,6 +411,7 @@ export class PedigreeService {
           where: {
             OR: nameConditions,
           },
+          include: pedigreeWithRelationsInclude,
         })
       : [];
 

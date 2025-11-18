@@ -14,7 +14,7 @@ import { CoatColorsModule } from "./coat-colors/coat-colors.module";
 import { envSchema } from "./common/config/env.validation";
 import { CsrfController } from "./common/controllers/csrf.controller";
 import { MasterDataController } from "./common/controllers/master-data.controller";
-import { AppThrottlerGuard } from "./common/guards/app-throttler.guard";
+import { EnhancedThrottlerGuard } from "./common/guards/enhanced-throttler.guard";
 import { CookieParserMiddleware } from "./common/middleware/cookie-parser.middleware";
 import { CorsMiddleware } from "./common/middleware/cors.middleware";
 import { CsrfMiddleware } from "./common/middleware/csrf.middleware";
@@ -119,7 +119,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     CsrfTokenService,
     {
       provide: APP_GUARD,
-      useClass: AppThrottlerGuard,
+      useClass: EnhancedThrottlerGuard,
     },
   ],
 })

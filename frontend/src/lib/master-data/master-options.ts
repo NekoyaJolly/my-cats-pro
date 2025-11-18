@@ -62,12 +62,12 @@ function resolveRecords<T extends OptionSource>(records: OptionRecords<T>): Read
     return [];
   }
 
-  if (Array.isArray(records)) {
-    return records as ReadonlyArray<T>;
+  if (isOptionArray(records)) {
+    return records;
   }
 
-  if (hasDataProperty(records) && Array.isArray(records.data)) {
-    return records.data as ReadonlyArray<T>;
+  if (hasArrayData(records)) {
+    return records.data;
   }
 
   return [];
@@ -75,6 +75,14 @@ function resolveRecords<T extends OptionSource>(records: OptionRecords<T>): Read
 
 function hasDataProperty<T extends OptionSource>(value: OptionRecords<T>): value is HasDataProperty<T> {
   return typeof value === 'object' && value !== null && 'data' in value;
+}
+
+function isOptionArray<T extends OptionSource>(value: OptionRecords<T>): value is ReadonlyArray<T> {
+  return Array.isArray(value);
+}
+
+function hasArrayData<T extends OptionSource>(value: OptionRecords<T>): value is HasDataProperty<T> & { data: ReadonlyArray<T> } {
+  return hasDataProperty(value) && Array.isArray(value.data);
 }
 
 function resolveLabel(record: OptionSource, displayMap?: MasterDisplayMap): string {
