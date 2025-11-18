@@ -10,11 +10,11 @@ export class BreedQueryDto {
   @Type(() => Number)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: "1ページあたりの件数", default: 50 })
+  @ApiPropertyOptional({ description: "1ページあたりの件数", default: 50, maximum: 500 })
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(500)
   @Type(() => Number)
   limit?: number = 50;
 
@@ -26,7 +26,7 @@ export class BreedQueryDto {
   @ApiPropertyOptional({ description: "ソート項目", default: "name" })
   @IsOptional()
   @IsString()
-  @IsIn(["name", "nameEn", "createdAt", "updatedAt"])
+  @IsIn(["name", "nameEn", "createdAt", "updatedAt", "code"])
   sortBy?: string = "name";
 
   @ApiPropertyOptional({ description: "ソート順", default: "asc" })

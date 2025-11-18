@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * 環境変数のスキーマ定義
  */
-const envSchema = z.object({
+export const envSchema = z.object({
   // Node環境
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().min(1000).max(65535).default(3004),

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -21,9 +21,13 @@ import { z } from 'zod';
 import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
 import { useGetCoatColors } from '@/lib/api/hooks/use-coat-colors';
+import { useBreedMasterData, useCoatColorMasterData } from '@/lib/api/hooks/use-master-data';
 import { ActionButton } from '@/components/ActionButton';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import TagSelector from '@/components/TagSelector';
+import { ALPHANUM_SPACE_HYPHEN_PATTERN, MasterDataCombobox } from '@/components/forms/MasterDataCombobox';
+import { useSelectionHistory } from '@/lib/hooks/use-selection-history';
+import { buildMasterOptions, createDisplayNameMap } from '@/lib/master-data/master-options';
 
 const optionalString = z
   .string()
@@ -49,14 +53,31 @@ const catFormSchema = z.object({
 });
 
 type CatFormValues = z.infer<typeof catFormSchema>;
+const COAT_COLOR_DESCRIPTION = '半角英数字・スペース・ハイフンで検索できます。候補一覧からも選択できます。';
 
 export default function CatRegistrationPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string | null>('register');
   const { setPageHeader } = usePageHeader();
   const createCat = useCreateCat();
-  const { data: breedsData } = useGetBreeds({ limit: 100 });
-  const { data: coatColorsData } = useGetCoatColors({ limit: 100 });
+  const breedListQuery = useMemo(() => ({ limit: 500, sortBy: 'code', sortOrder: 'asc' as const }), []);
+  const coatColorListQuery = useMemo(() => ({ limit: 500, sortBy: 'code', sortOrder: 'asc' as const }), []);
+  const { data: breedsData, isLoading: isBreedsLoading } = useGetBreeds(breedListQuery);
+  const { data: coatColorsData, isLoading: isCoatColorsLoading } = useGetCoatColors(coatColorListQuery);
+  const { data: breedMasterData, isLoading: isBreedMasterLoading } = useBreedMasterData();
+  const { data: coatMasterData, isLoading: isCoatMasterLoading } = useCoatColorMasterData();
+  const { history: breedHistory, recordSelection: recordBreedSelection } = useSelectionHistory('breed');
+  const { history: coatHistory, recordSelection: recordCoatSelection } = useSelectionHistory('coat-color');
+  const breedDisplayMap = useMemo(() => createDisplayNameMap(breedMasterData?.data), [breedMasterData]);
+  const coatDisplayMap = useMemo(() => createDisplayNameMap(coatMasterData?.data), [coatMasterData]);
+  const breedOptions = useMemo(
+    () => buildMasterOptions(breedsData?.data, breedDisplayMap),
+    [breedsData, breedDisplayMap],
+  );
+  const coatColorOptions = useMemo(
+    () => buildMasterOptions(coatColorsData?.data, coatDisplayMap),
+    [coatColorsData, coatDisplayMap],
+  );
   const {
     control,
     handleSubmit,
@@ -159,21 +180,18 @@ export default function CatRegistrationPage() {
                     name="breedId"
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <MasterDataCombobox
                         label="品種"
-                        placeholder="品種を選択"
-                        data={[
-                          { value: '', label: '未設定' },
-                          ...(breedsData?.data?.data?.map((breed) => ({
-                            value: breed.id,
-                            label: breed.name,
-                          })) ?? []),
-                        ]}
+                        placeholder="コードや名称を入力"
+                        value={field.value ?? undefined}
+                        onChange={(next) => field.onChange(next ?? undefined)}
+                        options={breedOptions}
+                        historyItems={breedHistory}
                         error={errors.breedId?.message}
-                        value={field.value ?? ''}
-                        onChange={(value) => field.onChange(value || undefined)}
-                        searchable
-                        clearable
+                        disabled={isSubmitting}
+                        loading={isBreedsLoading || isBreedMasterLoading}
+                        historyLabel="最近の品種"
+                        onOptionSelected={recordBreedSelection}
                       />
                     )}
                   />
@@ -219,21 +237,20 @@ export default function CatRegistrationPage() {
                     name="coatColorId"
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <MasterDataCombobox
                         label="色柄"
-                        placeholder="色柄を選択"
-                        data={[
-                          { value: '', label: '未設定' },
-                          ...(coatColorsData?.data?.data?.map((coatColor) => ({
-                            value: coatColor.id,
-                            label: coatColor.name,
-                          })) ?? []),
-                        ]}
+                        placeholder="コードや名称を入力"
+                        value={field.value ?? undefined}
+                        onChange={(next) => field.onChange(next ?? undefined)}
+                        options={coatColorOptions}
+                        historyItems={coatHistory}
                         error={errors.coatColorId?.message}
-                        value={field.value ?? ''}
-                        onChange={(value) => field.onChange(value || undefined)}
-                        searchable
-                        clearable
+                        disabled={isSubmitting}
+                        loading={isCoatColorsLoading || isCoatMasterLoading}
+                        historyLabel="最近の色柄"
+                        onOptionSelected={recordCoatSelection}
+                        description={COAT_COLOR_DESCRIPTION}
+                        sanitizePattern={ALPHANUM_SPACE_HYPHEN_PATTERN}
                       />
                     )}
                   />

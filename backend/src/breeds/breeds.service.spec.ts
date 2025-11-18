@@ -171,4 +171,24 @@ describe('BreedsService', () => {
       await expect(service.remove('non-existent')).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('getMasterData', () => {
+    it('should return breed master data from prisma', async () => {
+      const mockMaster = [
+        { code: 1, name: 'Abyssinian' },
+        { code: 2, name: 'American Curl(LH)' },
+      ];
+
+      mockPrismaService.breed.findMany.mockResolvedValue(mockMaster);
+
+      const result = await service.getMasterData();
+
+      expect(mockPrismaService.breed.findMany).toHaveBeenCalledWith({
+        select: { code: true, name: true },
+        where: { isActive: true },
+        orderBy: { code: 'asc' },
+      });
+      expect(result).toEqual(mockMaster);
+    });
+  });
 });

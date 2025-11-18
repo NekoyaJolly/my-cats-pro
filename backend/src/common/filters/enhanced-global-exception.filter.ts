@@ -30,14 +30,14 @@ export class EnhancedGlobalExceptionFilter implements ExceptionFilter {
       const errorResponse = {
         statusCode: HttpStatus.FORBIDDEN,
         code: 'FORBIDDEN',
-        message: 'Invalid or missing CSRF token',
+        message: 'CSRFトークンが不正または不足しています',
         timestamp: new Date().toISOString(),
         path: request.url,
         method: request.method,
       };
 
       this.logger.warn({
-        message: 'CSRF validation failed',
+  message: 'CSRF validation failed',
         statusCode: errorResponse.statusCode,
         path: errorResponse.path,
         method: errorResponse.method,

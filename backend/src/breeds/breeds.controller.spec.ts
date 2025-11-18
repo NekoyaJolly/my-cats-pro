@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { DisplayPreferencesService } from '../display-preferences/display-preferences.service';
+
 import { BreedsController } from './breeds.controller';
 import { BreedsService } from './breeds.service';
 
@@ -13,6 +15,11 @@ describe('BreedsController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    getMasterData: jest.fn(),
+  };
+  const mockDisplayPreferencesService = {
+    getPreferences: jest.fn(),
+    buildPersonalizedBreedRecords: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -22,6 +29,10 @@ describe('BreedsController', () => {
         {
           provide: BreedsService,
           useValue: mockBreedsService,
+        },
+        {
+          provide: DisplayPreferencesService,
+          useValue: mockDisplayPreferencesService,
         },
       ],
     }).compile();
@@ -100,6 +111,18 @@ describe('BreedsController', () => {
       await controller.remove('1');
 
       expect(service.remove).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('getMasterData', () => {
+    it('should return master data via service', async () => {
+      const mockMaster = [{ code: 1, name: 'Abyssinian' }];
+      mockBreedsService.getMasterData.mockResolvedValue(mockMaster);
+
+      const result = await controller.getMasterData(undefined);
+
+      expect(result).toEqual(mockMaster);
+      expect(service.getMasterData).toHaveBeenCalled();
     });
   });
 });

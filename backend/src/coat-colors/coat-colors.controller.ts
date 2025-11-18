@@ -17,12 +17,18 @@ import {
   ApiParam,
   ApiQuery,
   ApiBearerAuth,
+  ApiOkResponse,
+  ApiExtraModels,
 } from "@nestjs/swagger";
 import { UserRole } from "@prisma/client";
 
+import type { RequestUser } from "../auth/auth.types";
+import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RoleGuard } from "../auth/role.guard";
 import { Roles } from "../auth/roles.decorator";
+import { DisplayPreferencesService } from "../display-preferences/display-preferences.service";
+import { MasterDataItemDto } from "../display-preferences/dto/master-data-item.dto";
 
 import { CoatColorsService } from "./coat-colors.service";
 import {
@@ -32,12 +38,16 @@ import {
 } from "./dto";
 
 
+@ApiExtraModels(MasterDataItemDto)
 @ApiTags("Coat Colors")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller("coat-colors")
 export class CoatColorsController {
-  constructor(private readonly coatColorsService: CoatColorsService) {}
+  constructor(
+    private readonly coatColorsService: CoatColorsService,
+    private readonly displayPreferences: DisplayPreferencesService,
+  ) {}
 
   @Post()
   @UseGuards(RoleGuard)
@@ -89,6 +99,31 @@ export class CoatColorsController {
   })
   findAll(@Query() query: CoatColorQueryDto) {
     return this.coatColorsService.findAll(query);
+  }
+
+  @Get("master-data")
+  @ApiOperation({ summary: "Pedigree連携用の色柄マスターデータを取得" })
+  @ApiOkResponse({
+    description: "CSV マスターデータを displayName / displayNameMode 付きで返却",
+    type: MasterDataItemDto,
+    isArray: true,
+  })
+  async getMasterData(@GetUser() user: RequestUser | undefined) {
+    if (!user) {
+      return this.coatColorsService.getMasterData();
+    }
+
+    const preference = await this.displayPreferences.getPreferences(user.userId);
+    const personalized =
+      await this.displayPreferences.buildPersonalizedCoatColorRecords(preference);
+
+    return personalized.map((record) => ({
+      code: record.code,
+      name: record.canonicalName,
+      displayName: record.displayName,
+      displayNameMode: preference.coatColorNameMode,
+      isOverridden: record.isOverridden,
+    }));
   }
 
   @Get("statistics")

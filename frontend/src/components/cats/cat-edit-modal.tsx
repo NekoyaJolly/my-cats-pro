@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   Stack,
@@ -15,11 +15,15 @@ import {
   Grid,
 } from "@mantine/core";
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
+import { format } from "date-fns";
 import { useGetCat, useUpdateCat } from "@/lib/api/hooks/use-cats";
 import { useGetBreeds } from "@/lib/api/hooks/use-breeds";
 import { useGetCoatColors } from "@/lib/api/hooks/use-coat-colors";
+import { useBreedMasterData, useCoatColorMasterData } from "@/lib/api/hooks/use-master-data";
 import TagSelector from "@/components/TagSelector";
-import { format } from "date-fns";
+import { ALPHANUM_SPACE_HYPHEN_PATTERN, MasterDataCombobox } from "@/components/forms/MasterDataCombobox";
+import { useSelectionHistory } from "@/lib/hooks/use-selection-history";
+import { buildMasterOptions, createDisplayNameMap } from "@/lib/master-data/master-options";
 
 interface CatEditModalProps {
   opened: boolean;
@@ -36,6 +40,8 @@ const GENDER_OPTIONS = [
   { value: "SPAY", label: "Spayed Female" },
 ];
 
+const COAT_COLOR_DESCRIPTION = "半角英数字・スペース・ハイフンで検索できます。";
+
 export function CatEditModal({
   opened,
   onClose,
@@ -43,13 +49,23 @@ export function CatEditModal({
   onSuccess,
 }: CatEditModalProps) {
   const { data: cat, isLoading: isCatLoading } = useGetCat(catId);
-  const { data: breedsData, isLoading: isBreedsLoading } = useGetBreeds({ limit: 1000 });
-  const { data: coatColorsData, isLoading: isCoatColorsLoading } = useGetCoatColors({ limit: 1000 });
+  const breedListQuery = useMemo(() => ({ limit: 1000, sortBy: 'code', sortOrder: 'asc' as const }), []);
+  const coatColorListQuery = useMemo(() => ({ limit: 1000, sortBy: 'code', sortOrder: 'asc' as const }), []);
+  const { data: breedsData, isLoading: isBreedsLoading } = useGetBreeds(breedListQuery);
+  const { data: coatColorsData, isLoading: isCoatColorsLoading } = useGetCoatColors(coatColorListQuery);
+  const { data: breedMasterData, isLoading: isBreedMasterLoading } = useBreedMasterData();
+  const { data: coatMasterData, isLoading: isCoatMasterLoading } = useCoatColorMasterData();
+  const { history: breedHistory, recordSelection: recordBreedSelection } = useSelectionHistory("breed");
+  const { history: coatHistory, recordSelection: recordCoatSelection } = useSelectionHistory("coat-color");
+  const breedDisplayMap = useMemo(() => createDisplayNameMap(breedMasterData?.data), [breedMasterData]);
+  const coatDisplayMap = useMemo(() => createDisplayNameMap(coatMasterData?.data), [coatMasterData]);
+  const breedOptions = useMemo(() => buildMasterOptions(breedsData?.data, breedDisplayMap), [breedsData, breedDisplayMap]);
+  const coatOptions = useMemo(() => buildMasterOptions(coatColorsData?.data, coatDisplayMap), [coatColorsData, coatDisplayMap]);
   const updateCat = useUpdateCat(catId);
 
   const [form, setForm] = useState<{
     name: string;
-    gender: 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY';
+    gender: "MALE" | "FEMALE" | "NEUTER" | "SPAY";
     breedId: string;
     coatColorId: string;
     birthDate: string;
@@ -123,18 +139,8 @@ export function CatEditModal({
     }
   };
 
-  // 品種とカラーのオプションを作成
-  const breedOptions = breedsData?.data?.data?.map((breed: any) => ({
-    value: breed.id,
-    label: breed.name,
-  })) || [];
-
-  const coatColorOptions = coatColorsData?.data?.data?.map((color: any) => ({
-    value: color.id,
-    label: color.name,
-  })) || [];
-
-  const isLoading = isCatLoading || isBreedsLoading || isCoatColorsLoading;
+  const isLoading =
+    isCatLoading || isBreedsLoading || isCoatColorsLoading || isBreedMasterLoading || isCoatMasterLoading;
 
   return (
     <Modal
@@ -175,28 +181,32 @@ export function CatEditModal({
               </Grid.Col>
 
               <Grid.Col span={6}>
-                <Select
+                <MasterDataCombobox
                   label="品種"
-                  value={form.breedId}
-                  onChange={(value) => handleChange("breedId", value || "")}
-                  data={breedOptions}
-                  placeholder="品種を選択"
-                  searchable
-                  clearable
+                  value={form.breedId || undefined}
+                  onChange={(next) => handleChange("breedId", next ?? "")}
+                  options={breedOptions}
+                  historyItems={breedHistory}
                   disabled={updateCat.isPending}
+                  loading={isBreedsLoading || isBreedMasterLoading}
+                  historyLabel="最近の品種"
+                  onOptionSelected={recordBreedSelection}
                 />
               </Grid.Col>
 
               <Grid.Col span={6}>
-                <Select
+                <MasterDataCombobox
                   label="色柄"
-                  value={form.coatColorId}
-                  onChange={(value) => handleChange("coatColorId", value || "")}
-                  data={coatColorOptions}
-                  placeholder="色柄を選択"
-                  searchable
-                  clearable
+                  value={form.coatColorId || undefined}
+                  onChange={(next) => handleChange("coatColorId", next ?? "")}
+                  options={coatOptions}
+                  historyItems={coatHistory}
                   disabled={updateCat.isPending}
+                  loading={isCoatColorsLoading || isCoatMasterLoading}
+                  historyLabel="最近の色柄"
+                  onOptionSelected={recordCoatSelection}
+                  description={COAT_COLOR_DESCRIPTION}
+                  sanitizePattern={ALPHANUM_SPACE_HYPHEN_PATTERN}
                 />
               </Grid.Col>
 

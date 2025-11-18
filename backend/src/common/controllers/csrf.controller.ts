@@ -1,6 +1,6 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Req, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 
 import { CsrfTokenService } from '../services/csrf-token.service';
 
@@ -31,9 +31,10 @@ export class CsrfController {
     }
   })
   getCsrfToken(
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): { success: boolean; data: { csrfToken: string } } {
-    const csrfToken = this.csrfTokenService.createToken();
+    const csrfToken = this.csrfTokenService.issueToken(req);
 
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Pragma', 'no-cache');

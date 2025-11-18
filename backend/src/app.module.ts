@@ -11,15 +11,17 @@ import { BreedsModule } from "./breeds/breeds.module";
 import { CareModule } from "./care/care.module";
 import { CatsModule } from "./cats/cats.module";
 import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { envSchema } from "./common/config/env.validation";
 import { CsrfController } from "./common/controllers/csrf.controller";
 import { MasterDataController } from "./common/controllers/master-data.controller";
-import { AppThrottlerGuard } from "./common/guards/app-throttler.guard";
+import { EnhancedThrottlerGuard } from "./common/guards/enhanced-throttler.guard";
 import { CookieParserMiddleware } from "./common/middleware/cookie-parser.middleware";
 import { CorsMiddleware } from "./common/middleware/cors.middleware";
 import { CsrfMiddleware } from "./common/middleware/csrf.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { CsrfTokenService } from "./common/services/csrf-token.service";
+import { DisplayPreferencesModule } from "./display-preferences/display-preferences.module";
 import { GraduationModule } from "./graduation/graduation.module";
 import { HealthModule } from "./health/health.module";
 import { PedigreeModule } from "./pedigree/pedigree.module";
@@ -75,6 +77,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     }),
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: (config) => envSchema.parse(config),
     }),
     EventEmitterModule.forRoot({
       // イベントの非同期処理を有効化
@@ -100,7 +103,8 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     PedigreeModule,
     BreedsModule,
     CoatColorsModule,
-    BreedingModule,
+  BreedingModule,
+  DisplayPreferencesModule,
     CareModule,
     ScheduleModule,
     UploadModule,
@@ -115,7 +119,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     CsrfTokenService,
     {
       provide: APP_GUARD,
-      useClass: AppThrottlerGuard,
+      useClass: EnhancedThrottlerGuard,
     },
   ],
 })

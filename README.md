@@ -399,6 +399,7 @@ NEXT_PUBLIC_AUTH_DISABLED=1
 | `pnpm run db:migrate` | 開発用マイグレーション適用 (dev) |
 | `pnpm run db:deploy` | 本番向け migrate deploy |
 | `pnpm run db:seed` | 管理者 & サンプルデータ投入 |
+| `pnpm run generate-secrets` | JWT / CSRF 用の強力なランダムシークレットを生成 |
 | `pnpm run db:studio` | Prisma Studio GUI 起動 |
 | `pnpm run prisma:sync` | Prisma schema → Types 同期ウォッチ |
 | `pnpm run frontend:build` | フロントエンドビルド |

@@ -143,4 +143,24 @@ describe('CoatColorsService', () => {
       });
     });
   });
+
+  describe('getMasterData', () => {
+    it('should return coat color master data from prisma', async () => {
+      const mockMaster = [
+        { code: 1, name: 'White' },
+        { code: 2, name: 'Blue' },
+      ];
+
+      mockPrismaService.coatColor.findMany.mockResolvedValue(mockMaster);
+
+      const result = await service.getMasterData();
+
+      expect(mockPrismaService.coatColor.findMany).toHaveBeenCalledWith({
+        select: { code: true, name: true },
+        where: { isActive: true },
+        orderBy: { code: 'asc' },
+      });
+      expect(result).toEqual(mockMaster);
+    });
+  });
 });

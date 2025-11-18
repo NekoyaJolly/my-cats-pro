@@ -1,76 +1,64 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import csurf from 'csurf';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 import { CsrfValidationError } from '../errors/csrf-validation.error';
-import { CsrfTokenService } from '../services/csrf-token.service';
+
+export const CSRF_COOKIE_NAME = 'mycats.csrf';
 
 /**
- * CSRF保護ミドルウェア
- * クロスサイトリクエストフォージェリ攻撃から保護
+ * csurf を利用した CSRF 保護ミドルウェア
+ * Cookie に保管したシークレットと送信トークンを照合する
  */
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware {
-  constructor(private readonly csrfTokenService: CsrfTokenService) {}
+  private readonly csrfProtection: RequestHandler;
 
-  use(req: Request, _res: Response, next: NextFunction) {
-    const originalUrl = (req.originalUrl || req.url || req.path || '').toLowerCase();
-    const isCsrfTokenEndpoint =
-      originalUrl.startsWith('/api/v1/csrf-token') || originalUrl.startsWith('/csrf-token');
+  constructor() {
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    if (this.shouldSkipValidation(req, isCsrfTokenEndpoint)) {
+    this.csrfProtection = csurf({
+      cookie: {
+        key: CSRF_COOKIE_NAME,
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: isProduction,
+        path: '/',
+      },
+      ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+    }) as unknown as RequestHandler; // csurf 型は express@5 系のため、実際の express@4 型へ合わせる
+  }
+
+  use(req: Request, res: Response, next: NextFunction): void {
+    if (this.shouldBypass(req)) {
       return next();
     }
 
-    const token = this.extractToken(req);
-    if (!token) {
-      return next(new CsrfValidationError('Missing CSRF token'));
-    }
+    this.csrfProtection(req, res, (error?: unknown) => {
+      if (error) {
+        if (this.isCsrfLibraryError(error)) {
+          next(new CsrfValidationError());
+          return;
+        }
+        next(error);
+        return;
+      }
 
-    const isValid = this.csrfTokenService.validateToken(token);
-    if (!isValid) {
-      return next(new CsrfValidationError('Invalid or expired CSRF token'));
-    }
-
-    return next();
+      next();
+    });
   }
 
-  private shouldSkipValidation(req: Request, isCsrfTokenEndpoint: boolean): boolean {
-    if (isCsrfTokenEndpoint && req.method === 'GET') {
-      return true;
-    }
-
-    if (!isCsrfTokenEndpoint && ['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-      return true;
-    }
-
-    if (req.path === '/health' || req.path === '/api/v1/health') {
-      return true;
-    }
-
-    return false;
+  private shouldBypass(req: Request): boolean {
+    const normalizedPath = (req.originalUrl || req.url || '').toLowerCase();
+    const pathOnly = normalizedPath.split('?')[0];
+    return pathOnly === '/health' || pathOnly === '/api/v1/health';
   }
 
-  private extractToken(req: Request): string | null {
-    const headerNames = ['x-csrf-token', 'x-xsrf-token', 'csrf-token'];
-    for (const name of headerNames) {
-      const value = req.get(name);
-      if (value && typeof value === 'string' && value.trim().length > 0) {
-        return value;
-      }
+  private isCsrfLibraryError(error: unknown): error is { code?: string } {
+    if (!error || typeof error !== 'object') {
+      return false;
     }
-
-    if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
-      const candidate = (req.body as Record<string, unknown>)._csrf;
-      if (typeof candidate === 'string' && candidate.trim().length > 0) {
-        return candidate;
-      }
-    }
-
-    const queryCandidate = req.query?._csrf;
-    if (typeof queryCandidate === 'string' && queryCandidate.trim().length > 0) {
-      return queryCandidate;
-    }
-
-    return null;
+    const candidate = error as { code?: string };
+    return candidate.code === 'EBADCSRFTOKEN';
   }
 }
