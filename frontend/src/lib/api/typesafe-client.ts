@@ -127,6 +127,14 @@ class TypeSafeApiClient {
     }
   }
 
+  private ensureResponseData<T>(response: ApiResponse<T>, errorMessage: string): T {
+    if (response.data === undefined || response.data === null) {
+      throw new ApiError(errorMessage);
+    }
+
+    return response.data;
+  }
+
   // ==========================================
   // Staff API
   // ==========================================
@@ -136,7 +144,7 @@ class TypeSafeApiClient {
    */
   async getStaffList(): Promise<StaffListResponseDto> {
     const response = await this.request<StaffListResponseDto>(`/staff`);
-    return response.data!;
+    return this.ensureResponseData(response, 'スタッフ一覧の取得に失敗しました');
   }
 
   /**
@@ -144,7 +152,7 @@ class TypeSafeApiClient {
    */
   async getStaff(id: string): Promise<StaffResponseDto> {
     const response = await this.request<StaffResponseDto>(`/staff/${id}`);
-    return response.data!;
+    return this.ensureResponseData(response, 'スタッフ情報の取得に失敗しました');
   }
 
   /**
@@ -155,7 +163,7 @@ class TypeSafeApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return response.data!;
+    return this.ensureResponseData(response, 'スタッフの作成に失敗しました');
   }
 
   /**
@@ -166,7 +174,7 @@ class TypeSafeApiClient {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
-    return response.data!;
+    return this.ensureResponseData(response, 'スタッフの更新に失敗しました');
   }
 
   /**
@@ -176,7 +184,7 @@ class TypeSafeApiClient {
     const response = await this.request<StaffResponseDto>(`/staff/${id}`, {
       method: 'DELETE',
     });
-    return response.data!;
+    return this.ensureResponseData(response, 'スタッフの削除に失敗しました');
   }
 
   // ==========================================
@@ -200,7 +208,7 @@ class TypeSafeApiClient {
     const endpoint = queryString ? `/shifts?${queryString}` : '/shifts';
 
     const response = await this.request<ShiftResponseDto[]>(endpoint);
-    return response.data!;
+    return this.ensureResponseData(response, 'シフト一覧の取得に失敗しました');
   }
 
   /**
@@ -222,7 +230,7 @@ class TypeSafeApiClient {
     const response = await this.request<CalendarShiftEvent[]>(
       `/shifts/calendar?${searchParams.toString()}`,
     );
-    return response.data!;
+    return this.ensureResponseData(response, 'カレンダーシフトの取得に失敗しました');
   }
 
   /**
@@ -230,7 +238,7 @@ class TypeSafeApiClient {
    */
   async getShift(id: string): Promise<ShiftResponseDto> {
     const response = await this.request<ShiftResponseDto>(`/shifts/${id}`);
-    return response.data!;
+    return this.ensureResponseData(response, 'シフト情報の取得に失敗しました');
   }
 
   /**
@@ -241,7 +249,7 @@ class TypeSafeApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return response.data!;
+    return this.ensureResponseData(response, 'シフトの作成に失敗しました');
   }
 
   /**
@@ -252,7 +260,7 @@ class TypeSafeApiClient {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
-    return response.data!;
+    return this.ensureResponseData(response, 'シフトの更新に失敗しました');
   }
 
   /**

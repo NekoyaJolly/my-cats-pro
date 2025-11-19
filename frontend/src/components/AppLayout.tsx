@@ -44,7 +44,8 @@ import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
 import { notifications } from '@mantine/notifications';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuManager } from '@/components/context-menu';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, type ApiQueryParams } from '@/lib/api/client';
+import type { Cat } from '@/lib/api/hooks/use-cats';
 
 const navigationItems = [
   {
@@ -246,20 +247,20 @@ export function AppLayout({ children }: AppLayoutProps) {
       }
 
       try {
+        const catListQuery: ApiQueryParams<'/cats', 'get'> = { limit: 1000 };
         const response = await apiClient.get('/cats', {
-           
-          query: { limit: 1000 } as any,
+          query: catListQuery,
         });
 
         if (response.success && Array.isArray(response.data)) {
-          const cats = response.data;
+          const cats = response.data as Cat[];
           const today = new Date();
           
           // 在舎猫のみをフィルタ
-          const inHouseCats = cats.filter((cat: any) => cat.isInHouse);
+          const inHouseCats = cats.filter((cat) => cat.isInHouse);
           
           // 子猫判定関数（6ヶ月未満）
-          const isKittenFunc = (cat: any) => {
+          const isKittenFunc = (cat: Cat) => {
             if (!cat.birthDate) return false;
             const birthDate = new Date(cat.birthDate);
             const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
@@ -267,10 +268,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           };
           
           // 大人の猫（子猫以外）
-          const adultCats = inHouseCats.filter((cat: any) => !isKittenFunc(cat));
+          const adultCats = inHouseCats.filter((cat) => !isKittenFunc(cat));
           
           // 子猫（90日未満で母猫IDを持つ）
-          const kittens = inHouseCats.filter((cat: any) => {
+          const kittens = inHouseCats.filter((cat) => {
             if (!cat.birthDate || !cat.motherId) return false;
             const birthDate = new Date(cat.birthDate);
             const ageInDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -278,14 +279,14 @@ export function AppLayout({ children }: AppLayoutProps) {
           });
           
           // 卒業予定の猫（「卒業予定」タグを持つ猫）
-          const graduatedCats = inHouseCats.filter((cat: any) => 
-            cat.tags?.some((catTag: any) => catTag.tag.name === '卒業予定')
+          const graduatedCats = inHouseCats.filter((cat) => 
+            cat.tags?.some((catTag) => catTag.tag.name === '卒業予定')
           );
           
           // 統計を計算
           const stats: CatStats = {
-            male: adultCats.filter((cat: any) => cat.gender === 'MALE').length,
-            female: adultCats.filter((cat: any) => cat.gender === 'FEMALE').length,
+            male: adultCats.filter((cat) => cat.gender === 'MALE').length,
+            female: adultCats.filter((cat) => cat.gender === 'FEMALE').length,
             kittens: kittens.length,
             graduated: graduatedCats.length,
           };

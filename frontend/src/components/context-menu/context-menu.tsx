@@ -62,7 +62,7 @@ export interface ContextMenuAction {
   hidden?: boolean;
 }
 
-interface ContextMenuProviderProps<T = any> {
+interface ContextMenuProviderProps<T = unknown> {
   children: ReactNode;
   entity?: T;
   entityType?: string;
@@ -100,7 +100,7 @@ const defaultColors: Partial<Record<ContextAction, string>> = {
   delete: 'red',
 };
 
-export function ContextMenuProvider<T = any>({
+export function ContextMenuProvider<T = unknown>({
   children,
   entity,
   entityType,
@@ -280,7 +280,7 @@ export function ContextMenuProvider<T = any>({
 
   // 子要素にイベントハンドラーを追加
   const childWithHandlers = isValidElement(children)
-    ? cloneElement(children as React.ReactElement<any>, {
+    ? cloneElement(children as React.ReactElement, {
         ref: containerRef,
         onContextMenu: handleContextMenu,
         onDoubleClick: handleDoubleClick,
@@ -289,7 +289,7 @@ export function ContextMenuProvider<T = any>({
         onTouchMove: handleTouchMove,
         onTouchCancel: handleTouchCancel,
         style: {
-          ...((children as React.ReactElement<any>).props.style || {}),
+          ...((children as React.ReactElement).props.style || {}),
           cursor: disabled ? 'default' : 'context-menu',
           userSelect: 'none',
         },

@@ -23,14 +23,17 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconArrowLeft, IconEdit, IconUser, IconAlertCircle, IconChevronDown } from '@tabler/icons-react';
-import { useGetCat, useGetCats } from '@/lib/api/hooks/use-cats';
-import { useGetBirthPlans } from '@/lib/api/hooks/use-breeding';
-import { useGetCareSchedules, useGetMedicalRecords } from '@/lib/api/hooks/use-care';
+import { useGetCat, useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
+import { useGetBirthPlans, type BirthPlan, type KittenDisposition } from '@/lib/api/hooks/use-breeding';
+import { useGetCareSchedules, useGetMedicalRecords, type CareSchedule, type MedicalRecord } from '@/lib/api/hooks/use-care';
 import { useTransferCat } from '@/lib/api/hooks/use-graduation';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
 import { notifications } from '@mantine/notifications';
+
+type CatTagRelation = NonNullable<Cat['tags']>[number];
+type KittenWithDisposition = Cat & { disposition: KittenDisposition['disposition'] };
 
 type Props = {
   catId: string;
@@ -126,10 +129,10 @@ export default function CatDetailClient({ catId }: Props) {
           // ギャラリーページへリダイレクト
           router.push('/gallery');
         },
-        onError: (error: any) => {
+        onError: (transferError) => {
           notifications.show({
             title: '譲渡失敗',
-            message: error.message || '譲渡処理に失敗しました',
+            message: transferError instanceof Error ? transferError.message : '譲渡処理に失敗しました',
             color: 'red',
           });
         },
@@ -200,7 +203,7 @@ export default function CatDetailClient({ catId }: Props) {
                     </Badge>
                     {catData.tags && catData.tags.length > 0 && (
                       <>
-                        {catData.tags.map((catTag: any) => (
+                        {catData.tags.map((catTag: CatTagRelation) => (
                           <Badge
                             key={catTag.tag.id}
                             color={catTag.tag.color || 'blue'}
@@ -301,8 +304,9 @@ export default function CatDetailClient({ catId }: Props) {
                       </Accordion.Control>
                       <Accordion.Panel>
                         {(() => {
-                          const completedBirthPlans = (birthPlansResponse?.data || []).filter(
-                            (bp: any) => bp.motherId === catData.id && bp.status === 'BORN'
+                          const birthPlans: BirthPlan[] = birthPlansResponse?.data ?? [];
+                          const completedBirthPlans = birthPlans.filter(
+                            (plan) => plan.motherId === catData.id && plan.status === 'BORN'
                           );
 
                           if (completedBirthPlans.length === 0) {
@@ -313,56 +317,50 @@ export default function CatDetailClient({ catId }: Props) {
                             );
                           }
 
-                          // 全子猫データを取得
-                          const allKittens = catsResponse?.data || [];
+                          const allKittens: Cat[] = catsResponse?.data ?? [];
 
                           return (
                             <Stack gap="md">
-                              {completedBirthPlans.map((bp: any) => {
-                                // 処遇登録されている子猫を基準にする
-                                const dispositions = bp.kittenDispositions || [];
-                                
-                                // 同じ子猫に対して複数の処遇がある場合、最新のものを使用
-                                const latestDispositions = dispositions.reduce((acc: any[], d: any) => {
-                                  const existing = acc.find((item: any) => item.kittenId === d.kittenId);
-                                  if (!existing) {
-                                    acc.push(d);
-                                  } else {
-                                    // createdAtが新しい方を使用
-                                    if (new Date(d.createdAt) > new Date(existing.createdAt)) {
-                                      acc[acc.indexOf(existing)] = d;
-                                    }
+                              {completedBirthPlans.map((plan) => {
+                                const dispositions = plan.kittenDispositions ?? [];
+                                const latestDispositions = dispositions.reduce<KittenDisposition[]>((acc, disposition) => {
+                                  const key = disposition.kittenId ?? disposition.id;
+                                  const existingIndex = acc.findIndex((item) => (item.kittenId ?? item.id) === key);
+
+                                  if (existingIndex === -1) {
+                                    acc.push(disposition);
+                                    return acc;
+                                  }
+
+                                  const existing = acc[existingIndex];
+                                  if (new Date(disposition.createdAt) > new Date(existing.createdAt)) {
+                                    acc[existingIndex] = disposition;
                                   }
                                   return acc;
                                 }, []);
-                                
-                                // 処遇ごとの集計（最新の処遇のみで集計）
-                                const trainingCount = latestDispositions.filter((d: any) => d.disposition === 'TRAINING').length;
-                                const saleCount = latestDispositions.filter((d: any) => d.disposition === 'SALE').length;
-                                const deceasedCount = latestDispositions.filter((d: any) => d.disposition === 'DECEASED').length;
-                                
-                                // 出産頭数は処遇登録されたユニークな子猫の数
+
+                                const trainingCount = latestDispositions.filter((disposition) => disposition.disposition === 'TRAINING').length;
+                                const saleCount = latestDispositions.filter((disposition) => disposition.disposition === 'SALE').length;
+                                const deceasedCount = latestDispositions.filter((disposition) => disposition.disposition === 'DECEASED').length;
                                 const totalKittens = latestDispositions.length;
-                                
-                                // 詳細表示用に子猫の完全な情報を取得
+
                                 const kittens = latestDispositions
-                                  .map((d: any) => {
-                                    const kitten = allKittens.find((k: any) => k.id === d.kittenId);
-                                    return kitten ? { ...kitten, disposition: d.disposition } : null;
+                                  .map((disposition) => {
+                                    const kitten = allKittens.find((candidate) => candidate.id === disposition.kittenId);
+                                    return kitten ? { ...kitten, disposition: disposition.disposition } : null;
                                   })
-                                  .filter((k: any) => k !== null);
+                                  .filter((kitten): kitten is KittenWithDisposition => kitten !== null);
 
                                 return (
-                                  <Card key={bp.id} withBorder padding="md">
+                                  <Card key={plan.id} withBorder padding="md">
                                     <Stack gap="sm">
-                                      {/* 概要行 */}
                                       <Group justify="space-between" wrap="nowrap">
                                         <Group gap="md" wrap="wrap">
                                           <Text size="sm" fw={600}>
-                                            父: {bp.father?.name || '不明'}
+                                            父: {plan.father?.name || '不明'}
                                           </Text>
                                           <Text size="sm">
-                                            出産日: {bp.matingDate ? format(new Date(bp.matingDate), 'yyyy/MM/dd', { locale: ja }) : '不明'}
+                                            出産日: {plan.matingDate ? format(new Date(plan.matingDate), 'yyyy/MM/dd', { locale: ja }) : '不明'}
                                           </Text>
                                           <Text size="sm">
                                             出産: {totalKittens}頭
@@ -381,7 +379,7 @@ export default function CatDetailClient({ catId }: Props) {
                                           size="xs"
                                           variant="light"
                                           onClick={() => {
-                                            setSelectedBirthPlanId(bp.id);
+                                            setSelectedBirthPlanId(plan.id);
                                             openManagementModal();
                                           }}
                                         >
@@ -389,7 +387,6 @@ export default function CatDetailClient({ catId }: Props) {
                                         </Button>
                                       </Group>
 
-                                      {/* 子猫詳細（アコーディオン） */}
                                       {kittens.length > 0 && (
                                         <Accordion variant="separated">
                                           <Accordion.Item value="kittens">
@@ -398,12 +395,15 @@ export default function CatDetailClient({ catId }: Props) {
                                             </Accordion.Control>
                                             <Accordion.Panel>
                                               <Stack gap="xs">
-                                                {kittens.map((kitten: any) => {
-                                                  // kittens配列に既に処遇情報が含まれている
-                                                  const dispositionIcon = 
-                                                    kitten.disposition === 'TRAINING' ? '🎓' :
-                                                    kitten.disposition === 'SALE' ? '💰' :
-                                                    kitten.disposition === 'DECEASED' ? '🌈' : '';
+                                                {kittens.map((kitten) => {
+                                                  const dispositionIcon =
+                                                    kitten.disposition === 'TRAINING'
+                                                      ? '🎓'
+                                                      : kitten.disposition === 'SALE'
+                                                        ? '💰'
+                                                        : kitten.disposition === 'DECEASED'
+                                                          ? '🌈'
+                                                          : '';
 
                                                   return (
                                                     <Group key={kitten.id} justify="space-between" wrap="nowrap">
@@ -419,11 +419,12 @@ export default function CatDetailClient({ catId }: Props) {
                                                         </Text>
                                                         {dispositionIcon && (
                                                           <Badge size="sm" variant="light">
-                                                            {dispositionIcon} {
-                                                              kitten.disposition === 'TRAINING' ? '養成中' :
-                                                              kitten.disposition === 'SALE' ? '出荷済' :
-                                                              '死亡'
-                                                            }
+                                                            {dispositionIcon}{' '}
+                                                            {kitten.disposition === 'TRAINING'
+                                                              ? '養成中'
+                                                              : kitten.disposition === 'SALE'
+                                                                ? '出荷済'
+                                                                : '死亡'}
                                                           </Badge>
                                                         )}
                                                       </Group>
@@ -453,11 +454,11 @@ export default function CatDetailClient({ catId }: Props) {
                     </Accordion.Control>
                     <Accordion.Panel>
                       {(() => {
-                        const careSchedules = careSchedulesResponse?.data || [];
+                        const careSchedules: CareSchedule[] = careSchedulesResponse?.data ?? [];
                         const catCareSchedules = careSchedules.filter(
-                          (schedule: any) => 
-                            schedule.cat?.id === catData.id || 
-                            schedule.cats?.some((c: any) => c.id === catData.id)
+                          (schedule) =>
+                            schedule.cat?.id === catData.id ||
+                            schedule.cats?.some((careCat) => careCat.id === catData.id)
                         );
 
                         if (catCareSchedules.length === 0) {
@@ -470,7 +471,7 @@ export default function CatDetailClient({ catId }: Props) {
 
                         return (
                           <Stack gap="xs">
-                            {catCareSchedules.map((schedule: any) => (
+                            {catCareSchedules.map((schedule) => (
                               <Group key={schedule.id} gap="md" wrap="nowrap">
                                 <Text size="sm" fw={500} style={{ minWidth: '120px' }}>
                                   {schedule.name || schedule.title}
@@ -496,9 +497,9 @@ export default function CatDetailClient({ catId }: Props) {
                     </Accordion.Control>
                     <Accordion.Panel>
                       {(() => {
-                        const medicalRecords = medicalRecordsResponse?.data || [];
+                        const medicalRecords: MedicalRecord[] = medicalRecordsResponse?.data ?? [];
                         const catMedicalRecords = medicalRecords.filter(
-                          (record: any) => record.cat?.id === catData.id
+                          (record) => record.cat?.id === catData.id
                         );
 
                         if (catMedicalRecords.length === 0) {
@@ -511,7 +512,7 @@ export default function CatDetailClient({ catId }: Props) {
 
                         return (
                           <Stack gap="xs">
-                            {catMedicalRecords.map((record: any) => (
+                            {catMedicalRecords.map((record) => (
                               <Card key={record.id} withBorder padding="sm">
                                 <Group gap="md" wrap="wrap">
                                   <Text size="sm" fw={500}>

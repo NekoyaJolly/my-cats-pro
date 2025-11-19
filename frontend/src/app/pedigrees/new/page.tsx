@@ -57,27 +57,27 @@ const getBreeds = async (params?: { limit?: string }): Promise<ApiResponse<Breed
   // OpenAPI型定義が未生成のため一時的に型チェックをスキップ
   // 型定義生成後は @ts-expect-error を削除できます
   // @ts-expect-error - OpenAPI type definition not yet generated
-  return await apiClient.get('/breeds', params ? { query: params } : undefined);
+  return apiClient.get('/breeds', params ? { query: params } : undefined);
 };
 
 const getCoatColors = async (params?: { limit?: string }): Promise<ApiResponse<CoatColorsResponse>> => {
   // @ts-expect-error - OpenAPI型定義が未生成
-  return await apiClient.get('/coat-colors', params ? { query: params } : undefined);
+  return apiClient.get('/coat-colors', params ? { query: params } : undefined);
 };
 
 const getGenders = async (): Promise<ApiResponse<GendersResponse>> => {
   // @ts-expect-error - OpenAPI型定義が未生成
-  return await apiClient.get('/master/genders');
+  return apiClient.get('/master/genders');
 };
 
 const getPedigreeByNumber = async (pedigreeNumber: string): Promise<ApiResponse<PedigreeResponse>> => {
   // @ts-expect-error - OpenAPI型定義が未生成
-  return await apiClient.get(`/pedigrees/pedigree-id/${pedigreeNumber}`);
+  return apiClient.get(`/pedigrees/pedigree-id/${pedigreeNumber}`);
 };
 
 const createPedigree = async (data: PedigreeFormData): Promise<ApiResponse<PedigreeResponse>> => {
   // @ts-expect-error - OpenAPI型定義が未生成
-  return await apiClient.post('/pedigrees', { body: data });
+  return apiClient.post('/pedigrees', { body: data });
 };
 import { 
   IconDeviceFloppy, 

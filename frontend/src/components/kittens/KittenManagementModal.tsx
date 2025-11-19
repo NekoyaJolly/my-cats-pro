@@ -173,7 +173,7 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
   };
 
   // 子猫データを更新
-  const updateKitten = (index: number, field: keyof KittenData, value: any) => {
+  const updateKitten = <Field extends keyof KittenData>(index: number, field: Field, value: KittenData[Field]) => {
     setKittens(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
@@ -286,17 +286,21 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
         if (relevantPlan) {
           for (const kitten of kittensWithDisposition) {
             const kittenId = kitten.id || (kitten.tempId ? createdKittenIds[kitten.tempId] : undefined);
-            
+            const disposition = kitten.disposition;
+            if (!disposition) {
+              continue;
+            }
+
             await createKittenDispositionMutation.mutateAsync({
               birthRecordId: relevantPlan.id,
-              kittenId: kittenId,
+              kittenId,
               name: kitten.name,
               gender: kitten.gender,
-              disposition: kitten.disposition!.type,
-              trainingStartDate: kitten.disposition!.trainingStartDate,
-              saleInfo: kitten.disposition!.saleInfo,
-              deathDate: kitten.disposition!.deathDate,
-              deathReason: kitten.disposition!.type === 'DECEASED' ? '不明' : undefined,
+              disposition: disposition.type,
+              trainingStartDate: disposition.trainingStartDate,
+              saleInfo: disposition.saleInfo,
+              deathDate: disposition.deathDate,
+              deathReason: disposition.type === 'DECEASED' ? '不明' : undefined,
             });
           }
         }

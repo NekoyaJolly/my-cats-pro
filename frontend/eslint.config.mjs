@@ -45,7 +45,9 @@ const eslintConfig = [
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_'
       }],
-      '@typescript-eslint/no-explicit-any': 'error', // TODO: 長期的にerrorに
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/return-await': ['error', 'in-try-catch'],
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
@@ -137,7 +139,6 @@ const eslintConfig = [
     name: 'frontend-ui-relax-rules',
     files: ['src/app/**/*.tsx', 'src/components/**/*.tsx'],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
@@ -162,7 +163,10 @@ const eslintConfig = [
       "**/*_old.ts",
       "*.config.js",
       "*.config.mjs",
-      "src/lib/api/generated/**"
+      "src/lib/api/generated/**",
+      "**/*.bak",
+      "**/*.backup.ts",
+      "**/*.backup.tsx"
     ]
   }
 ];

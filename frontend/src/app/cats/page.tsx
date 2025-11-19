@@ -434,7 +434,10 @@ export default function CatsPage() {
         if (!kittensByMotherMap.has(kitten.motherId)) {
           kittensByMotherMap.set(kitten.motherId, []);
         }
-        kittensByMotherMap.get(kitten.motherId)!.push(kitten);
+        const siblings = kittensByMotherMap.get(kitten.motherId);
+        if (siblings) {
+          siblings.push(kitten);
+        }
       }
     });
 

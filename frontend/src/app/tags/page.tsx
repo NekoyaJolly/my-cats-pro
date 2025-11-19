@@ -2110,7 +2110,7 @@ export default function TagsPage() {
                             )}
                             {rule.config && typeof rule.config === 'object' && (rule.config as { tagIds?: string[] }).tagIds && (
                               <Badge size="xs" variant="outline" color="teal">
-                                付与タグ: {(rule.config as { tagIds?: string[] }).tagIds!.length}個
+                                付与タグ: {((rule.config as { tagIds?: string[] }).tagIds ?? []).length}個
                               </Badge>
                             )}
                             {rule._count && (
@@ -2821,7 +2821,7 @@ export default function TagsPage() {
                       付与するタグ
                     </Text>
                     <Text size="sm" c="dimmed">
-                      {(executingRule.config as { tagIds?: string[] }).tagIds!.length}個のタグを付与
+                      {((executingRule.config as { tagIds?: string[] }).tagIds ?? []).length}個のタグを付与
                     </Text>
                   </Box>
                 )}

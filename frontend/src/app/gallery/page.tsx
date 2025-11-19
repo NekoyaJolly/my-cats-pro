@@ -17,6 +17,7 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconTrophy, IconTrash } from '@tabler/icons-react';
 import { useGetGraduations, useGetGraduationDetail, useCancelGraduation } from '@/lib/api/hooks/use-graduation';
+import type { Cat } from '@/lib/api/hooks/use-cats';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { GenderBadge } from '@/components/GenderBadge';
 import { useDisclosure } from '@mantine/hooks';
@@ -87,10 +88,10 @@ export default function GalleryPage() {
               handleCloseDetailModal();
             }
           },
-          onError: (error: any) => {
+          onError: (error) => {
             notifications.show({
               title: '取り消し失敗',
-              message: error.message || '卒業記録の取り消しに失敗しました',
+              message: error instanceof Error ? error.message : '卒業記録の取り消しに失敗しました',
               color: 'red',
             });
           },
@@ -264,7 +265,7 @@ export default function GalleryPage() {
                   <Group>
                     <Text fw={500}>タグ:</Text>
                     <Group gap="xs">
-                      {graduationDetail.data.catSnapshot.tags.map((tagRelation: any) => (
+                      {graduationDetail.data.catSnapshot.tags.map((tagRelation: NonNullable<Cat['tags']>[number]) => (
                         <Badge key={tagRelation.tag.id} size="sm">
                           {tagRelation.tag.name}
                         </Badge>

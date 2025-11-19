@@ -284,7 +284,10 @@ export default function PedigreeDetailClient() {
                     <Button
                       size="xs"
                       variant="light"
-                      onClick={() => router.push(`/pedigrees/${pedigree.fatherPedigree!.id}`)}
+                      onClick={() => {
+                        if (!pedigree.fatherPedigree) return;
+                        router.push(`/pedigrees/${pedigree.fatherPedigree.id}`);
+                      }}
                     >
                       詳細を見る
                     </Button>
@@ -315,7 +318,10 @@ export default function PedigreeDetailClient() {
                     <Button
                       size="xs"
                       variant="light"
-                      onClick={() => router.push(`/pedigrees/${pedigree.motherPedigree!.id}`)}
+                      onClick={() => {
+                        if (!pedigree.motherPedigree) return;
+                        router.push(`/pedigrees/${pedigree.motherPedigree.id}`);
+                      }}
                     >
                       詳細を見る
                     </Button>

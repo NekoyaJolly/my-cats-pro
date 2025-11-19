@@ -539,7 +539,7 @@ export async function apiRequest<T = unknown>(
       }
     }
 
-    return handleResponse<T>(response);
+    return await handleResponse<T>(response);
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;

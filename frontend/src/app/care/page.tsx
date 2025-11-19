@@ -1009,13 +1009,18 @@ export default function CarePage() {
                 { value: '6', label: '土曜日' },
               ]}
               value={createForm.schedule.daysOfWeek?.[0]?.toString() || null}
-              onChange={(value) => setCreateForm((prev) => ({
-                ...prev,
-                schedule: {
-                  ...prev.schedule!,
-                  daysOfWeek: value ? [parseInt(value)] : []
+              onChange={(value) => setCreateForm((prev) => {
+                if (!prev.schedule) {
+                  return prev;
                 }
-              }))}
+                return {
+                  ...prev,
+                  schedule: {
+                    ...prev.schedule,
+                    daysOfWeek: value ? [parseInt(value, 10)] : [],
+                  },
+                };
+              })}
             />
           )}
 
@@ -1025,13 +1030,18 @@ export default function CarePage() {
               placeholder="日付を選択"
               data={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: `${i + 1}日` }))}
               value={createForm.schedule.dayOfMonth?.toString() || null}
-              onChange={(value) => setCreateForm((prev) => ({
-                ...prev,
-                schedule: {
-                  ...prev.schedule!,
-                  dayOfMonth: value ? parseInt(value) : undefined
+              onChange={(value) => setCreateForm((prev) => {
+                if (!prev.schedule) {
+                  return prev;
                 }
-              }))}
+                return {
+                  ...prev,
+                  schedule: {
+                    ...prev.schedule,
+                    dayOfMonth: value ? parseInt(value, 10) : undefined,
+                  },
+                };
+              })}
             />
           )}
 
@@ -1068,13 +1078,19 @@ export default function CarePage() {
               placeholder="例: 21"
               type="number"
               value={createForm.schedule.daysAfterBirth?.toString() || ''}
-              onChange={(event) => setCreateForm((prev) => ({
-                ...prev,
-                schedule: {
-                  ...prev.schedule!,
-                  daysAfterBirth: parseInt(event.target.value) || undefined
+              onChange={(event) => setCreateForm((prev) => {
+                if (!prev.schedule) {
+                  return prev;
                 }
-              }))}
+                const value = parseInt(event.target.value, 10);
+                return {
+                  ...prev,
+                  schedule: {
+                    ...prev.schedule,
+                    daysAfterBirth: Number.isNaN(value) ? undefined : value,
+                  },
+                };
+              })}
             />
           )}
 
@@ -1401,13 +1417,18 @@ export default function CarePage() {
                 { value: '6', label: '土曜日' },
               ]}
               value={createForm.schedule.daysOfWeek?.[0]?.toString() || null}
-              onChange={(value) => setCreateForm((prev) => ({
-                ...prev,
-                schedule: {
-                  ...prev.schedule!,
-                  daysOfWeek: value ? [parseInt(value)] : []
+              onChange={(value) => setCreateForm((prev) => {
+                if (!prev.schedule) {
+                  return prev;
                 }
-              }))}
+                return {
+                  ...prev,
+                  schedule: {
+                    ...prev.schedule,
+                    daysOfWeek: value ? [parseInt(value, 10)] : [],
+                  },
+                };
+              })}
             />
           )}
 
@@ -1417,13 +1438,18 @@ export default function CarePage() {
               placeholder="日付を選択"
               data={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: `${i + 1}日` }))}
               value={createForm.schedule.dayOfMonth?.toString() || null}
-              onChange={(value) => setCreateForm((prev) => ({
-                ...prev,
-                schedule: {
-                  ...prev.schedule!,
-                  dayOfMonth: value ? parseInt(value) : undefined
+              onChange={(value) => setCreateForm((prev) => {
+                if (!prev.schedule) {
+                  return prev;
                 }
-              }))}
+                return {
+                  ...prev,
+                  schedule: {
+                    ...prev.schedule,
+                    dayOfMonth: value ? parseInt(value, 10) : undefined,
+                  },
+                };
+              })}
             />
           )}
 
@@ -1460,13 +1486,19 @@ export default function CarePage() {
               placeholder="例: 21"
               type="number"
               value={createForm.schedule.daysAfterBirth?.toString() || ''}
-              onChange={(event) => setCreateForm((prev) => ({
-                ...prev,
-                schedule: {
-                  ...prev.schedule!,
-                  daysAfterBirth: parseInt(event.target.value) || undefined
+              onChange={(event) => setCreateForm((prev) => {
+                if (!prev.schedule) {
+                  return prev;
                 }
-              }))}
+                const value = parseInt(event.target.value, 10);
+                return {
+                  ...prev,
+                  schedule: {
+                    ...prev.schedule,
+                    daysAfterBirth: Number.isNaN(value) ? undefined : value,
+                  },
+                };
+              })}
             />
           )}
 

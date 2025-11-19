@@ -16,7 +16,7 @@ import {
 } from "@mantine/core";
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
 import { format } from "date-fns";
-import { useGetCat, useUpdateCat } from "@/lib/api/hooks/use-cats";
+import { useGetCat, useUpdateCat, type Cat } from "@/lib/api/hooks/use-cats";
 import { useGetBreeds } from "@/lib/api/hooks/use-breeds";
 import { useGetCoatColors } from "@/lib/api/hooks/use-coat-colors";
 import { useBreedMasterData, useCoatColorMasterData } from "@/lib/api/hooks/use-master-data";
@@ -98,7 +98,7 @@ export function CatEditModal({
         microchipNumber: catData.microchipNumber || "",
         registrationNumber: catData.registrationNumber || "",
         description: catData.description || "",
-        tagIds: catData.tags?.map((catTag: any) => catTag.tag.id) || [],
+        tagIds: catData.tags?.map((catTag: NonNullable<Cat['tags']>[number]) => catTag.tag.id) || [],
       });
     }
   }, [cat, opened]);

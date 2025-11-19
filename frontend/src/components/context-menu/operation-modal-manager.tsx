@@ -6,7 +6,7 @@ import { notifications } from '@mantine/notifications';
 
 export type OperationType = 'view' | 'edit' | 'create' | 'delete' | 'duplicate' | 'custom';
 
-interface OperationModalManagerProps<T = any> {
+interface OperationModalManagerProps<T = unknown> {
   operationType: OperationType | null;
   entity?: T;
   entityType?: string;
@@ -16,7 +16,7 @@ interface OperationModalManagerProps<T = any> {
   customContent?: ReactNode;
 }
 
-export function OperationModalManager<T = any>({
+export function OperationModalManager<T = unknown>({
   operationType,
   entity,
   entityType = 'アイテム',

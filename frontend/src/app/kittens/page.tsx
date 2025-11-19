@@ -169,8 +169,9 @@ export default function KittensPage() {
             motherMap.set(motherId, { mother: mother as Cat, kittens: [], fatherName: father?.name || '不明', birthPlan });
           }
         }
-        if (motherMap.has(motherId)) {
-          motherMap.get(motherId)!.kittens.push(kitten);
+        const motherEntry = motherMap.get(motherId);
+        if (motherEntry) {
+          motherEntry.kittens.push(kitten);
         }
       }
     });
@@ -246,7 +247,7 @@ export default function KittensPage() {
         if (!kitten.tags || kitten.tags.length === 0) {
           return false;
         }
-        return filterTags.some(filterTag => kitten.tags!.includes(filterTag));
+        return filterTags.some(filterTag => (kitten.tags ?? []).includes(filterTag));
       });
 
       return { ...mother, kittens: filteredKittens };
@@ -452,9 +453,10 @@ export default function KittensPage() {
                   ) || [];
 
                   const kittenSchedules = todaySchedules.filter((schedule: CareSchedule) => {
-                    if (!schedule.cat) return false;
+                    const catId = schedule.cat?.id;
+                    if (!catId) return false;
                     return motherCats.some(mother => 
-                      mother.kittens.some(kitten => kitten.id === schedule.cat!.id)
+                      mother.kittens.some(kitten => kitten.id === catId)
                     );
                   });
 
@@ -489,10 +491,12 @@ export default function KittensPage() {
                 {careSchedulesQuery.data?.data?.filter(
                   (schedule: CareSchedule) => {
                     const today = new Date().toISOString().split('T')[0];
-                    return schedule.scheduleDate.startsWith(today) && 
-                           motherCats.some(mother => 
-                             mother.kittens.some(kitten => kitten.id === schedule.cat!.id)
-                           );
+                    const catId = schedule.cat?.id;
+                    return Boolean(
+                      schedule.scheduleDate.startsWith(today) &&
+                      catId &&
+                      motherCats.some(mother => mother.kittens.some(kitten => kitten.id === catId))
+                    );
                   }
                 ).length === 0 && (
                   <Grid.Col span={12}>

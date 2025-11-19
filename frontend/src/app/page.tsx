@@ -36,7 +36,7 @@ import {
 } from '@tabler/icons-react';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { notifications } from '@mantine/notifications';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, type ApiQueryParams } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/store';
 import {
   DashboardCardSettings,
@@ -74,6 +74,15 @@ interface BreedingSummary {
   total: number;
   today: number;
 }
+
+type CareSchedule = {
+  status?: string | null;
+};
+
+type BreedingSchedule = {
+  breedingDate?: string | null;
+  date?: string | null;
+};
 
 export default function Home() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -121,9 +130,9 @@ export default function Home() {
         console.log('📡 API呼び出し開始...');
         
         // 猫データを取得
+        const catListQuery: ApiQueryParams<'/cats', 'get'> = { limit: 1000 };
         const catsResponse = await apiClient.get('/cats', {
-           
-          query: { limit: 1000 } as any,
+          query: catListQuery,
         });
         
         console.log('🐱 猫データレスポンス:', catsResponse);
@@ -141,11 +150,11 @@ export default function Home() {
         try {
           const careResponse = await apiClient.get('/care/schedules');
           if (careResponse.success && Array.isArray(careResponse.data)) {
-            const schedules = careResponse.data;
+            const schedules = careResponse.data as CareSchedule[];
             setCareSummary({
               total: schedules.length,
-              completed: schedules.filter((s: any) => s.status === 'completed').length,
-              pending: schedules.filter((s: any) => s.status !== 'completed').length,
+              completed: schedules.filter((schedule) => schedule.status === 'completed').length,
+              pending: schedules.filter((schedule) => schedule.status !== 'completed').length,
             });
           }
         } catch (careError) {
@@ -156,11 +165,11 @@ export default function Home() {
         try {
           const breedingResponse = await apiClient.get('/breeding');
           if (breedingResponse.success && Array.isArray(breedingResponse.data)) {
-            const schedules = breedingResponse.data;
+            const schedules = breedingResponse.data as BreedingSchedule[];
             const today = new Date().toISOString().split('T')[0];
             setBreedingSummary({
               total: schedules.length,
-              today: schedules.filter((s: any) => s.breedingDate?.startsWith(today) || s.date?.startsWith(today)).length,
+              today: schedules.filter((schedule) => schedule.breedingDate?.startsWith(today) || schedule.date?.startsWith(today)).length,
             });
           }
         } catch (breedingError) {

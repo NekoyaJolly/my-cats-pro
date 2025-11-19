@@ -17,7 +17,6 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus } from '@tabler/icons-react';
-import { z } from 'zod';
 import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
 import { useGetCoatColors } from '@/lib/api/hooks/use-coat-colors';
@@ -28,31 +27,7 @@ import TagSelector from '@/components/TagSelector';
 import { ALPHANUM_SPACE_HYPHEN_PATTERN, MasterDataCombobox } from '@/components/forms/MasterDataCombobox';
 import { useSelectionHistory } from '@/lib/hooks/use-selection-history';
 import { buildMasterOptions, createDisplayNameMap } from '@/lib/master-data/master-options';
-
-const optionalString = z
-  .string()
-  .optional()
-  .transform((value) => (value?.trim() ? value.trim() : undefined));
-
-const catFormSchema = z.object({
-  name: z.string().min(1, '名前は必須です'),
-  gender: z.enum(['MALE', 'FEMALE', 'NEUTER', 'SPAY'], {
-    errorMap: () => ({ message: '性別を選択してください' }),
-  }),
-  birthDate: z
-    .string()
-    .min(1, '生年月日を入力してください')
-    .regex(/^\d{4}-\d{2}-\d{2}$/, '生年月日はYYYY-MM-DD形式で入力してください'),
-  breedId: optionalString,
-  coatColorId: optionalString,
-  microchipNumber: optionalString,
-  registrationId: optionalString,
-  description: optionalString,
-  isInHouse: z.boolean().default(true),
-  tagIds: z.array(z.string()).default([]),
-});
-
-type CatFormValues = z.infer<typeof catFormSchema>;
+import { catFormSchema, type CatFormSchema as CatFormValues } from '@/lib/schemas';
 const COAT_COLOR_DESCRIPTION = '半角英数字・スペース・ハイフンで検索できます。候補一覧からも選択できます。';
 
 export default function CatRegistrationPage() {
