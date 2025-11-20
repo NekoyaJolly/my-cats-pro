@@ -12,5 +12,6 @@
   ],
   "coverageDirectory": "../coverage-e2e",
   "testEnvironment": "node",
-  "maxWorkers": 1
+  "maxWorkers": 1,
+  "setupFiles": ["<rootDir>/test/setup-e2e.ts"]
 }

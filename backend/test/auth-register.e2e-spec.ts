@@ -3,9 +3,11 @@ import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
 import { createTestApp } from "./utils/create-test-app";
+import { CsrfHelper } from "./utils/csrf-helper";
 
 describe("Auth register (e2e)", () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -13,6 +15,7 @@ describe("Auth register (e2e)", () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
+    csrfHelper = new CsrfHelper(app);
   });
 
   afterAll(async () => {
@@ -25,23 +28,18 @@ describe("Auth register (e2e)", () => {
     const password = "Secret123!";
 
     // first register
-    await request(app.getHttpServer())
-      .post("/api/v1/auth/register")
-      .send({ email, password })
-      .expect((res) => {
-        if (![201, 200].includes(res.status)) {
-          throw new Error(`unexpected status: ${res.status}`);
-        }
-      });
+    const res1 = await csrfHelper.post("/api/v1/auth/register", { email, password });
+    if (![201, 200].includes(res1.status)) {
+      throw new Error(`unexpected status: ${res1.status}`);
+    }
 
     // duplicate register should fail (409 or 400 as BadRequest)
-    await request(app.getHttpServer())
-      .post("/api/v1/auth/register")
-      .send({ email: emailRaw.toUpperCase(), password }) // different casing/spacing
-      .expect((res) => {
-        if (![409, 400].includes(res.status)) {
-          throw new Error(`expected 409/400, got ${res.status}`);
-        }
-      });
+    const res2 = await csrfHelper.post("/api/v1/auth/register", { 
+      email: emailRaw.toUpperCase(), 
+      password 
+    });
+    if (![409, 400].includes(res2.status)) {
+      throw new Error(`expected 409/400, got ${res2.status}`);
+    }
   });
 });
