@@ -1,5 +1,6 @@
 # Google Cloud Build Configuration
 # This file defines the CI/CD pipeline for building, testing, and deploying the application.
+# Supports both staging and production environments via substitution variables.
 
 steps:
   # 1. Build the backend Docker image
@@ -32,7 +33,7 @@ steps:
   # 3. Push the backend image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Push Backend'
-    args: 
+    args:
       - 'push'
       - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest'
     waitFor: ['Build Backend']
@@ -59,15 +60,22 @@ steps:
             read -r -a EXTRA_FLAGS <<< "${_BACKEND_DEPLOY_FLAGS}"
           fi
 
+          # Get service account based on environment
+          if [[ "${_ENVIRONMENT}" == "staging" ]]; then
+            SERVICE_ACCOUNT="${_BACKEND_SERVICE_ACCOUNT_STAGING}"
+          else
+            SERVICE_ACCOUNT="${_BACKEND_SERVICE_ACCOUNT}"
+          fi
+
           gcloud run deploy "${_BACKEND_SERVICE_NAME}" \
             --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest" \
             --region "${_LOCATION}" \
             --platform managed \
             --execution-environment=gen2 \
-            --service-account "${_BACKEND_SERVICE_ACCOUNT}" \
+            --service-account "${SERVICE_ACCOUNT}" \
             --allow-unauthenticated \
-            --set-secrets "DATABASE_URL=DATABASE_URL:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=JWT_SECRET:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:${_JWT_REFRESH_SECRET_VERSION},CSRF_TOKEN_SECRET=CSRF_TOKEN_SECRET:${_CSRF_TOKEN_SECRET_VERSION}" \
-            --set-env-vars "NODE_ENV=production,CORS_ORIGIN=${_CORS_ORIGIN},INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_CONNECTION_NAME}" \
+            --set-secrets "DATABASE_URL=DATABASE_URL_${_ENVIRONMENT}:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=JWT_SECRET_${_ENVIRONMENT}:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=JWT_REFRESH_SECRET_${_ENVIRONMENT}:${_JWT_REFRESH_SECRET_VERSION},CSRF_TOKEN_SECRET=CSRF_TOKEN_SECRET_${_ENVIRONMENT}:${_CSRF_TOKEN_SECRET_VERSION}" \
+            --set-env-vars "NODE_ENV=${_ENVIRONMENT},CORS_ORIGIN=${_CORS_ORIGIN},INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_CONNECTION_NAME}" \
             --add-cloudsql-instances "${_CLOUD_SQL_CONNECTION_NAME}" \
             --concurrency 20 \
             --max-instances 3 \
@@ -92,14 +100,21 @@ steps:
             read -r -a EXTRA_FLAGS <<< "${_FRONTEND_DEPLOY_FLAGS}"
           fi
 
+          # Get service account based on environment
+          if [[ "${_ENVIRONMENT}" == "staging" ]]; then
+            SERVICE_ACCOUNT="${_FRONTEND_SERVICE_ACCOUNT_STAGING}"
+          else
+            SERVICE_ACCOUNT="${_FRONTEND_SERVICE_ACCOUNT}"
+          fi
+
           gcloud run deploy "${_FRONTEND_SERVICE_NAME}" \
             --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest" \
             --region "${_LOCATION}" \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "NODE_ENV=production,NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}" \
+            --set-env-vars "NODE_ENV=${_ENVIRONMENT},NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}" \
             --execution-environment=gen2 \
-            --service-account "${_FRONTEND_SERVICE_ACCOUNT}" \
+            --service-account "${SERVICE_ACCOUNT}" \
             --concurrency 50 \
             --cpu-boost \
             "${EXTRA_FLAGS[@]}"
@@ -114,14 +129,19 @@ images:
 substitutions:
   _LOCATION: 'asia-northeast1' # Tokyo region
   _REPO_NAME: 'mycats-pro'
+  _ENVIRONMENT: 'production' # Default environment (can be 'staging' or 'production')
+  # Production environment settings
   _BACKEND_SERVICE_NAME: 'mycats-pro-backend'
   _FRONTEND_SERVICE_NAME: 'mycats-pro-frontend'
-  # These will be auto-generated after first deploy, update after initial deployment
   _NEXT_PUBLIC_API_URL: 'https://mycats-pro-backend-518939509282.asia-northeast1.run.app/api/v1'
   _CORS_ORIGIN: 'https://mycats-pro-frontend-518939509282.asia-northeast1.run.app'
   _CLOUD_SQL_CONNECTION_NAME: 'my-cats-pro:asia-northeast1:mycats-prod-db'
   _BACKEND_SERVICE_ACCOUNT: 'cloud-run-backend@my-cats-pro.iam.gserviceaccount.com'
   _FRONTEND_SERVICE_ACCOUNT: 'cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com'
+  # Staging environment service accounts
+  _BACKEND_SERVICE_ACCOUNT_STAGING: 'cloud-run-backend-staging@my-cats-pro.iam.gserviceaccount.com'
+  _FRONTEND_SERVICE_ACCOUNT_STAGING: 'cloud-run-frontend-staging@my-cats-pro.iam.gserviceaccount.com'
+  # Secret versions
   _DATABASE_URL_SECRET_VERSION: '1'
   _JWT_SECRET_VERSION: '1'
   _JWT_REFRESH_SECRET_VERSION: '1'

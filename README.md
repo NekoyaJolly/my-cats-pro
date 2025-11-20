@@ -525,15 +525,17 @@ pnpm run frontend:build
 - ✅ ユニットテスト
 - ✅ E2Eテスト
 - ✅ ビルド確認
-- ✅ 本番デプロイ（mainブランチのみ）
+- ✅ Cloud Run互換性チェック
+- ✅ ステージング環境デプロイ（main/developブランチ）
+- ✅ 本番環境デプロイ（mainブランチのみ）
+
+詳細なCI/CDフローとデプロイメント手順については、[CI/CDデプロイメントフロー](./docs/CICD_DEPLOYMENT_FLOW.md) を参照してください。
 
 **必要な環境変数（GitHub Secrets）:**
 
 ```bash
-PRODUCTION_DATABASE_URL    # 本番データベースURL
-PRODUCTION_JWT_SECRET      # 本番JWT秘密鍵
-PRODUCTION_CORS_ORIGIN     # 本番CORS許可オリジン
-PRODUCTION_URL            # 本番アプリケーションURL
+GCP_SA_KEY          # Google Cloud サービスアカウントのJSONキー
+GCP_PROJECT_ID      # Google Cloud プロジェクトID（my-cats-pro）
 ```
 
 #### 手動デプロイ
