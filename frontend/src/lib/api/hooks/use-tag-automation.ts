@@ -187,6 +187,7 @@ export function useCreateAutomationRule() {
     mutationFn: (payload: CreateTagAutomationRuleRequest) =>
       apiClient.post('/tags/automation/rules', {
         // Schema defines config as Record<string, never>, so we need to cast to any to pass actual config
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         body: payload as any,
         retryOnUnauthorized: false,
       }),
@@ -214,6 +215,7 @@ export function useUpdateAutomationRule() {
       apiClient.patch('/tags/automation/rules/{id}', {
         pathParams: { id },
         // Schema defines config as Record<string, never>, so we need to cast to any to pass actual config
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         body: payload as any,
         retryOnUnauthorized: false,
       }),

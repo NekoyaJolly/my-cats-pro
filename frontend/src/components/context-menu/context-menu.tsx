@@ -280,7 +280,7 @@ export function ContextMenuProvider<T = unknown>({
 
   // 子要素にイベントハンドラーを追加
   const childWithHandlers = isValidElement(children)
-    ? cloneElement(children as React.ReactElement<React.HTMLAttributes<HTMLElement> & { ref?: React.Ref<any> }>, {
+    ? cloneElement(children as React.ReactElement<React.HTMLAttributes<HTMLElement> & { ref?: React.Ref<HTMLElement> }>, {
         ref: containerRef,
         onContextMenu: handleContextMenu,
         onDoubleClick: handleDoubleClick,

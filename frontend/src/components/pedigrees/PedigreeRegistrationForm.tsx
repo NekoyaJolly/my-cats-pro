@@ -29,11 +29,11 @@ import {
 import classes from './PedigreeRegistrationForm.module.css';
 
 // API レスポンスの型定義
-interface BreedsResponse extends Array<Breed> {}
+type BreedsResponse = Breed[];
 
-interface CoatColorsResponse extends Array<CoatColor> {}
+type CoatColorsResponse = CoatColor[];
 
-interface GendersResponse extends Array<Gender> {}
+type GendersResponse = Gender[];
 
 interface PedigreeResponse {
   data: PedigreeFormData;
