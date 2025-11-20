@@ -99,15 +99,17 @@ describe("Care & Tags flows (e2e)", () => {
     expect(login.status).toBe(201);
     const token = login.body.data.access_token as string;
 
+    // Get CSRF token for authenticated requests
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
+
     // create tag category
     const categoryRes = await request(server)
       .post("/api/v1/tags/categories")
       .set("Authorization", `Bearer ${token}`)
       .set("X-CSRF-Token", csrfToken)
       .set("Cookie", cookie)
-      .send({ name: "Test Category", key: `test_category_${Date.now()}` })
-      ;
-    expect(res.status).toBe(201);
+      .send({ name: "Test Category", key: `test_category_${Date.now()}` });
+    expect(categoryRes.status).toBe(201);
     const categoryId = categoryRes.body.data.id as string;
     expect(categoryId).toBeDefined();
 
@@ -117,9 +119,8 @@ describe("Care & Tags flows (e2e)", () => {
       .set("Authorization", `Bearer ${token}`)
       .set("X-CSRF-Token", csrfToken)
       .set("Cookie", cookie)
-      .send({ categoryId, name: "Test Group" })
-      ;
-    expect(res.status).toBe(201);
+      .send({ categoryId, name: "Test Group" });
+    expect(groupRes.status).toBe(201);
     const groupId = groupRes.body.data.id as string;
     expect(groupId).toBeDefined();
 
@@ -130,9 +131,8 @@ describe("Care & Tags flows (e2e)", () => {
       .set("Authorization", `Bearer ${token}`)
       .set("X-CSRF-Token", csrfToken)
       .set("Cookie", cookie)
-      .send({ name: tagName, groupId, color: "#3B82F6" })
-      ;
-    expect(res.status).toBe(201);
+      .send({ name: tagName, groupId, color: "#3B82F6" });
+    expect(tagRes.status).toBe(201);
     const tagId = tagRes.body.data.id as string;
     expect(tagId).toBeDefined();
 
@@ -147,9 +147,8 @@ describe("Care & Tags flows (e2e)", () => {
         name: "E2E Tag Cat",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-      })
-      ;
-    expect(res.status).toBe(201);
+      });
+    expect(catRes.status).toBe(201);
     const catId =
       catRes.body.id ??
       catRes.body.data?.id ??
@@ -159,22 +158,20 @@ describe("Care & Tags flows (e2e)", () => {
     expect(catId).toBeDefined();
 
     // assign
-    await request(server)
+    const assignRes = await request(server)
       .post(`/api/v1/tags/cats/${catId}/tags`)
       .set("Authorization", `Bearer ${token}`)
       .set("X-CSRF-Token", csrfToken)
       .set("Cookie", cookie)
-      .send({ tagId })
-      ;
-    expect(res.status).toBe(200);
+      .send({ tagId });
+    expect(assignRes.status).toBe(200);
 
     // unassign
-    await request(server)
+    const unassignRes = await request(server)
       .delete(`/api/v1/tags/cats/${catId}/tags/${tagId}`)
       .set("Authorization", `Bearer ${token}`)
       .set("X-CSRF-Token", csrfToken)
-      .set("Cookie", cookie)
-      ;
-    expect(res.status).toBe(200);
+      .set("Cookie", cookie);
+    expect(unassignRes.status).toBe(200);
   });
 });
