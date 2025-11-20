@@ -3,9 +3,11 @@ import { Test } from "@nestjs/testing";
 import { Server } from "http";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
+import { CsrfHelper } from './utils/csrf-helper';
 
 describe("Care & Tags flows (e2e)", () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
   let server: Server;
 
   beforeAll(async () => {
@@ -18,6 +20,7 @@ describe("Care & Tags flows (e2e)", () => {
     );
     app.setGlobalPrefix("api/v1");
     await app.init();
+    csrfHelper = new CsrfHelper(app);
     server = app.getHttpServer();
   });
 

@@ -2,10 +2,12 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
+import { CsrfHelper } from './utils/csrf-helper';
 import { createTestApp } from "./utils/create-test-app";
 
 describe("Care & Tags flows (e2e)", () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -24,15 +26,11 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register
-    await request(app.getHttpServer())
-      .post("/api/v1/auth/register")
-      .send({ email, password })
+    await csrfHelper.post("/api/v1/auth/register", { email, password })
       .expect(201);
 
     // login
-    const login = await request(app.getHttpServer())
-      .post("/api/v1/auth/login")
-      .send({ email, password })
+    const login = await csrfHelper.post("/api/v1/auth/login", { email, password })
       .expect(201);
     const token = login.body.data.access_token as string;
 
@@ -89,8 +87,7 @@ describe("Care & Tags flows (e2e)", () => {
       });
 
     // unassign tag from cat
-    await request(app.getHttpServer())
-      .delete(`/api/v1/tags/cats/${catId}/tags/${tagId}`)
+    await csrfHelper.delete(`/api/v1/tags/cats/${catId}/tags/${tagId}`)
       .set("Authorization", `Bearer ${token}`)
       .expect(200)
       .expect((res) => {
@@ -103,13 +100,9 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register & login
-    await request(app.getHttpServer())
-      .post("/api/v1/auth/register")
-      .send({ email, password })
+    await csrfHelper.post("/api/v1/auth/register", { email, password })
       .expect(201);
-    const login = await request(app.getHttpServer())
-      .post("/api/v1/auth/login")
-      .send({ email, password })
+    const login = await csrfHelper.post("/api/v1/auth/login", { email, password })
       .expect(201);
     const token = login.body.data.access_token as string;
 

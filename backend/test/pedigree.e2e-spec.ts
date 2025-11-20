@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
+import { CsrfHelper } from './utils/csrf-helper';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { PedigreeService } from '../src/pedigree/pedigree.service';
 import { CreatePedigreeDto } from '../src/pedigree/dto/create-pedigree.dto';
@@ -18,6 +19,7 @@ const httpStatus = {
 
 describe('Pedigree module (integration)', () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
   let prisma: PrismaService;
   let pedigreeService: PedigreeService;
   const createdPedigreeIds: string[] = [];
@@ -177,9 +179,7 @@ describe('Pedigree module (integration)', () => {
     it('rejects pedigree creation via HTTP without admin role', async () => {
       const payload = buildCreateDto({ title: 'Forbidden attempt' });
 
-      const res = await request(app.getHttpServer())
-        .post('/api/v1/pedigrees')
-        .send(payload)
+      const res = await csrfHelper.post('/api/v1/pedigrees', payload)
         .expect(httpStatus.forbidden);
 
       expect(res.body.success).toBe(false);

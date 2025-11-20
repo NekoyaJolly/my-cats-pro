@@ -3,10 +3,12 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
+import { CsrfHelper } from './utils/csrf-helper';
 import { createTestApp } from './utils/create-test-app';
 
 describe('Breeding NG Rules API (e2e)', () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
   let authToken: string;
   let createdRuleId: string;
 
@@ -20,14 +22,10 @@ describe('Breeding NG Rules API (e2e)', () => {
     const email = `breeding_ng_rules_${Date.now()}@example.com`;
     const password = 'NgRulesTest123!';
 
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({ email, password })
+    await csrfHelper.post('/api/v1/auth/register', { email, password })
       .expect(201);
 
-    const loginRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email, password })
+    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password })
       .expect(201);
 
     authToken = loginRes.body.data.access_token;
@@ -95,8 +93,7 @@ describe('Breeding NG Rules API (e2e)', () => {
   });
 
   it('should delete the NG rule', async () => {
-    const res = await request(app.getHttpServer())
-      .delete(`/api/v1/breeding/ng-rules/${createdRuleId}`)
+    const res = await csrfHelper.delete(`/api/v1/breeding/ng-rules/${createdRuleId}`)
       .set('Authorization', `Bearer ${authToken}`)
       .expect(200);
 

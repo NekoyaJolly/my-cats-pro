@@ -4,6 +4,7 @@ import request from 'supertest';
 import { randomUUID } from 'crypto';
 
 import { AppModule } from '../src/app.module';
+import { CsrfHelper } from './utils/csrf-helper';
 import { createTestApp } from './utils/create-test-app';
 
 interface CatPayload {
@@ -32,6 +33,7 @@ function buildCatPayload(overrides: Partial<CatPayload> = {}): CatPayload {
 
 describe('Cats API (e2e)', () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
   let authToken: string;
 
   beforeAll(async () => {
@@ -44,14 +46,10 @@ describe('Cats API (e2e)', () => {
     const email = `cats_test_${Date.now()}@example.com`;
     const password = 'CatsTest123!';
 
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({ email, password })
+    await csrfHelper.post('/api/v1/auth/register', { email, password })
       .expect(201);
 
-    const loginRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email, password })
+    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password })
       .expect(201);
 
     authToken = loginRes.body.data.access_token;
@@ -350,8 +348,7 @@ describe('Cats API (e2e)', () => {
     });
 
     it('should delete cat successfully', async () => {
-      const res = await request(app.getHttpServer())
-        .delete(`/api/v1/cats/${catId}`)
+      const res = await csrfHelper.delete(`/api/v1/cats/${catId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -368,8 +365,7 @@ describe('Cats API (e2e)', () => {
 
     it('should return 404 when deleting non-existent cat', async () => {
       const missingId = randomUUID();
-      const res = await request(app.getHttpServer())
-        .delete(`/api/v1/cats/${missingId}`)
+      const res = await csrfHelper.delete(`/api/v1/cats/${missingId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
@@ -379,8 +375,7 @@ describe('Cats API (e2e)', () => {
     });
 
     it('should return 400 for invalid UUID', async () => {
-      const res = await request(app.getHttpServer())
-        .delete('/api/v1/cats/invalid-id')
+      const res = await csrfHelper.delete('/api/v1/cats/invalid-id')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(400);
 

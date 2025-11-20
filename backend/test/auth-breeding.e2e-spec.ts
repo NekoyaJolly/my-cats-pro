@@ -2,10 +2,12 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
+import { CsrfHelper } from './utils/csrf-helper';
 import { createTestApp } from "./utils/create-test-app";
 
 describe("Auth -> Breeding (e2e)", () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -24,15 +26,11 @@ describe("Auth -> Breeding (e2e)", () => {
   const password = "Secret123!";
 
     // register
-    await request(app.getHttpServer())
-      .post("/api/v1/auth/register")
-      .send({ email, password })
+    await csrfHelper.post("/api/v1/auth/register", { email, password })
       .expect(201);
 
     // login
-    const loginRes = await request(app.getHttpServer())
-      .post("/api/v1/auth/login")
-      .send({ email, password })
+    const loginRes = await csrfHelper.post("/api/v1/auth/login", { email, password })
       .expect(201);
 
     const token = loginRes.body.data.access_token as string;

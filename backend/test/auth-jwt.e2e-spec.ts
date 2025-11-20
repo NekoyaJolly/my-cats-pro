@@ -3,10 +3,12 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { JwtService } from '@nestjs/jwt';
+import { CsrfHelper } from './utils/csrf-helper';
 
 describe('Auth JWT & Rate Limiting (e2e)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
+  let csrfHelper: CsrfHelper;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -19,6 +21,7 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
     await app.init();
 
     jwtService = app.get<JwtService>(JwtService);
+    csrfHelper = new CsrfHelper(app);
   });
 
   afterAll(async () => {
@@ -43,14 +46,10 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const email = `jwt_test_${Date.now()}@example.com`;
       const password = 'Password123!';
 
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password })
+      await csrfHelper.post('/api/v1/auth/register', { email, password })
         .expect(201);
 
-      const loginRes = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email, password })
+      const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password })
         .expect(201);
 
       const token = loginRes.body.data.access_token;
@@ -66,14 +65,10 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const email = `jwt_valid_${Date.now()}@example.com`;
       const password = 'Password123!';
 
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password })
+      await csrfHelper.post('/api/v1/auth/register', { email, password })
         .expect(201);
 
-      const loginRes = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email, password })
+      const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password })
         .expect(201);
 
       const token = loginRes.body.data.access_token;
@@ -90,9 +85,7 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const email = `jwt_payload_${Date.now()}@example.com`;
       const password = 'Password123!';
 
-      const registerRes = await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password })
+      const registerRes = await csrfHelper.post('/api/v1/auth/register', { email, password })
         .expect(201);
 
       const token = registerRes.body.data.access_token;
@@ -109,22 +102,16 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const password = 'Password123!';
 
       // First login
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password })
+      await csrfHelper.post('/api/v1/auth/register', { email, password })
         .expect(201);
 
-      const login1Res = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email, password })
+      const login1Res = await csrfHelper.post('/api/v1/auth/login', { email, password })
         .expect(201);
 
       const token1 = login1Res.body.data.access_token;
 
       // Second login should generate new token
-      const login2Res = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email, password })
+      const login2Res = await csrfHelper.post('/api/v1/auth/login', { email, password })
         .expect(201);
 
       const token2 = login2Res.body.data.access_token;
@@ -151,23 +138,17 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const password = 'Password123!';
 
       // Register user
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password })
+      await csrfHelper.post('/api/v1/auth/register', { email, password })
         .expect(201);
 
       // Make 20 login requests
       for (let i = 0; i < 20; i++) {
-        await request(app.getHttpServer())
-          .post('/api/v1/auth/login')
-          .send({ email, password })
+        await csrfHelper.post('/api/v1/auth/login', { email, password })
           .expect(201);
       }
 
       // 21st request should be rate limited
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email, password })
+      await csrfHelper.post('/api/v1/auth/login', { email, password })
         .expect(429);
     }, 30000);
 
@@ -177,16 +158,12 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
 
       // Make 5 registration requests
       for (let i = 0; i < 5; i++) {
-        await request(app.getHttpServer())
-          .post('/api/v1/auth/register')
-          .send({ email: `${baseEmail}_${i}@example.com`, password })
+        await csrfHelper.post('/api/v1/auth/register', { email: `${baseEmail}_${i}@example.com`, password })
           .expect(201);
       }
 
       // 6th request should be rate limited
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email: `${baseEmail}_6@example.com`, password })
+      await csrfHelper.post('/api/v1/auth/register', { email: `${baseEmail}_6@example.com`, password })
         .expect(429);
     }, 20000);
 
@@ -195,23 +172,17 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const password = 'Password123!';
 
       // Register user (counts toward register limit)
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password })
+      await csrfHelper.post('/api/v1/auth/register', { email, password })
         .expect(201);
 
       // Login should have independent counter
       for (let i = 0; i < 5; i++) {
-        await request(app.getHttpServer())
-          .post('/api/v1/auth/login')
-          .send({ email, password })
+        await csrfHelper.post('/api/v1/auth/login', { email, password })
           .expect(201);
       }
 
       // Should still be able to login (not affected by register limit)
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email, password })
+      await csrfHelper.post('/api/v1/auth/login', { email, password })
         .expect(201);
     }, 15000);
   });
@@ -236,9 +207,7 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const email = `cors_test_${Date.now()}@example.com`;
       const password = 'Password123!';
 
-      const res = await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password })
+      const res = await csrfHelper.post('/api/v1/auth/register', { email, password })
         .set('Origin', 'http://localhost:3000')
         .expect(201);
 
@@ -253,23 +222,17 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const wrongPassword = 'WrongPassword123!';
 
       // Register user
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password: correctPassword })
+      await csrfHelper.post('/api/v1/auth/register', { email, password: correctPassword })
         .expect(201);
 
       // Make failed login attempts
       for (let i = 0; i < 3; i++) {
-        await request(app.getHttpServer())
-          .post('/api/v1/auth/login')
-          .send({ email, password: wrongPassword })
+        await csrfHelper.post('/api/v1/auth/login', { email, password: wrongPassword })
           .expect(401);
       }
 
       // Correct password should still work (account not locked yet)
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email, password: correctPassword })
+      await csrfHelper.post('/api/v1/auth/login', { email, password: correctPassword })
         .expect(201);
     });
 
@@ -277,14 +240,10 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const email = `wrong_password_${Date.now()}@example.com`;
       const password = 'CorrectPassword123!';
 
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password })
+      await csrfHelper.post('/api/v1/auth/register', { email, password })
         .expect(201);
 
-      const res = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email, password: 'WrongPassword!' })
+      const res = await csrfHelper.post('/api/v1/auth/login', { email, password: 'WrongPassword!' })
         .expect(401);
 
       expect(res.body).toHaveProperty('message');
@@ -293,9 +252,7 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
     it('should return same error for non-existent user (security)', async () => {
       const nonExistentEmail = `nonexistent_${Date.now()}@example.com`;
 
-      const res = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email: nonExistentEmail, password: 'SomePassword123!' })
+      const res = await csrfHelper.post('/api/v1/auth/login', { email: nonExistentEmail, password: 'SomePassword123!' })
         .expect(401);
 
       expect(res.body).toHaveProperty('message');
@@ -304,9 +261,7 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
 
   describe('Input Validation', () => {
     it('should validate email format on registration', async () => {
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email: 'invalid-email', password: 'Password123!' })
+      await csrfHelper.post('/api/v1/auth/register', { email: 'invalid-email', password: 'Password123!' })
         .expect(400);
     });
 
@@ -314,27 +269,19 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const email = `password_req_${Date.now()}@example.com`;
 
       // Too short
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password: 'Ab1!' })
+      await csrfHelper.post('/api/v1/auth/register', { email, password: 'Ab1!' })
         .expect(400);
 
       // No uppercase
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password: 'password123!' })
+      await csrfHelper.post('/api/v1/auth/register', { email, password: 'password123!' })
         .expect(400);
 
       // No lowercase
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password: 'PASSWORD123!' })
+      await csrfHelper.post('/api/v1/auth/register', { email, password: 'PASSWORD123!' })
         .expect(400);
 
       // No number
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email, password: 'PasswordABC!' })
+      await csrfHelper.post('/api/v1/auth/register', { email, password: 'PasswordABC!' })
         .expect(400);
     });
 
@@ -343,22 +290,16 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
       const password = 'Password123!';
 
       // Register with messy email
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({ email: emailRaw, password })
+      await csrfHelper.post('/api/v1/auth/register', { email: emailRaw, password })
         .expect(201);
 
       // Login with cleaned email should work
       const cleanEmail = emailRaw.trim().toLowerCase();
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email: cleanEmail, password })
+      await csrfHelper.post('/api/v1/auth/login', { email: cleanEmail, password })
         .expect(201);
 
       // Login with different casing should also work
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email: emailRaw.toUpperCase(), password })
+      await csrfHelper.post('/api/v1/auth/login', { email: emailRaw.toUpperCase(), password })
         .expect(201);
     });
   });

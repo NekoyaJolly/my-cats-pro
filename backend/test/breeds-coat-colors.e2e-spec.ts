@@ -5,6 +5,7 @@ import request from 'supertest';
 import { UserRole } from '@prisma/client';
 
 import { AppModule } from '../src/app.module';
+import { CsrfHelper } from './utils/csrf-helper';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './utils/create-test-app';
 
@@ -37,6 +38,7 @@ const reserveUniqueCode = async (
 
 describe('Breeds & Coat Colors API (e2e)', () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
   let prisma: PrismaService;
   let adminToken: string;
   const createdBreedIds: string[] = [];
@@ -63,9 +65,7 @@ describe('Breeds & Coat Colors API (e2e)', () => {
     const email = `coverage_admin_${Date.now()}@example.com`;
     const password = 'AdminCoverage123!';
 
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({ email, password })
+    await csrfHelper.post('/api/v1/auth/register', { email, password })
       .expect(httpStatus.created);
 
     await prisma.user.update({
@@ -73,9 +73,7 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       data: { role: UserRole.ADMIN },
     });
 
-    const loginRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email, password })
+    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password })
       .expect(httpStatus.created);
 
     adminToken = loginRes.body.data.access_token;
