@@ -27,8 +27,8 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register
-    const res = await csrfHelper.post("/api/v1/auth/register", { email, password });
-    expect(res.status).toBe(201);
+    const registerRes = await csrfHelper.post("/api/v1/auth/register", { email, password });
+    expect(registerRes.status).toBe(201);
 
     // login
     const login = await csrfHelper.post("/api/v1/auth/login", { email, password });
@@ -36,16 +36,19 @@ describe("Care & Tags flows (e2e)", () => {
     const token = login.body.data.access_token as string;
 
     // create a cat (owned by the registered user)
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
     const catRes = await request(app.getHttpServer())
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .send({
         registrationNumber: `REG-${Date.now()}`,
         name: "E2E Kitty",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-      })
-      .expect(201);
+      });
+    expect(catRes.status).toBe(201);
     const catId =
       catRes.body.id ??
       catRes.body.data?.id ??
@@ -57,42 +60,47 @@ describe("Care & Tags flows (e2e)", () => {
     const categoryRes = await request(app.getHttpServer())
       .post("/api/v1/tags/categories")
       .set("Authorization", `Bearer ${token}`)
-      .send({ name: "Test Category" })
-      .expect(201);
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
+      .send({ name: "Test Category" });
+    expect(categoryRes.status).toBe(201);
     const categoryId = categoryRes.body.data.id as string;
 
     // create a tag group
     const groupRes = await request(app.getHttpServer())
       .post("/api/v1/tags/groups")
       .set("Authorization", `Bearer ${token}`)
-      .send({ categoryId, name: "Test Group" })
-      .expect(201);
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
+      .send({ categoryId, name: "Test Group" });
+    expect(groupRes.status).toBe(201);
     const groupId = groupRes.body.data.id as string;
 
     // create a tag (auth required)
     const tagRes = await request(app.getHttpServer())
       .post("/api/v1/tags")
       .set("Authorization", `Bearer ${token}`)
-      .send({ name: `indoor-${Date.now()}`, groupId, color: "#00AA88" })
-      .expect(201);
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
+      .send({ name: `indoor-${Date.now()}`, groupId, color: "#00AA88" });
+    expect(tagRes.status).toBe(201);
     const tagId = tagRes.body.data.id as string;
 
     // assign tag to cat
-    await request(app.getHttpServer())
+    const assignRes = await request(app.getHttpServer())
       .post(`/api/v1/tags/cats/${catId}/tags`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({ tagId })
-      .expect((res) => {
-        if (!res.body.success) throw new Error("assign failed");
-      });
-
-    // unassign tag from cat
-    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
-    const res = await request(app.getHttpServer())
-      .delete(`/api/v1/tags/cats/${catId}/tags/${tagId}`)
       .set("Authorization", `Bearer ${token}`)
       .set("X-CSRF-Token", csrfToken)
       .set("Cookie", cookie)
+      .send({ tagId });
+    if (!assignRes.body.success) throw new Error("assign failed");
+
+    // unassign tag from cat
+    const unassignRes = await request(app.getHttpServer())
+      .delete(`/api/v1/tags/cats/${catId}/tags/${tagId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie);
       .expect((res) => {
     expect(res.status).toBe(200);
         if (!res.body.success) throw new Error("unassign failed");
@@ -159,7 +167,7 @@ describe("Care & Tags flows (e2e)", () => {
     // fetch schedules list for the cat
     const list = await request(app.getHttpServer())
       .get(`/api/v1/care/schedules?catId=${catId}`)
-      .expect(200);
+    expect(list.status).toBe(200);
     expect(list.body.data?.length).toBeGreaterThan(0);
   });
 });
