@@ -228,8 +228,71 @@ describe('CatsService', () => {
       expect(mockPrismaService.cat.delete).toHaveBeenCalledWith({
         where: { id: '1' },
         include: {
-          breed: true,
-          coatColor: true,
+          breed: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
+          coatColor: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
+          father: {
+            select: {
+              id: true,
+              name: true,
+              gender: true,
+            },
+          },
+          mother: {
+            select: {
+              id: true,
+              name: true,
+              gender: true,
+            },
+          },
+          pedigree: {
+            select: {
+              id: true,
+              pedigreeId: true,
+              catName: true,
+              breedCode: true,
+              coatColorCode: true,
+              genderCode: true,
+              birthDate: true,
+              breederName: true,
+              ownerName: true,
+            },
+          },
+          tags: {
+            include: {
+              tag: {
+                select: {
+                  id: true,
+                  name: true,
+                  color: true,
+                  textColor: true,
+                  group: {
+                    select: {
+                      id: true,
+                      name: true,
+                      category: {
+                        select: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       });
     });
