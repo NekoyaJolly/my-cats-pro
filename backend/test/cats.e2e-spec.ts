@@ -349,9 +349,13 @@ describe('Cats API (e2e)', () => {
     });
 
     it('should delete cat successfully', async () => {
-      const res = await csrfHelper.delete(`/api/v1/cats/${catId}`)
+      const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
+      const res = await request(app.getHttpServer())
+        .delete(`/api/v1/cats/${catId}`)
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie);
+      expect(res.status).toBe(200);
 
       expect(res.body.success).toBe(true);
 
@@ -366,9 +370,13 @@ describe('Cats API (e2e)', () => {
 
     it('should return 404 when deleting non-existent cat', async () => {
       const missingId = randomUUID();
-      const res = await csrfHelper.delete(`/api/v1/cats/${missingId}`)
+      const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
+      const res = await request(app.getHttpServer())
+        .delete(`/api/v1/cats/${missingId}`)
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie);
+      expect(res.status).toBe(404);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('NOT_FOUND');
@@ -376,9 +384,13 @@ describe('Cats API (e2e)', () => {
     });
 
     it('should return 400 for invalid UUID', async () => {
-      const res = await csrfHelper.delete('/api/v1/cats/invalid-id')
+      const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
+      const res = await request(app.getHttpServer())
+        .delete('/api/v1/cats/invalid-id')
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(400);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie);
+      expect(res.status).toBe(400);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('BAD_REQUEST');
