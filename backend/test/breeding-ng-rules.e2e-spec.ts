@@ -37,11 +37,11 @@ describe('Breeding NG Rules API (e2e)', () => {
   });
 
   it('should create a new NG rule', async () => {
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
     const res = await request(app.getHttpServer())
       .post('/api/v1/breeding/ng-rules')
       .set('Authorization', `Bearer ${authToken}`)
       .send({
-        name: '同一タグ禁止',
         description: '同じタグ同士の交配を禁止',
         type: 'TAG_COMBINATION',
         maleConditions: ['Champion'],
@@ -72,16 +72,19 @@ describe('Breeding NG Rules API (e2e)', () => {
   });
 
   it('should update an existing NG rule', async () => {
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
     const res = await request(app.getHttpServer())
       .patch(`/api/v1/breeding/ng-rules/${createdRuleId}`)
       .set('Authorization', `Bearer ${authToken}`)
+      .set('X-CSRF-Token', csrfToken)
+      .set('Cookie', cookie)
       .send({
         description: '条件を更新',
         maleConditions: ['GrandChampion'],
         femaleConditions: ['Champion'],
         active: false,
-      })
-      .expect(200);
+      });
+    expect(res.status).toBe(200);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data).toMatchObject({

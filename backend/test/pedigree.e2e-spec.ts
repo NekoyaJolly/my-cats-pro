@@ -180,8 +180,8 @@ describe('Pedigree module (integration)', () => {
     it('rejects pedigree creation via HTTP without admin role', async () => {
       const payload = buildCreateDto({ title: 'Forbidden attempt' });
 
-      const res = await csrfHelper.post('/api/v1/pedigrees', payload)
-        .expect(httpStatus.forbidden);
+      const res = await csrfHelper.post('/api/v1/pedigrees', payload);
+      expect(res.status).toBe(httpStatus.forbidden);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('FORBIDDEN');
