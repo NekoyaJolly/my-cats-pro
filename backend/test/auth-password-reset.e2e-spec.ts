@@ -139,11 +139,11 @@ describe('Auth Password Reset (e2e)', () => {
     });
 
     it('should reject invalid token', async () => {
-      await csrfHelper.post('/api/v1/auth/reset-password', {
+      const res = await csrfHelper.post('/api/v1/auth/reset-password', {
           token: 'invalid-token-123',
           newPassword: 'NewPassword123!',
-        })
-        .expect(400);
+        });
+      expect(res.status).toBe(400);
     });
 
     it('should reject expired token', async () => {
@@ -172,11 +172,11 @@ describe('Auth Password Reset (e2e)', () => {
       });
 
       // 4. Try to reset with expired token
-      await csrfHelper.post('/api/v1/auth/reset-password', {
+      const res3 = await csrfHelper.post('/api/v1/auth/reset-password', {
           token: user!.resetPasswordToken!,
           newPassword: 'NewPassword123!',
-        })
-        .expect(400);
+        });
+      expect(res.status).toBe(400);
     });
 
     it('should reject weak passwords', async () => {
@@ -195,11 +195,11 @@ describe('Auth Password Reset (e2e)', () => {
       });
 
       // Try with weak password
-      await csrfHelper.post('/api/v1/auth/reset-password', {
+      const res3 = await csrfHelper.post('/api/v1/auth/reset-password', {
           token: user!.resetPasswordToken!,
           newPassword: '123', // Too weak
-        })
-        .expect(400);
+        });
+      expect(res.status).toBe(400);
     });
 
     it('should prevent token reuse', async () => {
@@ -281,8 +281,8 @@ describe('Auth Password Reset (e2e)', () => {
       const resetRes = await csrfHelper.post('/api/v1/auth/reset-password', {
           token,
           newPassword,
-        })
-        .expect(201);
+        });
+      expect(resetRes.status).toBe(201);
 
       expect(resetRes.body.message).toContain('リセット');
 
