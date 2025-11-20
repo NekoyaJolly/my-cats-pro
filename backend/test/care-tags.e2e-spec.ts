@@ -15,6 +15,7 @@ describe("Care & Tags flows (e2e)", () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
+    csrfHelper = new CsrfHelper(app);
   });
 
   afterAll(async () => {
@@ -81,16 +82,19 @@ describe("Care & Tags flows (e2e)", () => {
       .post(`/api/v1/tags/cats/${catId}/tags`)
       .set("Authorization", `Bearer ${token}`)
       .send({ tagId })
-      .expect(200)
       .expect((res) => {
         if (!res.body.success) throw new Error("assign failed");
       });
 
     // unassign tag from cat
-    await csrfHelper.delete(`/api/v1/tags/cats/${catId}/tags/${tagId}`)
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
+    const res = await request(app.getHttpServer())
+      .delete(`/api/v1/tags/cats/${catId}/tags/${tagId}`)
       .set("Authorization", `Bearer ${token}`)
-      .expect(200)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .expect((res) => {
+    expect(res.status).toBe(200);
         if (!res.body.success) throw new Error("unassign failed");
       });
   });

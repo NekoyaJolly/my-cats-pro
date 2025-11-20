@@ -56,6 +56,7 @@ describe('Pedigree module (integration)', () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
+    csrfHelper = new CsrfHelper(app);
     prisma = app.get(PrismaService);
     pedigreeService = app.get(PedigreeService);
   });

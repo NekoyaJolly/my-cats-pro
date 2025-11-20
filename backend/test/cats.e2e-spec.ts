@@ -42,6 +42,7 @@ describe('Cats API (e2e)', () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
+    csrfHelper = new CsrfHelper(app);
 
     const email = `cats_test_${Date.now()}@example.com`;
     const password = 'CatsTest123!';
