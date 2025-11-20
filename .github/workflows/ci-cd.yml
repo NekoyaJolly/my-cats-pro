@@ -454,7 +454,7 @@ jobs:
       - name: Test health check endpoint
         run: |
           echo "🏥 Testing health check endpoint..."
-          
+
           # Test health endpoint
           response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
           if [ "$response" = "200" ]; then
@@ -468,11 +468,11 @@ jobs:
       - name: Test readiness check
         run: |
           echo "🔍 Testing API readiness..."
-          
+
           # Test that API is responding
           max_attempts=30
           attempt=0
-          
+
           while [ $attempt -lt $max_attempts ]; do
             if curl -f -s http://localhost:8080/health > /dev/null; then
               echo "✅ API is ready"
@@ -482,7 +482,7 @@ jobs:
             echo "⏳ Waiting for API... (attempt $attempt/$max_attempts)"
             sleep 2
           done
-          
+
           if [ $attempt -eq $max_attempts ]; then
             echo "❌ API failed to become ready"
             exit 1
@@ -491,7 +491,7 @@ jobs:
       - name: Validate Cloud Run requirements
         run: |
           echo "☁️ Validating Cloud Run requirements..."
-          
+
           # Check port 8080 is listening
           if netstat -tuln | grep -q ":8080"; then
             echo "✅ Service listening on port 8080 (Cloud Run default)"
@@ -499,14 +499,14 @@ jobs:
             echo "❌ Service not listening on port 8080"
             exit 1
           fi
-          
+
           # Check environment variable handling
           echo "✅ Environment variables properly configured"
-          
+
           # Validate response times (Cloud Run startup time requirements)
           response_time=$(curl -o /dev/null -s -w '%{time_total}' http://localhost:8080/health)
           echo "📊 Health check response time: ${response_time}s"
-          
+
           if (( $(echo "$response_time < 1.0" | bc -l) )); then
             echo "✅ Response time acceptable for Cloud Run"
           else
@@ -516,14 +516,14 @@ jobs:
       - name: Test CORS configuration
         run: |
           echo "🌐 Testing CORS configuration..."
-          
+
           # Test CORS headers
           cors_response=$(curl -s -H "Origin: https://example.com" \
             -H "Access-Control-Request-Method: GET" \
             -H "Access-Control-Request-Headers: Content-Type" \
             -X OPTIONS \
             http://localhost:8080/health)
-          
+
           echo "CORS preflight response received"
           echo "✅ CORS configuration test completed"
 
@@ -556,7 +556,7 @@ jobs:
       - name: Validate Cloud Build configuration
         run: |
           echo "🔍 Validating Cloud Build configuration..."
-          
+
           # Check for required fields
           required_fields=("steps" "images")
           for field in "${required_fields[@]}"; do
@@ -567,7 +567,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           echo "✅ Cloud Build configuration is valid"
 
       - name: Check deployment prerequisites

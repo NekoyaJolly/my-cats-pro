@@ -33,7 +33,7 @@ steps:
   # 3. Push the backend image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Push Backend'
-    args: 
+    args:
       - 'push'
       - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest'
     waitFor: ['Build Backend']
