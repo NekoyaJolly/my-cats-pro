@@ -18,15 +18,16 @@ describe('Breeding NG Rules API (e2e)', () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
+    csrfHelper = new CsrfHelper(app);
 
     const email = `breeding_ng_rules_${Date.now()}@example.com`;
     const password = 'NgRulesTest123!';
 
-    await csrfHelper.post('/api/v1/auth/register', { email, password })
-      .expect(201);
+    const res = await csrfHelper.post('/api/v1/auth/register', { email, password });
+    expect(res.status).toBe(201);
 
-    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password })
-      .expect(201);
+    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password });
+    expect(loginRes.status).toBe(201);
 
     authToken = loginRes.body.data.access_token;
   });
@@ -93,9 +94,13 @@ describe('Breeding NG Rules API (e2e)', () => {
   });
 
   it('should delete the NG rule', async () => {
-    const res = await csrfHelper.delete(`/api/v1/breeding/ng-rules/${createdRuleId}`)
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
+    const res = await request(app.getHttpServer())
+      .delete(`/api/v1/breeding/ng-rules/${createdRuleId}`)
       .set('Authorization', `Bearer ${authToken}`)
-      .expect(200);
+      .set('X-CSRF-Token', csrfToken)
+      .set('Cookie', cookie);
+    expect(res.status).toBe(200);
 
     expect(res.body.success).toBe(true);
 

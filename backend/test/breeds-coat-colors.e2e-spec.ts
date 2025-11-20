@@ -52,6 +52,7 @@ describe('Breeds & Coat Colors API (e2e)', () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
+    csrfHelper = new CsrfHelper(app);
     prisma = app.get(PrismaService);
 
     const [existingBreeds, existingColors] = await Promise.all([
@@ -65,16 +66,16 @@ describe('Breeds & Coat Colors API (e2e)', () => {
     const email = `coverage_admin_${Date.now()}@example.com`;
     const password = 'AdminCoverage123!';
 
-    await csrfHelper.post('/api/v1/auth/register', { email, password })
-      .expect(httpStatus.created);
+    const res2 = await csrfHelper.post('/api/v1/auth/register', { email, password });
+    expect(res2.status).toBe(httpStatus.created);
 
     await prisma.user.update({
       where: { email },
       data: { role: UserRole.ADMIN },
     });
 
-    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password })
-      .expect(httpStatus.created);
+    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password });
+    expect(loginRes.status).toBe(httpStatus.created);
 
     adminToken = loginRes.body.data.access_token;
   });

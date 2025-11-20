@@ -26,12 +26,12 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register
-    await csrfHelper.post("/api/v1/auth/register", { email, password })
-      .expect(201);
+    const res = await csrfHelper.post("/api/v1/auth/register", { email, password });
+    expect(res.status).toBe(201);
 
     // login
-    const login = await csrfHelper.post("/api/v1/auth/login", { email, password })
-      .expect(201);
+    const login = await csrfHelper.post("/api/v1/auth/login", { email, password });
+    expect(login.status).toBe(201);
     const token = login.body.data.access_token as string;
 
     // create a cat (owned by the registered user)
@@ -100,10 +100,10 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register & login
-    await csrfHelper.post("/api/v1/auth/register", { email, password })
-      .expect(201);
-    const login = await csrfHelper.post("/api/v1/auth/login", { email, password })
-      .expect(201);
+    const res = await csrfHelper.post("/api/v1/auth/register", { email, password });
+    expect(res.status).toBe(201);
+    const login = await csrfHelper.post("/api/v1/auth/login", { email, password });
+    expect(login.status).toBe(201);
     const token = login.body.data.access_token as string;
 
     // create a cat

@@ -46,11 +46,11 @@ describe('Cats API (e2e)', () => {
     const email = `cats_test_${Date.now()}@example.com`;
     const password = 'CatsTest123!';
 
-    await csrfHelper.post('/api/v1/auth/register', { email, password })
-      .expect(201);
+    const res = await csrfHelper.post('/api/v1/auth/register', { email, password });
+    expect(res.status).toBe(201);
 
-    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password })
-      .expect(201);
+    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password });
+    expect(loginRes.status).toBe(201);
 
     authToken = loginRes.body.data.access_token;
   });

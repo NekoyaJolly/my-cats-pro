@@ -44,12 +44,12 @@ describe('Auth Password Reset (e2e)', () => {
       const email = `reset_test_${Date.now()}@example.com`;
       const password = 'OldPassword123!';
 
-      await csrfHelper.post('/api/v1/auth/register', { email, password })
-        .expect(201);
+      const res = await csrfHelper.post('/api/v1/auth/register', { email, password });
+      expect(res.status).toBe(201);
 
       // 2. Request password reset
-      const resetRes = await csrfHelper.post('/api/v1/auth/request-password-reset', { email })
-        .expect(201);
+      const resetRes = await csrfHelper.post('/api/v1/auth/request-password-reset', { email });
+      expect(resetRes.status).toBe(201);
 
       expect(resetRes.body).toHaveProperty('message');
       expect(resetRes.body.message).toContain('リセット');
@@ -70,15 +70,15 @@ describe('Auth Password Reset (e2e)', () => {
       // Should not reveal whether user exists
       const nonExistentEmail = `nonexistent_${Date.now()}@example.com`;
 
-      const res = await csrfHelper.post('/api/v1/auth/request-password-reset', { email: nonExistentEmail })
-        .expect(201);
+      const res = await csrfHelper.post('/api/v1/auth/request-password-reset', { email: nonExistentEmail });
+      expect(res.status).toBe(201);
 
       expect(res.body.message).toContain('リセット');
     });
 
     it('should validate email format', async () => {
-      await csrfHelper.post('/api/v1/auth/request-password-reset', { email: 'invalid-email' })
-        .expect(400);
+      const res = await csrfHelper.post('/api/v1/auth/request-password-reset', { email: 'invalid-email' });
+      expect(res.status).toBe(400);
     });
 
     it('should enforce rate limiting (3 requests/min)', async () => {
@@ -86,13 +86,13 @@ describe('Auth Password Reset (e2e)', () => {
 
       // Make 4 rapid requests
       for (let i = 0; i < 3; i++) {
-        await csrfHelper.post('/api/v1/auth/request-password-reset', { email })
-          .expect(201);
+        const res = await csrfHelper.post('/api/v1/auth/request-password-reset', { email });
+        expect(res.status).toBe(201);
       }
 
       // 4th request should be rate limited
-      await csrfHelper.post('/api/v1/auth/request-password-reset', { email })
-        .expect(429);
+      const res2 = await csrfHelper.post('/api/v1/auth/request-password-reset', { email });
+      expect(res2.status).toBe(429);
     }, 10000);
   });
 
@@ -103,28 +103,28 @@ describe('Auth Password Reset (e2e)', () => {
       const oldPassword = 'OldPassword123!';
       const newPassword = 'NewPassword456!';
 
-      await csrfHelper.post('/api/v1/auth/register', { email, password: oldPassword })
-        .expect(201);
+      const res = await csrfHelper.post('/api/v1/auth/register', { email, password: oldPassword });
+      expect(res.status).toBe(201);
 
       // 2. Request password reset
-      const resetRequestRes = await csrfHelper.post('/api/v1/auth/request-password-reset', { email })
-        .expect(201);
+      const resetRequestRes = await csrfHelper.post('/api/v1/auth/request-password-reset', { email });
+      expect(resetRequestRes.status).toBe(201);
 
       // 3. Get token from response (development environment)
       const token = resetRequestRes.body.token;
       expect(token).toBeDefined();
 
       // 4. Reset password
-      await csrfHelper.post('/api/v1/auth/reset-password', { token, newPassword })
-        .expect(201);
+      const res2 = await csrfHelper.post('/api/v1/auth/reset-password', { token, newPassword });
+      expect(res2.status).toBe(201);
 
       // 5. Verify old password doesn't work
-      await csrfHelper.post('/api/v1/auth/login', { email, password: oldPassword })
-        .expect(401);
+      const res3 = await csrfHelper.post('/api/v1/auth/login', { email, password: oldPassword });
+      expect(res3.status).toBe(401);
 
       // 6. Verify new password works
-      const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password: newPassword })
-        .expect(201);
+      const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password: newPassword });
+      expect(loginRes.status).toBe(201);
 
       expect(loginRes.body.data).toHaveProperty('access_token');
 
@@ -151,12 +151,12 @@ describe('Auth Password Reset (e2e)', () => {
       const email = `reset_expired_${Date.now()}@example.com`;
       const password = 'OldPassword123!';
 
-      await csrfHelper.post('/api/v1/auth/register', { email, password })
-        .expect(201);
+      const res = await csrfHelper.post('/api/v1/auth/register', { email, password });
+      expect(res.status).toBe(201);
 
       // 2. Request password reset
-      await csrfHelper.post('/api/v1/auth/request-password-reset', { email })
-        .expect(201);
+      const res2 = await csrfHelper.post('/api/v1/auth/request-password-reset', { email });
+      expect(res2.status).toBe(201);
 
       // 3. Manually expire the token
       const user = await prisma.user.findUnique({
@@ -183,11 +183,11 @@ describe('Auth Password Reset (e2e)', () => {
       const email = `reset_weak_${Date.now()}@example.com`;
       const password = 'OldPassword123!';
 
-      await csrfHelper.post('/api/v1/auth/register', { email, password })
-        .expect(201);
+      const res = await csrfHelper.post('/api/v1/auth/register', { email, password });
+      expect(res.status).toBe(201);
 
-      await csrfHelper.post('/api/v1/auth/request-password-reset', { email })
-        .expect(201);
+      const res2 = await csrfHelper.post('/api/v1/auth/request-password-reset', { email });
+      expect(res2.status).toBe(201);
 
       const user = await prisma.user.findUnique({
         where: { email: email.toLowerCase().trim() },
@@ -208,24 +208,24 @@ describe('Auth Password Reset (e2e)', () => {
       const password = 'OldPassword123!';
       const newPassword = 'NewPassword123!';
 
-      await csrfHelper.post('/api/v1/auth/register', { email, password })
-        .expect(201);
+      const res = await csrfHelper.post('/api/v1/auth/register', { email, password });
+      expect(res.status).toBe(201);
 
       // 2. Request reset
-      const resetRequestRes = await csrfHelper.post('/api/v1/auth/request-password-reset', { email })
-        .expect(201);
+      const resetRequestRes = await csrfHelper.post('/api/v1/auth/request-password-reset', { email });
+      expect(resetRequestRes.status).toBe(201);
 
       // 3. Get token from response
       const token = resetRequestRes.body.token;
       expect(token).toBeDefined();
 
       // 4. Use token once
-      await csrfHelper.post('/api/v1/auth/reset-password', { token, newPassword })
-        .expect(201);
+      const res2 = await csrfHelper.post('/api/v1/auth/reset-password', { token, newPassword });
+      expect(res2.status).toBe(201);
 
       // 5. Try to reuse same token
-      await csrfHelper.post('/api/v1/auth/reset-password', { token, newPassword: 'AnotherPassword123!' })
-        .expect(400);
+      const res3 = await csrfHelper.post('/api/v1/auth/reset-password', { token, newPassword: 'AnotherPassword123!' });
+      expect(res3.status).toBe(400);
     });
 
     it('should enforce rate limiting (3 requests/min)', async () => {
@@ -255,21 +255,21 @@ describe('Auth Password Reset (e2e)', () => {
       const newPassword = 'New456Password!';
 
       // 1. User registration
-      const registerRes = await csrfHelper.post('/api/v1/auth/register', { email, password: originalPassword })
-        .expect(201);
+      const registerRes = await csrfHelper.post('/api/v1/auth/register', { email, password: originalPassword });
+      expect(registerRes.status).toBe(201);
 
       expect(registerRes.body.data).toHaveProperty('id');
       expect(registerRes.body.data).toHaveProperty('email');
 
       // 2. User can login with original password
-      const loginRes1 = await csrfHelper.post('/api/v1/auth/login', { email, password: originalPassword })
-        .expect(201);
+      const loginRes1 = await csrfHelper.post('/api/v1/auth/login', { email, password: originalPassword });
+      expect(loginRes1.status).toBe(201);
 
       expect(loginRes1.body.data).toHaveProperty('access_token');
 
       // 3. User requests password reset
-      const resetRequestRes = await csrfHelper.post('/api/v1/auth/request-password-reset', { email })
-        .expect(201);
+      const resetRequestRes = await csrfHelper.post('/api/v1/auth/request-password-reset', { email });
+      expect(resetRequestRes.status).toBe(201);
 
       expect(resetRequestRes.body.message).toContain('リセット');
 
@@ -287,12 +287,12 @@ describe('Auth Password Reset (e2e)', () => {
       expect(resetRes.body.message).toContain('リセット');
 
       // 6. Old password should no longer work
-      await csrfHelper.post('/api/v1/auth/login', { email, password: originalPassword })
-        .expect(401);
+      const res = await csrfHelper.post('/api/v1/auth/login', { email, password: originalPassword });
+      expect(res.status).toBe(401);
 
       // 7. New password should work
-      const loginRes2 = await csrfHelper.post('/api/v1/auth/login', { email, password: newPassword })
-        .expect(201);
+      const loginRes2 = await csrfHelper.post('/api/v1/auth/login', { email, password: newPassword });
+      expect(loginRes2.status).toBe(201);
 
       expect(loginRes2.body.data).toHaveProperty('access_token');
       expect(loginRes2.body.data.access_token).not.toBe(
