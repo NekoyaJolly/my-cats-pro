@@ -176,7 +176,7 @@ describe('Auth Password Reset (e2e)', () => {
           token: user!.resetPasswordToken!,
           newPassword: 'NewPassword123!',
         });
-      expect(res.status).toBe(400);
+      expect(res3.status).toBe(400);
     });
 
     it('should reject weak passwords', async () => {
@@ -199,7 +199,7 @@ describe('Auth Password Reset (e2e)', () => {
           token: user!.resetPasswordToken!,
           newPassword: '123', // Too weak
         });
-      expect(res.status).toBe(400);
+      expect(res3.status).toBe(400);
     });
 
     it('should prevent token reuse', async () => {
