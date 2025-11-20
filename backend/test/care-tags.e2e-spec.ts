@@ -101,10 +101,8 @@ describe("Care & Tags flows (e2e)", () => {
       .set("Authorization", `Bearer ${token}`)
       .set("X-CSRF-Token", csrfToken)
       .set("Cookie", cookie);
-      .expect((res) => {
-    expect(res.status).toBe(200);
-        if (!res.body.success) throw new Error("unassign failed");
-      });
+    expect(unassignRes.status).toBe(200);
+    if (!unassignRes.body.success) throw new Error("unassign failed");
   });
 
   it("care: register -> login -> create cat -> create schedule -> complete", async () => {

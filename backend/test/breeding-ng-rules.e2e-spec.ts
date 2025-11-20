@@ -41,13 +41,16 @@ describe('Breeding NG Rules API (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/breeding/ng-rules')
       .set('Authorization', `Bearer ${authToken}`)
+      .set('X-CSRF-Token', csrfToken)
+      .set('Cookie', cookie)
       .send({
+        name: '同一タグ禁止',
         description: '同じタグ同士の交配を禁止',
         type: 'TAG_COMBINATION',
         maleConditions: ['Champion'],
         femaleConditions: ['Champion'],
-      })
-      .expect(201);
+      });
+    expect(res.status).toBe(201);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data).toMatchObject({
