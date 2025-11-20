@@ -3,7 +3,7 @@
  * バックエンドAPIとの通信を行う共通クライアント
  */
 
-import type { operations, paths } from './generated/schema';
+import type { paths } from './generated/schema';
 import { getCsrfToken, clearCsrfToken, refreshCsrfToken } from './csrf';
 
 // NOTE: generated/schema.ts は最初の型生成後にインポート可能になります
@@ -81,7 +81,7 @@ type FilterPathsByMethod<M extends HttpMethod> = {
 
 type ExtractOperation<P extends string, M extends HttpMethod> = CanonicalPath<P> extends infer Canonical
   ? Canonical extends keyof paths
-    ? paths[Canonical][M] extends operations[keyof operations]
+    ? M extends keyof paths[Canonical]
       ? paths[Canonical][M]
       : never
     : never
@@ -94,7 +94,7 @@ type PathParamsFor<P extends string, M extends HttpMethod> = ExtractOperation<P,
   : Record<string, never>;
 
 type QueryParamsFor<P extends string, M extends HttpMethod> = ExtractOperation<P, M> extends {
-  parameters: { query: infer Params };
+  parameters: { query?: infer Params };
 }
   ? Params
   : Record<string, never>;

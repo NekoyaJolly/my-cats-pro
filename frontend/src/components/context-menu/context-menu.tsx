@@ -280,7 +280,7 @@ export function ContextMenuProvider<T = unknown>({
 
   // 子要素にイベントハンドラーを追加
   const childWithHandlers = isValidElement(children)
-    ? cloneElement(children as React.ReactElement, {
+    ? cloneElement(children as React.ReactElement<React.HTMLAttributes<HTMLElement> & { ref?: React.Ref<any> }>, {
         ref: containerRef,
         onContextMenu: handleContextMenu,
         onDoubleClick: handleDoubleClick,
@@ -289,7 +289,7 @@ export function ContextMenuProvider<T = unknown>({
         onTouchMove: handleTouchMove,
         onTouchCancel: handleTouchCancel,
         style: {
-          ...((children as React.ReactElement).props.style || {}),
+          ...((children as React.ReactElement<{ style?: React.CSSProperties }>).props.style || {}),
           cursor: disabled ? 'default' : 'context-menu',
           userSelect: 'none',
         },

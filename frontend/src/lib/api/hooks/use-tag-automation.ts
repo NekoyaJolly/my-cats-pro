@@ -88,15 +88,15 @@ export { automationRuleKeys };
 
 function buildAutomationRuleQuery(
   filters?: TagAutomationRuleFilters,
-): Record<string, string> | undefined {
+): { active?: boolean; scope?: string; triggerType?: string; eventType?: string } | undefined {
   if (!filters) {
     return undefined;
   }
 
-  const query: Record<string, string> = {};
+  const query: { active?: boolean; scope?: string; triggerType?: string; eventType?: string } = {};
 
   if (filters.active !== undefined) {
-    query.active = filters.active.toString();
+    query.active = filters.active;
   }
 
   if (filters.scope) {
@@ -133,7 +133,7 @@ export function useGetAutomationRules(
       try {
         const query = buildAutomationRuleQuery(filters);
         const response = await apiClient.get('/tags/automation/rules', {
-          query: query as unknown as Record<string, never> | undefined,
+          query: query,
         });
 
         // Validate response.data is an array
@@ -163,9 +163,9 @@ export function useGetAutomationRule(
         const response = await apiClient.get('/tags/automation/rules/{id}', {
           pathParams: { id: ruleId },
           query: {
-            includeRuns: 'true',
-            includeHistoryCount: 'true',
-          } as unknown as Record<string, never>,
+            includeRuns: true,
+            includeHistoryCount: true,
+          },
         });
 
         return response as TagAutomationRuleResponse;
@@ -186,7 +186,8 @@ export function useCreateAutomationRule() {
   return useMutation({
     mutationFn: (payload: CreateTagAutomationRuleRequest) =>
       apiClient.post('/tags/automation/rules', {
-        body: payload as unknown as never,
+        // Schema defines config as Record<string, never>, so we need to cast to any to pass actual config
+        body: payload as any,
         retryOnUnauthorized: false,
       }),
     onSuccess: () => {
@@ -212,7 +213,8 @@ export function useUpdateAutomationRule() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateTagAutomationRuleRequest }) =>
       apiClient.patch('/tags/automation/rules/{id}', {
         pathParams: { id },
-        body: payload as unknown as never,
+        // Schema defines config as Record<string, never>, so we need to cast to any to pass actual config
+        body: payload as any,
         retryOnUnauthorized: false,
       }),
     onSuccess: () => {
@@ -264,13 +266,13 @@ export function useGetAutomationRuns(
     queryKey: ['tagAutomationRuns', filters],
     queryFn: async () => {
       try {
-        const query: Record<string, string> = {};
+        const query: { ruleId?: string; status?: string; limit?: number } = {};
         if (filters?.ruleId) query.ruleId = filters.ruleId;
         if (filters?.status) query.status = filters.status;
-        if (filters?.limit) query.limit = filters.limit.toString();
+        if (filters?.limit) query.limit = filters.limit;
 
         const response = await apiClient.get('/tags/automation/runs', {
-          query: Object.keys(query).length > 0 ? (query as unknown as Record<string, never>) : undefined,
+          query: Object.keys(query).length > 0 ? query : undefined,
         });
 
         if (!response.data || !Array.isArray(response.data)) {
@@ -292,10 +294,9 @@ export function useExecuteAutomationRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, dryRun = false }: { id: string; dryRun?: boolean }) =>
+    mutationFn: ({ id }: { id: string }) =>
       apiClient.post('/tags/automation/rules/{id}/execute', {
         pathParams: { id },
-        query: dryRun ? ({ dryRun: 'true' } as unknown as Record<string, never>) : undefined,
         retryOnUnauthorized: false,
       }),
     onSuccess: () => {

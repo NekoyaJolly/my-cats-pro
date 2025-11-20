@@ -1,0 +1,33 @@
+.root {
+  position: relative;
+}
+
+.input {
+  height: 38px; /* Reduced from 42px */
+  padding-top: 14px; /* Reduced from 16px */
+}
+
+/* Textarea specific adjustment */
+textarea.input {
+  height: 38px;
+  min-height: 38px;
+  padding-top: 14px;
+}
+
+.label {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  top: 9px; /* Adjusted for smaller height */
+  left: 10px; /* Reduced padding */
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed); /* Lighter than placeholder */
+  transition: transform 150ms ease, color 150ms ease, font-size 150ms ease;
+}
+
+.label[data-floating] {
+  transform: translateY(-6px); /* Adjusted */
+  font-size: 10px; /* Smaller font for floating */
+  color: var(--mantine-color-blue-4); /* Lighter tone */
+  font-weight: 600;
+}

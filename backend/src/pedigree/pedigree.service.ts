@@ -420,4 +420,29 @@ export class PedigreeService {
       children: descendants,
     };
   }
+
+  async getNextId(): Promise<{ nextId: string }> {
+    try {
+      // 数値のみで構成されるpedigree_idの最大値を取得
+      // PostgreSQL固有の正規表現演算子 ~ を使用
+      const result = await this.prisma.$queryRaw<{ max_id: number }[]>`
+        SELECT MAX(CAST(pedigree_id AS INTEGER)) as max_id 
+        FROM pedigrees 
+        WHERE pedigree_id ~ '^[0-9]+$'
+      `;
+
+      if (result && result[0] && result[0].max_id !== null) {
+        // BigIntで返ってくる可能性があるため、NumberまたはString変換して処理
+        const maxId = Number(result[0].max_id);
+        return { nextId: (maxId + 1).toString() };
+      }
+
+      // データがない場合は初期値 "1" を返す
+      return { nextId: "1" };
+    } catch (error) {
+      console.error("Failed to get next pedigree ID:", error);
+      // エラー時は安全なデフォルト値を返す
+      return { nextId: "1" };
+    }
+  }
 }

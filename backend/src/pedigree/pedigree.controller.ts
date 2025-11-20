@@ -92,6 +92,13 @@ export class PedigreeController {
     return this.pedigreeService.findAll(query);
   }
 
+  @Get("next-id")
+  @ApiOperation({ summary: "次の血統書番号を取得" })
+  @ApiResponse({ status: HttpStatus.OK, description: "次の血統書番号" })
+  getNextId() {
+    return this.pedigreeService.getNextId();
+  }
+
   @Get("pedigree-id/:pedigreeId")
   @ApiOperation({ summary: "血統書番号で血統書データを取得" })
   @ApiResponse({ status: HttpStatus.OK, description: "血統書データ" })

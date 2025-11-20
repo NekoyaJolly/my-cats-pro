@@ -10,11 +10,11 @@ export class CoatColorQueryDto {
   @Type(() => Number)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: "1ページあたりの件数", default: 50, maximum: 500 })
+  @ApiPropertyOptional({ description: "1ページあたりの件数", default: 50, maximum: 1000 })
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(500)
+  @Max(1000)
   @Type(() => Number)
   limit?: number = 50;
 

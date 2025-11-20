@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-11-19T14:32:46.300Z
+// Prisma Schema - Last Updated: 2025-11-20T00:32:48.111Z
 // Auto-generated from schema.prisma
 
 generator client {

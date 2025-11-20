@@ -207,7 +207,7 @@ export default function MedicalRecordsPage() {
         catId: trimmedCatId,
         visitDate: dayjs(createForm.visitDate).toISOString(),
          
-        visitType: createForm.visitType || undefined,
+        visitType: (createForm.visitType as keyof typeof VISIT_TYPE_LABELS) || undefined,
         hospitalName: trimmedHospitalName || undefined,
         diagnosis: trimmedDiagnosis || undefined,
         treatmentPlan: trimmedTreatmentPlan || undefined,
