@@ -98,8 +98,15 @@ gcloud builds submit \
   --config=cloudbuild.yaml \
   --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend-staging,\
 _FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,\
-_ENVIRONMENT=staging
+_ENVIRONMENT=staging,\
+_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db
 ```
+
+**ステージング環境のCloud SQL設定:**
+- **インスタンス名**: `mycats-stg-db`
+- **接続名**: `my-cats-pro:asia-northeast1:mycats-stg-db`
+- **データベース**: ステージング専用のデータベースを使用
+- **Secret Manager**: `DATABASE_URL_staging` シークレットに接続文字列を保存
 
 ### 本番環境
 
@@ -110,6 +117,12 @@ gcloud builds submit \
 _FRONTEND_SERVICE_NAME=mycats-pro-frontend,\
 _ENVIRONMENT=production
 ```
+
+**本番環境のCloud SQL設定:**
+- **インスタンス名**: `mycats-prod-db`
+- **接続名**: `my-cats-pro:asia-northeast1:mycats-prod-db` (デフォルト)
+- **データベース**: `mycats_production`
+- **Secret Manager**: `DATABASE_URL_production` シークレットに接続文字列を保存
 
 ## 必要なGitHub Secrets
 
@@ -143,16 +156,31 @@ CI/CDパイプラインを実行するために、以下のGitHub Secretsを設�
 環境ごとに以下のシークレットを作成：
 
 #### ステージング環境
-- `DATABASE_URL_staging`
+- `DATABASE_URL_staging` - ステージング用Cloud SQLインスタンス(`mycats-stg-db`)への接続文字列
 - `JWT_SECRET_staging`
 - `JWT_REFRESH_SECRET_staging`
 - `CSRF_TOKEN_SECRET_staging`
 
 #### 本番環境
-- `DATABASE_URL_production`
+- `DATABASE_URL_production` - 本番用Cloud SQLインスタンス(`mycats-prod-db`)への接続文字列
 - `JWT_SECRET_production`
 - `JWT_REFRESH_SECRET_production`
 - `CSRF_TOKEN_SECRET_production`
+
+**Cloud SQL接続文字列の例:**
+```
+postgresql://[USER]:[PASSWORD]@localhost/[DATABASE]?host=/cloudsql/[CONNECTION_NAME]
+```
+
+ステージング環境の場合:
+```
+postgresql://mycats_stg:[PASSWORD]@localhost/mycats_staging?host=/cloudsql/my-cats-pro:asia-northeast1:mycats-stg-db
+```
+
+本番環境の場合:
+```
+postgresql://mycats_prod:[PASSWORD]@localhost/mycats_production?host=/cloudsql/my-cats-pro:asia-northeast1:mycats-prod-db
+```
 
 ## デプロイの承認設定（オプション）
 
