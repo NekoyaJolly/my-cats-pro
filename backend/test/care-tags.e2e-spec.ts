@@ -62,7 +62,7 @@ describe("Care & Tags flows (e2e)", () => {
       .set("Authorization", `Bearer ${token}`)
       .set("X-CSRF-Token", csrfToken)
       .set("Cookie", cookie)
-      .send({ name: "Test Category" });
+      .send({ name: "Test Category", key: `test_category_${Date.now()}` });
     expect(categoryRes.status).toBe(201);
     const categoryId = categoryRes.body.data.id as string;
 
@@ -116,17 +116,22 @@ describe("Care & Tags flows (e2e)", () => {
     expect(login.status).toBe(201);
     const token = login.body.data.access_token as string;
 
+    // Get CSRF token for authenticated requests
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
+
     // create a cat
     const catRes = await request(app.getHttpServer())
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .send({
         registrationNumber: `REG-${Date.now()}`,
         name: "E2E Care Cat",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-      })
-      .expect(201);
+      });
+    expect(catRes.status).toBe(201);
     const catId =
       catRes.body.id ??
       catRes.body.data?.id ??
@@ -138,29 +143,31 @@ describe("Care & Tags flows (e2e)", () => {
     const schedCreate = await request(app.getHttpServer())
       .post("/api/v1/care/schedules")
       .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .send({
         catIds: [catId],
         name: "Annual Health Check",
         careType: "HEALTH_CHECK",
         scheduledDate: "2025-09-01",
         description: "Annual check",
-      })
-      .expect(201);
+      });
+    expect(schedCreate.status).toBe(201);
     const scheduleId = schedCreate.body.data.id as string;
 
     // complete it with next schedule
-    await request(app.getHttpServer())
+    const completeRes = await request(app.getHttpServer())
       .patch(`/api/v1/care/schedules/${scheduleId}/complete`)
       .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .send({
         completedDate: "2025-09-01",
         nextScheduledDate: "2026-09-01",
         notes: "All good",
-      })
-      .expect(200)
-      .expect((res) => {
-        if (!res.body.success) throw new Error("complete failed");
       });
+    expect(completeRes.status).toBe(200);
+    if (!completeRes.body.success) throw new Error("complete failed");
 
     // fetch schedules list for the cat
     const list = await request(app.getHttpServer())
