@@ -41,6 +41,8 @@ describe('Breeds & Coat Colors API (e2e)', () => {
   let csrfHelper: CsrfHelper;
   let prisma: PrismaService;
   let adminToken: string;
+  let csrfToken: string;
+  let cookie: string;
   const createdBreedIds: string[] = [];
   const createdCoatColorIds: string[] = [];
   const usedBreedCodes = new Set<number>();
@@ -78,6 +80,11 @@ describe('Breeds & Coat Colors API (e2e)', () => {
     expect(loginRes.status).toBe(httpStatus.created);
 
     adminToken = loginRes.body.data.access_token;
+    
+    // Get CSRF token for authenticated requests
+    const csrfResponse = await csrfHelper.getCsrfToken();
+    csrfToken = csrfResponse.token;
+    cookie = csrfResponse.cookie;
   });
 
   afterAll(async () => {
@@ -111,9 +118,11 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/breeds')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send(payload)
-        .expect(httpStatus.created);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
+        .send(payload);
 
+      expect(res.status).toBe(httpStatus.created);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toMatchObject({
         name: payload.name,
@@ -133,9 +142,11 @@ describe('Breeds & Coat Colors API (e2e)', () => {
   const createRes = await request(app.getHttpServer())
         .post('/api/v1/breeds')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send(searchableBreed)
-        .expect(httpStatus.created);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
+        .send(searchableBreed);
 
+      expect(createRes.status).toBe(httpStatus.created);
       createdBreedIds.push(createRes.body.data.id);
 
       const res = await request(app.getHttpServer())
@@ -173,9 +184,11 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/breeds/${createdBreedId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ description: updatedDescription })
-        .expect(httpStatus.ok);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
+        .send({ description: updatedDescription });
 
+      expect(res.status).toBe(httpStatus.ok);
       expect(res.body.success).toBe(true);
       expect(res.body.data.description).toBe(updatedDescription);
     });
@@ -226,9 +239,11 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/coat-colors')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send(payload)
-        .expect(httpStatus.created);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
+        .send(payload);
 
+      expect(res.status).toBe(httpStatus.created);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toMatchObject({
         name: payload.name,
@@ -247,9 +262,11 @@ describe('Breeds & Coat Colors API (e2e)', () => {
   const createRes = await request(app.getHttpServer())
         .post('/api/v1/coat-colors')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send(searchableColor)
-        .expect(httpStatus.created);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
+        .send(searchableColor);
 
+      expect(createRes.status).toBe(httpStatus.created);
       createdCoatColorIds.push(createRes.body.data.id);
 
       const res = await request(app.getHttpServer())
@@ -286,9 +303,11 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/coat-colors/${createdCoatColorId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ description: updatedDescription })
-        .expect(httpStatus.ok);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
+        .send({ description: updatedDescription });
 
+      expect(res.status).toBe(httpStatus.ok);
       expect(res.body.success).toBe(true);
       expect(res.body.data.description).toBe(updatedDescription);
     });
