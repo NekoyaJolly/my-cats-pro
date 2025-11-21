@@ -452,6 +452,8 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
           JWT_SECRET: test-jwt-secret-key-minimum-32-chars-long-for-security
           JWT_REFRESH_SECRET: test-refresh-secret-key-minimum-32-chars-long
+          CSRF_TOKEN_SECRET: test-csrf-token-secret-for-cloud-run-validation-32chars-min
+          CORS_ORIGIN: http://localhost:3000
           NODE_ENV: production
           PORT: 8080
           ARGON2_MEMORY_COST: 65536
