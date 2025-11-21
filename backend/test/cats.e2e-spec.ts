@@ -4,6 +4,7 @@ import request from 'supertest';
 import { randomUUID } from 'crypto';
 
 import { AppModule } from '../src/app.module';
+import { CsrfHelper } from './utils/csrf-helper';
 import { createTestApp } from './utils/create-test-app';
 
 interface CatPayload {
@@ -32,7 +33,10 @@ function buildCatPayload(overrides: Partial<CatPayload> = {}): CatPayload {
 
 describe('Cats API (e2e)', () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
   let authToken: string;
+  let csrfToken: string;
+  let cookie: string;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -40,21 +44,23 @@ describe('Cats API (e2e)', () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
+    csrfHelper = new CsrfHelper(app);
 
     const email = `cats_test_${Date.now()}@example.com`;
     const password = 'CatsTest123!';
 
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({ email, password })
-      .expect(201);
+    const res = await csrfHelper.post('/api/v1/auth/register', { email, password });
+    expect(res.status).toBe(201);
 
-    const loginRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email, password })
-      .expect(201);
+    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password });
+    expect(loginRes.status).toBe(201);
 
     authToken = loginRes.body.data.access_token;
+    
+    // Get CSRF token for authenticated requests
+    const csrfResponse = await csrfHelper.getCsrfToken();
+    csrfToken = csrfResponse.token;
+    cookie = csrfResponse.cookie;
   });
 
   describe('GET /api/v1/cats', () => {
@@ -62,6 +68,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -89,6 +97,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -104,6 +114,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send(catData)
         .expect(201);
 
@@ -120,6 +132,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({})
         .expect(400);
 
@@ -143,6 +157,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send(invalidPayload)
         .expect(400);
 
@@ -154,6 +170,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({
           ...buildCatPayload(),
           birthDate: 'invalid-date',
@@ -170,12 +188,16 @@ describe('Cats API (e2e)', () => {
       await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send(buildCatPayload({ registrationNumber }))
         .expect(201);
 
       const duplicateRes = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send(buildCatPayload({ registrationNumber, name: 'Duplicate Cat' }))
         .expect(409);
 
@@ -192,12 +214,16 @@ describe('Cats API (e2e)', () => {
       await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({ ...buildCatPayload({ registrationNumber: registrationNumber1 }), microchipNumber })
         .expect(201);
 
       const duplicateRes = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({ ...buildCatPayload({ registrationNumber: registrationNumber2, name: 'Duplicate Cat' }), microchipNumber })
         .expect(409);
 
@@ -213,6 +239,8 @@ describe('Cats API (e2e)', () => {
         const res = await request(app.getHttpServer())
           .post('/api/v1/cats')
           .set('Authorization', `Bearer ${authToken}`)
+          .set('X-CSRF-Token', csrfToken)
+          .set('Cookie', cookie)
           .send(payload)
           .expect(201);
 
@@ -229,6 +257,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send(buildCatPayload({ name: 'Get By ID Test' }))
         .expect(201);
 
@@ -239,6 +269,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .get(`/api/v1/cats/${createdCatId}`)
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -251,6 +283,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .get(`/api/v1/cats/${missingId}`)
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .expect(404);
 
       expect(res.body.success).toBe(false);
@@ -262,6 +296,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/cats/invalid-uuid')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .expect(400);
 
       expect(res.body.success).toBe(false);
@@ -277,6 +313,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send(buildCatPayload({ name: 'Original Name' }))
         .expect(201);
 
@@ -292,6 +330,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/cats/${catId}`)
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send(updateData)
         .expect(200);
 
@@ -304,6 +344,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/cats/${catId}`)
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({ name: 'Only Name Updated' })
         .expect(200);
 
@@ -316,6 +358,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/cats/${missingId}`)
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({ name: 'New Name' })
         .expect(404);
 
@@ -328,6 +372,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/cats/${catId}`)
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({ gender: 'INVALID_GENDER' })
         .expect(400);
 
@@ -343,6 +389,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send(buildCatPayload({ name: 'To Be Deleted' }))
         .expect(201);
 
@@ -350,16 +398,21 @@ describe('Cats API (e2e)', () => {
     });
 
     it('should delete cat successfully', async () => {
+      const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
       const res = await request(app.getHttpServer())
         .delete(`/api/v1/cats/${catId}`)
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie);
+      expect(res.status).toBe(200);
 
       expect(res.body.success).toBe(true);
 
       const verifyRes = await request(app.getHttpServer())
         .get(`/api/v1/cats/${catId}`)
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .expect(404);
 
       expect(verifyRes.body.success).toBe(false);
@@ -368,10 +421,13 @@ describe('Cats API (e2e)', () => {
 
     it('should return 404 when deleting non-existent cat', async () => {
       const missingId = randomUUID();
+      const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
       const res = await request(app.getHttpServer())
         .delete(`/api/v1/cats/${missingId}`)
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie);
+      expect(res.status).toBe(404);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('NOT_FOUND');
@@ -379,10 +435,13 @@ describe('Cats API (e2e)', () => {
     });
 
     it('should return 400 for invalid UUID', async () => {
+      const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
       const res = await request(app.getHttpServer())
         .delete('/api/v1/cats/invalid-id')
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(400);
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie);
+      expect(res.status).toBe(400);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('BAD_REQUEST');
@@ -399,6 +458,8 @@ describe('Cats API (e2e)', () => {
         const res = await request(app.getHttpServer())
           .post('/api/v1/cats')
           .set('Authorization', `Bearer ${authToken}`)
+          .set('X-CSRF-Token', csrfToken)
+          .set('Cookie', cookie)
           .send(buildCatPayload())
           .expect(201);
         responses.push(res);
@@ -417,6 +478,8 @@ describe('Cats API (e2e)', () => {
         .get('/api/v1/cats')
         .query({ page: 1, limit: 50 })
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -431,6 +494,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({ gender: 'INVALID' })
         .expect(400);
 
@@ -446,6 +511,8 @@ describe('Cats API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/cats')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('X-CSRF-Token', csrfToken)
+        .set('Cookie', cookie)
         .send({
           ...buildCatPayload(),
           breedId: 'invalid-uuid',

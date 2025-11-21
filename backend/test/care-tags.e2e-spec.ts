@@ -2,10 +2,12 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
+import { CsrfHelper } from './utils/csrf-helper';
 import { createTestApp } from "./utils/create-test-app";
 
 describe("Care & Tags flows (e2e)", () => {
   let app: INestApplication;
+  let csrfHelper: CsrfHelper;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -13,6 +15,7 @@ describe("Care & Tags flows (e2e)", () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
+    csrfHelper = new CsrfHelper(app);
   });
 
   afterAll(async () => {
@@ -24,29 +27,28 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register
-    await request(app.getHttpServer())
-      .post("/api/v1/auth/register")
-      .send({ email, password })
-      .expect(201);
+    const registerRes = await csrfHelper.post("/api/v1/auth/register", { email, password });
+    expect(registerRes.status).toBe(201);
 
     // login
-    const login = await request(app.getHttpServer())
-      .post("/api/v1/auth/login")
-      .send({ email, password })
-      .expect(201);
+    const login = await csrfHelper.post("/api/v1/auth/login", { email, password });
+    expect(login.status).toBe(201);
     const token = login.body.data.access_token as string;
 
     // create a cat (owned by the registered user)
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
     const catRes = await request(app.getHttpServer())
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .send({
         registrationNumber: `REG-${Date.now()}`,
         name: "E2E Kitty",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-      })
-      .expect(201);
+      });
+    expect(catRes.status).toBe(201);
     const catId =
       catRes.body.id ??
       catRes.body.data?.id ??
@@ -58,44 +60,49 @@ describe("Care & Tags flows (e2e)", () => {
     const categoryRes = await request(app.getHttpServer())
       .post("/api/v1/tags/categories")
       .set("Authorization", `Bearer ${token}`)
-      .send({ name: "Test Category" })
-      .expect(201);
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
+      .send({ name: "Test Category", key: `test_category_${Date.now()}` });
+    expect(categoryRes.status).toBe(201);
     const categoryId = categoryRes.body.data.id as string;
 
     // create a tag group
     const groupRes = await request(app.getHttpServer())
       .post("/api/v1/tags/groups")
       .set("Authorization", `Bearer ${token}`)
-      .send({ categoryId, name: "Test Group" })
-      .expect(201);
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
+      .send({ categoryId, name: "Test Group" });
+    expect(groupRes.status).toBe(201);
     const groupId = groupRes.body.data.id as string;
 
     // create a tag (auth required)
     const tagRes = await request(app.getHttpServer())
       .post("/api/v1/tags")
       .set("Authorization", `Bearer ${token}`)
-      .send({ name: `indoor-${Date.now()}`, groupId, color: "#00AA88" })
-      .expect(201);
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
+      .send({ name: `indoor-${Date.now()}`, groupId, color: "#00AA88" });
+    expect(tagRes.status).toBe(201);
     const tagId = tagRes.body.data.id as string;
 
     // assign tag to cat
-    await request(app.getHttpServer())
+    const assignRes = await request(app.getHttpServer())
       .post(`/api/v1/tags/cats/${catId}/tags`)
       .set("Authorization", `Bearer ${token}`)
-      .send({ tagId })
-      .expect(200)
-      .expect((res) => {
-        if (!res.body.success) throw new Error("assign failed");
-      });
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
+      .send({ tagId });
+    if (!assignRes.body.success) throw new Error("assign failed");
 
     // unassign tag from cat
-    await request(app.getHttpServer())
+    const unassignRes = await request(app.getHttpServer())
       .delete(`/api/v1/tags/cats/${catId}/tags/${tagId}`)
       .set("Authorization", `Bearer ${token}`)
-      .expect(200)
-      .expect((res) => {
-        if (!res.body.success) throw new Error("unassign failed");
-      });
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie);
+    expect(unassignRes.status).toBe(200);
+    if (!unassignRes.body.success) throw new Error("unassign failed");
   });
 
   it("care: register -> login -> create cat -> create schedule -> complete", async () => {
@@ -103,27 +110,28 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register & login
-    await request(app.getHttpServer())
-      .post("/api/v1/auth/register")
-      .send({ email, password })
-      .expect(201);
-    const login = await request(app.getHttpServer())
-      .post("/api/v1/auth/login")
-      .send({ email, password })
-      .expect(201);
+    const res = await csrfHelper.post("/api/v1/auth/register", { email, password });
+    expect(res.status).toBe(201);
+    const login = await csrfHelper.post("/api/v1/auth/login", { email, password });
+    expect(login.status).toBe(201);
     const token = login.body.data.access_token as string;
+
+    // Get CSRF token for authenticated requests
+    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
 
     // create a cat
     const catRes = await request(app.getHttpServer())
       .post("/api/v1/cats")
       .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .send({
         registrationNumber: `REG-${Date.now()}`,
         name: "E2E Care Cat",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-      })
-      .expect(201);
+      });
+    expect(catRes.status).toBe(201);
     const catId =
       catRes.body.id ??
       catRes.body.data?.id ??
@@ -135,34 +143,36 @@ describe("Care & Tags flows (e2e)", () => {
     const schedCreate = await request(app.getHttpServer())
       .post("/api/v1/care/schedules")
       .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .send({
         catIds: [catId],
         name: "Annual Health Check",
         careType: "HEALTH_CHECK",
         scheduledDate: "2025-09-01",
         description: "Annual check",
-      })
-      .expect(201);
+      });
+    expect(schedCreate.status).toBe(201);
     const scheduleId = schedCreate.body.data.id as string;
 
     // complete it with next schedule
-    await request(app.getHttpServer())
+    const completeRes = await request(app.getHttpServer())
       .patch(`/api/v1/care/schedules/${scheduleId}/complete`)
       .set("Authorization", `Bearer ${token}`)
+      .set("X-CSRF-Token", csrfToken)
+      .set("Cookie", cookie)
       .send({
         completedDate: "2025-09-01",
         nextScheduledDate: "2026-09-01",
         notes: "All good",
-      })
-      .expect(200)
-      .expect((res) => {
-        if (!res.body.success) throw new Error("complete failed");
       });
+    expect(completeRes.status).toBe(200);
+    if (!completeRes.body.success) throw new Error("complete failed");
 
     // fetch schedules list for the cat
     const list = await request(app.getHttpServer())
       .get(`/api/v1/care/schedules?catId=${catId}`)
-      .expect(200);
+    expect(list.status).toBe(200);
     expect(list.body.data?.length).toBeGreaterThan(0);
   });
 });
