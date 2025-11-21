@@ -1,6 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { CsrfHelper } from './utils/csrf-helper';
 import { ThrottlerStorageService, ThrottlerStorage } from '@nestjs/throttler';

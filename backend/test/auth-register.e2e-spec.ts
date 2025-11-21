@@ -1,6 +1,5 @@
 import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import request from "supertest";
 import { AppModule } from "../src/app.module";
 import { createTestApp } from "./utils/create-test-app";
 import { CsrfHelper } from "./utils/csrf-helper";
