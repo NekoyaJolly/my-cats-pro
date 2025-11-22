@@ -60,12 +60,15 @@ steps:
             read -r -a EXTRA_FLAGS <<< "${_BACKEND_DEPLOY_FLAGS}"
           fi
 
-          # Get service account based on environment
+          # Get service account email based on environment
           if [[ "${_ENVIRONMENT}" == "staging" ]]; then
-            SERVICE_ACCOUNT="${_BACKEND_SERVICE_ACCOUNT_STAGING}"
+            SERVICE_ACCOUNT_EMAIL="${_BACKEND_SERVICE_ACCOUNT_STAGING}"
           else
-            SERVICE_ACCOUNT="${_BACKEND_SERVICE_ACCOUNT}"
+            SERVICE_ACCOUNT_EMAIL="${_BACKEND_SERVICE_ACCOUNT}"
           fi
+
+          # Convert to full Cloud Run service account format
+          SERVICE_ACCOUNT="projects/${PROJECT_ID}/serviceAccounts/${SERVICE_ACCOUNT_EMAIL}"
 
           gcloud run deploy "${_BACKEND_SERVICE_NAME}" \
             --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest" \
@@ -100,12 +103,15 @@ steps:
             read -r -a EXTRA_FLAGS <<< "${_FRONTEND_DEPLOY_FLAGS}"
           fi
 
-          # Get service account based on environment
+          # Get service account email based on environment
           if [[ "${_ENVIRONMENT}" == "staging" ]]; then
-            SERVICE_ACCOUNT="${_FRONTEND_SERVICE_ACCOUNT_STAGING}"
+            SERVICE_ACCOUNT_EMAIL="${_FRONTEND_SERVICE_ACCOUNT_STAGING}"
           else
-            SERVICE_ACCOUNT="${_FRONTEND_SERVICE_ACCOUNT}"
+            SERVICE_ACCOUNT_EMAIL="${_FRONTEND_SERVICE_ACCOUNT}"
           fi
+
+          # Convert to full Cloud Run service account format
+          SERVICE_ACCOUNT="projects/${PROJECT_ID}/serviceAccounts/${SERVICE_ACCOUNT_EMAIL}"
 
           gcloud run deploy "${_FRONTEND_SERVICE_NAME}" \
             --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest" \

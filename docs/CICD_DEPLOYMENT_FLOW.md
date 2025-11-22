@@ -107,6 +107,8 @@ _CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db
 - **接続名**: `my-cats-pro:asia-northeast1:mycats-stg-db`
 - **データベース**: ステージング専用のデータベースを使用
 - **Secret Manager**: `DATABASE_URL_staging` シークレットに接続文字列を保存
+- **Cloud Run 環境変数**: `INSTANCE_CONNECTION_NAME` に接続名が設定される
+- **デプロイ時の指定**: GitHub Actions の `deploy-staging` ジョブで `_CLOUD_SQL_CONNECTION_NAME` を明示的に指定
 
 ### 本番環境
 
@@ -123,6 +125,8 @@ _ENVIRONMENT=production
 - **接続名**: `my-cats-pro:asia-northeast1:mycats-prod-db` (デフォルト)
 - **データベース**: `mycats_production`
 - **Secret Manager**: `DATABASE_URL_production` シークレットに接続文字列を保存
+- **Cloud Run 環境変数**: `INSTANCE_CONNECTION_NAME` に接続名が設定される
+- **デプロイ時の指定**: `cloudbuild.yaml` のデフォルト値を使用（明示的な指定は不要）
 
 ## 必要なGitHub Secrets
 
@@ -144,12 +148,22 @@ CI/CDパイプラインを実行するために、以下のGitHub Secretsを設�
 以下のサービスアカウントが必要です：
 
 #### ステージング環境
-- `cloud-run-backend-staging@my-cats-pro.iam.gserviceaccount.com`
-- `cloud-run-frontend-staging@my-cats-pro.iam.gserviceaccount.com`
+- **Backend**: `cloud-run-backend-staging@my-cats-pro.iam.gserviceaccount.com`
+  - Cloud Run で Backend サービスを実行するために使用
+  - Cloud SQL インスタンス `mycats-stg-db` への接続権限が必要
+  - Secret Manager のステージング用シークレットへのアクセス権限が必要
+- **Frontend**: `cloud-run-frontend-staging@my-cats-pro.iam.gserviceaccount.com`
+  - Cloud Run で Frontend サービスを実行するために使用
 
 #### 本番環境
-- `cloud-run-backend@my-cats-pro.iam.gserviceaccount.com`
-- `cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com`
+- **Backend**: `cloud-run-backend@my-cats-pro.iam.gserviceaccount.com`
+  - Cloud Run で Backend サービスを実行するために使用
+  - Cloud SQL インスタンス `mycats-prod-db` への接続権限が必要
+  - Secret Manager の本番用シークレットへのアクセス権限が必要
+- **Frontend**: `cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com`
+  - Cloud Run で Frontend サービスを実行するために使用
+
+**重要**: Cloud Build は各サービスアカウントを `projects/my-cats-pro/serviceAccounts/{EMAIL}` 形式に変換してから Cloud Run に渡します。これにより、Compute Engine のデフォルトサービスアカウントが使用されることを防ぎます。
 
 ### Secret Manager
 
