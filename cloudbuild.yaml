@@ -54,6 +54,11 @@ steps:
       - '-c'
       - |
           set -euo pipefail
+          
+          # Clear any default gcloud service account settings to ensure explicit specification is used
+          echo "🔧 Clearing default gcloud service account configuration..."
+          gcloud config unset run/service-account 2>/dev/null || true
+          
           EXTRA_FLAGS=()
           if [[ -n "${_BACKEND_DEPLOY_FLAGS}" ]]; then
             # _BACKEND_DEPLOY_FLAGS may contain multiple flags separated by spaces.
@@ -67,15 +72,21 @@ steps:
             SERVICE_ACCOUNT_EMAIL="${_BACKEND_SERVICE_ACCOUNT}"
           fi
 
-          # Convert to full Cloud Run service account format
-          SERVICE_ACCOUNT="projects/${PROJECT_ID}/serviceAccounts/${SERVICE_ACCOUNT_EMAIL}"
+          # Debug output to verify correct service account is being used
+          echo "📋 Deployment Configuration:"
+          echo "  Environment: ${_ENVIRONMENT}"
+          echo "  Service Name: ${_BACKEND_SERVICE_NAME}"
+          echo "  Service Account Email: ${SERVICE_ACCOUNT_EMAIL}"
+          echo "  Cloud SQL Connection: ${_CLOUD_SQL_CONNECTION_NAME}"
+          echo "  Secrets Suffix: _${_ENVIRONMENT}"
 
+          # Use the service account email directly (Cloud Run accepts email format)
           gcloud run deploy "${_BACKEND_SERVICE_NAME}" \
             --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest" \
             --region "${_LOCATION}" \
             --platform managed \
             --execution-environment=gen2 \
-            --service-account "${SERVICE_ACCOUNT}" \
+            --service-account "${SERVICE_ACCOUNT_EMAIL}" \
             --allow-unauthenticated \
             --set-secrets "DATABASE_URL=DATABASE_URL_${_ENVIRONMENT}:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=JWT_SECRET_${_ENVIRONMENT}:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=JWT_REFRESH_SECRET_${_ENVIRONMENT}:${_JWT_REFRESH_SECRET_VERSION},CSRF_TOKEN_SECRET=CSRF_TOKEN_SECRET_${_ENVIRONMENT}:${_CSRF_TOKEN_SECRET_VERSION}" \
             --set-env-vars "NODE_ENV=${_ENVIRONMENT},CORS_ORIGIN=${_CORS_ORIGIN},INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_CONNECTION_NAME}" \
@@ -98,6 +109,11 @@ steps:
       - '-c'
       - |
           set -euo pipefail
+          
+          # Clear any default gcloud service account settings to ensure explicit specification is used
+          echo "🔧 Clearing default gcloud service account configuration..."
+          gcloud config unset run/service-account 2>/dev/null || true
+          
           EXTRA_FLAGS=()
           if [[ -n "${_FRONTEND_DEPLOY_FLAGS}" ]]; then
             read -r -a EXTRA_FLAGS <<< "${_FRONTEND_DEPLOY_FLAGS}"
@@ -110,9 +126,14 @@ steps:
             SERVICE_ACCOUNT_EMAIL="${_FRONTEND_SERVICE_ACCOUNT}"
           fi
 
-          # Convert to full Cloud Run service account format
-          SERVICE_ACCOUNT="projects/${PROJECT_ID}/serviceAccounts/${SERVICE_ACCOUNT_EMAIL}"
+          # Debug output to verify correct service account is being used
+          echo "📋 Deployment Configuration:"
+          echo "  Environment: ${_ENVIRONMENT}"
+          echo "  Service Name: ${_FRONTEND_SERVICE_NAME}"
+          echo "  Service Account Email: ${SERVICE_ACCOUNT_EMAIL}"
+          echo "  API URL: ${_NEXT_PUBLIC_API_URL}"
 
+          # Use the service account email directly (Cloud Run accepts email format)
           gcloud run deploy "${_FRONTEND_SERVICE_NAME}" \
             --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest" \
             --region "${_LOCATION}" \
@@ -120,7 +141,7 @@ steps:
             --allow-unauthenticated \
             --set-env-vars "NODE_ENV=${_ENVIRONMENT},NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}" \
             --execution-environment=gen2 \
-            --service-account "${SERVICE_ACCOUNT}" \
+            --service-account "${SERVICE_ACCOUNT_EMAIL}" \
             --concurrency 50 \
             --cpu-boost \
             "${EXTRA_FLAGS[@]}"
