@@ -642,7 +642,7 @@ jobs:
           echo "🚀 Deploying to staging environment..."
           gcloud builds submit \
             --config=cloudbuild.yaml \
-            --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend-staging,_FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,_ENVIRONMENT=staging \
+            --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend-staging,_FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,_ENVIRONMENT=staging,_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db \
             --project=${{ secrets.GCP_PROJECT_ID }}
 
       - name: Verify Staging Deployment

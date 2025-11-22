@@ -130,11 +130,13 @@ substitutions:
   _LOCATION: 'asia-northeast1' # Tokyo region
   _REPO_NAME: 'mycats-pro'
   _ENVIRONMENT: 'production' # Default environment (can be 'staging' or 'production')
-  # Production environment settings
+  # Production environment settings (defaults)
   _BACKEND_SERVICE_NAME: 'mycats-pro-backend'
   _FRONTEND_SERVICE_NAME: 'mycats-pro-frontend'
   _NEXT_PUBLIC_API_URL: 'https://mycats-pro-backend-518939509282.asia-northeast1.run.app/api/v1'
   _CORS_ORIGIN: 'https://mycats-pro-frontend-518939509282.asia-northeast1.run.app'
+  # Cloud SQL connection name (default: production instance)
+  # Staging overrides this with: my-cats-pro:asia-northeast1:mycats-stg-db
   _CLOUD_SQL_CONNECTION_NAME: 'my-cats-pro:asia-northeast1:mycats-prod-db'
   _BACKEND_SERVICE_ACCOUNT: 'cloud-run-backend@my-cats-pro.iam.gserviceaccount.com'
   _FRONTEND_SERVICE_ACCOUNT: 'cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com'
