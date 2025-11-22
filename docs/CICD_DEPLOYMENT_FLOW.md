@@ -99,8 +99,21 @@ gcloud builds submit \
   --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend-staging,\
 _FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,\
 _ENVIRONMENT=staging,\
-_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db
+_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db,\
+_CORS_ORIGIN=https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app,\
+_NEXT_PUBLIC_API_URL=https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app/api/v1
 ```
+
+**ステージング環境のCloud Run設定:**
+- **Backend Service Name**: `mycats-pro-backend-staging`
+- **Frontend Service Name**: `mycats-pro-frontend-staging`
+- **Backend Service Account**: `cloud-run-backend-staging@my-cats-pro.iam.gserviceaccount.com`
+- **Frontend Service Account**: `cloud-run-frontend-staging@my-cats-pro.iam.gserviceaccount.com`
+- **NODE_ENV**: `staging`
+- **Backend URL**: `https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app`
+- **Frontend URL**: `https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app`
+- **CORS_ORIGIN**: staging frontend URL
+- **NEXT_PUBLIC_API_URL**: staging backend API URL
 
 **ステージング環境のCloud SQL設定:**
 - **インスタンス名**: `mycats-stg-db`
@@ -119,6 +132,17 @@ gcloud builds submit \
 _FRONTEND_SERVICE_NAME=mycats-pro-frontend,\
 _ENVIRONMENT=production
 ```
+
+**本番環境のCloud Run設定:**
+- **Backend Service Name**: `mycats-pro-backend`
+- **Frontend Service Name**: `mycats-pro-frontend`
+- **Backend Service Account**: `cloud-run-backend@my-cats-pro.iam.gserviceaccount.com`
+- **Frontend Service Account**: `cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com`
+- **NODE_ENV**: `production`
+- **Backend URL**: `https://mycats-pro-backend-518939509282.asia-northeast1.run.app`
+- **Frontend URL**: `https://mycats-pro-frontend-518939509282.asia-northeast1.run.app`
+- **CORS_ORIGIN**: production frontend URL (デフォルト値を使用)
+- **NEXT_PUBLIC_API_URL**: production backend API URL (デフォルト値を使用)
 
 **本番環境のCloud SQL設定:**
 - **インスタンス名**: `mycats-prod-db`
@@ -163,7 +187,12 @@ CI/CDパイプラインを実行するために、以下のGitHub Secretsを設�
 - **Frontend**: `cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com`
   - Cloud Run で Frontend サービスを実行するために使用
 
-**重要**: Cloud Build は各サービスアカウントを `projects/my-cats-pro/serviceAccounts/{EMAIL}` 形式に変換してから Cloud Run に渡します。これにより、Compute Engine のデフォルトサービスアカウントが使用されることを防ぎます。
+**重要な変更点**: 
+- Cloud Build はサービスアカウントを**メールアドレス形式で直接指定**します（例: `cloud-run-backend-staging@my-cats-pro.iam.gserviceaccount.com`）
+- 以前の `projects/my-cats-pro/serviceAccounts/{EMAIL}` 形式は不要になりました
+- Cloud Build 実行前に `gcloud config unset run/service-account` を実行し、デフォルトのサービスアカウント設定をクリアします
+- これにより、Compute Engine のデフォルトサービスアカウント (`518939509282-compute@developer.gserviceaccount.com`) が誤って使用されることを防ぎます
+- デバッグ出力により、デプロイ時に正しいサービスアカウントが使用されていることを確認できます
 
 ### Secret Manager
 

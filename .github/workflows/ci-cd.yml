@@ -642,7 +642,7 @@ jobs:
           echo "🚀 Deploying to staging environment..."
           gcloud builds submit \
             --config=cloudbuild.yaml \
-            --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend-staging,_FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,_ENVIRONMENT=staging,_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db \
+            --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend-staging,_FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,_ENVIRONMENT=staging,_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db,_CORS_ORIGIN=https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app,_NEXT_PUBLIC_API_URL=https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app/api/v1 \
             --project=${{ secrets.GCP_PROJECT_ID }}
 
       - name: Verify Staging Deployment
