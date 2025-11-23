@@ -72,19 +72,6 @@ steps:
             SERVICE_ACCOUNT_EMAIL="${_BACKEND_SERVICE_ACCOUNT}"
           fi
 
-          # Configure secrets based on environment
-          if [[ "${_ENVIRONMENT}" == "staging" ]]; then
-            DATABASE_URL_SECRET_NAME="DATABASE_URL_staging"
-            JWT_SECRET_NAME="JWT_SECRET_staging"
-            JWT_REFRESH_SECRET_NAME="JWT_REFRESH_SECRET_staging"
-            CSRF_SECRET_NAME="CSRF_TOKEN_SECRET_staging"
-          else
-            DATABASE_URL_SECRET_NAME="DATABASE_URL"
-            JWT_SECRET_NAME="JWT_SECRET"
-            JWT_REFRESH_SECRET_NAME="JWT_REFRESH_SECRET"
-            CSRF_SECRET_NAME="CSRF_TOKEN_SECRET"
-          fi
-
           # Debug output to verify correct service account and secrets are being used
           echo "📋 Deployment Configuration:"
           echo "  Environment: ${_ENVIRONMENT}"
@@ -93,10 +80,10 @@ steps:
           echo "  Cloud SQL Connection: ${_CLOUD_SQL_CONNECTION_NAME}"
           echo ""
           echo "🔐 Secrets Configuration:"
-          echo "  DATABASE_URL: ${DATABASE_URL_SECRET_NAME}:${_DATABASE_URL_SECRET_VERSION}"
-          echo "  JWT_SECRET: ${JWT_SECRET_NAME}:${_JWT_SECRET_VERSION}"
-          echo "  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET_NAME}:${_JWT_REFRESH_SECRET_VERSION}"
-          echo "  CSRF_TOKEN_SECRET: ${CSRF_SECRET_NAME}:${_CSRF_TOKEN_SECRET_VERSION}"
+          echo "  DATABASE_URL: ${_DATABASE_URL_SECRET_NAME}:${_DATABASE_URL_SECRET_VERSION}"
+          echo "  JWT_SECRET: ${_JWT_SECRET_NAME}:${_JWT_SECRET_VERSION}"
+          echo "  JWT_REFRESH_SECRET: ${_JWT_REFRESH_SECRET_NAME}:${_JWT_REFRESH_SECRET_VERSION}"
+          echo "  CSRF_TOKEN_SECRET: ${_CSRF_TOKEN_SECRET_NAME}:${_CSRF_TOKEN_SECRET_VERSION}"
 
           # Use the service account email directly (Cloud Run accepts email format)
           gcloud run deploy "${_BACKEND_SERVICE_NAME}" \
@@ -106,7 +93,7 @@ steps:
             --execution-environment=gen2 \
             --service-account "${SERVICE_ACCOUNT_EMAIL}" \
             --allow-unauthenticated \
-            --set-secrets "DATABASE_URL=${DATABASE_URL_SECRET_NAME}:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=${JWT_SECRET_NAME}:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET_NAME}:${_JWT_REFRESH_SECRET_VERSION},CSRF_TOKEN_SECRET=${CSRF_SECRET_NAME}:${_CSRF_TOKEN_SECRET_VERSION}" \
+            --set-secrets "DATABASE_URL=${_DATABASE_URL_SECRET_NAME}:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=${_JWT_SECRET_NAME}:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=${_JWT_REFRESH_SECRET_NAME}:${_JWT_REFRESH_SECRET_VERSION},CSRF_TOKEN_SECRET=${_CSRF_TOKEN_SECRET_NAME}:${_CSRF_TOKEN_SECRET_VERSION}" \
             --set-env-vars "NODE_ENV=${_ENVIRONMENT},CORS_ORIGIN=${_CORS_ORIGIN},INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_CONNECTION_NAME}" \
             --add-cloudsql-instances "${_CLOUD_SQL_CONNECTION_NAME}" \
             --concurrency 20 \
@@ -190,6 +177,11 @@ substitutions:
   # Staging environment service accounts
   _BACKEND_SERVICE_ACCOUNT_STAGING: 'cloud-run-backend-staging@my-cats-pro.iam.gserviceaccount.com'
   _FRONTEND_SERVICE_ACCOUNT_STAGING: 'cloud-run-frontend-staging@my-cats-pro.iam.gserviceaccount.com'
+  # Secret names (defaults to production, override for staging)
+  _DATABASE_URL_SECRET_NAME: 'DATABASE_URL'
+  _JWT_SECRET_NAME: 'JWT_SECRET'
+  _JWT_REFRESH_SECRET_NAME: 'JWT_REFRESH_SECRET'
+  _CSRF_TOKEN_SECRET_NAME: 'CSRF_TOKEN_SECRET'
   # Secret versions (all using v1)
   _DATABASE_URL_SECRET_VERSION: '1'
   _JWT_SECRET_VERSION: '1'
