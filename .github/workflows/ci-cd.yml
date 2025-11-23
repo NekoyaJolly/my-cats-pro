@@ -599,9 +599,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ deployment-readiness ]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    environment:
-      name: staging
-      url: https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app
+    # environment: 'staging'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -657,9 +655,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ deploy-staging ]
     if: github.ref == 'refs/heads/main'
-    environment:
-      name: production
-      url: https://mycats-pro-frontend-518939509282.asia-northeast1.run.app
+    # environment: 'production'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
