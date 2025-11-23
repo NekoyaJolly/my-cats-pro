@@ -3,22 +3,20 @@ FROM node:20-alpine3.22 AS base
 WORKDIR /app
 RUN npm install -g pnpm@9.15.9
 
-# ---- Dependencies Stage ----
-FROM base AS deps
-COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
+# ---- Build Stage ----
+FROM base AS build
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY backend/prisma ./backend/prisma
-RUN pnpm install --filter backend
-WORKDIR /app/backend
-RUN pnpm prisma generate
 
-# ---- Build Stage ----
-FROM base AS build
-COPY --from=deps /app/backend/node_modules ./backend/node_modules
+# Install dependencies including devDependencies for building
+# Using --filter backend... to install backend dependencies and workspace root dependencies
+RUN pnpm install --frozen-lockfile --filter backend...
+
 COPY backend ./backend
 WORKDIR /app/backend
+RUN pnpm prisma generate
 RUN pnpm build
 
 # ---- Production Stage ----
@@ -35,16 +33,23 @@ RUN apk add --no-cache openssl libc6-compat && \
     npm install -g pnpm@9.15.9 && \
     addgroup -S nodejs && adduser -S nodeapp -G nodejs
 
-COPY --from=build /app/backend/dist ./dist
-COPY --from=build /app/backend/node_modules ./node_modules
-COPY --from=build /app/backend/package.json ./package.json
-COPY pnpm-lock.yaml ./pnpm-lock.yaml
-# Copy entire prisma directory including migrations
-COPY backend/prisma ./prisma/
+# Copy workspace config and package files for production install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+COPY backend/prisma ./backend/prisma
 
-# Remove development dependencies and ensure Prisma Client is generated for production
-RUN pnpm prune --prod && \
-    npx prisma generate
+# Install ONLY production dependencies directly in the production stage
+# This ensures no broken symlinks from copying node_modules and keeps image small
+RUN pnpm install --frozen-lockfile --prod --filter backend...
+
+# Copy build artifacts from build stage
+COPY --from=build /app/backend/dist ./backend/dist
+COPY --from=build /app/backend/prisma ./backend/prisma
+
+# Generate Prisma Client for production environment
+WORKDIR /app/backend
+RUN pnpm prisma generate
 
 # Copy entrypoint script
 COPY backend/docker-entrypoint.sh ./

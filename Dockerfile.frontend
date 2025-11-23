@@ -3,18 +3,15 @@ FROM node:20-alpine AS base
 WORKDIR /app
 RUN npm install -g pnpm@9.15.9
 
-# ---- Dependencies Stage ----
-FROM base AS deps
-COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
-COPY backend/package.json ./backend/
-COPY frontend/package.json ./frontend/
-RUN pnpm install --filter frontend
-
 # ---- Build Stage ----
 FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+
+# Install dependencies including devDependencies for building
+RUN pnpm install --frozen-lockfile --filter frontend...
+
 COPY frontend ./frontend
 WORKDIR /app/frontend
 RUN mkdir -p public
@@ -33,13 +30,23 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm install -g pnpm@9.15.9 && \
     addgroup -S nodejs && adduser -S nodeapp -G nodejs
 
-COPY --from=build /app/frontend/.next ./.next
-COPY --from=build /app/frontend/public ./public
-COPY --from=build /app/frontend/package.json ./package.json
-COPY --from=build /app/frontend/node_modules ./node_modules
-COPY pnpm-lock.yaml ./pnpm-lock.yaml
+# Copy workspace config and package files for production install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
 
-RUN pnpm prune --prod && chown -R nodeapp:nodejs /app
+# Install ONLY production dependencies directly
+RUN pnpm install --frozen-lockfile --prod --filter frontend...
+
+# Copy build artifacts
+COPY --from=build /app/frontend/.next ./frontend/.next
+COPY --from=build /app/frontend/public ./frontend/public
+COPY --from=build /app/frontend/package.json ./frontend/package.json
+
+# Set working directory to frontend where the app runs
+WORKDIR /app/frontend
+
+RUN chown -R nodeapp:nodejs /app
 
 USER nodeapp
 
