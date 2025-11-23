@@ -104,7 +104,7 @@ steps:
             --cpu-boost \
             --timeout 300 \
             --port 8080 \
-            --startup-probe=failureThreshold=10,timeoutSeconds=240,periodSeconds=240,httpGet.port=8080,httpGet.path=/health \
+            --startup-probe=failureThreshold=30,timeoutSeconds=5,periodSeconds=10,httpGet.port=8080,httpGet.path=/health \
             "${EXTRA_FLAGS[@]}"
     waitFor: ['Push Backend']
 
