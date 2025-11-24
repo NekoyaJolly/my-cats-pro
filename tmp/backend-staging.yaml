@@ -1,0 +1,123 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  annotations:
+    run.googleapis.com/client-name: cloud-console
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/maxScale: '20'
+    run.googleapis.com/operation-id: babf20f7-8963-45cb-b187-93637289d641
+    run.googleapis.com/urls: '["https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app","https://mycats-pro-backend-staging-q6g6ucnolq-an.a.run.app"]'
+    serving.knative.dev/creator: 518939509282-compute@developer.gserviceaccount.com
+    serving.knative.dev/lastModifier: nekonokawase@gmail.com
+  creationTimestamp: '2025-11-18T21:32:42.180725Z'
+  generation: 16
+  labels:
+    cloud.googleapis.com/location: asia-northeast1
+  name: mycats-pro-backend-staging
+  namespace: '518939509282'
+  resourceVersion: AAZEV12M8IA
+  selfLink: /apis/serving.knative.dev/v1/namespaces/518939509282/services/mycats-pro-backend-staging
+  uid: 54be7f4d-338b-4382-88cf-b4deb860e7b3
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '3'
+        run.googleapis.com/client-name: gcloud
+        run.googleapis.com/client-version: 548.0.0
+        run.googleapis.com/cloudsql-instances: my-cats-pro:asia-northeast1:mycats-prod-db,my-cats-pro:asia-northeast1:mycats-stg-db
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/startup-cpu-boost: 'true'
+      labels:
+        client.knative.dev/nonce: nyffbtcbbz
+        run.googleapis.com/startupProbeType: Custom
+    spec:
+      containerConcurrency: 20
+      containers:
+      - env:
+        - name: NODE_ENV
+          value: staging
+        - name: CORS_ORIGIN
+          value: https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app
+        - name: INSTANCE_CONNECTION_NAME
+          value: my-cats-pro:asia-northeast1:mycats-stg-db
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: DATABASE_URL_STAGING
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: JWT_SECRET_STAGING
+        - name: JWT_REFRESH_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: JWT_REFRESH_SECRET_STAGING
+        - name: CSRF_TOKEN_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: CSRF_TOKEN_SECRET_STAGING
+        image: asia-northeast1-docker.pkg.dev/my-cats-pro/mycats-pro/backend:latest
+        ports:
+        - containerPort: 8080
+          name: http1
+        resources:
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        startupProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 10
+      serviceAccountName: 518939509282-compute@developer.gserviceaccount.com
+      timeoutSeconds: 240
+  traffic:
+  - latestRevision: true
+    percent: 100
+status:
+  address:
+    url: https://mycats-pro-backend-staging-q6g6ucnolq-an.a.run.app
+  conditions:
+  - lastTransitionTime: '2025-11-24T13:44:42.574748Z'
+    message: |-
+      The user-provided container failed the configured startup probe checks. Logs for this revision might contain more information.
+
+      Logs URL: https://console.cloud.google.com/logs/viewer?project=my-cats-pro&resource=cloud_run_revision/service_name/mycats-pro-backend-staging/revision_name/mycats-pro-backend-staging-00015-bsg&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22mycats-pro-backend-staging%22%0Aresource.labels.revision_name%3D%22mycats-pro-backend-staging-00015-bsg%22 
+      For more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start
+    reason: HealthCheckContainerError
+    status: 'False'
+    type: Ready
+  - lastTransitionTime: '2025-11-24T13:44:42.547593Z'
+    message: |-
+      The user-provided container failed the configured startup probe checks. Logs for this revision might contain more information.
+
+      Logs URL: https://console.cloud.google.com/logs/viewer?project=my-cats-pro&resource=cloud_run_revision/service_name/mycats-pro-backend-staging/revision_name/mycats-pro-backend-staging-00015-bsg&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22mycats-pro-backend-staging%22%0Aresource.labels.revision_name%3D%22mycats-pro-backend-staging-00015-bsg%22 
+      For more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start
+    reason: HealthCheckContainerError
+    status: 'False'
+    type: ConfigurationsReady
+  - lastTransitionTime: '2025-11-24T13:44:42.574748Z'
+    message: |-
+      The user-provided container failed the configured startup probe checks. Logs for this revision might contain more information.
+
+      Logs URL: https://console.cloud.google.com/logs/viewer?project=my-cats-pro&resource=cloud_run_revision/service_name/mycats-pro-backend-staging/revision_name/mycats-pro-backend-staging-00015-bsg&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22mycats-pro-backend-staging%22%0Aresource.labels.revision_name%3D%22mycats-pro-backend-staging-00015-bsg%22 
+      For more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start
+    reason: HealthCheckContainerError
+    status: 'False'
+    type: RoutesReady
+  latestCreatedRevisionName: mycats-pro-backend-staging-00015-bsg
+  latestReadyRevisionName: mycats-pro-backend-staging-00004-s5g
+  observedGeneration: 16
+  traffic:
+  - latestRevision: true
+    percent: 100
+    revisionName: mycats-pro-backend-staging-00004-s5g
+  url: https://mycats-pro-backend-staging-q6g6ucnolq-an.a.run.app

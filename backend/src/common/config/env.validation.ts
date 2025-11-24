@@ -5,7 +5,7 @@ import { z } from 'zod';
  */
 export const envSchema = z.object({
   // Node環境
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
   PORT: z.coerce.number().min(1000).max(65535).default(3004),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 

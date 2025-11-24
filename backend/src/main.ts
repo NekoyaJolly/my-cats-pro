@@ -39,9 +39,11 @@ async function bootstrap() {
     logger.log("Starting Cat Management System API...");
 
     // Validate environment configuration
-    if (process.env.NODE_ENV === "production") {
+    const isProdLikeEnv = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging";
+
+    if (isProdLikeEnv) {
       validateProductionEnvironment();
-      logger.log("✅ Production environment validation passed");
+      logger.log(`✅ ${process.env.NODE_ENV} environment validation passed`);
     }
     
     logEnvironmentInfo();
