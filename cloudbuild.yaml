@@ -54,11 +54,11 @@ steps:
       - '-c'
       - |
           set -euo pipefail
-          
+
           # Clear any default gcloud service account settings to ensure explicit specification is used
           echo "🔧 Clearing default gcloud service account configuration..."
           gcloud config unset run/service-account 2>/dev/null || true
-          
+
           EXTRA_FLAGS=()
           if [[ -n "${_BACKEND_DEPLOY_FLAGS}" ]]; then
             # _BACKEND_DEPLOY_FLAGS may contain multiple flags separated by spaces.
@@ -116,11 +116,11 @@ steps:
       - '-c'
       - |
           set -euo pipefail
-          
+
           # Clear any default gcloud service account settings to ensure explicit specification is used
           echo "🔧 Clearing default gcloud service account configuration..."
           gcloud config unset run/service-account 2>/dev/null || true
-          
+
           EXTRA_FLAGS=()
           if [[ -n "${_FRONTEND_DEPLOY_FLAGS}" ]]; then
             read -r -a EXTRA_FLAGS <<< "${_FRONTEND_DEPLOY_FLAGS}"
