@@ -49,8 +49,8 @@ export function validateProductionEnvironment(): ProductionConfig {
   }
 
   // Validate NODE_ENV
-  if (requiredVars.NODE_ENV && !["development", "production", "test"].includes(requiredVars.NODE_ENV)) {
-    errors.push("NODE_ENV must be one of: development, production, test");
+  if (requiredVars.NODE_ENV && !["development", "staging", "production", "test"].includes(requiredVars.NODE_ENV)) {
+    errors.push("NODE_ENV must be one of: development, staging, production, test");
   }
 
   // Validate PORT
