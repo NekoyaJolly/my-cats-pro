@@ -614,64 +614,6 @@ docker-compose up -d
 # 4. ビルド・起動
 ```
 
-### 4. Google Cloud Run（本番環境）
-
-**適用対象**: このプロジェクトの本番環境
-
-**本番環境URL:**
-- フロントエンド: `https://mycats-pro-frontend-518939509282.asia-northeast1.run.app`
-- バックエンド: `https://mycats-pro-backend-518939509282.asia-northeast1.run.app`
-
-**必要なGCPリソース:**
-- Cloud Run（フロントエンド・バックエンド）
-- Cloud SQL（PostgreSQL）
-- Artifact Registry（Dockerイメージ）
-- Secret Manager（シークレット管理）
-
-**必要な環境変数/シークレット:**
-
-| 変数名 | 説明 |
-|--------|------|
-| `DATABASE_URL` | Cloud SQL 接続文字列 |
-| `JWT_SECRET` | JWT 署名用シークレット |
-| `JWT_REFRESH_SECRET` | リフレッシュトークン用シークレット |
-| `CSRF_TOKEN_SECRET` | CSRF トークン用シークレット |
-| `CORS_ORIGIN` | 許可するフロントエンドオリジン |
-| `NEXT_PUBLIC_API_URL` | バックエンドAPIのURL |
-
-**デプロイフロー:**
-1. Cloud Build がトリガーされる（GitHub Push時）
-2. Docker イメージをビルドし、Artifact Registry にプッシュ
-3. Cloud Run にデプロイ
-4. バックエンドコンテナ起動時に自動でマイグレーションとシードを実行
-
-**シード処理（docker-entrypoint.sh）:**
-```bash
-# マイグレーション実行
-npx prisma migrate deploy --schema=./prisma/schema.prisma
-
-# シード実行
-node dist/prisma/seed.js
-
-# アプリケーション起動
-exec node dist/main.js
-```
-
-**シードのカスタマイズ:**
-以下の環境変数でシードの管理者ユーザーをカスタマイズ可能：
-- `ADMIN_EMAIL`: 管理者メールアドレス（デフォルト: `admin@example.com`）
-- `ADMIN_PASSWORD`: 管理者パスワード（デフォルト: `Passw0rd!`）
-- `ADMIN_FORCE_UPDATE`: `1` に設定するとパスワードを強制更新
-
-**テスト用アカウント:**
-- Email: `admin@example.com`
-- Password: `Passw0rd!`
-
-**新規ユーザー登録:**
-1. フロントエンドの `/register` ページにアクセス
-2. メールアドレスとパスワードを入力して登録
-3. 登録完了後、自動的にログイン状態になりホームページへリダイレクト
-
 ### デプロイ方式の比較
 
 | 方式           | フロント | バック | DB  | プライベート | コスト |
@@ -679,7 +621,6 @@ exec node dist/main.js
 | Vercel         | ✅       | 部分的 | ❌  | ✅           | 無料〜 |
 | Railway/Heroku | ✅       | ✅     | ✅  | ✅           | 有料   |
 | 自前サーバー   | ✅       | ✅     | ✅  | ✅           | VPS代  |
-| Cloud Run      | ✅       | ✅     | ✅  | ✅           | 従量制 |
 
 ## 🔍 トラブルシューティング
 
