@@ -1,6 +1,7 @@
-name: Deploy Only (Staging & Production)
+name: Deploy (Staging & Production)
 
 on:
+  # 手動実行用
   workflow_dispatch:
     inputs:
       environment:
@@ -12,19 +13,35 @@ on:
           - production
           - both
 
+  # 他のワークフロー（ci-cd.yml）から呼び出す用
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      GCP_SA_KEY:
+        required: true
+      GCP_PROJECT_ID:
+        required: true
+
 permissions:
   contents: read
 
 env:
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
+  # workflow_dispatch と workflow_call 両対応
+  DEPLOY_ENV: ${{ github.event.inputs.environment || inputs.environment }}
 
 jobs:
   # Deploy to Staging Environment
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    if: github.event.inputs.environment == 'staging' || github.event.inputs.environment == 'both'
+    # 手動実行: github.event.inputs.environment
+    # 呼び出し実行: inputs.environment
+    if: env.DEPLOY_ENV == 'staging' || env.DEPLOY_ENV == 'both'
     environment:
       name: staging
       url: https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app
@@ -36,15 +53,10 @@ jobs:
         run: |
           if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
             echo "❌ Error: GCP_SA_KEY secret is not set"
-            echo "Please configure the GCP_SA_KEY secret in repository settings:"
-            echo "  Settings > Secrets and variables > Actions > New repository secret"
-            echo "  Name: GCP_SA_KEY"
-            echo "  Value: <Full JSON content of GCP service account key>"
             exit 1
           fi
           if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
             echo "❌ Error: GCP_PROJECT_ID secret is not set"
-            echo "Please configure the GCP_PROJECT_ID secret in repository settings"
             exit 1
           fi
           echo "✅ All required secrets are configured"
@@ -103,10 +115,7 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [ deploy-staging ]
-    if: |
-      always() &&
-      (needs.deploy-staging.result == 'success' || needs.deploy-staging.result == 'skipped') &&
-      (github.event.inputs.environment == 'production' || github.event.inputs.environment == 'both')
+    if: env.DEPLOY_ENV == 'production' || env.DEPLOY_ENV == 'both'
     environment:
       name: production
       url: https://mycats-pro-frontend-518939509282.asia-northeast1.run.app
@@ -118,15 +127,10 @@ jobs:
         run: |
           if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
             echo "❌ Error: GCP_SA_KEY secret is not set"
-            echo "Please configure the GCP_SA_KEY secret in repository settings:"
-            echo "  Settings > Secrets and variables > Actions > New repository secret"
-            echo "  Name: GCP_SA_KEY"
-            echo "  Value: <Full JSON content of GCP service account key>"
             exit 1
           fi
           if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
             echo "❌ Error: GCP_PROJECT_ID secret is not set"
-            echo "Please configure the GCP_PROJECT_ID secret in repository settings"
             exit 1
           fi
           echo "✅ All required secrets are configured"
