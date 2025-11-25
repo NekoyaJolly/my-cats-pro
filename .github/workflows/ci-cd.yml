@@ -398,7 +398,7 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-  # 6. Cloud Run Compatibility Check
+   # 6. Cloud Run Compatibility Check
   cloud-run-validation:
     name: Cloud Run Compatibility
     runs-on: ubuntu-latest
@@ -469,7 +469,6 @@ jobs:
         run: |
           echo "🏥 Testing health check endpoint..."
 
-          # Test health endpoint
           response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
           if [ "$response" = "200" ]; then
             echo "✅ Health check endpoint returned 200 OK"
@@ -483,7 +482,6 @@ jobs:
         run: |
           echo "🔍 Testing API readiness..."
 
-          # Test that API is responding
           max_attempts=30
           attempt=0
 
@@ -514,10 +512,6 @@ jobs:
             exit 1
           fi
 
-          # Check environment variable handling
-          echo "✅ Environment variables properly configured"
-
-          # Validate response times (Cloud Run startup time requirements)
           response_time=$(curl -o /dev/null -s -w '%{time_total}' http://localhost:8080/health)
           echo "📊 Health check response time: ${response_time}s"
 
@@ -531,7 +525,6 @@ jobs:
         run: |
           echo "🌐 Testing CORS configuration..."
 
-          # Test CORS headers
           cors_response=$(curl -s -H "Origin: https://example.com" \
             -H "Access-Control-Request-Method: GET" \
             -H "Access-Control-Request-Headers: Content-Type" \
@@ -571,7 +564,6 @@ jobs:
         run: |
           echo "🔍 Validating Cloud Build configuration..."
 
-          # Check for required fields
           required_fields=("steps" "images")
           for field in "${required_fields[@]}"; do
             if grep -q "$field:" cloudbuild.yaml; then
@@ -591,119 +583,4 @@ jobs:
           echo "✅ Container images scanned for vulnerabilities"
           echo "✅ Cloud Run compatibility verified"
           echo "✅ Health checks working"
-          echo "🚀 Ready for production deployment"
-
-  # 8. Deploy to Staging Environment
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: [ deployment-readiness ]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    # environment: 'staging'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Validate required secrets
-        run: |
-          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
-            echo "❌ Error: GCP_SA_KEY secret is not set"
-            echo "Please configure the GCP_SA_KEY secret in repository settings:"
-            echo "  Settings > Secrets and variables > Actions > New repository secret"
-            echo "  Name: GCP_SA_KEY"
-            echo "  Value: <Full JSON content of GCP service account key>"
-            exit 1
-          fi
-          if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
-            echo "❌ Error: GCP_PROJECT_ID secret is not set"
-            echo "Please configure the GCP_PROJECT_ID secret in repository settings"
-            exit 1
-          fi
-          echo "✅ All required secrets are configured"
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker asia-northeast1-docker.pkg.dev
-
-      - name: Deploy to Staging using Cloud Build
-        run: |
-          echo "🚀 Deploying to staging environment..."
-          gcloud builds submit \
-            --config=cloudbuild.yaml \
-            --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend-staging,_FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,_ENVIRONMENT=staging,_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db,_CORS_ORIGIN=https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app,_NEXT_PUBLIC_API_URL=https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app/api/v1,_DATABASE_URL_SECRET_NAME=DATABASE_URL_STAGING,_JWT_SECRET_NAME=JWT_SECRET_STAGING,_JWT_REFRESH_SECRET_NAME=JWT_REFRESH_SECRET_STAGING,_CSRF_TOKEN_SECRET_NAME=CSRF_TOKEN_SECRET_STAGING \
-            --project=${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Verify Staging Deployment
-        run: |
-          echo "✅ Staging deployment completed"
-          echo "Backend URL: https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app"
-          echo "Frontend URL: https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app"
-
-  # 9. Deploy to Production Environment
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [ deploy-staging ]
-    if: github.ref == 'refs/heads/main'
-    # environment: 'production'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Validate required secrets
-        run: |
-          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
-            echo "❌ Error: GCP_SA_KEY secret is not set"
-            echo "Please configure the GCP_SA_KEY secret in repository settings:"
-            echo "  Settings > Secrets and variables > Actions > New repository secret"
-            echo "  Name: GCP_SA_KEY"
-            echo "  Value: <Full JSON content of GCP service account key>"
-            exit 1
-          fi
-          if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
-            echo "❌ Error: GCP_PROJECT_ID secret is not set"
-            echo "Please configure the GCP_PROJECT_ID secret in repository settings"
-            exit 1
-          fi
-          echo "✅ All required secrets are configured"
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker asia-northeast1-docker.pkg.dev
-
-      - name: Deploy to Production using Cloud Build
-        run: |
-          echo "🚀 Deploying to production environment..."
-          gcloud builds submit \
-            --config=cloudbuild.yaml \
-            --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend,_FRONTEND_SERVICE_NAME=mycats-pro-frontend,_ENVIRONMENT=production \
-            --project=${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Verify Production Deployment
-        run: |
-          echo "✅ Production deployment completed"
-          echo "Backend URL: https://mycats-pro-backend-518939509282.asia-northeast1.run.app"
-          echo "Frontend URL: https://mycats-pro-frontend-518939509282.asia-northeast1.run.app"
-
-  # Note: 以下のジョブは現時点ではスキップ（将来的に有効化可能）
-  # - performance-test (k6による負荷テスト)
+          echo "🚀 Ready for production deployment (deployment is handled by deploy-only.yml)"
