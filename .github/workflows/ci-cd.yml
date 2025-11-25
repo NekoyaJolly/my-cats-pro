@@ -585,7 +585,7 @@ jobs:
           echo "✅ Health checks working"
           echo "🚀 Ready for production deployment (deployment is handled by deploy-only.yml)"
 
-   # 8. Deploy to Staging via deploy-only.yml (reusable workflow)
+  # 8. Deploy to Staging via deploy-only.yml (reusable workflow)
   deploy-from-ci-staging:
     name: Deploy to Staging (via deploy-only.yml)
     needs: [ deployment-readiness ]
