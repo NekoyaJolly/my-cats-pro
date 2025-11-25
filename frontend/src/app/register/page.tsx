@@ -274,7 +274,7 @@ function RegisterForm() {
                   📧 Email: admin@example.com
                 </Text>
                 <Text size="xs" style={{ color: 'var(--text-secondary)' }}>
-                  🔐 Password: Admin123
+                  🔐 Password: Passw0rd!
                 </Text>
               </Stack>
             </Paper>

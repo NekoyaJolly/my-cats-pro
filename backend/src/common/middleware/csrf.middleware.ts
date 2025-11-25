@@ -17,11 +17,14 @@ export class CsrfMiddleware implements NestMiddleware {
   constructor() {
     const isProduction = process.env.NODE_ENV === 'production';
 
+    // 本番環境では sameSite: 'none' + secure: true を使用
+    // これは Cloud Run のフロントエンド/バックエンドが異なるサブドメインにあるため必要
+    // 開発環境では sameSite: 'lax' を使用（HTTP でも動作する）
     this.csrfProtection = csurf({
       cookie: {
         key: CSRF_COOKIE_NAME,
         httpOnly: true,
-        sameSite: 'strict',
+        sameSite: isProduction ? 'none' : 'lax',
         secure: isProduction,
         path: '/',
       },

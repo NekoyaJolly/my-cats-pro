@@ -85,6 +85,7 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // Admin user
+  // パスワード: Passw0rd! (末尾に ! あり)
   const passwordHash = await argon2.hash('Passw0rd!');
   
   const admin = await prisma.user.upsert({
