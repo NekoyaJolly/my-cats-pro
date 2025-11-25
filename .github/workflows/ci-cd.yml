@@ -584,3 +584,29 @@ jobs:
           echo "✅ Cloud Run compatibility verified"
           echo "✅ Health checks working"
           echo "🚀 Ready for production deployment (deployment is handled by deploy-only.yml)"
+
+   # 8. Deploy to Staging via deploy-only.yml (reusable workflow)
+  deploy-from-ci-staging:
+    name: Deploy to Staging (via deploy-only.yml)
+    needs: [ deployment-readiness ]
+    # main / develop のみ自動デプロイしたい場合
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/deploy-only.yml
+    with:
+      environment: staging
+    secrets:
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+
+  # 9. Deploy to Production via deploy-only.yml (reusable workflow)
+  deploy-from-ci-production:
+    name: Deploy to Production (via deploy-only.yml)
+    needs: [ deploy-from-ci-staging ]
+    # Production は main だけに限定
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy-only.yml
+    with:
+      environment: production
+    secrets:
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
