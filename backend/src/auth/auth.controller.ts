@@ -26,7 +26,7 @@ function toUserRole(val: string): RequestUser["role"] {
 }
 
 
-import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_MAX_AGE_MS, REFRESH_COOKIE_SAMESITE, isSecureEnv } from './auth.constants';
+import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_MAX_AGE_MS, getRefreshCookieSameSite, isSecureEnv } from './auth.constants';
 import { AuthService } from "./auth.service";
 import type { RequestUser } from "./auth.types";
 import { ChangePasswordDto } from "./dto/change-password.dto";
@@ -166,7 +166,7 @@ export class AuthController {
   @ApiResponse({ status: HttpStatus.OK })
   logout(@GetUser() user: RequestUser | undefined, @Res({ passthrough: true }) res: Response) {
     // Cookie 無効化
-    res.cookie(REFRESH_COOKIE_NAME, '', { httpOnly: true, secure: isSecureEnv(), sameSite: REFRESH_COOKIE_SAMESITE, path: '/', maxAge: 0 });
+    res.cookie(REFRESH_COOKIE_NAME, '', { httpOnly: true, secure: isSecureEnv(), sameSite: getRefreshCookieSameSite(), path: '/', maxAge: 0 });
     return this.auth.logout(user!.userId);
   }
 
@@ -189,7 +189,7 @@ export class AuthController {
     res.cookie(REFRESH_COOKIE_NAME, token, {
       httpOnly: true,
       secure: isSecureEnv(),
-      sameSite: REFRESH_COOKIE_SAMESITE,
+      sameSite: getRefreshCookieSameSite(),
       path: '/',
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     });

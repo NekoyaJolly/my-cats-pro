@@ -559,6 +559,56 @@ NODE_ENV=production node backend/dist/main.js
 - **フロントエンド**: `frontend/.next/`ディレクトリ
 - **バックエンド**: `backend/dist/`ディレクトリ（`pnpm run build`実行時）
 
+### 本番環境（Cloud Run）での動作確認
+
+本番環境にデプロイ後、以下の手順でログイン機能の動作確認を行ってください。
+
+#### 本番環境 URL
+
+- **フロントエンド**: `https://mycats-pro-frontend-518939509282.asia-northeast1.run.app`
+- **バックエンド API**: `https://mycats-pro-backend-518939509282.asia-northeast1.run.app/api/v1`
+
+#### テストアカウントでのログイン確認
+
+1. フロントエンドURLにアクセス
+2. ログイン画面で以下の認証情報を入力：
+   - メールアドレス: `admin@example.com`
+   - パスワード: `Passw0rd!`
+3. ログインボタンをクリック
+4. ホーム画面にリダイレクトされれば成功
+
+#### 新規ユーザー登録でのログイン確認
+
+1. フロントエンドURLにアクセス
+2. ログイン画面で「新規登録」リンクをクリック
+3. 登録フォームに以下を入力：
+   - メールアドレス: 任意の有効なメールアドレス
+   - パスワード: 8文字以上、大文字・小文字・数字を含む
+4. 登録ボタンをクリック
+5. 登録成功後、ログイン画面にリダイレクト
+6. 登録したアカウントでログイン
+
+#### トラブルシューティング
+
+ログインに失敗する場合は以下を確認してください：
+
+1. **バックエンドヘルスチェック**: `https://mycats-pro-backend-518939509282.asia-northeast1.run.app/health`
+2. **Cloud Logging でエラーログを確認**
+3. **CORS_ORIGIN 環境変数が正しく設定されているか確認**（バックエンド側）
+4. **シード実行の確認**: バックエンドの起動ログで `Admin user created: admin@example.com` が表示されているか
+
+#### 必要な環境変数（Cloud Run）
+
+| 環境変数 | 説明 |
+|----------|------|
+| `DATABASE_URL` | PostgreSQL接続URL（Secret Managerから取得） |
+| `JWT_SECRET` | JWT署名用シークレット（Secret Managerから取得） |
+| `JWT_REFRESH_SECRET` | JWTリフレッシュトークン用シークレット |
+| `CSRF_TOKEN_SECRET` | CSRFトークン用シークレット |
+| `CORS_ORIGIN` | フロントエンドURL（例: `https://mycats-pro-frontend-518939509282.asia-northeast1.run.app`） |
+| `NODE_ENV` | `production` |
+| `NEXT_PUBLIC_API_URL` | バックエンドAPI URL（フロントエンドビルド時引数） |
+
 ## 🌐 デプロイオプション
 
 > **Note:** GitHub Pages へのデプロイは廃止しました。以下のオプションから環境に合わせて選択してください。
