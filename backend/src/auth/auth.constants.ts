@@ -17,6 +17,3 @@ export function isSecureEnv(): boolean {
 export function getRefreshCookieSameSite(): 'lax' | 'none' {
   return isSecureEnv() ? 'none' : 'lax';
 }
-
-// 後方互換性のためのエイリアス（非推奨：関数を使用してください）
-export const REFRESH_COOKIE_SAMESITE: 'lax' | 'none' = 'lax';

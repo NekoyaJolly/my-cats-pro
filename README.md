@@ -565,8 +565,12 @@ NODE_ENV=production node backend/dist/main.js
 
 #### 本番環境 URL
 
-- **フロントエンド**: `https://mycats-pro-frontend-518939509282.asia-northeast1.run.app`
-- **バックエンド API**: `https://mycats-pro-backend-518939509282.asia-northeast1.run.app/api/v1`
+Cloud Run にデプロイされた URL は以下の形式になります（実際のプロジェクト ID は異なる場合があります）：
+
+- **フロントエンド**: `https://<frontend-service-name>-<project-hash>.<region>.run.app`
+- **バックエンド API**: `https://<backend-service-name>-<project-hash>.<region>.run.app/api/v1`
+
+> 実際の URL は Cloud Run コンソールまたは `gcloud run services describe` コマンドで確認してください。
 
 #### テストアカウントでのログイン確認
 
@@ -592,7 +596,7 @@ NODE_ENV=production node backend/dist/main.js
 
 ログインに失敗する場合は以下を確認してください：
 
-1. **バックエンドヘルスチェック**: `https://mycats-pro-backend-518939509282.asia-northeast1.run.app/health`
+1. **バックエンドヘルスチェック**: `https://<backend-service-url>/health`
 2. **Cloud Logging でエラーログを確認**
 3. **CORS_ORIGIN 環境変数が正しく設定されているか確認**（バックエンド側）
 4. **シード実行の確認**: バックエンドの起動ログで `Admin user created: admin@example.com` が表示されているか
@@ -605,7 +609,7 @@ NODE_ENV=production node backend/dist/main.js
 | `JWT_SECRET` | JWT署名用シークレット（Secret Managerから取得） |
 | `JWT_REFRESH_SECRET` | JWTリフレッシュトークン用シークレット |
 | `CSRF_TOKEN_SECRET` | CSRFトークン用シークレット |
-| `CORS_ORIGIN` | フロントエンドURL（例: `https://mycats-pro-frontend-518939509282.asia-northeast1.run.app`） |
+| `CORS_ORIGIN` | フロントエンドURL（例: `https://your-frontend-service.run.app`） |
 | `NODE_ENV` | `production` |
 | `NEXT_PUBLIC_API_URL` | バックエンドAPI URL（フロントエンドビルド時引数） |
 
