@@ -1,0 +1,26 @@
+# Trigger deploy-only reusable workflow after ci-cd finishes successfully
+# 注意: workflows: に指定する "CI/CD Pipeline" は ci-cd.yml の top-level name: と完全一致させてください。
+# ファイル配置: .github/workflows/trigger-deploy-from-ci.yml
+name: trigger-deploy-from-ci
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  call-deploy:
+    name: Call Deploy Workflow for Both Environments
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    uses: ./.github/workflows/deploy-only.yml
+    with:
+      environment: "both"
+    secrets:
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}

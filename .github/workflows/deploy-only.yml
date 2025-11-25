@@ -11,6 +11,17 @@ on:
           - staging
           - production
           - both
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: string
+    secrets:
+      GCP_SA_KEY:
+        required: true
+      GCP_PROJECT_ID:
+        required: true
 
 permissions:
   contents: read
