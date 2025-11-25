@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useMemo, useState, Suspense } from 'react';
+import { useMemo, useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -23,7 +23,8 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
-import { apiClient, type ApiRequestBody } from '@/lib/api/client';
+import { apiClient, type ApiRequestBody, setTokens } from '@/lib/api/client';
+import { useAuthStore } from '@/lib/auth/store';
 
 type RegisterRequestBody = ApiRequestBody<'/auth/register', 'post'>;
 
@@ -33,12 +34,29 @@ interface RegisterFormValues {
   confirmPassword: string;
 }
 
+interface RegisterResponseData {
+  id?: string;
+  email?: string;
+  access_token?: string;
+  refresh_token?: string;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  };
+}
+
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const bootstrap = useAuthStore((state) => state.bootstrap);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const initialized = useAuthStore((state) => state.initialized);
 
   const returnTo = searchParams?.get('returnTo') ?? null;
   const targetPath = useMemo(() => {
@@ -48,6 +66,13 @@ function RegisterForm() {
     const disallowed = ['/login', '/register'];
     return disallowed.includes(returnTo) ? '/' : returnTo;
   }, [returnTo]);
+
+  // 既ログイン時リダイレクト
+  useEffect(() => {
+    if (initialized && isAuthenticated) {
+      router.replace(targetPath);
+    }
+  }, [initialized, isAuthenticated, router, targetPath]);
 
   // フォーム設定
   const form = useForm<RegisterFormValues>({
@@ -91,16 +116,32 @@ function RegisterForm() {
         retryOnUnauthorized: false,
       });
 
-      if (response.success) {
-        setSuccess(true);
-        // 3秒後にログインページへリダイレクト
-        setTimeout(() => {
-          if (returnTo && targetPath !== '/') {
-            router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
-          } else {
-            router.push('/login');
-          }
-        }, 3000);
+      if (response.success && response.data) {
+        const data = response.data as RegisterResponseData;
+        // トークンがあれば保存して自動ログイン
+        if (data.access_token) {
+          setTokens(data.access_token, data.refresh_token ?? null);
+          bootstrap({
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token,
+            user: data.user,
+          });
+          setSuccess(true);
+          // 1秒後にリダイレクト
+          setTimeout(() => {
+            router.replace(targetPath);
+          }, 1000);
+        } else {
+          // トークンがない場合はログインページへリダイレクト
+          setSuccess(true);
+          setTimeout(() => {
+            if (returnTo && targetPath !== '/') {
+              router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
+            } else {
+              router.push('/login');
+            }
+          }, 3000);
+        }
       } else {
         setError(response.message || '登録に失敗しました');
       }
@@ -149,7 +190,7 @@ function RegisterForm() {
                   color="green"
                   mb="md"
                 >
-                  アカウントが作成されました。ログインページへ移動します...
+                  アカウントが作成されました。ホームページへ移動します...
                 </Alert>
               )}
 
@@ -274,7 +315,7 @@ function RegisterForm() {
                   📧 Email: admin@example.com
                 </Text>
                 <Text size="xs" style={{ color: 'var(--text-secondary)' }}>
-                  🔐 Password: Admin123
+                  🔐 Password: Passw0rd!
                 </Text>
               </Stack>
             </Paper>
