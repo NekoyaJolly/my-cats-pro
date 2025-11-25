@@ -28,12 +28,18 @@ import { useAuthStore } from '@/lib/auth/store';
 
 type RegisterRequestBody = ApiRequestBody<'/auth/register', 'post'>;
 
+// リダイレクト遅延時間（ミリ秒）
+const AUTO_LOGIN_REDIRECT_DELAY_MS = 1000;
+const MANUAL_LOGIN_REDIRECT_DELAY_MS = 3000;
+
 interface RegisterFormValues {
   email: string;
   password: string;
   confirmPassword: string;
 }
 
+// 登録 API のレスポンスデータ型
+// NOTE: OpenAPI スキーマから自動生成される型が利用可能な場合はそちらを使用することを推奨
 interface RegisterResponseData {
   id?: string;
   email?: string;
@@ -46,6 +52,16 @@ interface RegisterResponseData {
     firstName?: string | null;
     lastName?: string | null;
   };
+}
+
+// 型ガード: RegisterResponseData かどうかを検証
+function isRegisterResponseData(data: unknown): data is RegisterResponseData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  // access_token または user のいずれかがあれば有効とみなす
+  return typeof obj.access_token === 'string' || typeof obj.user === 'object';
 }
 
 function RegisterForm() {
@@ -116,8 +132,8 @@ function RegisterForm() {
         retryOnUnauthorized: false,
       });
 
-      if (response.success && response.data) {
-        const data = response.data as RegisterResponseData;
+      if (response.success && response.data && isRegisterResponseData(response.data)) {
+        const data = response.data;
         // トークンがあれば保存して自動ログイン
         if (data.access_token) {
           setTokens(data.access_token, data.refresh_token ?? null);
@@ -127,10 +143,10 @@ function RegisterForm() {
             user: data.user,
           });
           setSuccess(true);
-          // 1秒後にリダイレクト
+          // 自動ログイン後にリダイレクト
           setTimeout(() => {
             router.replace(targetPath);
-          }, 1000);
+          }, AUTO_LOGIN_REDIRECT_DELAY_MS);
         } else {
           // トークンがない場合はログインページへリダイレクト
           setSuccess(true);
@@ -140,7 +156,7 @@ function RegisterForm() {
             } else {
               router.push('/login');
             }
-          }, 3000);
+          }, MANUAL_LOGIN_REDIRECT_DELAY_MS);
         }
       } else {
         setError(response.message || '登録に失敗しました');
