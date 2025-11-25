@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useMemo, useState, Suspense, useEffect } from 'react';
+import { useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -23,45 +23,14 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
-import { apiClient, type ApiRequestBody, setTokens } from '@/lib/api/client';
-import { useAuthStore } from '@/lib/auth/store';
+import { apiClient, type ApiRequestBody } from '@/lib/api/client';
 
 type RegisterRequestBody = ApiRequestBody<'/auth/register', 'post'>;
-
-// リダイレクト遅延時間（ミリ秒）
-const AUTO_LOGIN_REDIRECT_DELAY_MS = 1000;
-const MANUAL_LOGIN_REDIRECT_DELAY_MS = 3000;
 
 interface RegisterFormValues {
   email: string;
   password: string;
   confirmPassword: string;
-}
-
-// 登録 API のレスポンスデータ型
-// NOTE: OpenAPI スキーマから自動生成される型が利用可能な場合はそちらを使用することを推奨
-interface RegisterResponseData {
-  id?: string;
-  email?: string;
-  access_token?: string;
-  refresh_token?: string;
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-    firstName?: string | null;
-    lastName?: string | null;
-  };
-}
-
-// 型ガード: RegisterResponseData かどうかを検証
-function isRegisterResponseData(data: unknown): data is RegisterResponseData {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-  const obj = data as Record<string, unknown>;
-  // access_token または user のいずれかがあれば有効とみなす
-  return typeof obj.access_token === 'string' || typeof obj.user === 'object';
 }
 
 function RegisterForm() {
@@ -70,9 +39,6 @@ function RegisterForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const bootstrap = useAuthStore((state) => state.bootstrap);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const initialized = useAuthStore((state) => state.initialized);
 
   const returnTo = searchParams?.get('returnTo') ?? null;
   const targetPath = useMemo(() => {
@@ -82,13 +48,6 @@ function RegisterForm() {
     const disallowed = ['/login', '/register'];
     return disallowed.includes(returnTo) ? '/' : returnTo;
   }, [returnTo]);
-
-  // 既ログイン時リダイレクト
-  useEffect(() => {
-    if (initialized && isAuthenticated) {
-      router.replace(targetPath);
-    }
-  }, [initialized, isAuthenticated, router, targetPath]);
 
   // フォーム設定
   const form = useForm<RegisterFormValues>({
@@ -132,32 +91,16 @@ function RegisterForm() {
         retryOnUnauthorized: false,
       });
 
-      if (response.success && response.data && isRegisterResponseData(response.data)) {
-        const data = response.data;
-        // トークンがあれば保存して自動ログイン
-        if (data.access_token) {
-          setTokens(data.access_token, data.refresh_token ?? null);
-          bootstrap({
-            accessToken: data.access_token,
-            refreshToken: data.refresh_token,
-            user: data.user,
-          });
-          setSuccess(true);
-          // 自動ログイン後にリダイレクト
-          setTimeout(() => {
-            router.replace(targetPath);
-          }, AUTO_LOGIN_REDIRECT_DELAY_MS);
-        } else {
-          // トークンがない場合はログインページへリダイレクト
-          setSuccess(true);
-          setTimeout(() => {
-            if (returnTo && targetPath !== '/') {
-              router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
-            } else {
-              router.push('/login');
-            }
-          }, MANUAL_LOGIN_REDIRECT_DELAY_MS);
-        }
+      if (response.success) {
+        setSuccess(true);
+        // 3秒後にログインページへリダイレクト
+        setTimeout(() => {
+          if (returnTo && targetPath !== '/') {
+            router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
+          } else {
+            router.push('/login');
+          }
+        }, 3000);
       } else {
         setError(response.message || '登録に失敗しました');
       }
@@ -206,7 +149,7 @@ function RegisterForm() {
                   color="green"
                   mb="md"
                 >
-                  アカウントが作成されました。ホームページへ移動します...
+                  アカウントが作成されました。ログインページへ移動します...
                 </Alert>
               )}
 
@@ -331,7 +274,7 @@ function RegisterForm() {
                   📧 Email: admin@example.com
                 </Text>
                 <Text size="xs" style={{ color: 'var(--text-secondary)' }}>
-                  🔐 Password: Passw0rd!
+                  🔐 Password: Admin123
                 </Text>
               </Stack>
             </Paper>
