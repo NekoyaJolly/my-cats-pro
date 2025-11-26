@@ -1,17 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
 
-import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
+import { PrismaService } from '../prisma/prisma.service';
 
-import { TenantsService } from './tenants.service';
 import { InviteTenantAdminDto, InviteUserDto, CompleteInvitationDto } from './dto/invitation.dto';
+import { TenantsService } from './tenants.service';
 
 describe('TenantsService', () => {
   let service: TenantsService;
-  let prisma: PrismaService;
-  let passwordService: PasswordService;
+  let _prisma: PrismaService;
+  let _passwordService: PasswordService;
 
   const mockPrismaService = {
     user: {
@@ -35,6 +36,10 @@ describe('TenantsService', () => {
     hashPassword: jest.fn(),
   };
 
+  const mockJwtService = {
+    signAsync: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -47,12 +52,16 @@ describe('TenantsService', () => {
           provide: PasswordService,
           useValue: mockPasswordService,
         },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
       ],
     }).compile();
 
     service = module.get<TenantsService>(TenantsService);
-    prisma = module.get<PrismaService>(PrismaService);
-    passwordService = module.get<PasswordService>(PasswordService);
+    _prisma = module.get<PrismaService>(PrismaService);
+    _passwordService = module.get<PasswordService>(PasswordService);
 
     // Reset mocks
     jest.clearAllMocks();
@@ -195,6 +204,7 @@ describe('TenantsService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
       mockPasswordService.validatePasswordStrength.mockReturnValue({ isValid: true, errors: [] });
       mockPasswordService.hashPassword.mockResolvedValue('hashed-password');
+      mockJwtService.signAsync.mockResolvedValue('test-jwt-token');
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
@@ -215,6 +225,7 @@ describe('TenantsService', () => {
       expect(result.success).toBe(true);
       expect(result.userId).toBeDefined();
       expect(result.tenantId).toBe('tenant-1');
+      expect(result.access_token).toBe('test-jwt-token');
     });
 
     it('無効なトークンの場合エラー', async () => {

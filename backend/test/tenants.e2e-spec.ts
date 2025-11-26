@@ -53,7 +53,7 @@ describe('Tenants (e2e)', () => {
     });
 
     // SuperAdmin ユーザーを作成
-    const superAdmin = await prisma.user.create({
+    await prisma.user.create({
       data: {
         email: 'superadmin@test.com',
         clerkId: 'test_superadmin',
@@ -64,7 +64,7 @@ describe('Tenants (e2e)', () => {
     });
 
     // SuperAdmin としてログイン（簡易的なトークン生成）
-    const loginResponse = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/auth/register')
       .send({
         email: 'superadmin2@test.com',

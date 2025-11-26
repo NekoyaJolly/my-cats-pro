@@ -7,6 +7,7 @@ import {
   ConflictException,
   Logger 
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
 
 import { PasswordService } from '../auth/password.service';
@@ -30,6 +31,7 @@ export class TenantsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly jwt: JwtService,
   ) {}
 
   /**
@@ -103,9 +105,10 @@ export class TenantsService {
     });
 
     // TODO: メール送信実装
-    // 開発環境ではコンソールにトークンを出力
+    // 開発環境では安全な形式でトークン情報を出力
     if (process.env.NODE_ENV !== 'production') {
-      this.logger.log(`Invitation token for ${email}: ${result.invitation.token}`);
+      const tokenPreview = `${result.invitation.token.substring(0, 8)}...`;
+      this.logger.log(`Invitation token created for ${email} (preview: ${tokenPreview})`);
       this.logger.log(`Invitation URL: http://localhost:3000/accept-invitation?token=${result.invitation.token}`);
     }
 
@@ -182,7 +185,8 @@ export class TenantsService {
 
     // TODO: メール送信実装
     if (process.env.NODE_ENV !== 'production') {
-      this.logger.log(`Invitation token for ${email}: ${invitation.token}`);
+      const tokenPreview = `${invitation.token.substring(0, 8)}...`;
+      this.logger.log(`Invitation token created for ${email} (preview: ${tokenPreview})`);
       this.logger.log(`Invitation URL: http://localhost:3000/accept-invitation?token=${invitation.token}`);
     }
 
@@ -284,15 +288,26 @@ export class TenantsService {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: JWT トークン生成（auth.service と統合する場合）
-    // 現時点では簡易的なトークンを返す
-    const mockToken = `mock_token_${result.id}`;
+    // JWT トークン生成
+    const accessToken = await this.jwt.signAsync(
+      {
+        sub: result.id,
+        email: result.email,
+        role: result.role,
+        tenantId: result.tenantId,
+        jti: randomUUID(),
+      },
+      {
+        expiresIn: '15m',
+        secret: process.env.JWT_SECRET,
+      },
+    );
 
     return {
       success: true,
       userId: result.id,
       tenantId: result.tenantId!,
-      access_token: mockToken,
+      access_token: accessToken,
       message: 'ユーザー登録が完了しました',
     };
   }
