@@ -514,6 +514,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      tenantId: user.tenantId, // マルチテナント対応
       jti: randomUUID(),
     };
     const access_token = await this.jwt.signAsync(accessPayload, {

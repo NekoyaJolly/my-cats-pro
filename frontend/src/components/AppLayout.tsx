@@ -38,6 +38,7 @@ import {
   IconStethoscope,
   IconHeartHandshake,
   IconPhoto,
+  IconUsers,
 } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
@@ -92,6 +93,11 @@ const navigationItems = [
     label: 'スタッフシフト',
     href: '/staff/shifts',
     icon: IconCalendarTime,
+  },
+  {
+    label: 'テナント管理',
+    href: '/tenants',
+    icon: IconUsers,
   },
   {
     label: 'その他',

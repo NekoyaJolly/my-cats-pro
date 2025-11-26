@@ -7,6 +7,7 @@ export interface AuthUser {
   role: string;
   firstName?: string | null;
   lastName?: string | null;
+  tenantId?: string | null;
 }
 
 export interface LoginRequest {
@@ -61,6 +62,7 @@ function toAuthUser(value: unknown): AuthUser | null {
 
   const firstName = 'firstName' in value && typeof value.firstName === 'string' ? value.firstName : null;
   const lastName = 'lastName' in value && typeof value.lastName === 'string' ? value.lastName : null;
+  const tenantId = 'tenantId' in value && typeof value.tenantId === 'string' ? value.tenantId : null;
 
   return {
     id: idCandidate,
@@ -68,6 +70,7 @@ function toAuthUser(value: unknown): AuthUser | null {
     role: roleCandidate,
     firstName,
     lastName,
+    tenantId,
   };
 }
 
