@@ -51,10 +51,6 @@ describe('Cats API (e2e)', () => {
     expect(loginRes.status).toBe(201);
 
     authToken = loginRes.body.data.access_token;
-    
-    // Get CSRF token for authenticated requests
-    csrfToken = csrfResponse.token;
-    cookie = csrfResponse.cookie;
   });
 
   describe('GET /api/v1/cats', () => {

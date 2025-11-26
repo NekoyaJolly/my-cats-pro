@@ -75,10 +75,6 @@ describe('Breeds & Coat Colors API (e2e)', () => {
     expect(loginRes.status).toBe(httpStatus.created);
 
     adminToken = loginRes.body.data.access_token;
-    
-    // Get CSRF token for authenticated requests
-    csrfToken = csrfResponse.token;
-    cookie = csrfResponse.cookie;
   });
 
   afterAll(async () => {
