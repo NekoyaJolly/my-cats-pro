@@ -856,3 +856,68 @@ bash scripts/start-all.sh
 **プロジェクト状態**: アクティブ開発中  
 **主要バージョン**: フロントエンド（Next.js 15.5.3 + React 19.1.0 + Mantine 8.2.4）、バックエンド（NestJS 10 + Prisma 6.14.0）  
 **パッケージマネージャー**: pnpm 9.15.9（推奨）
+
+## 🔐 認証とセキュリティ
+
+### CSRF保護の撤去について
+
+**重要な変更**: バージョン 2025-11 以降、本プロジェクトではCSRF（Cross-Site Request Forgery）保護を完全に撤去しました。
+
+#### 変更理由
+- JWT（JSON Web Token）ベースの認証方式を採用
+- ステートレスなAPI設計により、CSRFトークンの管理が不要
+- フロントエンドとバックエンドの疎結合を強化
+- APIテストとデバッグの簡素化
+
+#### 影響
+- **ログイン・認証エンドポイント**: `/api/v1/auth/login`, `/api/v1/auth/register` などはCSRFトークンなしでアクセス可能
+- **保護されたエンドポイント**: JWTトークンを `Authorization: Bearer <token>` ヘッダーで提供することで認証
+- **セキュリティ**: CORS、Helmet、レート制限などの他のセキュリティ対策は引き続き有効
+
+### シードユーザーでのログイン
+
+開発・テスト環境では、即座にログインテストを行えるよう、デフォルトのAdminユーザーが自動作成されます。
+
+#### デフォルトシードユーザー情報
+
+- **Email**: `admin@example.com`
+- **Password**: `Passw0rd!`
+- **Role**: `ADMIN`
+
+**⚠️ セキュリティ警告**: 本番環境では必ずデフォルトパスワードを変更してください！
+
+#### シードユーザーの作成方法
+
+```bash
+cd backend
+
+# マイグレーションとシード実行
+pnpm prisma:deploy
+pnpm seed
+
+# または環境変数でカスタマイズ
+ADMIN_EMAIL=custom@example.com ADMIN_PASSWORD=SecurePass123! pnpm seed
+```
+
+#### ログイン確認方法
+
+詳細は [backend/SEED_USER_GUIDE.md](./backend/SEED_USER_GUIDE.md) を参照してください。
+
+**方法1: E2Eテストで確認**
+```bash
+cd backend
+pnpm test:e2e
+```
+
+**方法2: cURLで確認**
+```bash
+curl -X POST http://localhost:3004/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"Passw0rd!"}'
+```
+
+**方法3: フロントエンドから確認**
+1. `pnpm dev` でアプリ起動
+2. http://localhost:3000 でログイン画面にアクセス
+3. デフォルト認証情報でログイン
+
