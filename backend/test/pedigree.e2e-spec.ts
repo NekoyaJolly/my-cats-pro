@@ -4,7 +4,6 @@ import { randomUUID } from 'crypto';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
-import { CsrfHelper } from './utils/csrf-helper';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { PedigreeService } from '../src/pedigree/pedigree.service';
 import { CreatePedigreeDto } from '../src/pedigree/dto/create-pedigree.dto';
@@ -19,7 +18,6 @@ const httpStatus = {
 
 describe('Pedigree module (integration)', () => {
   let app: INestApplication;
-  let csrfHelper: CsrfHelper;
   let prisma: PrismaService;
   let pedigreeService: PedigreeService;
   const createdPedigreeIds: string[] = [];
@@ -56,7 +54,6 @@ describe('Pedigree module (integration)', () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
-    csrfHelper = new CsrfHelper(app);
     prisma = app.get(PrismaService);
     pedigreeService = app.get(PedigreeService);
   });

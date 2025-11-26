@@ -12,15 +12,12 @@ import { CareModule } from "./care/care.module";
 import { CatsModule } from "./cats/cats.module";
 import { CoatColorsModule } from "./coat-colors/coat-colors.module";
 import { envSchema } from "./common/config/env.validation";
-import { CsrfController } from "./common/controllers/csrf.controller";
 import { MasterDataController } from "./common/controllers/master-data.controller";
 import { EnhancedThrottlerGuard } from "./common/guards/enhanced-throttler.guard";
 import { CookieParserMiddleware } from "./common/middleware/cookie-parser.middleware";
 import { CorsMiddleware } from "./common/middleware/cors.middleware";
-import { CsrfMiddleware } from "./common/middleware/csrf.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
-import { CsrfTokenService } from "./common/services/csrf-token.service";
 import { DisplayPreferencesModule } from "./display-preferences/display-preferences.module";
 import { GraduationModule } from "./graduation/graduation.module";
 import { HealthModule } from "./health/health.module";
@@ -114,9 +111,8 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     ShiftModule,
     GraduationModule,
   ],
-  controllers: [MasterDataController, CsrfController],
+  controllers: [MasterDataController],
   providers: [
-    CsrfTokenService,
     {
       provide: APP_GUARD,
       useClass: EnhancedThrottlerGuard,
@@ -126,7 +122,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(CorsMiddleware, RequestIdMiddleware, SecurityMiddleware, CookieParserMiddleware, CsrfMiddleware)
+      .apply(CorsMiddleware, RequestIdMiddleware, SecurityMiddleware, CookieParserMiddleware)
       .forRoutes('*');
   }
 }
