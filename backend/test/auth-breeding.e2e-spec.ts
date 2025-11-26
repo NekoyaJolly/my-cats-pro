@@ -2,12 +2,10 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
-import { CsrfHelper } from './utils/csrf-helper';
 import { createTestApp } from "./utils/create-test-app";
 
 describe("Auth -> Breeding (e2e)", () => {
   let app: INestApplication;
-  let csrfHelper: CsrfHelper;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -15,7 +13,6 @@ describe("Auth -> Breeding (e2e)", () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
-    csrfHelper = new CsrfHelper(app);
   });
 
   afterAll(async () => {
@@ -27,11 +24,11 @@ describe("Auth -> Breeding (e2e)", () => {
     const password = "Secret123!";
 
     // register
-    const registerRes = await csrfHelper.post("/api/v1/auth/register", { email, password });
+    const registerRes = await request(app.getHttpServer()).post("/api/v1/auth/register").send({ email, password });
     expect(registerRes.status).toBe(201);
 
     // login
-    const loginRes = await csrfHelper.post("/api/v1/auth/login", { email, password });
+    const loginRes = await request(app.getHttpServer()).post("/api/v1/auth/login").send({ email, password });
     expect(loginRes.status).toBe(201);
 
     const token = loginRes.body.data.access_token as string;
@@ -39,12 +36,9 @@ describe("Auth -> Breeding (e2e)", () => {
 
     // create breeding (needs mother/father cat; here we expect 400/404 if not present)
     // Note: breeding endpoint needs both CSRF token AND JWT token
-    const { token: csrfToken, cookie } = await csrfHelper.getCsrfToken();
     const breedingRes = await request(app.getHttpServer())
       .post("/api/v1/breeding")
       .set("Authorization", `Bearer ${token}`)
-      .set("X-CSRF-Token", csrfToken)
-      .set("Cookie", cookie)
       .send({
         femaleId: "00000000-0000-0000-0000-000000000000",
         maleId: "00000000-0000-0000-0000-000000000000",

@@ -10,7 +10,6 @@ import * as Sentry from '@sentry/node';
 import { Request, Response } from 'express';
 
 import type { RequestUser } from '../../auth/auth.types';
-import { CsrfValidationError } from '../errors/csrf-validation.error';
 
 /**
  * エラー監視を強化したグローバル例外フィルター
@@ -24,33 +23,6 @@ export class EnhancedGlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request & { user?: RequestUser }>();
-
-    // Handle CSRF errors specifically
-    if (this.isCsrfError(exception)) {
-      const errorResponse = {
-        statusCode: HttpStatus.FORBIDDEN,
-        code: 'FORBIDDEN',
-        message: 'CSRFトークンが不正または不足しています',
-        timestamp: new Date().toISOString(),
-        path: request.url,
-        method: request.method,
-      };
-
-      this.logger.warn({
-  message: 'CSRF validation failed',
-        statusCode: errorResponse.statusCode,
-        path: errorResponse.path,
-        method: errorResponse.method,
-        ip: request.ip,
-        userAgent: request.get('user-agent'),
-        severity: 'warning',
-      });
-
-      return response.status(HttpStatus.FORBIDDEN).json({
-        success: false,
-        error: errorResponse,
-      });
-    }
 
     const status =
       exception instanceof HttpException
@@ -141,31 +113,5 @@ export class EnhancedGlobalExceptionFilter implements ExceptionFilter {
       success: false,
       error: errorResponse,
     });
-  }
-
-  /**
-   * Check if the exception is a CSRF error
-   */
-  private isCsrfError(exception: unknown): boolean {
-    if (exception instanceof CsrfValidationError) {
-      return true;
-    }
-
-    if (exception instanceof Error) {
-      // Check for csurf-specific error codes
-      const err = exception as Error & { code?: string };
-      if (err.code === 'EBADCSRFTOKEN') {
-        return true;
-      }
-      // Check for misconfigured csrf error message
-      if (err.message && err.message.toLowerCase().includes('misconfigured csrf')) {
-        return true;
-      }
-      // Check for invalid csrf token message
-      if (err.message && err.message.toLowerCase().includes('csrf')) {
-        return true;
-      }
-    }
-    return false;
   }
 }

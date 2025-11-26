@@ -5,7 +5,6 @@ import request from 'supertest';
 import { UserRole } from '@prisma/client';
 
 import { AppModule } from '../src/app.module';
-import { CsrfHelper } from './utils/csrf-helper';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './utils/create-test-app';
 
@@ -38,11 +37,8 @@ const reserveUniqueCode = async (
 
 describe('Breeds & Coat Colors API (e2e)', () => {
   let app: INestApplication;
-  let csrfHelper: CsrfHelper;
   let prisma: PrismaService;
   let adminToken: string;
-  let csrfToken: string;
-  let cookie: string;
   const createdBreedIds: string[] = [];
   const createdCoatColorIds: string[] = [];
   const usedBreedCodes = new Set<number>();
@@ -54,7 +50,6 @@ describe('Breeds & Coat Colors API (e2e)', () => {
     }).compile();
 
     app = await createTestApp(moduleRef);
-    csrfHelper = new CsrfHelper(app);
     prisma = app.get(PrismaService);
 
     const [existingBreeds, existingColors] = await Promise.all([
@@ -68,7 +63,7 @@ describe('Breeds & Coat Colors API (e2e)', () => {
     const email = `coverage_admin_${Date.now()}@example.com`;
     const password = 'AdminCoverage123!';
 
-    const res2 = await csrfHelper.post('/api/v1/auth/register', { email, password });
+    const res2 = await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email, password });
     expect(res2.status).toBe(httpStatus.created);
 
     await prisma.user.update({
@@ -76,15 +71,10 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       data: { role: UserRole.ADMIN },
     });
 
-    const loginRes = await csrfHelper.post('/api/v1/auth/login', { email, password });
+    const loginRes = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email, password });
     expect(loginRes.status).toBe(httpStatus.created);
 
     adminToken = loginRes.body.data.access_token;
-    
-    // Get CSRF token for authenticated requests
-    const csrfResponse = await csrfHelper.getCsrfToken();
-    csrfToken = csrfResponse.token;
-    cookie = csrfResponse.cookie;
   });
 
   afterAll(async () => {
@@ -118,8 +108,6 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/breeds')
         .set('Authorization', `Bearer ${adminToken}`)
-        .set('X-CSRF-Token', csrfToken)
-        .set('Cookie', cookie)
         .send(payload);
 
       expect(res.status).toBe(httpStatus.created);
@@ -142,8 +130,6 @@ describe('Breeds & Coat Colors API (e2e)', () => {
   const createRes = await request(app.getHttpServer())
         .post('/api/v1/breeds')
         .set('Authorization', `Bearer ${adminToken}`)
-        .set('X-CSRF-Token', csrfToken)
-        .set('Cookie', cookie)
         .send(searchableBreed);
 
       expect(createRes.status).toBe(httpStatus.created);
@@ -184,8 +170,6 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/breeds/${createdBreedId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .set('X-CSRF-Token', csrfToken)
-        .set('Cookie', cookie)
         .send({ description: updatedDescription });
 
       expect(res.status).toBe(httpStatus.ok);
@@ -239,8 +223,6 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/coat-colors')
         .set('Authorization', `Bearer ${adminToken}`)
-        .set('X-CSRF-Token', csrfToken)
-        .set('Cookie', cookie)
         .send(payload);
 
       expect(res.status).toBe(httpStatus.created);
@@ -262,8 +244,6 @@ describe('Breeds & Coat Colors API (e2e)', () => {
   const createRes = await request(app.getHttpServer())
         .post('/api/v1/coat-colors')
         .set('Authorization', `Bearer ${adminToken}`)
-        .set('X-CSRF-Token', csrfToken)
-        .set('Cookie', cookie)
         .send(searchableColor);
 
       expect(createRes.status).toBe(httpStatus.created);
@@ -303,8 +283,6 @@ describe('Breeds & Coat Colors API (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/coat-colors/${createdCoatColorId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .set('X-CSRF-Token', csrfToken)
-        .set('Cookie', cookie)
         .send({ description: updatedDescription });
 
       expect(res.status).toBe(httpStatus.ok);
