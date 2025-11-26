@@ -4,10 +4,30 @@
 
 - 本書はルート `AGENTS.md` と `GEMINI.md` の内容を統合した、mycats-pro 専用の AI コーディングエージェント向け包括ガイドです。Copilot / Gemini / そのほかの LLM は本ドキュメントを唯一の参照として利用してください。
 - 元の `AGENTS.md` が定義するプロジェクト規約が依然として唯一のソースです。本書は重複していた指示を整理しつつ、Gemini 固有の運用ヒントも同じ場所で確認できるよう再編しています。
-- 参照した公式情報（最終更新 2025-11-18 UTC）：
-  - [Gemini API ドキュメント](https://ai.google.dev/gemini-api/docs) — モデル一覧、利用可能なツール、レートリミット、セキュリティポリシー。
+- 参照した公式情報：
+  - 最終更新 2025-11-18 UTC: [Gemini API ドキュメント](https://ai.google.dev/gemini-api/docs) — モデル一覧、利用可能なツール、レートリミット、セキュリティポリシー。
   - [プロンプト設計戦略](https://ai.google.dev/gemini-api/docs/prompting-strategies) — 指示の構造化、少数ショット例、長文コンテキスト制御、Gemini 3 での推奨温度設定など。
+  - 最終更新 2025-11-26 UTC: [GitHub Copilot Coding Agent Best Practices](https://docs.github.com/en/copilot/tutorials/coding-agent/get-the-best-results) — タスク設計、カスタム指示、エージェント活用。
 - 公式ドキュメントより新しい指針を適用する場合は、根拠 URL と最終更新日を本書に追記し、`AGENTS.md` / `GEMINI.md` と内容を同期させてください。
+
+## 専門エージェント
+
+このプロジェクトでは、タスクに応じて専門化されたエージェントを活用できます：
+
+- **Backend Agent** (`.github/agents/backend-agent.md`) - NestJS + Prisma + PostgreSQL の専門家
+- **Frontend Agent** (`.github/agents/frontend-agent.md`) - Next.js + React + Mantine の専門家
+- **Documentation Agent** (`.github/agents/docs-agent.md`) - ドキュメント作成・保守の専門家
+- **Test Agent** (`.github/agents/test-agent.md`) - テスト作成・カバレッジ向上の専門家
+
+各エージェントは特定のドメインに特化しており、より的確なサポートを提供します。タスクに応じて適切なエージェントを参照してください。
+
+## パス固有の指示
+
+以下のディレクトリには専用の指示ファイルがあります：
+
+- `backend/**` → `.github/instructions/backend.instructions.md`
+- `frontend/**` → `.github/instructions/frontend.instructions.md`
+- `**/*.md` → `.github/instructions/docs.instructions.md`
 
 ## Gemini 固有の運用ヒント
 
@@ -102,6 +122,33 @@
 
 - 主要フォルダにはローカルルールをまとめた `CODE_GUIDE.md` を設置済。
 - 変更対象の直下に該当ファイルがある場合は **必読**。ここで定義されたローカル規約は本ファイルより優先される。
+
+### 4-2. 境界 - 変更してはいけないもの
+
+以下のファイル・ディレクトリは **絶対に変更・削除してはいけません**：
+
+- **自動生成ファイル**:
+  - `node_modules/**` - 依存関係
+  - `dist/**`, `.next/**` - ビルド成果物
+  - `backend/prisma/migrations/**` - データベースマイグレーション（手動編集禁止）
+  - `frontend/src/lib/api/generated/**` - OpenAPI 自動生成型
+
+- **設定ファイル** (必要な場合のみ慎重に変更):
+  - `.env`, `.env.production` - 機密情報
+  - `pnpm-lock.yaml` - ロックファイル
+  - `docker-compose.yml` - インフラ設定
+  - `nginx/nginx.conf` - Web サーバー設定
+
+- **CI/CD とデプロイ** (明示的な指示がない限り変更禁止):
+  - `.github/workflows/**` - GitHub Actions
+  - `cloudbuild.yaml` - GCP ビルド設定
+  - `Dockerfile.*` - コンテナ設定
+
+- **データベース**:
+  - 既存のマイグレーションファイルは編集不可
+  - スキーマ変更は新規マイグレーションで対応
+
+このプロジェクトでは、上記の境界を守ることでシステムの安定性と再現性を保証しています。
 
 ---
 
