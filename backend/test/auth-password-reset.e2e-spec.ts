@@ -230,7 +230,9 @@ describe('Auth Password Reset (e2e)', () => {
 
       // Make 3 rapid requests (at the limit)
       for (let i = 0; i < 3; i++) {
-        const res = await csrfHelper.post('/api/v1/auth/reset-password', { token: `${token}-${i}`, newPassword: 'NewPassword123!' });
+        const res = await request(app.getHttpServer())
+          .post('/api/v1/auth/reset-password')
+          .send({ token: `${token}-${i}`, newPassword: 'NewPassword123!' });
         
         // Should get 400 for invalid token, not 429
         expect([400, 429]).toContain(res.status);
@@ -238,7 +240,9 @@ describe('Auth Password Reset (e2e)', () => {
 
       // Additional requests should be rate limited or continue to fail
       // Note: Rate limiting behavior may vary based on implementation
-      const finalRes = await csrfHelper.post('/api/v1/auth/reset-password', { token: `${token}-final`, newPassword: 'NewPassword123!' });
+      const finalRes = await request(app.getHttpServer())
+        .post('/api/v1/auth/reset-password')
+        .send({ token: `${token}-final`, newPassword: 'NewPassword123!' });
       
       // Accept either 400 (invalid token) or 429 (rate limited)
       expect([400, 429]).toContain(finalRes.status);
