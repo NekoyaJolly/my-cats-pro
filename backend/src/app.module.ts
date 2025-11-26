@@ -27,6 +27,7 @@ import { ScheduleModule } from "./schedule/schedule.module";
 import { ShiftModule } from './shift/shift.module';
 import { StaffModule } from './staff/staff.module';
 import { TagsModule } from "./tags/tags.module";
+import { TenantsModule } from "./tenants/tenants.module";
 import { UploadModule } from "./upload/upload.module";
 import { UsersModule } from "./users/users.module";
 
@@ -96,6 +97,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     PrismaModule,
     AuthModule,
     UsersModule,
+    TenantsModule,
     CatsModule,
     PedigreeModule,
     BreedsModule,

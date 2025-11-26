@@ -15,6 +15,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================================
+// Multi-Tenant Models
+// ==========================================
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users       User[]
+  invitations InvitationToken[]
+
+  // Indexes
+  @@index([slug])
+  @@index([isActive])
+  @@map("tenants")
+}
+
+model InvitationToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  role      UserRole
+  tenantId  String   @map("tenant_id")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([email])
+  @@index([token])
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@map("invitation_tokens")
+}
+
 model User {
   id                   String    @id @default(uuid())
   clerkId              String    @unique @map("clerk_id")
@@ -30,10 +73,12 @@ model User {
   failedLoginAttempts  Int       @default(0) @map("failed_login_attempts")
   lockedUntil          DateTime? @map("locked_until")
   lastLoginAt          DateTime? @map("last_login_at")
+  tenantId             String?   @map("tenant_id") // マルチテナント対応
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
   // Relations
+  tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   breedingRecords BreedingRecord[]
   careRecords     CareRecord[]
   schedules       Schedule[]
@@ -51,10 +96,12 @@ model User {
   @@index([role])
   @@index([isActive])
   @@index([lastLoginAt])
+  @@index([tenantId]) // テナント検索用
   
   // 複合インデックス（ユーザー検索パターン）
   @@index([role, isActive]) // ロール別アクティブユーザー検索
   @@index([isActive, lastLoginAt]) // アクティブユーザーのログイン履歴
+  @@index([tenantId, role]) // テナント内ロール検索
   
   @@map("users")
 }
@@ -907,6 +954,7 @@ enum UserRole {
   USER
   ADMIN
   SUPER_ADMIN
+  TENANT_ADMIN // テナント管理者
 }
 
 enum BreedingStatus {
