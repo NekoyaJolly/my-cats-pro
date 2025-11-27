@@ -8,6 +8,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RoleGuard } from '../auth/role.guard';
@@ -37,7 +38,7 @@ export class TenantsController {
    */
   @Post('invite-admin')
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles('SUPER_ADMIN')
+  @Roles(UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ 
@@ -57,7 +58,7 @@ export class TenantsController {
    */
   @Post(':tenantId/users/invite')
   @UseGuards(JwtAuthGuard, RoleGuard, TenantScopedGuard)
-  @Roles('TENANT_ADMIN')
+  @Roles(UserRole.TENANT_ADMIN)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ 
