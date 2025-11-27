@@ -609,7 +609,7 @@ export default function MedicalRecordsPage() {
             }
           />
 
-          {/* 5. 症状タグ */}
+          {/* 4. 症状タグ */}
           <Box>
             <Text size="sm" fw={500} mb="xs">
               症状タグ
@@ -658,7 +658,7 @@ export default function MedicalRecordsPage() {
             )}
           </Box>
 
-          {/* 6. 診断結果 */}
+          {/* 5. 診断結果 */}
           <Textarea
             label="診断結果"
             placeholder="診断結果"
@@ -668,7 +668,7 @@ export default function MedicalRecordsPage() {
             autosize
           />
 
-          {/* 7. 治療計画 */}
+          {/* 6. 治療計画 */}
           <Textarea
             label="治療計画"
             placeholder="治療内容や計画"
@@ -694,7 +694,7 @@ export default function MedicalRecordsPage() {
             />
           </Box>
 
-          {/* 8. 次回予定日 */}
+          {/* 7. 次回予定日 */}
           <DatePickerInput
             label="次回予定日"
             placeholder="次回の受診予定日"
@@ -707,7 +707,7 @@ export default function MedicalRecordsPage() {
             }
           />
 
-          {/* 9. 備考 */}
+          {/* 8. 備考 */}
           <Textarea
             label="備考"
             placeholder="その他のメモ"
