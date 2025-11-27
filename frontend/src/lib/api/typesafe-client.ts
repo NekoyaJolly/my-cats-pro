@@ -9,14 +9,11 @@ import {
   UpdateShiftRequest,
   CalendarShiftEvent,
 } from '@/types/api.types';
-import { getCsrfToken, refreshCsrfToken } from './csrf';
 
 /**
  * APIベースURL（環境変数から取得、既に/api/v1を含んでいる想定）
  */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';
-
-const CSRF_PROTECTED_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
  * APIエラークラス
@@ -60,15 +57,6 @@ class TypeSafeApiClient {
       incomingHeaders.forEach((value, key) => headers.set(key, value));
     }
 
-    if (CSRF_PROTECTED_METHODS.has(method)) {
-      try {
-        const csrfToken = await getCsrfToken();
-        headers.set('X-CSRF-Token', csrfToken);
-      } catch (error) {
-        console.error('Failed to get CSRF token:', error);
-      }
-    }
-
     const requestInit: RequestInit = {
       ...options,
       method,
@@ -77,25 +65,7 @@ class TypeSafeApiClient {
     };
 
     try {
-      let response = await fetch(url, requestInit);
-
-      if (response.status === 403 && CSRF_PROTECTED_METHODS.has(method)) {
-        try {
-          await refreshCsrfToken();
-          const freshToken = await getCsrfToken();
-          headers.set('X-CSRF-Token', freshToken);
-          response = await fetch(url, {
-            ...requestInit,
-            headers,
-          });
-        } catch (error) {
-          throw new ApiError(
-            error instanceof Error ? error.message : 'CSRFトークンの更新に失敗しました',
-            response.status,
-            undefined,
-          );
-        }
-      }
+      const response = await fetch(url, requestInit);
 
       const data = await response.json() as ApiResponse<T>;
 

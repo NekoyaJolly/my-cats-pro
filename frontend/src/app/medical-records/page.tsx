@@ -74,7 +74,6 @@ function truncateText(text: string | null | undefined, maxLength = 10): string {
 interface CreateMedicalRecordFormState {
   catId: string;
   visitDate: Date | null;
-  visitType: string;
   hospitalName: string;
   symptomTags: string[]; // タグID配列
   diagnosis: string;
@@ -98,7 +97,6 @@ export default function MedicalRecordsPage() {
   const [createForm, setCreateForm] = useState<CreateMedicalRecordFormState>({
     catId: '',
     visitDate: new Date(),
-    visitType: '',
     hospitalName: '',
     symptomTags: [],
     diagnosis: '',
@@ -171,7 +169,6 @@ export default function MedicalRecordsPage() {
     setCreateForm({
       catId: '',
       visitDate: new Date(),
-      visitType: '',
       hospitalName: '',
       symptomTags: [],
       diagnosis: '',
@@ -206,8 +203,6 @@ export default function MedicalRecordsPage() {
       {
         catId: trimmedCatId,
         visitDate: dayjs(createForm.visitDate).toISOString(),
-         
-        visitType: (createForm.visitType as keyof typeof VISIT_TYPE_LABELS) || undefined,
         hospitalName: trimmedHospitalName || undefined,
         diagnosis: trimmedDiagnosis || undefined,
         treatmentPlan: trimmedTreatmentPlan || undefined,
@@ -588,38 +583,20 @@ export default function MedicalRecordsPage() {
           />
 
           {/* 2. 受診日 */}
-          <Group grow>
-            <DatePickerInput
-              label="受診日"
-              placeholder="受診日を選択"
-              value={createForm.visitDate}
-              onChange={(value) =>
-                setCreateForm((prev) => ({
-                  ...prev,
-                  visitDate: value ? new Date(value) : null,
-                }))
-              }
-              required
-            />
+          <DatePickerInput
+            label="受診日"
+            placeholder="受診日を選択"
+            value={createForm.visitDate}
+            onChange={(value) =>
+              setCreateForm((prev) => ({
+                ...prev,
+                visitDate: value ? new Date(value) : null,
+              }))
+            }
+            required
+          />
 
-            {/* 3. 受診種別 */}
-            <Select
-              label="受診種別"
-              placeholder="種別を選択"
-              data={[
-                { value: 'CHECKUP', label: '健康診断' },
-                { value: 'VACCINATION', label: 'ワクチン' },
-                { value: 'EMERGENCY', label: '緊急' },
-                { value: 'SURGERY', label: '手術' },
-                { value: 'FOLLOW_UP', label: 'フォローアップ' },
-                { value: 'OTHER', label: 'その他' },
-              ]}
-              value={createForm.visitType}
-              onChange={(value) => setCreateForm((prev) => ({ ...prev, visitType: value || '' }))}
-            />
-          </Group>
-
-          {/* 4. 病院名 */}
+          {/* 3. 病院名 */}
           <TextInput
             label="病院名"
             placeholder="例: ねこクリニック東京"
