@@ -1,5 +1,6 @@
 import { 
   Controller, 
+  Get,
   Post, 
   Body, 
   Param, 
@@ -10,6 +11,8 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
+import type { RequestUser } from '../auth/auth.types';
+import { GetUser } from '../auth/get-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RoleGuard } from '../auth/role.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -32,6 +35,48 @@ import { TenantsService } from './tenants.service';
 @Controller('tenants')
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) {}
+
+  /**
+   * テナント一覧取得
+   * SUPER_ADMIN のみがアクセス可能
+   */
+  @Get()
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'テナント一覧取得',
+    description: 'SuperAdminのみが実行可能。全テナントの一覧を取得します。' 
+  })
+  @ApiResponse({ status: 200, description: 'テナント一覧を返却' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  async listTenants() {
+    return this.tenantsService.listTenants();
+  }
+
+  /**
+   * テナント詳細取得
+   * SUPER_ADMIN または TENANT_ADMIN（自テナントのみ）がアクセス可能
+   */
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'テナント詳細取得',
+    description: 'SuperAdminまたはテナント管理者（自テナントのみ）が実行可能。指定IDのテナント詳細を取得します。' 
+  })
+  @ApiResponse({ status: 200, description: 'テナント詳細を返却' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  @ApiResponse({ status: 404, description: 'テナントが見つかりません' })
+  async getTenantById(
+    @Param('id') id: string,
+    @GetUser() user: RequestUser,
+  ) {
+    return this.tenantsService.getTenantById(id, user);
+  }
 
   /**
    * SuperAdmin がテナント管理者を招待

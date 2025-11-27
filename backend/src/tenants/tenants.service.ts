@@ -5,11 +5,13 @@ import {
   BadRequestException, 
   NotFoundException,
   ConflictException,
+  ForbiddenException,
   Logger 
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
 
+import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -33,6 +35,81 @@ export class TenantsService {
     private readonly passwordService: PasswordService,
     private readonly jwt: JwtService,
   ) {}
+
+  /**
+   * テナント一覧を取得
+   * 
+   * @returns 全テナントの一覧
+   */
+  async listTenants() {
+    const tenants = await this.prisma.tenant.findMany({
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      success: true,
+      data: tenants,
+      count: tenants.length,
+    };
+  }
+
+  /**
+   * 指定 ID のテナントを取得
+   * 
+   * - SUPER_ADMIN: すべてのテナントにアクセス可能
+   * - TENANT_ADMIN: 自テナントのみアクセス可能
+   * 
+   * @param tenantId テナント ID
+   * @param currentUser 現在のユーザー情報
+   * @returns テナント詳細
+   * @throws NotFoundException テナントが見つからない場合
+   * @throws ForbiddenException アクセス権がない場合
+   */
+  async getTenantById(tenantId: string, currentUser: RequestUser) {
+    // TENANT_ADMIN の場合、自テナントのみアクセス可能
+    if (currentUser.role === UserRole.TENANT_ADMIN) {
+      if (!currentUser.tenantId) {
+        throw new ForbiddenException('テナントに所属していません');
+      }
+      if (currentUser.tenantId !== tenantId) {
+        throw new ForbiddenException('他のテナントの情報にはアクセスできません');
+      }
+    }
+
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('テナントが見つかりません');
+    }
+
+    return {
+      success: true,
+      data: tenant,
+    };
+  }
 
   /**
    * SuperAdmin がテナント管理者を招待

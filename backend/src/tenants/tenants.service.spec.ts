@@ -1,8 +1,9 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRole } from '@prisma/client';
 
+import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -21,6 +22,7 @@ describe('TenantsService', () => {
     },
     tenant: {
       findUnique: jest.fn(),
+      findMany: jest.fn(),
       create: jest.fn(),
     },
     invitationToken: {
@@ -257,6 +259,162 @@ describe('TenantsService', () => {
       await expect(service.completeInvitation(dto)).rejects.toThrow(
         '招待トークンの有効期限が切れています',
       );
+    });
+  });
+
+  describe('listTenants', () => {
+    it('全テナントの一覧を正常に取得', async () => {
+      const mockTenants = [
+        {
+          id: 'tenant-1',
+          name: 'Test Tenant 1',
+          slug: 'test-tenant-1',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'tenant-2',
+          name: 'Test Tenant 2',
+          slug: 'test-tenant-2',
+          isActive: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockPrismaService.tenant.findMany.mockResolvedValue(mockTenants);
+
+      const result = await service.listTenants();
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockTenants);
+      expect(result.count).toBe(2);
+      expect(mockPrismaService.tenant.findMany).toHaveBeenCalledWith({
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('テナントが存在しない場合は空の配列を返す', async () => {
+      mockPrismaService.tenant.findMany.mockResolvedValue([]);
+
+      const result = await service.listTenants();
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual([]);
+      expect(result.count).toBe(0);
+    });
+  });
+
+  describe('getTenantById', () => {
+    const tenantId = 'tenant-1';
+
+    const superAdminUser: RequestUser = {
+      userId: 'super-admin-1',
+      email: 'superadmin@example.com',
+      role: UserRole.SUPER_ADMIN,
+      tenantId: undefined,
+    };
+
+    const tenantAdminUser: RequestUser = {
+      userId: 'tenant-admin-1',
+      email: 'tenantadmin@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    it('SUPER_ADMIN は指定 ID のテナントを正常に取得できる', async () => {
+      const mockTenant = {
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        _count: { users: 5 },
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+
+      const result = await service.getTenantById(tenantId, superAdminUser);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockTenant);
+      expect(mockPrismaService.tenant.findUnique).toHaveBeenCalledWith({
+        where: { id: tenantId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              users: true,
+            },
+          },
+        },
+      });
+    });
+
+    it('TENANT_ADMIN は自テナントの情報を取得できる', async () => {
+      const mockTenant = {
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        _count: { users: 3 },
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+
+      const result = await service.getTenantById(tenantId, tenantAdminUser);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockTenant);
+    });
+
+    it('TENANT_ADMIN は他のテナントの情報にはアクセスできない', async () => {
+      await expect(
+        service.getTenantById('tenant-2', tenantAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.getTenantById('tenant-2', tenantAdminUser),
+      ).rejects.toThrow('他のテナントの情報にはアクセスできません');
+    });
+
+    it('テナントに所属していない TENANT_ADMIN はエラー', async () => {
+      const noTenantAdminUser: RequestUser = {
+        userId: 'tenant-admin-2',
+        email: 'tenantadmin2@example.com',
+        role: UserRole.TENANT_ADMIN,
+        tenantId: undefined,
+      };
+
+      await expect(
+        service.getTenantById(tenantId, noTenantAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.getTenantById(tenantId, noTenantAdminUser),
+      ).rejects.toThrow('テナントに所属していません');
+    });
+
+    it('テナントが見つからない場合は NotFoundException をスロー', async () => {
+      mockPrismaService.tenant.findUnique.mockResolvedValue(null);
+
+      await expect(service.getTenantById(tenantId, superAdminUser)).rejects.toThrow(NotFoundException);
+      await expect(service.getTenantById(tenantId, superAdminUser)).rejects.toThrow('テナントが見つかりません');
     });
   });
 });
