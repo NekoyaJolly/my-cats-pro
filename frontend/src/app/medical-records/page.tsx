@@ -39,15 +39,6 @@ import { useGetCats } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 
-const VISIT_TYPE_LABELS = {
-  CHECKUP: '健康診断',
-  VACCINATION: 'ワクチン',
-  EMERGENCY: '緊急',
-  SURGERY: '手術',
-  FOLLOW_UP: 'フォローアップ',
-  OTHER: 'その他',
-} as const;
-
 const STATUS_LABELS = {
   TREATING: '治療中',
   COMPLETED: '完了',
@@ -292,11 +283,10 @@ export default function MedicalRecordsPage() {
                   <Table.Tr>
                     <Table.Th style={{ width: '15%' }}>受診日</Table.Th>
                     <Table.Th style={{ width: '15%' }}>猫名</Table.Th>
-                    <Table.Th style={{ width: '15%' }}>受診種別</Table.Th>
-                    <Table.Th style={{ width: '20%' }}>症状・診断</Table.Th>
+                    <Table.Th style={{ width: '25%' }}>症状・診断</Table.Th>
                     <Table.Th style={{ width: '15%' }}>病院名</Table.Th>
-                    <Table.Th style={{ width: '10%' }}>状態</Table.Th>
-                    <Table.Th style={{ width: '10%', textAlign: 'center' }}>操作</Table.Th>
+                    <Table.Th style={{ width: '15%' }}>状態</Table.Th>
+                    <Table.Th style={{ width: '15%', textAlign: 'center' }}>操作</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -310,11 +300,6 @@ export default function MedicalRecordsPage() {
                       <Table.Td>
                         <Text size="sm" fw={500}>
                           {record.cat.name}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">
-                          {record.visitType ? VISIT_TYPE_LABELS[record.visitType] : '未設定'}
                         </Text>
                       </Table.Td>
                       <Table.Td>
@@ -425,22 +410,12 @@ export default function MedicalRecordsPage() {
               <Text fw={500}>{detailRecord.cat.name}</Text>
             </Box>
 
-            <Group grow>
-              <Box>
-                <Text size="sm" c="dimmed" mb={4}>
-                  受診種別
-                </Text>
-                <Text fw={500}>
-                  {detailRecord.visitType ? VISIT_TYPE_LABELS[detailRecord.visitType] : '未設定'}
-                </Text>
-              </Box>
-              <Box>
-                <Text size="sm" c="dimmed" mb={4}>
-                  病院名
-                </Text>
-                <Text fw={500}>{detailRecord.hospitalName || '未設定'}</Text>
-              </Box>
-            </Group>
+            <Box>
+              <Text size="sm" c="dimmed" mb={4}>
+                病院名
+              </Text>
+              <Text fw={500}>{detailRecord.hospitalName || '未設定'}</Text>
+            </Box>
 
             <Box>
               <Text size="sm" c="dimmed" mb={4}>
