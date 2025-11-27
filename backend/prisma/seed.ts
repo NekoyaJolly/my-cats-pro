@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 import * as argon2 from 'argon2';
 
 import { BREED_MASTER_DATA } from '../src/breeds/breed-master.data';
@@ -92,20 +92,42 @@ async function main() {
     where: { email: 'admin@example.com' },
     update: {
       passwordHash,
-      role: 'ADMIN',
+      role: UserRole.ADMIN,
     },
     create: {
       id: '00000000-0000-0000-4000-800000000001', // UUIDv4形式
       clerkId: 'local_admin_001',
       email: 'admin@example.com',
       passwordHash,
-      role: 'ADMIN',
+      role: UserRole.ADMIN,
       firstName: 'Admin',
       lastName: 'User',
     },
   });
 
   console.log('✅ Admin user created:', admin.email);
+
+  // SuperAdmin user（開発用検証ユーザー）
+  // パスワード: Passw0rd! (末尾に ! あり)
+  // テナント管理機能の検証に使用する SUPER_ADMIN ロールのユーザー
+  const superAdmin = await prisma.user.upsert({
+    where: { email: 'superadmin@example.com' },
+    update: {
+      passwordHash,
+      role: UserRole.SUPER_ADMIN,
+    },
+    create: {
+      id: '00000000-0000-0000-4000-800000000002', // UUIDv4形式
+      clerkId: 'local_superadmin_001',
+      email: 'superadmin@example.com',
+      passwordHash,
+      role: UserRole.SUPER_ADMIN,
+      firstName: 'Super',
+      lastName: 'Admin',
+    },
+  });
+
+  console.log('✅ SuperAdmin user created:', superAdmin.email);
 
   await syncMasterData();
 

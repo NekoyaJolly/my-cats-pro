@@ -1,4 +1,4 @@
-import { ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRole } from '@prisma/client';
@@ -8,6 +8,7 @@ import { RoleGuard } from './role.guard';
 describe('RoleGuard', () => {
   let guard: RoleGuard;
   let reflector: Reflector;
+  let loggerWarnSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,6 +25,13 @@ describe('RoleGuard', () => {
 
     guard = module.get<RoleGuard>(RoleGuard);
     reflector = module.get<Reflector>(Reflector);
+
+    // Logger の warn メソッドをモック
+    loggerWarnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   const createMockExecutionContext = (
@@ -135,6 +143,61 @@ describe('RoleGuard', () => {
       const result = guard.canActivate(context);
 
       expect(result).toBe(true);
+    });
+  });
+
+  describe('ログ出力', () => {
+    it('ユーザーが存在しない場合にログを出力する', () => {
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([UserRole.ADMIN]);
+
+      const context = createMockExecutionContext(undefined);
+      guard.canActivate(context);
+
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'アクセス拒否: ユーザー情報がありません',
+          reason: 'user_not_found',
+        }),
+      );
+    });
+
+    it('ロールが不足している場合にログを出力する', () => {
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([UserRole.ADMIN]);
+
+      const context = createMockExecutionContext({
+        userId: 'user-6',
+        email: 'user@example.com',
+        role: UserRole.USER,
+      });
+      guard.canActivate(context);
+
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'アクセス拒否: ロールが不足しています',
+          userId: 'user-6',
+          userRole: UserRole.USER,
+          reason: 'role_mismatch',
+        }),
+      );
+    });
+
+    it('アクセスが許可された場合はログを出力しない', () => {
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([UserRole.ADMIN]);
+
+      const context = createMockExecutionContext({
+        userId: 'user-7',
+        email: 'admin@example.com',
+        role: UserRole.ADMIN,
+      });
+      guard.canActivate(context);
+
+      expect(loggerWarnSpy).not.toHaveBeenCalled();
     });
   });
 });
