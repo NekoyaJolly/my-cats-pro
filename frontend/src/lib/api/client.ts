@@ -4,7 +4,6 @@
  */
 
 import type { paths } from './generated/schema';
-import { getCsrfToken, clearCsrfToken, refreshCsrfToken } from './csrf';
 
 // NOTE: generated/schema.ts は最初の型生成後にインポート可能になります
 async function parseJson(response: Response): Promise<unknown> {
@@ -30,8 +29,6 @@ async function parseJson(response: Response): Promise<unknown> {
  * API基底URL
  */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';
-
-const CSRF_PROTECTED_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
  * APIレスポンスの共通型
@@ -335,7 +332,7 @@ function deleteCookie(name: string): void {
  * 
  * TODO (P1 - High Priority):
  * - Migrate to HttpOnly cookies for refresh tokens
- * - Consider HttpOnly cookies for access tokens with CSRF protection
+ * - Consider HttpOnly cookies for access tokens
  * - Remove localStorage storage completely
  * - See: docs/IMPROVEMENT_ACTION_PLAN.md for migration steps
  * 
@@ -389,7 +386,6 @@ export function getRefreshToken(): string | null {
 export function clearTokens(): void {
   accessToken = null;
   refreshToken = null;
-  clearCsrfToken(); // CSRF トークンもクリア
   
   if (typeof window !== 'undefined') {
     localStorage.removeItem('accessToken');
@@ -482,18 +478,6 @@ export async function apiRequest<T = unknown>(
   }
 
   const method = (options.method || 'GET').toUpperCase();
-  const shouldAttachCsrf = CSRF_PROTECTED_METHODS.has(method);
-
-  // POST/PUT/PATCH/DELETE リクエストにはCSRFトークンを追加
-  if (shouldAttachCsrf) {
-    try {
-      const csrfToken = await getCsrfToken();
-      headers.set('X-CSRF-Token', csrfToken);
-    } catch (error) {
-      console.error('Failed to get CSRF token:', error);
-      // CSRF トークン取得失敗時もリクエストは続行（サーバー側で拒否される）
-    }
-  }
 
   const requestInit: RequestInit = {
     ...options,
@@ -518,24 +502,6 @@ export async function apiRequest<T = unknown>(
           window.location.href = '/login';
         }
         throw new ApiError('認証が必要です', 401);
-      }
-    }
-
-    const csrfRetryAvailable = shouldAttachCsrf;
-    if (response.status === 403 && csrfRetryAvailable) {
-      try {
-        await refreshCsrfToken();
-        const freshToken = await getCsrfToken();
-        headers.set('X-CSRF-Token', freshToken);
-        response = await fetch(fullUrl, {
-          ...requestInit,
-          headers,
-        });
-      } catch (error) {
-        throw new ApiError(
-          error instanceof Error ? error.message : 'CSRFトークンの更新に失敗しました',
-          403,
-        );
       }
     }
 

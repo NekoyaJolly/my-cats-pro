@@ -39,15 +39,6 @@ import { useGetCats } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 
-const VISIT_TYPE_LABELS = {
-  CHECKUP: '健康診断',
-  VACCINATION: 'ワクチン',
-  EMERGENCY: '緊急',
-  SURGERY: '手術',
-  FOLLOW_UP: 'フォローアップ',
-  OTHER: 'その他',
-} as const;
-
 const STATUS_LABELS = {
   TREATING: '治療中',
   COMPLETED: '完了',
@@ -74,7 +65,6 @@ function truncateText(text: string | null | undefined, maxLength = 10): string {
 interface CreateMedicalRecordFormState {
   catId: string;
   visitDate: Date | null;
-  visitType: string;
   hospitalName: string;
   symptomTags: string[]; // タグID配列
   diagnosis: string;
@@ -98,7 +88,6 @@ export default function MedicalRecordsPage() {
   const [createForm, setCreateForm] = useState<CreateMedicalRecordFormState>({
     catId: '',
     visitDate: new Date(),
-    visitType: '',
     hospitalName: '',
     symptomTags: [],
     diagnosis: '',
@@ -171,7 +160,6 @@ export default function MedicalRecordsPage() {
     setCreateForm({
       catId: '',
       visitDate: new Date(),
-      visitType: '',
       hospitalName: '',
       symptomTags: [],
       diagnosis: '',
@@ -206,8 +194,6 @@ export default function MedicalRecordsPage() {
       {
         catId: trimmedCatId,
         visitDate: dayjs(createForm.visitDate).toISOString(),
-         
-        visitType: (createForm.visitType as keyof typeof VISIT_TYPE_LABELS) || undefined,
         hospitalName: trimmedHospitalName || undefined,
         diagnosis: trimmedDiagnosis || undefined,
         treatmentPlan: trimmedTreatmentPlan || undefined,
@@ -297,11 +283,10 @@ export default function MedicalRecordsPage() {
                   <Table.Tr>
                     <Table.Th style={{ width: '15%' }}>受診日</Table.Th>
                     <Table.Th style={{ width: '15%' }}>猫名</Table.Th>
-                    <Table.Th style={{ width: '15%' }}>受診種別</Table.Th>
-                    <Table.Th style={{ width: '20%' }}>症状・診断</Table.Th>
+                    <Table.Th style={{ width: '25%' }}>症状・診断</Table.Th>
                     <Table.Th style={{ width: '15%' }}>病院名</Table.Th>
-                    <Table.Th style={{ width: '10%' }}>状態</Table.Th>
-                    <Table.Th style={{ width: '10%', textAlign: 'center' }}>操作</Table.Th>
+                    <Table.Th style={{ width: '15%' }}>状態</Table.Th>
+                    <Table.Th style={{ width: '15%', textAlign: 'center' }}>操作</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -315,11 +300,6 @@ export default function MedicalRecordsPage() {
                       <Table.Td>
                         <Text size="sm" fw={500}>
                           {record.cat.name}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">
-                          {record.visitType ? VISIT_TYPE_LABELS[record.visitType] : '未設定'}
                         </Text>
                       </Table.Td>
                       <Table.Td>
@@ -430,22 +410,12 @@ export default function MedicalRecordsPage() {
               <Text fw={500}>{detailRecord.cat.name}</Text>
             </Box>
 
-            <Group grow>
-              <Box>
-                <Text size="sm" c="dimmed" mb={4}>
-                  受診種別
-                </Text>
-                <Text fw={500}>
-                  {detailRecord.visitType ? VISIT_TYPE_LABELS[detailRecord.visitType] : '未設定'}
-                </Text>
-              </Box>
-              <Box>
-                <Text size="sm" c="dimmed" mb={4}>
-                  病院名
-                </Text>
-                <Text fw={500}>{detailRecord.hospitalName || '未設定'}</Text>
-              </Box>
-            </Group>
+            <Box>
+              <Text size="sm" c="dimmed" mb={4}>
+                病院名
+              </Text>
+              <Text fw={500}>{detailRecord.hospitalName || '未設定'}</Text>
+            </Box>
 
             <Box>
               <Text size="sm" c="dimmed" mb={4}>
@@ -588,38 +558,20 @@ export default function MedicalRecordsPage() {
           />
 
           {/* 2. 受診日 */}
-          <Group grow>
-            <DatePickerInput
-              label="受診日"
-              placeholder="受診日を選択"
-              value={createForm.visitDate}
-              onChange={(value) =>
-                setCreateForm((prev) => ({
-                  ...prev,
-                  visitDate: value ? new Date(value) : null,
-                }))
-              }
-              required
-            />
+          <DatePickerInput
+            label="受診日"
+            placeholder="受診日を選択"
+            value={createForm.visitDate}
+            onChange={(value) =>
+              setCreateForm((prev) => ({
+                ...prev,
+                visitDate: value ? new Date(value) : null,
+              }))
+            }
+            required
+          />
 
-            {/* 3. 受診種別 */}
-            <Select
-              label="受診種別"
-              placeholder="種別を選択"
-              data={[
-                { value: 'CHECKUP', label: '健康診断' },
-                { value: 'VACCINATION', label: 'ワクチン' },
-                { value: 'EMERGENCY', label: '緊急' },
-                { value: 'SURGERY', label: '手術' },
-                { value: 'FOLLOW_UP', label: 'フォローアップ' },
-                { value: 'OTHER', label: 'その他' },
-              ]}
-              value={createForm.visitType}
-              onChange={(value) => setCreateForm((prev) => ({ ...prev, visitType: value || '' }))}
-            />
-          </Group>
-
-          {/* 4. 病院名 */}
+          {/* 3. 病院名 */}
           <TextInput
             label="病院名"
             placeholder="例: ねこクリニック東京"
@@ -632,7 +584,7 @@ export default function MedicalRecordsPage() {
             }
           />
 
-          {/* 5. 症状タグ */}
+          {/* 4. 症状タグ */}
           <Box>
             <Text size="sm" fw={500} mb="xs">
               症状タグ
@@ -681,7 +633,7 @@ export default function MedicalRecordsPage() {
             )}
           </Box>
 
-          {/* 6. 診断結果 */}
+          {/* 5. 診断結果 */}
           <Textarea
             label="診断結果"
             placeholder="診断結果"
@@ -691,7 +643,7 @@ export default function MedicalRecordsPage() {
             autosize
           />
 
-          {/* 7. 治療計画 */}
+          {/* 6. 治療計画 */}
           <Textarea
             label="治療計画"
             placeholder="治療内容や計画"
@@ -717,7 +669,7 @@ export default function MedicalRecordsPage() {
             />
           </Box>
 
-          {/* 8. 次回予定日 */}
+          {/* 7. 次回予定日 */}
           <DatePickerInput
             label="次回予定日"
             placeholder="次回の受診予定日"
@@ -730,7 +682,7 @@ export default function MedicalRecordsPage() {
             }
           />
 
-          {/* 9. 備考 */}
+          {/* 8. 備考 */}
           <Textarea
             label="備考"
             placeholder="その他のメモ"
