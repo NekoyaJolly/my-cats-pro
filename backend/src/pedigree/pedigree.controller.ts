@@ -16,9 +16,11 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
 import { UserRole } from "@prisma/client";
 
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RoleGuard } from "../auth/role.guard";
 import { Roles } from "../auth/roles.decorator";
 
@@ -27,8 +29,8 @@ import { PedigreeService } from "./pedigree.service";
 
 
 @ApiTags("Pedigrees")
-// @ApiBearerAuth()  // Temporarily disabled for development
-// @UseGuards(JwtAuthGuard)  // Temporarily disabled for development
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller("pedigrees")
 export class PedigreeController {
   constructor(private readonly pedigreeService: PedigreeService) {}
