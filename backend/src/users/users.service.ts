@@ -1,8 +1,24 @@
-import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { randomBytes } from 'crypto';
+
+import { 
+  Injectable, 
+  Logger, 
+  ForbiddenException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
+
+import { InviteUserDto } from './dto/invite-user.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
+
+/** 招待トークンのバイトサイズ */
+const INVITATION_TOKEN_BYTES = 32;
+/** 招待トークンの有効期限（日数） */
+const INVITATION_EXPIRY_DAYS = 7;
 
 export interface PromoteToSuperAdminResponse {
   success: true;
@@ -23,6 +39,15 @@ export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * 指定されたロールが高権限ロール（SUPER_ADMIN, TENANT_ADMIN）かどうかをチェック
+   * 
+   * @private
+   */
+  private isPrivilegedRole(role: UserRole): boolean {
+    return role === UserRole.SUPER_ADMIN || role === UserRole.TENANT_ADMIN;
+  }
 
   /**
    * ユーザー一覧を取得
@@ -172,5 +197,272 @@ export class UsersService {
         role: updatedUser.role,
       },
     };
+  }
+
+  /**
+   * ユーザー招待
+   * 
+   * 権限チェックルール:
+   * - SUPER_ADMIN: 任意のテナントに TENANT_ADMIN / ADMIN / USER を招待可能
+   * - TENANT_ADMIN: 自テナント (currentUser.tenantId === dto.tenantId) にのみ ADMIN / USER を招待可能
+   *   - SUPER_ADMIN, TENANT_ADMIN ロールへの招待は ForbiddenException
+   * 
+   * @param currentUser 現在のユーザー情報
+   * @param dto 招待情報
+   * @returns 招待トークン情報
+   */
+  async inviteUser(
+    currentUser: RequestUser,
+    dto: InviteUserDto,
+  ): Promise<{
+    success: true;
+    invitationToken: string;
+    tenantId: string;
+    message: string;
+  }> {
+    // ロールが設定されていない場合はアクセス拒否
+    if (!currentUser.role) {
+      throw new ForbiddenException('ユーザーロールが設定されていません');
+    }
+
+    const email = dto.email.trim().toLowerCase();
+
+    // SUPER_ADMIN の場合
+    if (currentUser.role === UserRole.SUPER_ADMIN) {
+      // SUPER_ADMIN は任意のテナントに任意のロールを招待可能
+      return this.createInvitation(email, dto.role, dto.tenantId, currentUser);
+    }
+
+    // TENANT_ADMIN の場合
+    if (currentUser.role === UserRole.TENANT_ADMIN) {
+      // テナントに所属していない場合はエラー
+      if (!currentUser.tenantId) {
+        throw new ForbiddenException('テナントに所属していません');
+      }
+
+      // 他のテナントへの招待は禁止
+      if (currentUser.tenantId !== dto.tenantId) {
+        throw new ForbiddenException('他のテナントにユーザーを招待することはできません');
+      }
+
+      // SUPER_ADMIN, TENANT_ADMIN ロールへの招待は禁止
+      if (this.isPrivilegedRole(dto.role)) {
+        throw new ForbiddenException('SUPER_ADMIN または TENANT_ADMIN を招待する権限がありません');
+      }
+
+      return this.createInvitation(email, dto.role, dto.tenantId, currentUser);
+    }
+
+    // それ以外のロールの場合はアクセス拒否
+    throw new ForbiddenException('ユーザー招待の権限がありません');
+  }
+
+  /**
+   * 招待トークンを作成する内部メソッド
+   * 
+   * @private
+   */
+  private async createInvitation(
+    email: string,
+    role: UserRole,
+    tenantId: string,
+    currentUser: RequestUser,
+  ): Promise<{
+    success: true;
+    invitationToken: string;
+    tenantId: string;
+    message: string;
+  }> {
+    // テナントの存在確認
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('指定されたテナントが見つかりません');
+    }
+
+    // メールアドレスの重複チェック
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('このメールアドレスは既に使用されています');
+    }
+
+    // 招待トークン生成
+    const token = randomBytes(INVITATION_TOKEN_BYTES).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + INVITATION_EXPIRY_DAYS);
+
+    const invitation = await this.prisma.invitationToken.create({
+      data: {
+        email,
+        token,
+        role,
+        tenantId,
+        expiresAt,
+      },
+    });
+
+    this.logger.log({
+      message: 'User invitation created',
+      tenantId,
+      email,
+      role,
+      invitedBy: currentUser.userId,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      invitationToken: invitation.token,
+      tenantId,
+      message: '招待を作成しました',
+    };
+  }
+
+  /**
+   * ユーザーロール変更
+   * 
+   * 権限チェックルール:
+   * - SUPER_ADMIN:
+   *   - 任意のユーザーのロールを変更可能
+   *   - ただし、SUPER_ADMIN を SUPER_ADMIN 以外に降格する操作は ForbiddenException
+   *   - 自分自身のロール変更も禁止
+   * - TENANT_ADMIN:
+   *   - 対象ユーザーが自テナント所属であること (user.tenantId === currentUser.tenantId)
+   *   - 変更可能なロール: ADMIN ↔ USER のみ
+   *   - SUPER_ADMIN, TENANT_ADMIN への変更は ForbiddenException
+   *   - SUPER_ADMIN, TENANT_ADMIN のロール変更も ForbiddenException
+   * 
+   * @param currentUser 現在のユーザー情報
+   * @param userId 対象ユーザー ID
+   * @param dto 新しいロール情報
+   * @returns 更新後のユーザー情報
+   */
+  async updateUserRole(
+    currentUser: RequestUser,
+    userId: string,
+    dto: UpdateUserRoleDto,
+  ): Promise<{
+    success: true;
+    data: {
+      id: string;
+      email: string;
+      role: UserRole;
+    };
+    message: string;
+  }> {
+    // ロールが設定されていない場合はアクセス拒否
+    if (!currentUser.role) {
+      throw new ForbiddenException('ユーザーロールが設定されていません');
+    }
+
+    // 対象ユーザーの取得
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        tenantId: true,
+      },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('指定されたユーザーが見つかりません');
+    }
+
+    // SUPER_ADMIN の場合
+    if (currentUser.role === UserRole.SUPER_ADMIN) {
+      // 自分自身のロール変更は禁止
+      if (currentUser.userId === userId) {
+        throw new ForbiddenException('自分自身のロールを変更することはできません');
+      }
+
+      // SUPER_ADMIN を降格することは禁止
+      if (targetUser.role === UserRole.SUPER_ADMIN && dto.role !== UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException('SUPER_ADMIN を降格することはできません');
+      }
+
+      // ロール更新
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: { role: dto.role },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+        },
+      });
+
+      this.logger.log({
+        message: 'User role updated by SUPER_ADMIN',
+        targetUserId: userId,
+        oldRole: targetUser.role,
+        newRole: dto.role,
+        updatedBy: currentUser.userId,
+      });
+
+      return {
+        success: true,
+        data: updatedUser,
+        message: 'ロールを更新しました',
+      };
+    }
+
+    // TENANT_ADMIN の場合
+    if (currentUser.role === UserRole.TENANT_ADMIN) {
+      // テナントに所属していない場合はエラー
+      if (!currentUser.tenantId) {
+        throw new ForbiddenException('テナントに所属していません');
+      }
+
+      // 対象ユーザーが他テナントの場合はエラー
+      if (targetUser.tenantId !== currentUser.tenantId) {
+        throw new ForbiddenException('他のテナントのユーザーのロールを変更することはできません');
+      }
+
+      // 対象ユーザーが SUPER_ADMIN または TENANT_ADMIN の場合は変更不可
+      if (this.isPrivilegedRole(targetUser.role)) {
+        throw new ForbiddenException('SUPER_ADMIN または TENANT_ADMIN のロールを変更する権限がありません');
+      }
+
+      // SUPER_ADMIN, TENANT_ADMIN への変更は禁止
+      if (this.isPrivilegedRole(dto.role)) {
+        throw new ForbiddenException('SUPER_ADMIN または TENANT_ADMIN に変更する権限がありません');
+      }
+
+      // ロール更新（ADMIN ↔ USER のみ許可）
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: { role: dto.role },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+        },
+      });
+
+      this.logger.log({
+        message: 'User role updated by TENANT_ADMIN',
+        targetUserId: userId,
+        oldRole: targetUser.role,
+        newRole: dto.role,
+        updatedBy: currentUser.userId,
+        tenantId: currentUser.tenantId,
+      });
+
+      return {
+        success: true,
+        data: updatedUser,
+        message: 'ロールを更新しました',
+      };
+    }
+
+    // それ以外のロールの場合はアクセス拒否
+    throw new ForbiddenException('ユーザーロール変更の権限がありません');
   }
 }
