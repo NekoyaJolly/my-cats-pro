@@ -1,30 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Modal,
   Stack,
   TextInput,
   Group,
-  Alert,
-  Code,
-  CopyButton,
-  Button,
-  Text,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconCheck, IconCopy, IconMail } from '@tabler/icons-react';
 import { ActionButton } from '@/components/ActionButton';
 import { apiClient } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
-import { getInvitationUrl } from '@/lib/invitation-utils';
 
 /**
  * テナント管理者招待モーダル（SUPER_ADMIN専用）
  */
 export function InviteTenantAdminModal() {
-  const router = useRouter();
   const [opened, { open, close }] = useDisclosure(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,11 +23,6 @@ export function InviteTenantAdminModal() {
     tenantName: '',
     tenantSlug: '',
   });
-  // 招待成功後の情報を保持
-  const [invitationResult, setInvitationResult] = useState<{
-    email: string;
-    invitationToken: string;
-  } | null>(null);
 
   // フォームリセット
   const resetForm = () => {
@@ -45,7 +31,6 @@ export function InviteTenantAdminModal() {
       tenantName: '',
       tenantSlug: '',
     });
-    setInvitationResult(null);
   };
 
   // モーダルを閉じる
@@ -54,12 +39,6 @@ export function InviteTenantAdminModal() {
       resetForm();
       close();
     }
-  };
-
-  // テナント一覧を更新して閉じる
-  const handleFinish = () => {
-    handleClose();
-    router.refresh();
   };
 
   // 招待送信
@@ -94,28 +73,15 @@ export function InviteTenantAdminModal() {
         } as never,
       });
 
-      if (response.success && response.data) {
-        const data = response.data as { invitationToken?: string };
-        if (data.invitationToken) {
-          // 招待URLを表示するモードに切り替え
-          setInvitationResult({
-            email: formData.email.trim(),
-            invitationToken: data.invitationToken,
-          });
-          notifications.show({
-            title: '成功',
-            message: 'テナントと招待が作成されました',
-            color: 'green',
-          });
-        } else {
-          // トークンが返されなかった場合は従来の動作
-          notifications.show({
-            title: '成功',
-            message: 'テナント管理者の招待を送信しました',
-            color: 'green',
-          });
-          handleFinish();
-        }
+      if (response.success) {
+        notifications.show({
+          title: '成功',
+          message: 'テナント管理者の招待を送信しました',
+          color: 'green',
+        });
+        handleClose();
+        // ページリロードでテナント一覧を更新
+        window.location.reload();
       } else {
         throw new Error(response.error || '招待の送信に失敗しました');
       }
@@ -147,87 +113,43 @@ export function InviteTenantAdminModal() {
         title="テナント管理者を招待"
         size="md"
       >
-        {invitationResult ? (
-          // 招待成功後の表示
-          <Stack gap="md">
-            <Alert icon={<IconMail size={16} />} title="招待を作成しました" color="green">
-              <Text size="sm" mb="xs">
-                <strong>{invitationResult.email}</strong> 宛ての招待を作成しました。
-              </Text>
-              <Text size="sm" c="dimmed">
-                以下の招待URLをコピーして、招待者に共有してください。
-              </Text>
-            </Alert>
+        <Stack gap="md">
+          <TextInput
+            label="メールアドレス"
+            placeholder="admin@example.com"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            disabled={loading}
+          />
 
-            <Stack gap="xs">
-              <Text size="sm" fw={500}>招待URL:</Text>
-              <Code block style={{ wordBreak: 'break-all' }}>
-                {getInvitationUrl(invitationResult.invitationToken)}
-              </Code>
-              <CopyButton value={getInvitationUrl(invitationResult.invitationToken)}>
-                {({ copied, copy }) => (
-                  <Button
-                    color={copied ? 'teal' : 'blue'}
-                    leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                    onClick={copy}
-                    variant="light"
-                  >
-                    {copied ? 'コピーしました！' : 'URLをコピー'}
-                  </Button>
-                )}
-              </CopyButton>
-            </Stack>
+          <TextInput
+            label="テナント名"
+            placeholder="サンプルテナント"
+            required
+            value={formData.tenantName}
+            onChange={(e) => setFormData({ ...formData, tenantName: e.target.value })}
+            disabled={loading}
+          />
 
-            <Text size="xs" c="dimmed">
-              ※ 招待URLは7日間有効です。
-            </Text>
+          <TextInput
+            label="テナントスラッグ（オプション）"
+            placeholder="sample-tenant"
+            description="未入力の場合、テナント名から自動生成されます"
+            value={formData.tenantSlug}
+            onChange={(e) => setFormData({ ...formData, tenantSlug: e.target.value })}
+            disabled={loading}
+          />
 
-            <Group justify="flex-end" mt="md">
-              <ActionButton action="save" onClick={handleFinish}>
-                閉じる
-              </ActionButton>
-            </Group>
-          </Stack>
-        ) : (
-          // 招待フォーム
-          <Stack gap="md">
-            <TextInput
-              label="メールアドレス"
-              placeholder="admin@example.com"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              disabled={loading}
-            />
-
-            <TextInput
-              label="テナント名"
-              placeholder="サンプルテナント"
-              required
-              value={formData.tenantName}
-              onChange={(e) => setFormData({ ...formData, tenantName: e.target.value })}
-              disabled={loading}
-            />
-
-            <TextInput
-              label="テナントスラッグ（オプション）"
-              placeholder="sample-tenant"
-              description="未入力の場合、テナント名から自動生成されます"
-              value={formData.tenantSlug}
-              onChange={(e) => setFormData({ ...formData, tenantSlug: e.target.value })}
-              disabled={loading}
-            />
-
-            <Group justify="flex-end" mt="md">
-              <ActionButton action="cancel" onClick={handleClose} disabled={loading}>
-                キャンセル
-              </ActionButton>
-              <ActionButton action="save" onClick={handleSubmit} loading={loading}>
-                招待を送信
-              </ActionButton>
-            </Group>
-          </Stack>
-        )}
+          <Group justify="flex-end" mt="md">
+            <ActionButton action="cancel" onClick={handleClose} disabled={loading}>
+              キャンセル
+            </ActionButton>
+            <ActionButton action="save" onClick={handleSubmit} loading={loading}>
+              招待を送信
+            </ActionButton>
+          </Group>
+        </Stack>
       </Modal>
     </>
   );

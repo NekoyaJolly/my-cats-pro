@@ -21,10 +21,7 @@ import { RateLimitConfig } from "../common/config/rate-limit.config";
 import { RateLimit } from "../common/decorators/rate-limit.decorator";
 
 function toUserRole(val: string): RequestUser["role"] {
-  // UserRole enumに定義されているロールのみ認識する
-  if (val === "SUPER_ADMIN" || val === "TENANT_ADMIN" || val === "ADMIN" || val === "USER") {
-    return val as RequestUser["role"];
-  }
+  if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
   return "USER";
 }
 
