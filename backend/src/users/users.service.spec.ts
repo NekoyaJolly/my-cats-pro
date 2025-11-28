@@ -10,10 +10,21 @@ import { UsersService } from './users.service';
 describe('UsersService', () => {
   let service: UsersService;
 
+  // トランザクション内で使用されるモック
+  const mockTxUser = {
+    count: jest.fn(),
+    update: jest.fn(),
+  };
+
   const mockPrismaService = {
     user: {
       findMany: jest.fn(),
+      count: jest.fn(),
+      update: jest.fn(),
     },
+    $transaction: jest.fn((callback: (tx: { user: typeof mockTxUser }) => Promise<unknown>) => {
+      return callback({ user: mockTxUser });
+    }),
   };
 
   beforeEach(async () => {
@@ -30,6 +41,9 @@ describe('UsersService', () => {
     service = module.get<UsersService>(UsersService);
 
     jest.clearAllMocks();
+    // トランザクションのモックもクリア
+    mockTxUser.count.mockClear();
+    mockTxUser.update.mockClear();
   });
 
   describe('listUsers', () => {
@@ -202,6 +216,69 @@ describe('UsersService', () => {
         await expect(service.listUsers(noRoleUser)).rejects.toThrow(
           'ユーザーロールが設定されていません',
         );
+      });
+    });
+  });
+
+  describe('promoteToSuperAdminOnce', () => {
+    const regularUser: RequestUser = {
+      userId: 'user-1',
+      email: 'user@example.com',
+      role: UserRole.USER,
+      tenantId: 'tenant-1',
+    };
+
+    describe('SUPER_ADMIN がまだ存在しない場合', () => {
+      it('ユーザーを SUPER_ADMIN に昇格できる', async () => {
+        mockTxUser.count.mockResolvedValue(0);
+        mockTxUser.update.mockResolvedValue({
+          id: regularUser.userId,
+          email: regularUser.email,
+          role: UserRole.SUPER_ADMIN,
+        });
+
+        const result = await service.promoteToSuperAdminOnce(regularUser);
+
+        expect(result.success).toBe(true);
+        expect(result.data.id).toBe(regularUser.userId);
+        expect(result.data.email).toBe(regularUser.email);
+        expect(result.data.role).toBe(UserRole.SUPER_ADMIN);
+
+        expect(mockTxUser.count).toHaveBeenCalledWith({
+          where: { role: UserRole.SUPER_ADMIN },
+        });
+        expect(mockTxUser.update).toHaveBeenCalledWith({
+          where: { id: regularUser.userId },
+          data: { role: UserRole.SUPER_ADMIN },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+          },
+        });
+      });
+    });
+
+    describe('SUPER_ADMIN がすでに存在する場合', () => {
+      it('ForbiddenException を投げる', async () => {
+        mockTxUser.count.mockResolvedValue(1);
+
+        await expect(service.promoteToSuperAdminOnce(regularUser)).rejects.toThrow(
+          ForbiddenException,
+        );
+        await expect(service.promoteToSuperAdminOnce(regularUser)).rejects.toThrow(
+          'SUPER_ADMINはすでに存在します',
+        );
+      });
+
+      it('prisma.user.update が呼ばれないことを確認', async () => {
+        mockTxUser.count.mockResolvedValue(2);
+
+        await expect(service.promoteToSuperAdminOnce(regularUser)).rejects.toThrow(
+          ForbiddenException,
+        );
+
+        expect(mockTxUser.update).not.toHaveBeenCalled();
       });
     });
   });

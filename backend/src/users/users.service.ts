@@ -4,6 +4,15 @@ import { UserRole } from '@prisma/client';
 import type { RequestUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 
+export interface PromoteToSuperAdminResponse {
+  success: true;
+  data: {
+    id: string;
+    email: string;
+    role: UserRole;
+  };
+}
+
 /**
  * ユーザー管理サービス
  * 
@@ -111,5 +120,57 @@ export class UsersService {
 
     // それ以外のロールの場合はアクセス拒否
     throw new ForbiddenException('ユーザー一覧の取得権限がありません');
+  }
+
+  /**
+   * 初回 SUPER_ADMIN 昇格
+   * 
+   * DB 上に SUPER_ADMIN が存在しない場合のみ、現在のユーザーを SUPER_ADMIN に昇格します。
+   * 
+   * @param currentUser 現在のユーザー情報
+   * @returns 昇格後のユーザー情報
+   * @throws ForbiddenException SUPER_ADMIN がすでに存在する場合
+   */
+  async promoteToSuperAdminOnce(currentUser: RequestUser): Promise<PromoteToSuperAdminResponse> {
+    // トランザクションで競合状態を防止
+    const updatedUser = await this.prisma.$transaction(async (tx) => {
+      const superAdminCount = await tx.user.count({
+        where: { role: UserRole.SUPER_ADMIN },
+      });
+
+      if (superAdminCount > 0) {
+        this.logger.warn({
+          message: 'promoteToSuperAdminOnce: すでにSUPER_ADMINが存在するため拒否',
+          requestedByUserId: currentUser.userId,
+          requestedByEmail: currentUser.email,
+        });
+        throw new ForbiddenException('SUPER_ADMINはすでに存在します');
+      }
+
+      return tx.user.update({
+        where: { id: currentUser.userId },
+        data: { role: UserRole.SUPER_ADMIN },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+        },
+      });
+    });
+
+    this.logger.log({
+      message: 'promoteToSuperAdminOnce: SUPER_ADMINを初回作成',
+      userId: updatedUser.id,
+      email: updatedUser.email,
+    });
+
+    return {
+      success: true,
+      data: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+      },
+    };
   }
 }

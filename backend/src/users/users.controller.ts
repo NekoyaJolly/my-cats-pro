@@ -1,6 +1,7 @@
 import { 
   Controller, 
   Get, 
+  Post,
   Query, 
   UseGuards 
 } from '@nestjs/common';
@@ -52,5 +53,24 @@ export class UsersController {
     @Query('tenantId') tenantId?: string,
   ) {
     return this.usersService.listUsers(user, tenantId);
+  }
+
+  /**
+   * 初回 SUPER_ADMIN 昇格
+   * 
+   * DB 上に SUPER_ADMIN が存在しない場合のみ、現在のログインユーザーを SUPER_ADMIN に昇格します。
+   */
+  @Post('promote-to-superadmin-once')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: '初回 SUPER_ADMIN 昇格',
+    description: 'SUPER_ADMIN がまだ存在しない場合のみ、現在のユーザーを SUPER_ADMIN に昇格します。' 
+  })
+  @ApiResponse({ status: 200, description: '昇格成功' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 403, description: 'SUPER_ADMIN はすでに存在します' })
+  async promoteToSuperAdminOnce(@GetUser() user: RequestUser) {
+    return this.usersService.promoteToSuperAdminOnce(user);
   }
 }
