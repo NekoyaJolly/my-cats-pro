@@ -359,16 +359,23 @@ function AcceptInvitationForm() {
 
               {/* エラーメッセージ */}
               {error && (
-                <Alert
-                  icon={<IconAlertCircle size={16} />}
-                  title="エラー"
-                  color="red"
-                  mb="md"
-                  withCloseButton
-                  onClose={() => setError(null)}
-                >
-                  {error}
-                </Alert>
+                <Stack gap="md">
+                  <Alert
+                    icon={<IconAlertCircle size={16} />}
+                    title="エラー"
+                    color="red"
+                    withCloseButton
+                    onClose={() => setError(null)}
+                  >
+                    {error}
+                  </Alert>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/login')}
+                  >
+                    ログインページへ
+                  </Button>
+                </Stack>
               )}
 
               {!success && (
