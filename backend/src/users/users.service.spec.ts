@@ -13,6 +13,8 @@ describe('UsersService', () => {
   const mockPrismaService = {
     user: {
       findMany: jest.fn(),
+      count: jest.fn(),
+      update: jest.fn(),
     },
   };
 
@@ -202,6 +204,69 @@ describe('UsersService', () => {
         await expect(service.listUsers(noRoleUser)).rejects.toThrow(
           'ユーザーロールが設定されていません',
         );
+      });
+    });
+  });
+
+  describe('promoteToSuperAdminOnce', () => {
+    const regularUser: RequestUser = {
+      userId: 'user-1',
+      email: 'user@example.com',
+      role: UserRole.USER,
+      tenantId: 'tenant-1',
+    };
+
+    describe('SUPER_ADMIN がまだ存在しない場合', () => {
+      it('ユーザーを SUPER_ADMIN に昇格できる', async () => {
+        mockPrismaService.user.count.mockResolvedValue(0);
+        mockPrismaService.user.update.mockResolvedValue({
+          id: regularUser.userId,
+          email: regularUser.email,
+          role: UserRole.SUPER_ADMIN,
+        });
+
+        const result = await service.promoteToSuperAdminOnce(regularUser);
+
+        expect(result.success).toBe(true);
+        expect(result.data.id).toBe(regularUser.userId);
+        expect(result.data.email).toBe(regularUser.email);
+        expect(result.data.role).toBe(UserRole.SUPER_ADMIN);
+
+        expect(mockPrismaService.user.count).toHaveBeenCalledWith({
+          where: { role: UserRole.SUPER_ADMIN },
+        });
+        expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+          where: { id: regularUser.userId },
+          data: { role: UserRole.SUPER_ADMIN },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+          },
+        });
+      });
+    });
+
+    describe('SUPER_ADMIN がすでに存在する場合', () => {
+      it('ForbiddenException を投げる', async () => {
+        mockPrismaService.user.count.mockResolvedValue(1);
+
+        await expect(service.promoteToSuperAdminOnce(regularUser)).rejects.toThrow(
+          ForbiddenException,
+        );
+        await expect(service.promoteToSuperAdminOnce(regularUser)).rejects.toThrow(
+          'SUPER_ADMINはすでに存在します',
+        );
+      });
+
+      it('prisma.user.update が呼ばれないことを確認', async () => {
+        mockPrismaService.user.count.mockResolvedValue(2);
+
+        await expect(service.promoteToSuperAdminOnce(regularUser)).rejects.toThrow(
+          ForbiddenException,
+        );
+
+        expect(mockPrismaService.user.update).not.toHaveBeenCalled();
       });
     });
   });
