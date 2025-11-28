@@ -146,9 +146,97 @@ async function main() {
     }
   }
 
+  // 2) SuperAdmin user (ENV override, 非破壊化ロジック)
+  // SUPERADMIN_EMAIL が設定されている場合のみ SUPERADMIN を作成
+  const superadminEmail = process.env.SUPERADMIN_EMAIL?.toLowerCase();
+  const superadminPassword = process.env.SUPERADMIN_PASSWORD;
+  const superadminForceUpdate = process.env.SUPERADMIN_FORCE_UPDATE === "1";
+
+  if (superadminEmail && superadminPassword) {
+    const existingSuperadmin = await prisma.user.findUnique({
+      where: { email: superadminEmail },
+    });
+    let superadminAction: "created" | "kept" | "updated" = "kept";
+    let superadmin: { id: string };
+
+    if (!existingSuperadmin) {
+      // 新規作成
+      const hash = await argon2.hash(superadminPassword, {
+        type: argon2.argon2id,
+        memoryCost: 65536,
+        timeCost: 3,
+        parallelism: 4,
+        hashLength: 64,
+      });
+      superadmin = await prisma.user.create({
+        data: {
+          clerkId: "local_superadmin",
+          email: superadminEmail,
+          firstName: "Super",
+          lastName: "Admin",
+          role: UserRole.SUPER_ADMIN,
+          isActive: true,
+          passwordHash: hash,
+        },
+      });
+      superadminAction = "created";
+    } else {
+      // 既存: 原則 passwordHash を変更しない / 役割や有効化のみ調整
+      let needsUpdate = false;
+      const updateData: Partial<typeof existingSuperadmin> = {};
+      if (existingSuperadmin.role !== UserRole.SUPER_ADMIN) {
+        updateData.role = UserRole.SUPER_ADMIN;
+        needsUpdate = true;
+      }
+      if (!existingSuperadmin.isActive) {
+        updateData.isActive = true;
+        needsUpdate = true;
+      }
+      if (superadminForceUpdate) {
+        const hash = await argon2.hash(superadminPassword, {
+          type: argon2.argon2id,
+          memoryCost: 65536,
+          timeCost: 3,
+          parallelism: 4,
+          hashLength: 64,
+        });
+        updateData.passwordHash = hash;
+        needsUpdate = true;
+      }
+      if (needsUpdate) {
+        superadmin = await prisma.user.update({
+          where: { email: superadminEmail },
+          data: updateData,
+        });
+        superadminAction = "updated";
+      } else {
+        superadmin = existingSuperadmin;
+        superadminAction = "kept";
+      }
+    }
+
+    console.log("SuperAdmin:", {
+      email: superadminEmail,
+      password:
+        superadminForceUpdate || superadminAction === "created"
+          ? "(set from env)"
+          : "(unchanged)",
+      id: superadmin.id,
+      action: superadminAction,
+    });
+  } else if (superadminEmail && !superadminPassword) {
+    console.log(
+      "⚠️ SUPERADMIN_EMAIL が設定されていますが、SUPERADMIN_PASSWORD が設定されていないためスキップします。",
+    );
+  } else {
+    console.log(
+      "ℹ️ SUPERADMIN_EMAIL が設定されていないため、SUPERADMINの作成をスキップします。",
+    );
+  }
+
   await syncMasterData();
 
-  // 2) Sample tag category & tag
+  // 3) Sample tag category & tag
   const category = await prisma.tagCategory.upsert({
     where: { key: "cat_status" },
     update: {
