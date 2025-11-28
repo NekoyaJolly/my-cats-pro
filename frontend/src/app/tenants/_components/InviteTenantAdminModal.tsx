@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Modal,
   Stack,
@@ -17,11 +18,13 @@ import { IconCheck, IconCopy, IconMail } from '@tabler/icons-react';
 import { ActionButton } from '@/components/ActionButton';
 import { apiClient } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
+import { getInvitationUrl } from '@/lib/invitation-utils';
 
 /**
  * テナント管理者招待モーダル（SUPER_ADMIN専用）
  */
 export function InviteTenantAdminModal() {
+  const router = useRouter();
   const [opened, { open, close }] = useDisclosure(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -56,7 +59,7 @@ export function InviteTenantAdminModal() {
   // テナント一覧を更新して閉じる
   const handleFinish = () => {
     handleClose();
-    window.location.reload();
+    router.refresh();
   };
 
   // 招待送信
@@ -126,14 +129,6 @@ export function InviteTenantAdminModal() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // 招待URL生成（現在のホストを使用）
-  const getInvitationUrl = (token: string) => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/accept-invitation?token=${token}`;
-    }
-    return `/accept-invitation?token=${token}`;
   };
 
   return (

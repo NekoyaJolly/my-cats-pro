@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Modal,
   Stack,
@@ -19,6 +20,7 @@ import { ActionButton } from '@/components/ActionButton';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/store';
 import { notifications } from '@mantine/notifications';
+import { getInvitationUrl } from '@/lib/invitation-utils';
 
 // ロール選択肢（TENANT_ADMIN が招待できるのは USER と ADMIN のみ）
 const ROLE_OPTIONS = [
@@ -30,6 +32,7 @@ const ROLE_OPTIONS = [
  * ユーザー招待モーダル（TENANT_ADMIN専用）
  */
 export function InviteUserModal() {
+  const router = useRouter();
   const { user } = useAuth();
   const [opened, { open, close }] = useDisclosure(false);
   const [loading, setLoading] = useState(false);
@@ -67,7 +70,7 @@ export function InviteUserModal() {
   // ユーザー一覧を更新して閉じる
   const handleFinish = () => {
     handleClose();
-    window.location.reload();
+    router.refresh();
   };
 
   // 招待送信
@@ -137,14 +140,6 @@ export function InviteUserModal() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // 招待URL生成（現在のホストを使用）
-  const getInvitationUrl = (token: string) => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/accept-invitation?token=${token}`;
-    }
-    return `/accept-invitation?token=${token}`;
   };
 
   // ロール名を日本語で取得
