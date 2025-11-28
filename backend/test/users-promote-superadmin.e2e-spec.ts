@@ -1,11 +1,10 @@
-import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { UserRole } from '@prisma/client';
 
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { createTestApp } from './utils/create-test-app';
 
 describe('Users promote-to-superadmin-once (e2e)', () => {
   let app: INestApplication;
@@ -18,22 +17,23 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
   const testPassword = 'SecurePass123!';
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
-    app = await createTestApp(moduleRef);
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+
+    await app.init();
     prisma = app.get<PrismaService>(PrismaService);
 
-    // テスト前に既存の SUPER_ADMIN を削除（クリーン状態から開始）
-    await prisma.user.updateMany({
-      where: { role: UserRole.SUPER_ADMIN },
-      data: { role: UserRole.USER },
-    });
-  });
-
-  afterAll(async () => {
-    // テストユーザーをクリーンアップ
+    // テスト前にテスト用ユーザーをクリーンアップ
     await prisma.user.deleteMany({
       where: {
         email: {
@@ -42,20 +42,42 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
       },
     });
 
-    await app.close();
+    // テスト前に既存の SUPER_ADMIN を一時的に USER に降格
+    // 注意: このテストは単独で実行するか、他のテストと干渉しないように注意が必要
+    await prisma.user.updateMany({
+      where: { role: UserRole.SUPER_ADMIN },
+      data: { role: UserRole.USER },
+    });
   });
 
-  describe('POST /api/v1/users/promote-to-superadmin-once', () => {
+  afterAll(async () => {
+    if (prisma) {
+      // テストユーザーをクリーンアップ
+      await prisma.user.deleteMany({
+        where: {
+          email: {
+            in: [testEmail1, testEmail2],
+          },
+        },
+      });
+    }
+
+    if (app) {
+      await app.close();
+    }
+  });
+
+  describe('POST /users/promote-to-superadmin-once', () => {
     it('未認証ユーザーはアクセスできない（401）', async () => {
       await request(app.getHttpServer())
-        .post('/api/v1/users/promote-to-superadmin-once')
+        .post('/users/promote-to-superadmin-once')
         .expect(401);
     });
 
     it('SUPER_ADMIN が存在しない場合、認証済みユーザーは昇格できる', async () => {
       // ユーザー1を登録
       await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
+        .post('/auth/register')
         .send({
           email: testEmail1,
           password: testPassword,
@@ -68,7 +90,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
 
       // ユーザー1でログイン
       const loginResponse = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
+        .post('/auth/login')
         .send({
           email: testEmail1,
           password: testPassword,
@@ -81,7 +103,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
 
       // 昇格リクエスト
       const promoteResponse = await request(app.getHttpServer())
-        .post('/api/v1/users/promote-to-superadmin-once')
+        .post('/users/promote-to-superadmin-once')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(201);
 
@@ -99,7 +121,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
     it('SUPER_ADMIN が既に存在する場合、別のユーザーは昇格できない（403）', async () => {
       // ユーザー2を登録
       await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
+        .post('/auth/register')
         .send({
           email: testEmail2,
           password: testPassword,
@@ -112,7 +134,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
 
       // ユーザー2でログイン
       const loginResponse = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
+        .post('/auth/login')
         .send({
           email: testEmail2,
           password: testPassword,
@@ -125,7 +147,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
 
       // 昇格リクエスト（すでに SUPER_ADMIN が存在するので 403）
       const promoteResponse = await request(app.getHttpServer())
-        .post('/api/v1/users/promote-to-superadmin-once')
+        .post('/users/promote-to-superadmin-once')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(403);
 
@@ -135,7 +157,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
     it('昇格済みユーザーは再度昇格リクエストを送ると 403 を受ける', async () => {
       // ユーザー1（すでに SUPER_ADMIN）でログイン
       const loginResponse = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
+        .post('/auth/login')
         .send({
           email: testEmail1,
           password: testPassword,
@@ -148,7 +170,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
 
       // 再度昇格リクエスト（すでに SUPER_ADMIN が存在するので 403）
       await request(app.getHttpServer())
-        .post('/api/v1/users/promote-to-superadmin-once')
+        .post('/users/promote-to-superadmin-once')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(403);
     });
@@ -156,7 +178,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
     it('昇格後のユーザーは SUPER_ADMIN 専用 API にアクセスできる', async () => {
       // ユーザー1（SUPER_ADMIN）でログイン
       const loginResponse = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
+        .post('/auth/login')
         .send({
           email: testEmail1,
           password: testPassword,
@@ -169,7 +191,7 @@ describe('Users promote-to-superadmin-once (e2e)', () => {
 
       // SUPER_ADMIN 専用のテナント一覧 API にアクセス
       const tenantsResponse = await request(app.getHttpServer())
-        .get('/api/v1/tenants')
+        .get('/tenants')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
