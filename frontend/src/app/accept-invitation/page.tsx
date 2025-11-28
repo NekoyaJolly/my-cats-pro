@@ -261,8 +261,7 @@ function AcceptInvitationForm() {
       if (response.success && response.data) {
         const data = response.data;
         
-        // API レスポンスは snake_case (access_token) を使用するが、
-        // 内部では一貫性のため camelCase (accessToken) に変換して使用
+        // API レスポンスは snake_case (access_token) だが、TypeScript 変数名は camelCase (accessToken) を使用
         const accessToken = data.access_token;
         if (accessToken && typeof accessToken === 'string') {
           // 第2引数の null は refreshToken（招待登録では refresh token は返されない）
