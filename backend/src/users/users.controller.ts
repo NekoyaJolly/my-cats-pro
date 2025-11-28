@@ -2,10 +2,15 @@ import {
   Controller, 
   Get, 
   Post,
+  Patch,
+  Body,
+  Param,
   Query, 
-  UseGuards 
+  UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
@@ -14,6 +19,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RoleGuard } from '../auth/role.guard';
 import { Roles } from '../auth/roles.decorator';
 
+import { InviteUserDto } from './dto/invite-user.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UsersService } from './users.service';
 
 /**
@@ -72,5 +79,59 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'SUPER_ADMIN はすでに存在します' })
   async promoteToSuperAdminOnce(@GetUser() user: RequestUser) {
     return this.usersService.promoteToSuperAdminOnce(user);
+  }
+
+  /**
+   * ユーザー招待
+   * 
+   * - SUPER_ADMIN: 任意のテナントに TENANT_ADMIN / ADMIN / USER を招待可能
+   * - TENANT_ADMIN: 自テナントにのみ ADMIN / USER を招待可能
+   */
+  @Post('invite')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ 
+    summary: 'ユーザー招待',
+    description: 'SUPER_ADMINは任意のテナント、TENANT_ADMINは自テナントにユーザーを招待します。' 
+  })
+  @ApiResponse({ status: 201, description: '招待が作成されました' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  @ApiResponse({ status: 404, description: 'テナントが見つかりません' })
+  @ApiResponse({ status: 409, description: 'メールアドレスが既に使用されています' })
+  async inviteUser(
+    @GetUser() user: RequestUser,
+    @Body() dto: InviteUserDto,
+  ) {
+    return this.usersService.inviteUser(user, dto);
+  }
+
+  /**
+   * ユーザーロール変更
+   * 
+   * - SUPER_ADMIN: 任意のユーザーのロールを変更可能（自分自身と SUPER_ADMIN 降格は不可）
+   * - TENANT_ADMIN: 自テナントの ADMIN ↔ USER のみ変更可能
+   */
+  @Patch(':id/role')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'ユーザーロール変更',
+    description: 'SUPER_ADMINは任意のユーザー、TENANT_ADMINは自テナントのADMIN/USERのロールを変更します。' 
+  })
+  @ApiParam({ name: 'id', description: '対象ユーザー ID' })
+  @ApiResponse({ status: 200, description: 'ロールが更新されました' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  @ApiResponse({ status: 404, description: 'ユーザーが見つかりません' })
+  async updateUserRole(
+    @GetUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateUserRoleDto,
+  ) {
+    return this.usersService.updateUserRole(user, id, dto);
   }
 }

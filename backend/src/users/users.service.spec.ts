@@ -1,10 +1,16 @@
-import { ForbiddenException } from '@nestjs/common';
+import { 
+  ForbiddenException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 
+import { InviteUserDto } from './dto/invite-user.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
@@ -19,8 +25,15 @@ describe('UsersService', () => {
   const mockPrismaService = {
     user: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
       count: jest.fn(),
       update: jest.fn(),
+    },
+    tenant: {
+      findUnique: jest.fn(),
+    },
+    invitationToken: {
+      create: jest.fn(),
     },
     $transaction: jest.fn((callback: (tx: { user: typeof mockTxUser }) => Promise<unknown>) => {
       return callback({ user: mockTxUser });
@@ -44,6 +57,9 @@ describe('UsersService', () => {
     // トランザクションのモックもクリア
     mockTxUser.count.mockClear();
     mockTxUser.update.mockClear();
+    mockPrismaService.tenant.findUnique.mockClear();
+    mockPrismaService.user.findUnique.mockClear();
+    mockPrismaService.invitationToken.create.mockClear();
   });
 
   describe('listUsers', () => {
@@ -279,6 +295,420 @@ describe('UsersService', () => {
         );
 
         expect(mockTxUser.update).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('inviteUser', () => {
+    const superAdminUser: RequestUser = {
+      userId: 'super-admin-1',
+      email: 'superadmin@example.com',
+      role: UserRole.SUPER_ADMIN,
+      tenantId: undefined,
+    };
+
+    const tenantAdminUser: RequestUser = {
+      userId: 'tenant-admin-1',
+      email: 'tenantadmin@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    const mockTenant = {
+      id: 'tenant-1',
+      name: 'Test Tenant',
+      slug: 'test-tenant',
+      isActive: true,
+    };
+
+    const mockInvitation = {
+      id: 'invitation-1',
+      email: 'newuser@example.com',
+      token: 'mock-token-123',
+      role: UserRole.USER,
+      tenantId: 'tenant-1',
+      expiresAt: new Date(),
+    };
+
+    describe('SUPER_ADMIN として', () => {
+      it('任意のテナントにユーザーを招待できる', async () => {
+        const dto: InviteUserDto = {
+          email: 'newuser@example.com',
+          role: UserRole.USER,
+          tenantId: 'tenant-1',
+        };
+
+        mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+        mockPrismaService.user.findUnique.mockResolvedValue(null);
+        mockPrismaService.invitationToken.create.mockResolvedValue(mockInvitation);
+
+        const result = await service.inviteUser(superAdminUser, dto);
+
+        expect(result.success).toBe(true);
+        expect(result.tenantId).toBe('tenant-1');
+        expect(result.message).toBe('招待を作成しました');
+        expect(mockPrismaService.tenant.findUnique).toHaveBeenCalledWith({
+          where: { id: 'tenant-1' },
+        });
+        expect(mockPrismaService.invitationToken.create).toHaveBeenCalled();
+      });
+
+      it('TENANT_ADMIN を招待できる', async () => {
+        const dto: InviteUserDto = {
+          email: 'newadmin@example.com',
+          role: UserRole.TENANT_ADMIN,
+          tenantId: 'tenant-1',
+        };
+
+        mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+        mockPrismaService.user.findUnique.mockResolvedValue(null);
+        mockPrismaService.invitationToken.create.mockResolvedValue({
+          ...mockInvitation,
+          role: UserRole.TENANT_ADMIN,
+        });
+
+        const result = await service.inviteUser(superAdminUser, dto);
+
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('TENANT_ADMIN として', () => {
+      it('自テナントに ADMIN を招待できる', async () => {
+        const dto: InviteUserDto = {
+          email: 'newadmin@example.com',
+          role: UserRole.ADMIN,
+          tenantId: 'tenant-1',
+        };
+
+        mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+        mockPrismaService.user.findUnique.mockResolvedValue(null);
+        mockPrismaService.invitationToken.create.mockResolvedValue({
+          ...mockInvitation,
+          role: UserRole.ADMIN,
+        });
+
+        const result = await service.inviteUser(tenantAdminUser, dto);
+
+        expect(result.success).toBe(true);
+        expect(result.tenantId).toBe('tenant-1');
+      });
+
+      it('自テナントに USER を招待できる', async () => {
+        const dto: InviteUserDto = {
+          email: 'newuser@example.com',
+          role: UserRole.USER,
+          tenantId: 'tenant-1',
+        };
+
+        mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+        mockPrismaService.user.findUnique.mockResolvedValue(null);
+        mockPrismaService.invitationToken.create.mockResolvedValue(mockInvitation);
+
+        const result = await service.inviteUser(tenantAdminUser, dto);
+
+        expect(result.success).toBe(true);
+      });
+
+      it('TENANT_ADMIN を招待しようとすると 403', async () => {
+        const dto: InviteUserDto = {
+          email: 'newadmin@example.com',
+          role: UserRole.TENANT_ADMIN,
+          tenantId: 'tenant-1',
+        };
+
+        await expect(service.inviteUser(tenantAdminUser, dto)).rejects.toThrow(
+          ForbiddenException,
+        );
+        await expect(service.inviteUser(tenantAdminUser, dto)).rejects.toThrow(
+          'SUPER_ADMIN または TENANT_ADMIN を招待する権限がありません',
+        );
+      });
+
+      it('SUPER_ADMIN を招待しようとすると 403', async () => {
+        const dto: InviteUserDto = {
+          email: 'newsuperadmin@example.com',
+          role: UserRole.SUPER_ADMIN,
+          tenantId: 'tenant-1',
+        };
+
+        await expect(service.inviteUser(tenantAdminUser, dto)).rejects.toThrow(
+          ForbiddenException,
+        );
+        await expect(service.inviteUser(tenantAdminUser, dto)).rejects.toThrow(
+          'SUPER_ADMIN または TENANT_ADMIN を招待する権限がありません',
+        );
+      });
+
+      it('他テナントに招待しようとすると 403', async () => {
+        const dto: InviteUserDto = {
+          email: 'newuser@example.com',
+          role: UserRole.USER,
+          tenantId: 'tenant-2',
+        };
+
+        await expect(service.inviteUser(tenantAdminUser, dto)).rejects.toThrow(
+          ForbiddenException,
+        );
+        await expect(service.inviteUser(tenantAdminUser, dto)).rejects.toThrow(
+          '他のテナントにユーザーを招待することはできません',
+        );
+      });
+    });
+
+    describe('共通エラーケース', () => {
+      it('既存ユーザーがいる場合は 409', async () => {
+        const dto: InviteUserDto = {
+          email: 'existing@example.com',
+          role: UserRole.USER,
+          tenantId: 'tenant-1',
+        };
+
+        mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+        mockPrismaService.user.findUnique.mockResolvedValue({
+          id: 'existing-user',
+          email: 'existing@example.com',
+        });
+
+        await expect(service.inviteUser(superAdminUser, dto)).rejects.toThrow(
+          ConflictException,
+        );
+        await expect(service.inviteUser(superAdminUser, dto)).rejects.toThrow(
+          'このメールアドレスは既に使用されています',
+        );
+      });
+
+      it('テナントが存在しない場合は 404', async () => {
+        const dto: InviteUserDto = {
+          email: 'newuser@example.com',
+          role: UserRole.USER,
+          tenantId: 'non-existent-tenant',
+        };
+
+        mockPrismaService.tenant.findUnique.mockResolvedValue(null);
+
+        await expect(service.inviteUser(superAdminUser, dto)).rejects.toThrow(
+          NotFoundException,
+        );
+        await expect(service.inviteUser(superAdminUser, dto)).rejects.toThrow(
+          '指定されたテナントが見つかりません',
+        );
+      });
+    });
+  });
+
+  describe('updateUserRole', () => {
+    const superAdminUser: RequestUser = {
+      userId: 'super-admin-1',
+      email: 'superadmin@example.com',
+      role: UserRole.SUPER_ADMIN,
+      tenantId: undefined,
+    };
+
+    const tenantAdminUser: RequestUser = {
+      userId: 'tenant-admin-1',
+      email: 'tenantadmin@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    const mockUser = {
+      id: 'user-1',
+      email: 'user@example.com',
+      role: UserRole.USER,
+      tenantId: 'tenant-1',
+    };
+
+    const mockAdmin = {
+      id: 'admin-1',
+      email: 'admin@example.com',
+      role: UserRole.ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    const mockSuperAdmin = {
+      id: 'super-admin-2',
+      email: 'superadmin2@example.com',
+      role: UserRole.SUPER_ADMIN,
+      tenantId: undefined,
+    };
+
+    const mockTenantAdmin = {
+      id: 'tenant-admin-2',
+      email: 'tenantadmin2@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    describe('SUPER_ADMIN として', () => {
+      it('ユーザーのロールを変更できる', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.ADMIN };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+        mockPrismaService.user.update.mockResolvedValue({
+          ...mockUser,
+          role: UserRole.ADMIN,
+        });
+
+        const result = await service.updateUserRole(superAdminUser, 'user-1', dto);
+
+        expect(result.success).toBe(true);
+        expect(result.data.role).toBe(UserRole.ADMIN);
+        expect(result.message).toBe('ロールを更新しました');
+      });
+
+      it('SUPER_ADMIN を降格しようとすると 403', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.ADMIN };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(mockSuperAdmin);
+
+        await expect(
+          service.updateUserRole(superAdminUser, 'super-admin-2', dto),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.updateUserRole(superAdminUser, 'super-admin-2', dto),
+        ).rejects.toThrow('SUPER_ADMIN を降格することはできません');
+      });
+
+      it('自分自身のロールを変更しようとすると 403', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.ADMIN };
+
+        mockPrismaService.user.findUnique.mockResolvedValue({
+          id: 'super-admin-1',
+          email: 'superadmin@example.com',
+          role: UserRole.SUPER_ADMIN,
+        });
+
+        await expect(
+          service.updateUserRole(superAdminUser, 'super-admin-1', dto),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.updateUserRole(superAdminUser, 'super-admin-1', dto),
+        ).rejects.toThrow('自分自身のロールを変更することはできません');
+      });
+    });
+
+    describe('TENANT_ADMIN として', () => {
+      it('自テナントの ADMIN を USER に変更できる', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.USER };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(mockAdmin);
+        mockPrismaService.user.update.mockResolvedValue({
+          ...mockAdmin,
+          role: UserRole.USER,
+        });
+
+        const result = await service.updateUserRole(tenantAdminUser, 'admin-1', dto);
+
+        expect(result.success).toBe(true);
+        expect(result.data.role).toBe(UserRole.USER);
+      });
+
+      it('自テナントの USER を ADMIN に変更できる', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.ADMIN };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+        mockPrismaService.user.update.mockResolvedValue({
+          ...mockUser,
+          role: UserRole.ADMIN,
+        });
+
+        const result = await service.updateUserRole(tenantAdminUser, 'user-1', dto);
+
+        expect(result.success).toBe(true);
+        expect(result.data.role).toBe(UserRole.ADMIN);
+      });
+
+      it('他テナントのユーザーを変更しようとすると 403', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.ADMIN };
+
+        const otherTenantUser = {
+          ...mockUser,
+          tenantId: 'tenant-2',
+        };
+        mockPrismaService.user.findUnique.mockResolvedValue(otherTenantUser);
+
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'user-1', dto),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'user-1', dto),
+        ).rejects.toThrow('他のテナントのユーザーのロールを変更することはできません');
+      });
+
+      it('SUPER_ADMIN を変更しようとすると 403', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.ADMIN };
+
+        const superAdminInTenant = {
+          ...mockSuperAdmin,
+          tenantId: 'tenant-1',
+        };
+        mockPrismaService.user.findUnique.mockResolvedValue(superAdminInTenant);
+
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'super-admin-2', dto),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'super-admin-2', dto),
+        ).rejects.toThrow(
+          'SUPER_ADMIN または TENANT_ADMIN のロールを変更する権限がありません',
+        );
+      });
+
+      it('TENANT_ADMIN を変更しようとすると 403', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.USER };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(mockTenantAdmin);
+
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'tenant-admin-2', dto),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'tenant-admin-2', dto),
+        ).rejects.toThrow(
+          'SUPER_ADMIN または TENANT_ADMIN のロールを変更する権限がありません',
+        );
+      });
+
+      it('SUPER_ADMIN に変更しようとすると 403', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.SUPER_ADMIN };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'user-1', dto),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'user-1', dto),
+        ).rejects.toThrow('SUPER_ADMIN または TENANT_ADMIN に変更する権限がありません');
+      });
+
+      it('TENANT_ADMIN に変更しようとすると 403', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.TENANT_ADMIN };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'user-1', dto),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.updateUserRole(tenantAdminUser, 'user-1', dto),
+        ).rejects.toThrow('SUPER_ADMIN または TENANT_ADMIN に変更する権限がありません');
+      });
+    });
+
+    describe('共通エラーケース', () => {
+      it('ユーザーが存在しない場合は 404', async () => {
+        const dto: UpdateUserRoleDto = { role: UserRole.ADMIN };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+        await expect(
+          service.updateUserRole(superAdminUser, 'non-existent-user', dto),
+        ).rejects.toThrow(NotFoundException);
+        await expect(
+          service.updateUserRole(superAdminUser, 'non-existent-user', dto),
+        ).rejects.toThrow('指定されたユーザーが見つかりません');
       });
     });
   });

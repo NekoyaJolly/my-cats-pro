@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Table, Badge, Text, Card, Loader, Center, Alert } from '@mantine/core';
+import { useState, useEffect, useCallback } from 'react';
+import { Table, Badge, Text, Card, Loader, Center, Alert, Select } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { apiClient } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
+import { useAuth } from '@/lib/auth/store';
 
 interface User {
   id: string;
@@ -16,13 +17,23 @@ interface User {
   createdAt: string;
 }
 
+interface RoleOption {
+  value: string;
+  label: string;
+}
+
 /**
  * ユーザー一覧テーブル
  */
 export function UsersList() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [changingRoleUserId, setChangingRoleUserId] = useState<string | null>(null);
+
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const isTenantAdmin = currentUser?.role === 'TENANT_ADMIN';
 
   // ロール表示名変換
   const getRoleLabel = (role: string): string => {
@@ -44,6 +55,73 @@ export function UsersList() {
       USER: 'gray',
     };
     return mapping[role] || 'gray';
+  };
+
+  /**
+   * ターゲットユーザーのロール変更可能な選択肢を返す
+   * 変更不可の場合は null を返す
+   */
+  const getRoleOptions = useCallback((targetUser: User): RoleOption[] | null => {
+    // 自分自身は変更不可
+    if (targetUser.id === currentUser?.id) return null;
+
+    if (isSuperAdmin) {
+      // SUPER_ADMIN は他の SUPER_ADMIN のロールは変更不可
+      if (targetUser.role === 'SUPER_ADMIN') return null;
+      // ADMIN ↔ USER, TENANT_ADMIN への変更を許可
+      return [
+        { value: 'USER', label: '一般ユーザー' },
+        { value: 'ADMIN', label: '管理者' },
+        { value: 'TENANT_ADMIN', label: 'テナント管理者' },
+      ];
+    }
+
+    if (isTenantAdmin) {
+      // TENANT_ADMIN は SUPER_ADMIN と TENANT_ADMIN のユーザーは変更不可
+      if (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'TENANT_ADMIN') return null;
+      // 自テナントの ADMIN ↔ USER のみ変更可能
+      return [
+        { value: 'USER', label: '一般ユーザー' },
+        { value: 'ADMIN', label: '管理者' },
+      ];
+    }
+
+    return null;
+  }, [currentUser?.id, isSuperAdmin, isTenantAdmin]);
+
+  /**
+   * ロール変更 API 呼び出し
+   */
+  const handleRoleChange = async (userId: string, newRole: string): Promise<void> => {
+    setChangingRoleUserId(userId);
+    try {
+      const response = await apiClient.request(`/users/${userId}/role` as never, 'patch', {
+        body: { role: newRole } as never,
+      });
+
+      if (response.success) {
+        // ユーザー一覧の state を更新
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+        );
+        notifications.show({
+          title: '成功',
+          message: 'ロールを変更しました',
+          color: 'green',
+        });
+      } else {
+        throw new Error(response.error || 'ロールの変更に失敗しました');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'エラーが発生しました';
+      notifications.show({
+        title: 'エラー',
+        message,
+        color: 'red',
+      });
+    } finally {
+      setChangingRoleUserId(null);
+    }
   };
 
   // ユーザー一覧取得
@@ -103,6 +181,9 @@ export function UsersList() {
     );
   }
 
+  // 現在のユーザーが SUPER_ADMIN または TENANT_ADMIN の場合、操作列を表示
+  const showActionsColumn = isSuperAdmin || isTenantAdmin;
+
   return (
     <Card withBorder>
       <Table striped highlightOnHover>
@@ -112,11 +193,14 @@ export function UsersList() {
             <Table.Th>メールアドレス</Table.Th>
             <Table.Th>ロール</Table.Th>
             <Table.Th>登録日</Table.Th>
+            {showActionsColumn && <Table.Th>操作</Table.Th>}
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
           {users.map((u) => {
             const displayName = [u.lastName, u.firstName].filter(Boolean).join(' ') || '未設定';
+            const roleOptions = getRoleOptions(u);
+            const isChangingRole = changingRoleUserId === u.id;
             
             return (
               <Table.Tr key={u.id}>
@@ -138,6 +222,31 @@ export function UsersList() {
                     {new Date(u.createdAt).toLocaleDateString('ja-JP')}
                   </Text>
                 </Table.Td>
+                {showActionsColumn && (
+                  <Table.Td>
+                    {roleOptions ? (
+                      <Select
+                        size="xs"
+                        w={160}
+                        placeholder="ロール変更"
+                        data={roleOptions}
+                        value={u.role}
+                        onChange={(value) => {
+                          if (value && value !== u.role) {
+                            void handleRoleChange(u.id, value);
+                          }
+                        }}
+                        disabled={isChangingRole}
+                        rightSection={isChangingRole ? <Loader size="xs" /> : undefined}
+                        aria-label={`${displayName}のロールを変更`}
+                      />
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        -
+                      </Text>
+                    )}
+                  </Table.Td>
+                )}
               </Table.Tr>
             );
           })}
