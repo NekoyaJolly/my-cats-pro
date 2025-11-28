@@ -10,12 +10,21 @@ import { UsersService } from './users.service';
 describe('UsersService', () => {
   let service: UsersService;
 
+  // トランザクション内で使用されるモック
+  const mockTxUser = {
+    count: jest.fn(),
+    update: jest.fn(),
+  };
+
   const mockPrismaService = {
     user: {
       findMany: jest.fn(),
       count: jest.fn(),
       update: jest.fn(),
     },
+    $transaction: jest.fn((callback: (tx: { user: typeof mockTxUser }) => Promise<unknown>) => {
+      return callback({ user: mockTxUser });
+    }),
   };
 
   beforeEach(async () => {
@@ -32,6 +41,9 @@ describe('UsersService', () => {
     service = module.get<UsersService>(UsersService);
 
     jest.clearAllMocks();
+    // トランザクションのモックもクリア
+    mockTxUser.count.mockClear();
+    mockTxUser.update.mockClear();
   });
 
   describe('listUsers', () => {
@@ -218,8 +230,8 @@ describe('UsersService', () => {
 
     describe('SUPER_ADMIN がまだ存在しない場合', () => {
       it('ユーザーを SUPER_ADMIN に昇格できる', async () => {
-        mockPrismaService.user.count.mockResolvedValue(0);
-        mockPrismaService.user.update.mockResolvedValue({
+        mockTxUser.count.mockResolvedValue(0);
+        mockTxUser.update.mockResolvedValue({
           id: regularUser.userId,
           email: regularUser.email,
           role: UserRole.SUPER_ADMIN,
@@ -232,10 +244,10 @@ describe('UsersService', () => {
         expect(result.data.email).toBe(regularUser.email);
         expect(result.data.role).toBe(UserRole.SUPER_ADMIN);
 
-        expect(mockPrismaService.user.count).toHaveBeenCalledWith({
+        expect(mockTxUser.count).toHaveBeenCalledWith({
           where: { role: UserRole.SUPER_ADMIN },
         });
-        expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        expect(mockTxUser.update).toHaveBeenCalledWith({
           where: { id: regularUser.userId },
           data: { role: UserRole.SUPER_ADMIN },
           select: {
@@ -249,7 +261,7 @@ describe('UsersService', () => {
 
     describe('SUPER_ADMIN がすでに存在する場合', () => {
       it('ForbiddenException を投げる', async () => {
-        mockPrismaService.user.count.mockResolvedValue(1);
+        mockTxUser.count.mockResolvedValue(1);
 
         await expect(service.promoteToSuperAdminOnce(regularUser)).rejects.toThrow(
           ForbiddenException,
@@ -260,13 +272,13 @@ describe('UsersService', () => {
       });
 
       it('prisma.user.update が呼ばれないことを確認', async () => {
-        mockPrismaService.user.count.mockResolvedValue(2);
+        mockTxUser.count.mockResolvedValue(2);
 
         await expect(service.promoteToSuperAdminOnce(regularUser)).rejects.toThrow(
           ForbiddenException,
         );
 
-        expect(mockPrismaService.user.update).not.toHaveBeenCalled();
+        expect(mockTxUser.update).not.toHaveBeenCalled();
       });
     });
   });

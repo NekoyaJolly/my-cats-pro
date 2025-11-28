@@ -21,7 +21,7 @@ import {
   Text,
   Loader,
 } from '@mantine/core';
-import { IconAlertTriangle, IconCheck, IconShieldCheck } from '@tabler/icons-react';
+import { IconAlertTriangle, IconCheck, IconLogout, IconShieldCheck } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { apiRequest, ApiError, ApiResponse } from '@/lib/api/client';
 
@@ -41,7 +41,7 @@ type PageState =
  * バックエンドは { success: true, data: { id, email, role } } を返す
  */
 interface PromoteResponseData {
-  id: string;
+  id: string; // UUID
   email: string;
   role: string;
 }
@@ -57,7 +57,7 @@ async function promoteToSuperAdmin(): Promise<ApiResponse<PromoteResponseData>> 
 
 export default function FirstSuperAdminSetupPage() {
   const router = useRouter();
-  const { user, isAuthenticated, initialized } = useAuth();
+  const { user, isAuthenticated, initialized, logout } = useAuth();
   const [pageState, setPageState] = useState<PageState>({ status: 'loading' });
 
   // 認証状態に応じた初期化
@@ -123,8 +123,11 @@ export default function FirstSuperAdminSetupPage() {
           justifyContent: 'center',
           background: 'linear-gradient(135deg, #eef2ff 0%, #e1f1ff 100%)',
         }}
+        role="status"
+        aria-live="polite"
+        aria-label="読み込み中"
       >
-        <Loader size="lg" />
+        <Loader size="lg" aria-label="読み込み中" />
       </Box>
     );
   }
@@ -150,6 +153,7 @@ export default function FirstSuperAdminSetupPage() {
               <Text
                 size="xl"
                 style={{ fontSize: '3.5rem', marginBottom: '0.75rem', lineHeight: 1 }}
+                aria-hidden="true"
               >
                 🛡️
               </Text>
@@ -189,19 +193,25 @@ export default function FirstSuperAdminSetupPage() {
                     >
                       このアカウントは SUPER ADMIN に昇格しました。
                       システム全体の管理権限を持っています。
+                      <Text size="sm" fw={600} mt="xs">
+                        権限を反映するため、再ログインが必要です。
+                      </Text>
                     </Alert>
                     <Button
                       fullWidth
                       size="md"
-                      leftSection={<IconShieldCheck size="1rem" />}
-                      onClick={() => router.push('/tenants')}
+                      leftSection={<IconLogout size="1rem" />}
+                      onClick={async () => {
+                        await logout();
+                        router.push('/login');
+                      }}
                       style={{
                         marginTop: '0.5rem',
                         background: 'var(--accent)',
                         boxShadow: '0 8px 20px rgba(37, 99, 235, 0.25)',
                       }}
                     >
-                      テナント管理ページへ
+                      ログアウトして再ログイン
                     </Button>
                   </>
                 )}

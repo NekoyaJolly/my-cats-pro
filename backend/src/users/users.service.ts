@@ -132,27 +132,30 @@ export class UsersService {
    * @throws ForbiddenException SUPER_ADMIN がすでに存在する場合
    */
   async promoteToSuperAdminOnce(currentUser: RequestUser): Promise<PromoteToSuperAdminResponse> {
-    const superAdminCount = await this.prisma.user.count({
-      where: { role: UserRole.SUPER_ADMIN },
-    });
-
-    if (superAdminCount > 0) {
-      this.logger.warn({
-        message: 'promoteToSuperAdminOnce: すでにSUPER_ADMINが存在するため拒否',
-        requestedByUserId: currentUser.userId,
-        requestedByEmail: currentUser.email,
+    // トランザクションで競合状態を防止
+    const updatedUser = await this.prisma.$transaction(async (tx) => {
+      const superAdminCount = await tx.user.count({
+        where: { role: UserRole.SUPER_ADMIN },
       });
-      throw new ForbiddenException('SUPER_ADMINはすでに存在します');
-    }
 
-    const updatedUser = await this.prisma.user.update({
-      where: { id: currentUser.userId },
-      data: { role: UserRole.SUPER_ADMIN },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-      },
+      if (superAdminCount > 0) {
+        this.logger.warn({
+          message: 'promoteToSuperAdminOnce: すでにSUPER_ADMINが存在するため拒否',
+          requestedByUserId: currentUser.userId,
+          requestedByEmail: currentUser.email,
+        });
+        throw new ForbiddenException('SUPER_ADMINはすでに存在します');
+      }
+
+      return tx.user.update({
+        where: { id: currentUser.userId },
+        data: { role: UserRole.SUPER_ADMIN },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+        },
+      });
     });
 
     this.logger.log({
