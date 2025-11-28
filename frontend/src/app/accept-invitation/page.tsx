@@ -269,7 +269,7 @@ function AcceptInvitationForm() {
           setTokens(accessToken, null);
           
           // auth store を bootstrap（ユーザー情報は後で /me などで取得される想定）
-          bootstrap({
+          await bootstrap({
             accessToken,
           });
           
