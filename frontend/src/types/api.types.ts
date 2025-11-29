@@ -10,6 +10,19 @@ export interface ApiResponse<T> {
 }
 
 /**
+ * 曜日型
+ */
+export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+/**
+ * 出勤時間テンプレート
+ */
+export interface WorkTimeTemplate {
+  startHour: number; // 0–23
+  endHour: number; // 1–24, must be > startHour
+}
+
+/**
  * スタッフレスポンスDTO
  */
 export interface StaffResponseDto {
@@ -21,6 +34,8 @@ export interface StaffResponseDto {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  workingDays?: Weekday[];
+  workTimeTemplate?: WorkTimeTemplate | null;
 }
 
 /**
@@ -39,6 +54,8 @@ export interface CreateStaffRequest {
   email?: string | null;
   role?: string;
   color?: string;
+  workingDays?: Weekday[];
+  workTimeTemplate?: WorkTimeTemplate | null;
 }
 
 /**
@@ -50,6 +67,8 @@ export interface UpdateStaffRequest {
   role?: string;
   color?: string;
   isActive?: boolean;
+  workingDays?: Weekday[];
+  workTimeTemplate?: WorkTimeTemplate | null;
 }
 
 /**

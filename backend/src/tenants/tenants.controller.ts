@@ -19,6 +19,7 @@ import { Roles } from '../auth/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { TenantScopedGuard } from '../common/guards/tenant-scoped.guard';
 
+import { CreateTenantDto } from './dto/create-tenant.dto';
 import { 
   InviteTenantAdminDto, 
   InviteUserDto, 
@@ -53,6 +54,27 @@ export class TenantsController {
   @ApiResponse({ status: 403, description: '権限がありません' })
   async listTenants() {
     return this.tenantsService.listTenants();
+  }
+
+  /**
+   * テナント作成
+   * SUPER_ADMIN のみがアクセス可能
+   */
+  @Post()
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ 
+    summary: 'テナント作成',
+    description: 'SuperAdminのみが実行可能。新しいテナントを作成します。' 
+  })
+  @ApiResponse({ status: 201, description: 'テナントが作成されました' })
+  @ApiResponse({ status: 400, description: '不正なリクエスト' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  @ApiResponse({ status: 409, description: 'スラッグが既に使用されています' })
+  async createTenant(@Body() dto: CreateTenantDto) {
+    return this.tenantsService.createTenant(dto);
   }
 
   /**

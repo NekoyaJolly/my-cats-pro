@@ -15,7 +15,7 @@ import { InviteUserModal } from './InviteUserModal';
  * 
  * ロールに応じて以下の機能を提供:
  * - 全員: プロフィール編集、パスワード変更
- * - SUPER_ADMIN: テナント管理者招待、全テナント閲覧
+ * - SUPER_ADMIN: テナント管理者招待、全テナント閲覧、テナント作成
  * - TENANT_ADMIN: ユーザー招待、自テナントのユーザー閲覧
  */
 export function TenantsManagement() {
@@ -25,7 +25,8 @@ export function TenantsManagement() {
   // 権限チェック
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const isTenantAdmin = user?.role === 'TENANT_ADMIN';
-  const hasManagementAccess = isSuperAdmin || isTenantAdmin;
+  // ユーザー管理は SUPER_ADMIN と TENANT_ADMIN が可能
+  const hasUserManagementAccess = isSuperAdmin || isTenantAdmin;
 
   // 初期化待機
   if (!initialized) {
@@ -54,8 +55,8 @@ export function TenantsManagement() {
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
           <Tabs.Tab value="profile">ユーザー設定</Tabs.Tab>
-          {hasManagementAccess && <Tabs.Tab value="tenants">テナント一覧</Tabs.Tab>}
-          {hasManagementAccess && <Tabs.Tab value="users">ユーザー一覧</Tabs.Tab>}
+          {isSuperAdmin && <Tabs.Tab value="tenants">テナント一覧</Tabs.Tab>}
+          {hasUserManagementAccess && <Tabs.Tab value="users">ユーザー一覧</Tabs.Tab>}
         </Tabs.List>
 
         <Tabs.Panel value="profile" pt="md">
