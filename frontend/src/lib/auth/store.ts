@@ -29,6 +29,7 @@ interface AuthActions {
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   bootstrap: (payload: unknown) => void;
+  updateUser: (updates: Partial<AuthUser>) => void;
   setError: (message: string | null) => void;
   clearError: () => void;
 }
@@ -199,6 +200,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
     });
   },
 
+  updateUser: (updates) => set((state) => ({
+    user: state.user ? { ...state.user, ...updates } : null,
+  })),
+
   setError: (message) => set({ error: message ?? null }),
 
   clearError: () => set({ error: null }),
@@ -214,6 +219,7 @@ export function useAuth() {
   const error = useAuthStore((state) => state.error);
   const login = useAuthStore((state) => state.login);
   const logout = useAuthStore((state) => state.logout);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const clearError = useAuthStore((state) => state.clearError);
 
   return {
@@ -226,6 +232,7 @@ export function useAuth() {
     error,
     login,
     logout,
+    updateUser,
     clearError,
   };
 }

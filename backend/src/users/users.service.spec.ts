@@ -2,6 +2,7 @@ import {
   ForbiddenException,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRole } from '@prisma/client';
@@ -26,6 +27,7 @@ describe('UsersService', () => {
     user: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       count: jest.fn(),
       update: jest.fn(),
     },
@@ -59,6 +61,7 @@ describe('UsersService', () => {
     mockTxUser.update.mockClear();
     mockPrismaService.tenant.findUnique.mockClear();
     mockPrismaService.user.findUnique.mockClear();
+    mockPrismaService.user.findFirst.mockClear();
     mockPrismaService.invitationToken.create.mockClear();
   });
 
@@ -709,6 +712,206 @@ describe('UsersService', () => {
         await expect(
           service.updateUserRole(superAdminUser, 'non-existent-user', dto),
         ).rejects.toThrow('指定されたユーザーが見つかりません');
+      });
+    });
+  });
+
+  describe('getProfile', () => {
+    const regularUser: RequestUser = {
+      userId: 'user-1',
+      email: 'user@example.com',
+      role: UserRole.USER,
+      tenantId: 'tenant-1',
+    };
+
+    const mockUserProfile = {
+      id: 'user-1',
+      email: 'user@example.com',
+      firstName: 'User',
+      lastName: 'Test',
+      role: UserRole.USER,
+    };
+
+    it('ユーザーが存在する場合、プロフィール情報を正常に取得できる', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUserProfile);
+
+      const result = await service.getProfile(regularUser);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockUserProfile);
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: regularUser.userId },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+        },
+      });
+    });
+
+    it('ユーザーが存在しない場合、NotFoundException がスローされる', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.getProfile(regularUser)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.getProfile(regularUser)).rejects.toThrow(
+        'ユーザーが見つかりません',
+      );
+    });
+  });
+
+  describe('updateProfile', () => {
+    const regularUser: RequestUser = {
+      userId: 'user-1',
+      email: 'user@example.com',
+      role: UserRole.USER,
+      tenantId: 'tenant-1',
+    };
+
+    const mockUpdatedUser = {
+      id: 'user-1',
+      email: 'newemail@example.com',
+      firstName: 'NewFirst',
+      lastName: 'NewLast',
+      role: UserRole.USER,
+    };
+
+    it('firstName, lastName, email を正常に更新できる', async () => {
+      const dto = {
+        firstName: 'NewFirst',
+        lastName: 'NewLast',
+        email: 'newemail@example.com',
+      };
+
+      mockPrismaService.user.findFirst.mockResolvedValue(null);
+      mockPrismaService.user.update.mockResolvedValue(mockUpdatedUser);
+
+      const result = await service.updateProfile(regularUser, dto);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockUpdatedUser);
+      expect(result.message).toBe('プロフィールを更新しました');
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: regularUser.userId },
+        data: {
+          firstName: 'NewFirst',
+          lastName: 'NewLast',
+          email: 'newemail@example.com',
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+        },
+      });
+    });
+
+    it('firstName のみを更新できる', async () => {
+      const dto = { firstName: 'NewFirst' };
+
+      mockPrismaService.user.update.mockResolvedValue({
+        ...mockUpdatedUser,
+        firstName: 'NewFirst',
+      });
+
+      const result = await service.updateProfile(regularUser, dto);
+
+      expect(result.success).toBe(true);
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: regularUser.userId },
+        data: { firstName: 'NewFirst' },
+        select: expect.any(Object),
+      });
+    });
+
+    it('空のDTOの場合、BadRequestException がスローされる', async () => {
+      const dto = {};
+
+      await expect(service.updateProfile(regularUser, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.updateProfile(regularUser, dto)).rejects.toThrow(
+        '更新するフィールドがありません',
+      );
+    });
+
+    it('既存のメールアドレスを指定した場合、ConflictException がスローされる', async () => {
+      const dto = { email: 'existing@example.com' };
+
+      mockPrismaService.user.findFirst.mockResolvedValue({
+        id: 'other-user',
+        email: 'existing@example.com',
+      });
+
+      await expect(service.updateProfile(regularUser, dto)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(service.updateProfile(regularUser, dto)).rejects.toThrow(
+        'このメールアドレスは既に使用されています',
+      );
+    });
+
+    it('空のメールアドレスを指定した場合、BadRequestException がスローされる', async () => {
+      const dto = { email: '' };
+
+      await expect(service.updateProfile(regularUser, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.updateProfile(regularUser, dto)).rejects.toThrow(
+        'メールアドレスは空にできません',
+      );
+    });
+
+    it('空白のみのメールアドレスを指定した場合、BadRequestException がスローされる', async () => {
+      const dto = { email: '   ' };
+
+      await expect(service.updateProfile(regularUser, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.updateProfile(regularUser, dto)).rejects.toThrow(
+        'メールアドレスは空にできません',
+      );
+    });
+
+    it('メールアドレスが正規化される（trim + toLowerCase）', async () => {
+      const dto = { email: '  Test@Example.COM  ' };
+
+      mockPrismaService.user.findFirst.mockResolvedValue(null);
+      mockPrismaService.user.update.mockResolvedValue({
+        ...mockUpdatedUser,
+        email: 'test@example.com',
+      });
+
+      await service.updateProfile(regularUser, dto);
+
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: regularUser.userId },
+        data: { email: 'test@example.com' },
+        select: expect.any(Object),
+      });
+    });
+
+    it('空文字列で firstName/lastName を削除できる', async () => {
+      const dto = { firstName: '', lastName: '' };
+
+      mockPrismaService.user.update.mockResolvedValue({
+        ...mockUpdatedUser,
+        firstName: '',
+        lastName: '',
+      });
+
+      const result = await service.updateProfile(regularUser, dto);
+
+      expect(result.success).toBe(true);
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: regularUser.userId },
+        data: { firstName: '', lastName: '' },
+        select: expect.any(Object),
       });
     });
   });

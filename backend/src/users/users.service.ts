@@ -32,6 +32,17 @@ export interface PromoteToSuperAdminResponse {
 }
 
 /**
+ * ユーザープロフィール情報の共通型
+ */
+export interface UserProfileData {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: UserRole;
+}
+
+/**
  * ユーザー管理サービス
  * 
  * マルチテナント環境でのユーザー一覧取得機能を提供します。
@@ -476,13 +487,7 @@ export class UsersService {
    */
   async getProfile(currentUser: RequestUser): Promise<{
     success: true;
-    data: {
-      id: string;
-      email: string;
-      firstName: string | null;
-      lastName: string | null;
-      role: UserRole;
-    };
+    data: UserProfileData;
   }> {
     const user = await this.prisma.user.findUnique({
       where: { id: currentUser.userId },
@@ -522,33 +527,12 @@ export class UsersService {
     dto: UpdateProfileDto,
   ): Promise<{
     success: true;
-    data: {
-      id: string;
-      email: string;
-      firstName: string | null;
-      lastName: string | null;
-      role: UserRole;
-    };
+    data: UserProfileData;
     message: string;
   }> {
     // 更新対象のフィールドがない場合はエラー
     if (dto.firstName === undefined && dto.lastName === undefined && dto.email === undefined) {
       throw new BadRequestException('更新するフィールドがありません');
-    }
-
-    // メールアドレスの変更がある場合は重複チェック
-    if (dto.email) {
-      const normalizedEmail = dto.email.trim().toLowerCase();
-      const existingUser = await this.prisma.user.findFirst({
-        where: {
-          email: normalizedEmail,
-          NOT: { id: currentUser.userId },
-        },
-      });
-
-      if (existingUser) {
-        throw new ConflictException('このメールアドレスは既に使用されています');
-      }
     }
 
     // 更新データを構築
@@ -558,6 +542,7 @@ export class UsersService {
       email?: string;
     } = {};
 
+    // firstName/lastName は空文字列も許可（名前を消す場合）
     if (dto.firstName !== undefined) {
       updateData.firstName = dto.firstName;
     }
@@ -565,7 +550,22 @@ export class UsersService {
       updateData.lastName = dto.lastName;
     }
     if (dto.email !== undefined) {
-      updateData.email = dto.email.trim().toLowerCase();
+      const trimmedEmail = dto.email.trim().toLowerCase();
+      if (trimmedEmail === '') {
+        throw new BadRequestException('メールアドレスは空にできません');
+      }
+      // メールアドレスの重複チェック
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          email: trimmedEmail,
+          NOT: { id: currentUser.userId },
+        },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('このメールアドレスは既に使用されています');
+      }
+      updateData.email = trimmedEmail;
     }
 
     const updatedUser = await this.prisma.user.update({

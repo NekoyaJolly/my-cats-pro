@@ -9,11 +9,13 @@ import {
   Group,
   Text,
   Divider,
+  Alert,
 } from '@mantine/core';
+import { IconAlertTriangle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { ActionButton } from '@/components/ActionButton';
-import { useAuth } from '@/lib/auth/store';
-import { apiClient } from '@/lib/api/client';
+import { useAuth, useAuthStore } from '@/lib/auth/store';
+import { apiClient, apiRequest } from '@/lib/api/client';
 
 interface ProfileFormData {
   firstName: string;
@@ -27,6 +29,14 @@ interface PasswordFormData {
   confirmPassword: string;
 }
 
+interface ProfileUpdateResponse {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: string;
+}
+
 /**
  * ユーザープロフィール編集・パスワード変更フォーム
  * 
@@ -36,6 +46,7 @@ interface PasswordFormData {
  */
 export function UserProfileForm() {
   const { user } = useAuth();
+  const updateUser = useAuthStore((state) => state.updateUser);
 
   // プロフィールフォームの状態
   const [profileData, setProfileData] = useState<ProfileFormData>({
@@ -43,6 +54,7 @@ export function UserProfileForm() {
     lastName: '',
     email: '',
   });
+  const [originalEmail, setOriginalEmail] = useState<string>('');
   const [profileLoading, setProfileLoading] = useState(false);
 
   // パスワードフォームの状態
@@ -61,8 +73,12 @@ export function UserProfileForm() {
         lastName: user.lastName ?? '',
         email: user.email ?? '',
       });
+      setOriginalEmail(user.email ?? '');
     }
   }, [user]);
+
+  // メールアドレスが変更されたかどうか
+  const isEmailChanged = profileData.email.trim().toLowerCase() !== originalEmail.toLowerCase();
 
   // プロフィール更新処理
   const handleProfileSubmit = async () => {
@@ -79,23 +95,42 @@ export function UserProfileForm() {
     try {
       setProfileLoading(true);
 
-      // PATCH /users/me で型安全に呼び出し
-      const response = await apiClient.request('/users/me' as never, 'patch', {
-        body: {
-          firstName: profileData.firstName.trim() || undefined,
-          lastName: profileData.lastName.trim() || undefined,
+      // PATCH /users/me で呼び出し（OpenAPIスキーマに未定義のため apiRequest を使用）
+      const response = await apiRequest<ProfileUpdateResponse>('/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          firstName: profileData.firstName.trim(),
+          lastName: profileData.lastName.trim(),
           email: profileData.email.trim(),
-        } as never,
+        }),
       });
 
-      if (response.success) {
+      if (response.success && response.data) {
+        // 認証ストアを更新
+        updateUser({
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          email: response.data.email,
+        });
+
+        // 元のメールアドレスを更新
+        setOriginalEmail(response.data.email);
+
         notifications.show({
           title: '成功',
           message: 'プロフィールを更新しました',
           color: 'green',
         });
       } else {
-        throw new Error(response.error || 'プロフィールの更新に失敗しました');
+        const errorMessage =
+          response.error ||
+          response.message ||
+          'プロフィールの更新に失敗しました';
+        notifications.show({
+          title: 'エラー',
+          message: errorMessage,
+          color: 'red',
+        });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'エラーが発生しました';
@@ -172,7 +207,15 @@ export function UserProfileForm() {
           confirmPassword: '',
         });
       } else {
-        throw new Error(response.error || 'パスワードの変更に失敗しました');
+        const errorMessage =
+          response.error ||
+          response.message ||
+          'パスワードの変更に失敗しました';
+        notifications.show({
+          title: 'エラー',
+          message: errorMessage,
+          color: 'red',
+        });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'エラーが発生しました';
@@ -200,6 +243,7 @@ export function UserProfileForm() {
             value={profileData.lastName}
             onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
             disabled={profileLoading}
+            description="空欄にすると姓が削除されます"
           />
 
           <TextInput
@@ -208,6 +252,7 @@ export function UserProfileForm() {
             value={profileData.firstName}
             onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
             disabled={profileLoading}
+            description="空欄にすると名が削除されます"
           />
 
           <TextInput
@@ -219,6 +264,12 @@ export function UserProfileForm() {
             onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
             disabled={profileLoading}
           />
+
+          {isEmailChanged && (
+            <Alert icon={<IconAlertTriangle size={16} />} color="orange" variant="light">
+              メールアドレスを変更すると、次回ログイン時に新しいメールアドレスが必要になります。
+            </Alert>
+          )}
 
           <Group justify="flex-end">
             <ActionButton
