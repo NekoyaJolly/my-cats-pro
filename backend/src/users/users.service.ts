@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 
@@ -13,6 +14,7 @@ import type { RequestUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { InviteUserDto } from './dto/invite-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 
 /** 招待トークンのバイトサイズ */
@@ -464,5 +466,130 @@ export class UsersService {
 
     // それ以外のロールの場合はアクセス拒否
     throw new ForbiddenException('ユーザーロール変更の権限がありません');
+  }
+
+  /**
+   * 認証されたユーザーのプロフィールを取得
+   * 
+   * @param currentUser 現在のユーザー情報
+   * @returns プロフィール情報
+   */
+  async getProfile(currentUser: RequestUser): Promise<{
+    success: true;
+    data: {
+      id: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+      role: UserRole;
+    };
+  }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: currentUser.userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('ユーザーが見つかりません');
+    }
+
+    this.logger.log({
+      message: 'Profile retrieved',
+      userId: user.id,
+    });
+
+    return {
+      success: true,
+      data: user,
+    };
+  }
+
+  /**
+   * 認証されたユーザーのプロフィールを更新
+   * 
+   * @param currentUser 現在のユーザー情報
+   * @param dto 更新するプロフィール情報
+   * @returns 更新後のプロフィール情報
+   */
+  async updateProfile(
+    currentUser: RequestUser,
+    dto: UpdateProfileDto,
+  ): Promise<{
+    success: true;
+    data: {
+      id: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+      role: UserRole;
+    };
+    message: string;
+  }> {
+    // 更新対象のフィールドがない場合はエラー
+    if (dto.firstName === undefined && dto.lastName === undefined && dto.email === undefined) {
+      throw new BadRequestException('更新するフィールドがありません');
+    }
+
+    // メールアドレスの変更がある場合は重複チェック
+    if (dto.email) {
+      const normalizedEmail = dto.email.trim().toLowerCase();
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          email: normalizedEmail,
+          NOT: { id: currentUser.userId },
+        },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('このメールアドレスは既に使用されています');
+      }
+    }
+
+    // 更新データを構築
+    const updateData: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+    } = {};
+
+    if (dto.firstName !== undefined) {
+      updateData.firstName = dto.firstName;
+    }
+    if (dto.lastName !== undefined) {
+      updateData.lastName = dto.lastName;
+    }
+    if (dto.email !== undefined) {
+      updateData.email = dto.email.trim().toLowerCase();
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: currentUser.userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+      },
+    });
+
+    this.logger.log({
+      message: 'Profile updated',
+      userId: updatedUser.id,
+      updatedFields: Object.keys(updateData),
+    });
+
+    return {
+      success: true,
+      data: updatedUser,
+      message: 'プロフィールを更新しました',
+    };
   }
 }

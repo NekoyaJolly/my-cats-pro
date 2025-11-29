@@ -20,6 +20,7 @@ import { RoleGuard } from '../auth/role.guard';
 import { Roles } from '../auth/roles.decorator';
 
 import { InviteUserDto } from './dto/invite-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UsersService } from './users.service';
 
@@ -60,6 +61,50 @@ export class UsersController {
     @Query('tenantId') tenantId?: string,
   ) {
     return this.usersService.listUsers(user, tenantId);
+  }
+
+  /**
+   * 自身のプロフィール取得
+   * 
+   * JWTで認証されたユーザー自身のプロフィール情報を取得します。
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: '自身のプロフィール取得',
+    description: 'JWTで認証されたユーザー自身のプロフィール情報を取得します。' 
+  })
+  @ApiResponse({ status: 200, description: 'プロフィール情報を返却' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 404, description: 'ユーザーが見つかりません' })
+  async getMe(@GetUser() user: RequestUser) {
+    return this.usersService.getProfile(user);
+  }
+
+  /**
+   * 自身のプロフィール更新
+   * 
+   * JWTで認証されたユーザー自身のプロフィール情報を更新します。
+   * 各フィールドはオプショナル（更新したいフィールドのみ送信可能）。
+   * メールアドレスが変更される場合は重複チェックを行います。
+   */
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: '自身のプロフィール更新',
+    description: 'JWTで認証されたユーザー自身のプロフィール情報を更新します。各フィールドはオプショナルです。' 
+  })
+  @ApiResponse({ status: 200, description: 'プロフィールが更新されました' })
+  @ApiResponse({ status: 400, description: '更新するフィールドがありません' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 409, description: 'メールアドレスが既に使用されています' })
+  async updateMe(
+    @GetUser() user: RequestUser,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(user, dto);
   }
 
   /**
