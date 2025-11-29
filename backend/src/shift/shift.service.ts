@@ -51,13 +51,12 @@ export class ShiftService {
    */
   private toCalendarEvent(shift: Shift & { staff: Staff }): CalendarShiftEvent {
     const shiftDate = shift.shiftDate.toISOString().split('T')[0];
-    const displayName = shift.displayName || shift.staff.name;
 
     return {
       id: shift.id,
-      title: displayName,
-      start: `${shiftDate}T00:00:00`,
-      end: `${shiftDate}T23:59:59`,
+      title: shift.staff.name,
+      start: shiftDate,
+      end: shiftDate,
       backgroundColor: shift.staff.color,
       borderColor: shift.staff.color,
       extendedProps: {

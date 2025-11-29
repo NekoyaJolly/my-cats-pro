@@ -1100,13 +1100,15 @@ enum TagAutomationRunStatus {
 // ==========================================
 
 model Staff {
-  id       String  @id @default(uuid())
-  userId   String? @unique @map("user_id") // User連携（任意）
-  name     String
-  email    String? @unique
-  role     String  @default("スタッフ") // 役職
-  color    String  @default("#4dabf7") // カレンダー表示色
-  isActive Boolean @default(true) @map("is_active")
+  id               String  @id @default(uuid())
+  userId           String? @unique @map("user_id") // User連携（任意）
+  name             String
+  email            String? @unique
+  role             String  @default("スタッフ") // 役職
+  color            String  @default("#4dabf7") // カレンダー表示色
+  isActive         Boolean @default(true) @map("is_active")
+  workingDays      Json?   @map("working_days") // 出勤曜日 ["mon", "tue", ...] 形式
+  workTimeTemplate Json?   @map("work_time_template") // 勤務時間テンプレート { startHour: number, endHour: number }
 
   user           User?               @relation(fields: [userId], references: [id])
   shifts         Shift[]

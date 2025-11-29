@@ -1,4 +1,20 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, IsUUID, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsBoolean, IsUUID, IsNotEmpty, Matches, IsArray, IsIn, ValidateNested, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
+
+/**
+ * 勤務時間テンプレートDTO
+ */
+export class WorkTimeTemplateDto {
+  @IsInt({ message: '開始時間は整数で指定してください' })
+  @Min(0, { message: '開始時間は0以上で指定してください' })
+  @Max(23, { message: '開始時間は23以下で指定してください' })
+  startHour: number;
+
+  @IsInt({ message: '終了時間は整数で指定してください' })
+  @Min(1, { message: '終了時間は1以上で指定してください' })
+  @Max(24, { message: '終了時間は24以下で指定してください' })
+  endHour: number;
+}
 
 /**
  * スタッフ作成DTO
@@ -50,4 +66,21 @@ export class CreateStaffDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  /**
+   * 出勤曜日（任意）
+   * ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] の配列
+   */
+  @IsOptional()
+  @IsArray()
+  @IsIn(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], { each: true })
+  workingDays?: string[] | null;
+
+  /**
+   * 勤務時間テンプレート（任意）
+   */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WorkTimeTemplateDto)
+  workTimeTemplate?: WorkTimeTemplateDto | null;
 }

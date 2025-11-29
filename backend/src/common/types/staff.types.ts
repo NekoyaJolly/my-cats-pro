@@ -1,6 +1,19 @@
 import { Staff } from '@prisma/client';
 
 /**
+ * 曜日型
+ */
+export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+/**
+ * 勤務時間テンプレート
+ */
+export interface WorkTimeTemplate {
+  startHour: number; // 0–23
+  endHour: number; // 1–24, must be > startHour
+}
+
+/**
  * スタッフエンティティ（DBから取得される完全な型）
  */
 export type StaffEntity = Staff;
@@ -15,6 +28,8 @@ export interface StaffResponseDto {
   role: string;
   color: string;
   isActive: boolean;
+  workingDays: Weekday[] | null;
+  workTimeTemplate: WorkTimeTemplate | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,6 +42,8 @@ export interface CreateStaffRequest {
   email?: string | null;
   role?: string;
   color?: string;
+  workingDays?: Weekday[] | null;
+  workTimeTemplate?: WorkTimeTemplate | null;
 }
 
 /**
@@ -38,6 +55,8 @@ export interface UpdateStaffRequest {
   role?: string;
   color?: string;
   isActive?: boolean;
+  workingDays?: Weekday[] | null;
+  workTimeTemplate?: WorkTimeTemplate | null;
 }
 
 /**
