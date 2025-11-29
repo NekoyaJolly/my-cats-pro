@@ -152,11 +152,11 @@ export function UserProfileForm() {
       setPasswordLoading(true);
 
       // POST /auth/change-password で型安全に呼び出し
-      const response = await apiClient.request('/auth/change-password' as never, 'post', {
+      const response = await apiClient.post('/auth/change-password', {
         body: {
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword,
-        } as never,
+        },
       });
 
       if (response.success) {
