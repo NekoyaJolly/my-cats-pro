@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Staff } from '@prisma/client';
+import { Staff, Prisma } from '@prisma/client';
 
-import { StaffResponseDto, StaffListResponseDto } from '../common/types/staff.types';
+import { StaffResponseDto, StaffListResponseDto, Weekday, WorkTimeTemplate } from '../common/types/staff.types';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateStaffDto } from './dto/create-staff.dto';
@@ -10,6 +10,27 @@ import { UpdateStaffDto } from './dto/update-staff.dto';
 @Injectable()
 export class StaffService {
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * JSONフィールドをWeekday[]に変換
+   */
+  private parseWorkingDays(json: Prisma.JsonValue | null): Weekday[] | null {
+    if (!json || !Array.isArray(json)) return null;
+    const validDays: Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    return json.filter((day): day is Weekday => validDays.includes(day as Weekday));
+  }
+
+  /**
+   * JSONフィールドをWorkTimeTemplateに変換
+   */
+  private parseWorkTimeTemplate(json: Prisma.JsonValue | null): WorkTimeTemplate | null {
+    if (!json || typeof json !== 'object' || Array.isArray(json)) return null;
+    const obj = json as Record<string, unknown>;
+    if (typeof obj.startHour === 'number' && typeof obj.endHour === 'number') {
+      return { startHour: obj.startHour, endHour: obj.endHour };
+    }
+    return null;
+  }
 
   /**
    * Staffエンティティを StaffResponseDto に変換
@@ -22,6 +43,8 @@ export class StaffService {
       role: staff.role,
       color: staff.color,
       isActive: staff.isActive,
+      workingDays: this.parseWorkingDays(staff.workingDays),
+      workTimeTemplate: this.parseWorkTimeTemplate(staff.workTimeTemplate),
       createdAt: staff.createdAt.toISOString(),
       updatedAt: staff.updatedAt.toISOString(),
     };
@@ -39,6 +62,12 @@ export class StaffService {
         color: createStaffDto.color || '#4dabf7',
         userId: createStaffDto.userId || null,
         isActive: createStaffDto.isActive !== undefined ? createStaffDto.isActive : true,
+        workingDays: createStaffDto.workingDays 
+          ? (createStaffDto.workingDays as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
+        workTimeTemplate: createStaffDto.workTimeTemplate 
+          ? (createStaffDto.workTimeTemplate as unknown as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       },
     });
 
@@ -89,6 +118,16 @@ export class StaffService {
         ...(updateStaffDto.role !== undefined && { role: updateStaffDto.role }),
         ...(updateStaffDto.color !== undefined && { color: updateStaffDto.color }),
         ...(updateStaffDto.isActive !== undefined && { isActive: updateStaffDto.isActive }),
+        ...(updateStaffDto.workingDays !== undefined && { 
+          workingDays: updateStaffDto.workingDays 
+            ? (updateStaffDto.workingDays as Prisma.InputJsonValue)
+            : Prisma.JsonNull
+        }),
+        ...(updateStaffDto.workTimeTemplate !== undefined && { 
+          workTimeTemplate: updateStaffDto.workTimeTemplate 
+            ? (updateStaffDto.workTimeTemplate as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull
+        }),
       },
     });
 
