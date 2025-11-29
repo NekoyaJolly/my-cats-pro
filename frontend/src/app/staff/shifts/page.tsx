@@ -20,6 +20,11 @@ import {
   Badge,
   ActionIcon,
   Menu,
+  Checkbox,
+  NumberInput,
+  Textarea,
+  CopyButton,
+  Tooltip,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -45,7 +50,49 @@ import type {
   CreateStaffRequest,
   UpdateStaffRequest,
   CalendarShiftEvent,
+  Weekday,
+  WorkTimeTemplate,
 } from '@/types/api.types';
+
+/**
+ * 共通バリデーション関数
+ */
+const validateName = (value: string | undefined): string | null => {
+  return !value ? '名前は必須です' : null;
+};
+
+const validateColor = (value: string | undefined): string | null => {
+  if (!value) return 'カラーは必須です';
+  if (!/^#[0-9A-Fa-f]{6}$/.test(value)) {
+    return 'カラーコードは#000000形式で指定してください';
+  }
+  return null;
+};
+
+const validateWorkingDays = (value: Weekday[] | undefined): string | null => {
+  return !value || value.length === 0 ? '少なくとも1つの出勤曜日を選択してください' : null;
+};
+
+const validateWorkTimeTemplate = (value: WorkTimeTemplate | undefined): string | null => {
+  if (!value) return null;
+  const { startHour, endHour } = value;
+  // NumberInput は 0 を含む数値または NaN を返す可能性があるため、型チェックで検証
+  if (
+    typeof startHour !== 'number' ||
+    typeof endHour !== 'number' ||
+    Number.isNaN(startHour) ||
+    Number.isNaN(endHour)
+  ) {
+    return '開始／終了時間を入力してください';
+  }
+  if (startHour < 0 || startHour > 23 || endHour < 1 || endHour > 24) {
+    return '開始時間は0〜23、終了時間は1〜24の範囲で指定してください';
+  }
+  if (endHour <= startHour) {
+    return '終了時間は開始時間より後にしてください';
+  }
+  return null;
+};
 
 export default function StaffShiftsPage() {
   const calendarRef = useRef<FullCalendar>(null);
@@ -66,42 +113,52 @@ export default function StaffShiftsPage() {
   const [operationLoading, setOperationLoading] = useState(false);
 
   // スタッフ作成フォーム
-  const createForm = useForm<CreateStaffRequest>({
+  // フォームでは workingDays と workTimeTemplate を必須として扱う
+  // APIへ送信時はそのまま CreateStaffRequest として使用可能（オプショナルフィールドのため）
+  const createForm = useForm<
+    Omit<CreateStaffRequest, 'workingDays' | 'workTimeTemplate'> & {
+      workingDays: Weekday[];
+      workTimeTemplate: WorkTimeTemplate;
+    }
+  >({
     initialValues: {
       name: '',
       email: null,
       role: 'スタッフ',
       color: '#4dabf7',
+      workingDays: [],
+      workTimeTemplate: { startHour: 9, endHour: 18 },
     },
     validate: {
-      name: (value) => (!value ? '名前は必須です' : null),
-      color: (value) => {
-        if (!value) return 'カラーは必須です';
-        if (!/^#[0-9A-Fa-f]{6}$/.test(value)) {
-          return 'カラーコードは#000000形式で指定してください';
-        }
-        return null;
-      },
+      name: validateName,
+      color: validateColor,
+      workingDays: validateWorkingDays,
+      workTimeTemplate: validateWorkTimeTemplate,
     },
   });
 
   // スタッフ編集フォーム
-  const editForm = useForm<UpdateStaffRequest>({
+  // フォームでは workingDays と workTimeTemplate を必須として扱う
+  // APIへ送信時はそのまま UpdateStaffRequest として使用可能（オプショナルフィールドのため）
+  const editForm = useForm<
+    Omit<UpdateStaffRequest, 'workingDays' | 'workTimeTemplate'> & {
+      workingDays: Weekday[];
+      workTimeTemplate: WorkTimeTemplate;
+    }
+  >({
     initialValues: {
       name: '',
       email: null,
       role: 'スタッフ',
       color: '#4dabf7',
+      workingDays: [],
+      workTimeTemplate: { startHour: 9, endHour: 18 },
     },
     validate: {
-      name: (value) => (!value ? '名前は必須です' : null),
-      color: (value) => {
-        if (!value) return 'カラーは必須です';
-        if (!/^#[0-9A-Fa-f]{6}$/.test(value)) {
-          return 'カラーコードは#000000形式で指定してください';
-        }
-        return null;
-      },
+      name: validateName,
+      color: validateColor,
+      workingDays: validateWorkingDays,
+      workTimeTemplate: validateWorkTimeTemplate,
     },
   });
 
@@ -302,6 +359,8 @@ export default function StaffShiftsPage() {
       email: staff.email,
       role: staff.role,
       color: staff.color,
+      workingDays: staff.workingDays ?? [],
+      workTimeTemplate: staff.workTimeTemplate ?? { startHour: 9, endHour: 18 },
     });
     openEdit();
   };
@@ -427,6 +486,70 @@ export default function StaffShiftsPage() {
     }
   };
 
+  /**
+   * シフトテキスト生成
+   */
+  const weekdayLabelJa = ['日', '月', '火', '水', '木', '金', '土'];
+
+  /**
+   * シフトイベントからスタッフ名を取得
+   * FullCalendar イベントでは title にスタッフ名が設定されるが、
+   * フォールバックとして extendedProps.staffName も確認する
+   */
+  const getStaffNameFromShift = (shift: CalendarShiftEvent): string => {
+    return shift.title ?? shift.extendedProps?.staffName ?? '';
+  };
+
+  /**
+   * Date オブジェクトをタイムゾーンに依存しない YYYY-MM-DD 形式に変換
+   * toISOString() は UTC に変換されるため、ローカル日付を正しく取得するために
+   * 年月日を個別に取得して文字列化する
+   */
+  const formatDateKey = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const generateShiftText = (): string => {
+    if (!shifts || shifts.length === 0) return '';
+
+    const map = new Map<string, string[]>();
+
+    shifts.forEach((shift) => {
+      const start = shift.start;
+      if (!start) return;
+
+      const date = new Date(start);
+      if (Number.isNaN(date.getTime())) return;
+
+      const dateKey = formatDateKey(date);
+      const staffName = getStaffNameFromShift(shift);
+      if (!staffName) return;
+
+      const list = map.get(dateKey) ?? [];
+      list.push(staffName);
+      map.set(dateKey, list);
+    });
+
+    const sortedKeys = Array.from(map.keys()).sort();
+
+    const lines = sortedKeys
+      .map((dateKey) => {
+        const date = new Date(dateKey);
+        // 不正な日付をスキップ
+        if (Number.isNaN(date.getTime())) return null;
+        const day = date.getDate();
+        const weekday = weekdayLabelJa[date.getDay()];
+        const staffNames = map.get(dateKey) ?? [];
+        return `${day}日(${weekday}) ${staffNames.join(' ')}`;
+      })
+      .filter((line): line is string => line !== null);
+
+    return lines.join('\n');
+  };
+
   if (error && !loading) {
     return (
       <Container size="xl" py="md">
@@ -445,6 +568,16 @@ export default function StaffShiftsPage() {
   return (
     <Container size="xl" py="md">
       <LoadingOverlay visible={loading} />
+
+      <Alert
+        icon={<IconAlertCircle size="1rem" />}
+        title="シフトの自動保存について"
+        color="blue"
+        variant="light"
+        mb="md"
+      >
+        カレンダーへのドラッグ・移動・削除の操作は、すべて自動的に保存されます。そのため、別途「保存」ボタンを押す必要はありません。
+      </Alert>
 
       {/* スタッフ作成モーダル */}
       <Modal opened={createOpened} onClose={closeCreate} title="スタッフ追加" size="md">
@@ -488,6 +621,43 @@ export default function StaffShiftsPage() {
               ]}
               {...createForm.getInputProps('color')}
             />
+
+            <Checkbox.Group
+              label="出勤曜日"
+              description="通常出勤する曜日を選択してください"
+              {...createForm.getInputProps('workingDays')}
+            >
+              <Group mt="xs">
+                <Checkbox value="mon" label="月" />
+                <Checkbox value="tue" label="火" />
+                <Checkbox value="wed" label="水" />
+                <Checkbox value="thu" label="木" />
+                <Checkbox value="fri" label="金" />
+                <Checkbox value="sat" label="土" />
+                <Checkbox value="sun" label="日" />
+              </Group>
+            </Checkbox.Group>
+
+            <Group grow>
+              <NumberInput
+                label="出勤開始時刻（テンプレート）"
+                description="0〜23の範囲で入力（例: 9）"
+                min={0}
+                max={23}
+                step={1}
+                suffix=" 時"
+                {...createForm.getInputProps('workTimeTemplate.startHour')}
+              />
+              <NumberInput
+                label="出勤終了時刻（テンプレート）"
+                description="1〜24の範囲で入力（例: 18）"
+                min={1}
+                max={24}
+                step={1}
+                suffix=" 時"
+                {...createForm.getInputProps('workTimeTemplate.endHour')}
+              />
+            </Group>
 
             <Group justify="flex-end" mt="md">
               <Button
@@ -555,6 +725,43 @@ export default function StaffShiftsPage() {
               ]}
               {...editForm.getInputProps('color')}
             />
+
+            <Checkbox.Group
+              label="出勤曜日"
+              description="通常出勤する曜日を選択してください"
+              {...editForm.getInputProps('workingDays')}
+            >
+              <Group mt="xs">
+                <Checkbox value="mon" label="月" />
+                <Checkbox value="tue" label="火" />
+                <Checkbox value="wed" label="水" />
+                <Checkbox value="thu" label="木" />
+                <Checkbox value="fri" label="金" />
+                <Checkbox value="sat" label="土" />
+                <Checkbox value="sun" label="日" />
+              </Group>
+            </Checkbox.Group>
+
+            <Group grow>
+              <NumberInput
+                label="出勤開始時刻（テンプレート）"
+                description="0〜23の範囲で入力（例: 9）"
+                min={0}
+                max={23}
+                step={1}
+                suffix=" 時"
+                {...editForm.getInputProps('workTimeTemplate.startHour')}
+              />
+              <NumberInput
+                label="出勤終了時刻（テンプレート）"
+                description="1〜24の範囲で入力（例: 18）"
+                min={1}
+                max={24}
+                step={1}
+                suffix=" 時"
+                {...editForm.getInputProps('workTimeTemplate.endHour')}
+              />
+            </Group>
 
             <Group justify="flex-end" mt="md">
               <Button
@@ -721,40 +928,73 @@ export default function StaffShiftsPage() {
           </ScrollArea>
         </Paper>
 
-        {/* 中央: カレンダー */}
-        <Paper
-          withBorder
-          p="md"
-          style={{
-            flex: 1,
-            height: '100%',
-            overflow: 'hidden',
-          }}
-        >
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            locale="ja"
-            headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth,dayGridWeek',
+        {/* 右サイド: カレンダーとテキストエクスポート */}
+        <Stack style={{ flex: 1, height: '100%' }} gap="md">
+          {/* テキストエクスポート */}
+          <Paper withBorder p="md">
+            <Group justify="space-between" align="flex-start" mb="xs">
+              <Text fw={600} size="sm">
+                テキスト形式シフト一覧
+              </Text>
+              <CopyButton value={generateShiftText()} timeout={2000}>
+                {({ copied, copy }) => (
+                  <Tooltip label={copied ? 'コピーしました' : 'コピー'}>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      color={copied ? 'teal' : 'blue'}
+                      onClick={copy}
+                    >
+                      {copied ? 'コピー済み' : 'コピー'}
+                    </Button>
+                  </Tooltip>
+                )}
+              </CopyButton>
+            </Group>
+            <Textarea
+              value={generateShiftText()}
+              readOnly
+              autosize
+              minRows={3}
+              maxRows={10}
+              placeholder="カレンダーに登録されたシフトが、ここにテキストとして表示されます。"
+            />
+          </Paper>
+
+          {/* カレンダー */}
+          <Paper
+            withBorder
+            p="md"
+            style={{
+              flex: 1,
+              overflow: 'hidden',
             }}
-            buttonText={{
-              today: '今日',
-              month: '月',
-              week: '週',
-            }}
-            height="100%"
-            editable={true}
-            droppable={true}
-            events={shifts}
-            eventReceive={handleEventReceive}
-            eventClick={handleEventClick}
-            eventDrop={handleEventDrop}
-          />
-        </Paper>
+          >
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              locale="ja"
+              headerToolbar={{
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,dayGridWeek',
+              }}
+              buttonText={{
+                today: '今日',
+                month: '月',
+                week: '週',
+              }}
+              height="100%"
+              editable={true}
+              droppable={true}
+              events={shifts}
+              eventReceive={handleEventReceive}
+              eventClick={handleEventClick}
+              eventDrop={handleEventDrop}
+            />
+          </Paper>
+        </Stack>
       </Group>
     </Container>
   );
