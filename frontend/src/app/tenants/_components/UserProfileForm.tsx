@@ -93,7 +93,9 @@ export function UserProfileForm() {
       setProfileLoading(true);
 
       // PATCH /users/me で呼び出し
-      // フロントエンドは displayName を入力させ、送信時には firstName に設定、lastName は空文字列
+      // ビジネスロジック: UIでは「ユーザーネーム」として単一フィールドで入力させ、
+      // バックエンドの firstName フィールドにマッピングする。lastName は使用しない（空文字列）。
+      // これにより既存のデータモデルを維持しつつ、シンプルなUI体験を提供する。
       const response = await apiRequest<ProfileUpdateResponse>('/users/me', {
         method: 'PATCH',
         body: JSON.stringify({

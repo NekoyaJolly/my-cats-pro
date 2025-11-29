@@ -79,7 +79,7 @@ export class TenantsService {
 
     // 生成されたスラッグが空の場合はエラー
     if (!slug) {
-      throw new BadRequestException('テナント名からスラッグを生成できませんでした。スラッグを明示的に指定してください');
+      throw new BadRequestException('テナント名からスラッグを生成できませんでした。半角英小文字・数字・ハイフンで構成されるスラッグを明示的に指定してください（例: sample-tenant）');
     }
 
     // スラッグの重複チェック
