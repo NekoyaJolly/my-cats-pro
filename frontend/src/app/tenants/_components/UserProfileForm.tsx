@@ -18,8 +18,7 @@ import { useAuth, useAuthStore } from '@/lib/auth/store';
 import { apiClient, apiRequest } from '@/lib/api/client';
 
 interface ProfileFormData {
-  firstName: string;
-  lastName: string;
+  displayName: string;
   email: string;
 }
 
@@ -41,7 +40,7 @@ interface ProfileUpdateResponse {
  * ユーザープロフィール編集・パスワード変更フォーム
  * 
  * 2つのセクションで構成：
- * - プロフィール編集（姓、名、メールアドレス）
+ * - プロフィール編集（ユーザーネーム、メールアドレス）
  * - パスワード変更（現在のパスワード、新しいパスワード、確認）
  */
 export function UserProfileForm() {
@@ -50,8 +49,7 @@ export function UserProfileForm() {
 
   // プロフィールフォームの状態
   const [profileData, setProfileData] = useState<ProfileFormData>({
-    firstName: '',
-    lastName: '',
+    displayName: '',
     email: '',
   });
   const [originalEmail, setOriginalEmail] = useState<string>('');
@@ -69,8 +67,7 @@ export function UserProfileForm() {
   useEffect(() => {
     if (user) {
       setProfileData({
-        firstName: user.firstName ?? '',
-        lastName: user.lastName ?? '',
+        displayName: user.firstName ?? '',
         email: user.email ?? '',
       });
       setOriginalEmail(user.email ?? '');
@@ -82,7 +79,7 @@ export function UserProfileForm() {
 
   // プロフィール更新処理
   const handleProfileSubmit = async () => {
-    // 空白チェック（姓名は必須ではないが、メールは必須）
+    // 空白チェック（ユーザーネームは任意だが、メールは必須）
     if (!profileData.email.trim()) {
       notifications.show({
         title: 'エラー',
@@ -95,12 +92,15 @@ export function UserProfileForm() {
     try {
       setProfileLoading(true);
 
-      // PATCH /users/me で呼び出し（OpenAPIスキーマに未定義のため apiRequest を使用）
+      // PATCH /users/me で呼び出し
+      // ビジネスロジック: UIでは「ユーザーネーム」として単一フィールドで入力させ、
+      // バックエンドの firstName フィールドにマッピングする。lastName は使用しない（空文字列）。
+      // これにより既存のデータモデルを維持しつつ、シンプルなUI体験を提供する。
       const response = await apiRequest<ProfileUpdateResponse>('/users/me', {
         method: 'PATCH',
         body: JSON.stringify({
-          firstName: profileData.firstName.trim(),
-          lastName: profileData.lastName.trim(),
+          firstName: profileData.displayName.trim(),
+          lastName: '',
           email: profileData.email.trim(),
         }),
       });
@@ -238,21 +238,11 @@ export function UserProfileForm() {
           <Divider />
 
           <TextInput
-            label="姓"
-            placeholder="山田"
-            value={profileData.lastName}
-            onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+            label="ユーザーネーム"
+            placeholder="山田太郎"
+            value={profileData.displayName}
+            onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
             disabled={profileLoading}
-            description="空欄にすると姓が削除されます"
-          />
-
-          <TextInput
-            label="名"
-            placeholder="太郎"
-            value={profileData.firstName}
-            onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
-            disabled={profileLoading}
-            description="空欄にすると名が削除されます"
           />
 
           <TextInput

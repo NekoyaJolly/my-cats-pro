@@ -15,6 +15,7 @@ import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+import { CreateTenantDto } from './dto/create-tenant.dto';
 import { 
   InviteTenantAdminDto, 
   InviteUserDto, 
@@ -58,6 +59,61 @@ export class TenantsService {
       success: true,
       data: tenants,
       count: tenants.length,
+    };
+  }
+
+  /**
+   * テナントを作成
+   * 
+   * @param dto テナント作成DTO
+   * @returns 作成されたテナント
+   * @throws BadRequestException スラッグを生成できなかった場合
+   * @throws ConflictException スラッグが既に使用されている場合
+   */
+  async createTenant(dto: CreateTenantDto): Promise<{
+    success: true;
+    data: { id: string; name: string; slug: string };
+  }> {
+    // テナントスラッグの生成（未指定の場合）
+    const slug = dto.slug || this.generateSlug(dto.name);
+
+    // 生成されたスラッグが空の場合はエラー
+    if (!slug) {
+      throw new BadRequestException('テナント名からスラッグを生成できませんでした。半角英小文字・数字・ハイフンで構成されるスラッグを明示的に指定してください（例: sample-tenant）');
+    }
+
+    // スラッグの重複チェック
+    const existingTenant = await this.prisma.tenant.findUnique({
+      where: { slug },
+    });
+
+    if (existingTenant) {
+      throw new ConflictException('このスラッグは既に使用されています');
+    }
+
+    // テナント作成
+    const tenant = await this.prisma.tenant.create({
+      data: {
+        name: dto.name,
+        slug,
+        isActive: true,
+      },
+    });
+
+    this.logger.log({
+      message: 'Tenant created',
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      data: {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+      },
     };
   }
 
