@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
@@ -92,6 +92,32 @@ const validateWorkTimeTemplate = (value: WorkTimeTemplate | undefined): string |
     return '終了時間は開始時間より後にしてください';
   }
   return null;
+};
+
+/**
+ * シフトテキスト生成用のヘルパー
+ */
+const weekdayLabelJa = ['日', '月', '火', '水', '木', '金', '土'] as const;
+
+/**
+ * シフトイベントからスタッフ名を取得
+ * FullCalendar イベントでは title にスタッフ名が設定されるが、
+ * フォールバックとして extendedProps.staffName も確認する
+ */
+const getStaffNameFromShift = (shift: CalendarShiftEvent): string => {
+  return shift.title ?? shift.extendedProps?.staffName ?? '';
+};
+
+/**
+ * Date オブジェクトをタイムゾーンに依存しない YYYY-MM-DD 形式に変換
+ * toISOString() は UTC に変換されるため、ローカル日付を正しく取得するために
+ * 年月日を個別に取得して文字列化する
+ */
+const formatDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 export default function StaffShiftsPage() {
@@ -487,32 +513,9 @@ export default function StaffShiftsPage() {
   };
 
   /**
-   * シフトテキスト生成
+   * シフトテキスト生成（useMemo でメモ化して、shifts が変更された時のみ再計算）
    */
-  const weekdayLabelJa = ['日', '月', '火', '水', '木', '金', '土'];
-
-  /**
-   * シフトイベントからスタッフ名を取得
-   * FullCalendar イベントでは title にスタッフ名が設定されるが、
-   * フォールバックとして extendedProps.staffName も確認する
-   */
-  const getStaffNameFromShift = (shift: CalendarShiftEvent): string => {
-    return shift.title ?? shift.extendedProps?.staffName ?? '';
-  };
-
-  /**
-   * Date オブジェクトをタイムゾーンに依存しない YYYY-MM-DD 形式に変換
-   * toISOString() は UTC に変換されるため、ローカル日付を正しく取得するために
-   * 年月日を個別に取得して文字列化する
-   */
-  const formatDateKey = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const generateShiftText = (): string => {
+  const shiftText = useMemo(() => {
     if (!shifts || shifts.length === 0) return '';
 
     const map = new Map<string, string[]>();
@@ -548,7 +551,7 @@ export default function StaffShiftsPage() {
       .filter((line): line is string => line !== null);
 
     return lines.join('\n');
-  };
+  }, [shifts]);
 
   if (error && !loading) {
     return (
@@ -936,7 +939,7 @@ export default function StaffShiftsPage() {
               <Text fw={600} size="sm">
                 テキスト形式シフト一覧
               </Text>
-              <CopyButton value={generateShiftText()} timeout={2000}>
+              <CopyButton value={shiftText} timeout={2000}>
                 {({ copied, copy }) => (
                   <Tooltip label={copied ? 'コピーしました' : 'コピー'}>
                     <Button
@@ -952,7 +955,7 @@ export default function StaffShiftsPage() {
               </CopyButton>
             </Group>
             <Textarea
-              value={generateShiftText()}
+              value={shiftText}
               readOnly
               autosize
               minRows={3}
