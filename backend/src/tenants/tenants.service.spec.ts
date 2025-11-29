@@ -7,6 +7,7 @@ import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+import { CreateTenantDto } from './dto/create-tenant.dto';
 import { InviteTenantAdminDto, InviteUserDto, CompleteInvitationDto } from './dto/invitation.dto';
 import { TenantsService } from './tenants.service';
 
@@ -311,6 +312,114 @@ describe('TenantsService', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual([]);
       expect(result.count).toBe(0);
+    });
+  });
+
+  describe('createTenant', () => {
+    it('明示的なスラッグでテナントを正常に作成', async () => {
+      const dto: CreateTenantDto = {
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(null);
+      mockPrismaService.tenant.create.mockResolvedValue({
+        id: 'tenant-1',
+        name: dto.name,
+        slug: dto.slug,
+      });
+
+      const result = await service.createTenant(dto);
+
+      expect(result.success).toBe(true);
+      expect(result.data.id).toBe('tenant-1');
+      expect(result.data.name).toBe(dto.name);
+      expect(result.data.slug).toBe(dto.slug);
+      expect(mockPrismaService.tenant.create).toHaveBeenCalledWith({
+        data: {
+          name: dto.name,
+          slug: dto.slug,
+          isActive: true,
+        },
+      });
+    });
+
+    it('自動生成されたスラッグでテナントを正常に作成', async () => {
+      const dto: CreateTenantDto = {
+        name: 'My New Tenant',
+        // slug は未指定
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(null);
+      mockPrismaService.tenant.create.mockResolvedValue({
+        id: 'tenant-2',
+        name: dto.name,
+        slug: 'my-new-tenant',
+      });
+
+      const result = await service.createTenant(dto);
+
+      expect(result.success).toBe(true);
+      expect(result.data.id).toBe('tenant-2');
+      expect(result.data.name).toBe(dto.name);
+      expect(result.data.slug).toBe('my-new-tenant');
+    });
+
+    it('日本語のみのテナント名（スラッグ生成不可）の場合エラー', async () => {
+      const dto: CreateTenantDto = {
+        name: 'サンプルテナント',
+        // slug は未指定 → 日本語から生成できない
+      };
+
+      await expect(service.createTenant(dto)).rejects.toThrow(BadRequestException);
+      await expect(service.createTenant(dto)).rejects.toThrow(
+        'テナント名からスラッグを生成できませんでした',
+      );
+    });
+
+    it('スラッグが既に使用されている場合エラー', async () => {
+      const dto: CreateTenantDto = {
+        name: 'Another Tenant',
+        slug: 'existing-slug',
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue({
+        id: 'existing-tenant',
+        slug: 'existing-slug',
+      });
+
+      await expect(service.createTenant(dto)).rejects.toThrow(ConflictException);
+      await expect(service.createTenant(dto)).rejects.toThrow(
+        'このスラッグは既に使用されています',
+      );
+    });
+
+    it('レスポンス構造が正しい形式であること', async () => {
+      const dto: CreateTenantDto = {
+        name: 'Response Test',
+        slug: 'response-test',
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(null);
+      mockPrismaService.tenant.create.mockResolvedValue({
+        id: 'tenant-3',
+        name: dto.name,
+        slug: dto.slug,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await service.createTenant(dto);
+
+      // レスポンス構造を検証
+      expect(result).toHaveProperty('success', true);
+      expect(result).toHaveProperty('data');
+      expect(result.data).toHaveProperty('id');
+      expect(result.data).toHaveProperty('name');
+      expect(result.data).toHaveProperty('slug');
+      // 余分なプロパティは含まれないことを確認
+      expect(Object.keys(result.data)).toHaveLength(3);
     });
   });
 
