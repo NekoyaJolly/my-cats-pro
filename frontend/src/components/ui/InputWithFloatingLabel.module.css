@@ -1,45 +1,40 @@
+/**
+ * InputWithFloatingLabel コンポーネント用のスタイル定義
+ * PedigreeRegistrationForm の基本項目入力スタイルを共通化
+ *
+ * @see frontend/src/components/ui/InputWithFloatingLabel.tsx
+ */
+
 .root {
   position: relative;
 }
 
+.input {
+  height: 38px;
+  padding-top: 14px;
+}
+
+/* Textarea specific adjustment */
+textarea.input {
+  height: 38px;
+  min-height: 38px;
+  padding-top: 14px;
+}
+
 .label {
   position: absolute;
-  z-index: 2;
-  top: 7px;
-  left: var(--mantine-spacing-sm);
+  z-index: 1;
   pointer-events: none;
-  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
-  transition:
-    transform 150ms ease,
-    font-size 150ms ease,
-    color 150ms ease;
-
-  &[data-floating] {
-    transform: translate(calc(var(--mantine-spacing-sm) * -1), -28px);
-    font-size: var(--mantine-font-size-xs);
-    font-weight: 500;
-    color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
-  }
+  top: 9px;
+  left: 10px;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+  transition: transform 150ms ease, color 150ms ease, font-size 150ms ease;
 }
 
-.required {
-  transition: opacity 150ms ease;
-  opacity: 0;
-
-  [data-floating] & {
-    opacity: 1;
-  }
-}
-
-.input {
-  &::placeholder {
-    transition: color 150ms ease;
-    color: transparent;
-  }
-
-  &[data-floating] {
-    &::placeholder {
-      color: var(--mantine-color-placeholder);
-    }
-  }
+.label[data-floating] {
+  transform: translateY(-6px);
+  font-size: 10px;
+  color: var(--mantine-color-blue-4);
+  font-weight: 600;
 }

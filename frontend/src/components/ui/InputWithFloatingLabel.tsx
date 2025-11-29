@@ -5,23 +5,25 @@ import { TextInput, type TextInputProps } from '@mantine/core';
 import classes from './InputWithFloatingLabel.module.css';
 
 /**
- * Mantine公式「Input with floating label」パターンに準拠したテキスト入力コンポーネント。
- * フォーカスまたは値がある場合にラベルが浮き上がるアニメーションを提供します。
+ * PedigreeRegistrationForm の基本項目入力スタイルを共通化したテキスト入力コンポーネント。
+ * このプロジェクトにおける標準的な1行テキスト入力として使用します。
+ *
+ * - 入力値がある場合、またはフォーカス時にラベルが浮き上がる（`data-floating` 属性で制御）
+ * - `value` が `null` や `undefined` の場合は空文字として扱う
  *
  * @example
  * ```tsx
- * const [value, setValue] = useState('');
+ * const [name, setName] = useState('');
  * <InputWithFloatingLabel
- *   label="名前"
- *   value={value}
- *   onChange={(e) => setValue(e.currentTarget.value)}
- *   required
+ *   label="猫の名前"
+ *   value={name}
+ *   onChange={(e) => setName(e.currentTarget.value)}
  * />
  * ```
  */
-type InputWithFloatingLabelProps = TextInputProps & {
-  /** 入力値（制御コンポーネントとして使用） */
-  value: string;
+type InputWithFloatingLabelProps = Omit<TextInputProps, 'value'> & {
+  /** 入力値（null/undefined の場合は空文字として扱う） */
+  value?: string | null;
 };
 
 export function InputWithFloatingLabel(props: InputWithFloatingLabelProps) {
@@ -36,10 +38,9 @@ export function InputWithFloatingLabel(props: InputWithFloatingLabelProps) {
   } = props;
 
   const [focused, setFocused] = useState(false);
-  // Mantine公式サンプルと同じロジック：
-  // - 値がある、またはフォーカス中の場合は true を返す
-  // - それ以外は undefined を返し、data-floating 属性が付与されない
-  const floating = value.trim().length !== 0 || focused || undefined;
+  // null/undefined を空文字として扱う
+  const normalizedValue = value ?? '';
+  const floating = normalizedValue.length > 0 || focused || undefined;
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setFocused(true);
@@ -51,17 +52,16 @@ export function InputWithFloatingLabel(props: InputWithFloatingLabelProps) {
     onBlur?.(e);
   };
 
-  // デフォルトのclassesにユーザー指定のclassNamesをマージ
-  // ユーザー指定のスタイルが優先される
-  const mergedClassNames = classNames
-    ? { ...classes, ...classNames }
-    : classes;
-
   return (
     <TextInput
       {...rest}
-      value={value}
-      classNames={mergedClassNames}
+      value={normalizedValue}
+      classNames={{
+        root: classes.root,
+        input: classes.input,
+        label: classes.label,
+        ...classNames,
+      }}
       onFocus={handleFocus}
       onBlur={handleBlur}
       autoComplete={autoComplete}
