@@ -95,7 +95,7 @@ const navigationItems = [
     icon: IconCalendarTime,
   },
   {
-    label: 'テナント管理',
+    label: 'ユーザー設定',
     href: '/tenants',
     icon: IconUsers,
   },

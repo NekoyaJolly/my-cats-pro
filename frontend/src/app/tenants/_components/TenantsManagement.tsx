@@ -6,20 +6,21 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { TenantsList } from './TenantsList';
 import { UsersList } from './UsersList';
+import { UserProfileForm } from './UserProfileForm';
 import { InviteTenantAdminModal } from './InviteTenantAdminModal';
 import { InviteUserModal } from './InviteUserModal';
 
 /**
- * テナント管理メインコンポーネント
+ * ユーザー設定メインコンポーネント
  * 
  * ロールに応じて以下の機能を提供:
+ * - 全員: プロフィール編集、パスワード変更
  * - SUPER_ADMIN: テナント管理者招待、全テナント閲覧
  * - TENANT_ADMIN: ユーザー招待、自テナントのユーザー閲覧
- * - その他: 自テナントの情報閲覧のみ
  */
 export function TenantsManagement() {
   const { user, isAuthenticated, initialized } = useAuth();
-  const [activeTab, setActiveTab] = useState<string | null>('tenants');
+  const [activeTab, setActiveTab] = useState<string | null>('profile');
 
   // 権限チェック
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
@@ -48,19 +49,18 @@ export function TenantsManagement() {
 
   return (
     <Stack gap="lg" p="md">
-      <Title order={2}>テナント管理</Title>
-
-      {!hasManagementAccess && (
-        <Alert icon={<IconAlertCircle size={16} />} title="権限がありません" color="yellow">
-          テナント管理機能へのアクセスには管理者権限が必要です
-        </Alert>
-      )}
+      <Title order={2}>ユーザー設定</Title>
 
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
-          <Tabs.Tab value="tenants">テナント一覧</Tabs.Tab>
-          <Tabs.Tab value="users">ユーザー一覧</Tabs.Tab>
+          <Tabs.Tab value="profile">ユーザー設定</Tabs.Tab>
+          {hasManagementAccess && <Tabs.Tab value="tenants">テナント一覧</Tabs.Tab>}
+          {hasManagementAccess && <Tabs.Tab value="users">ユーザー一覧</Tabs.Tab>}
         </Tabs.List>
+
+        <Tabs.Panel value="profile" pt="md">
+          <UserProfileForm />
+        </Tabs.Panel>
 
         <Tabs.Panel value="tenants" pt="md">
           <TenantsList />
