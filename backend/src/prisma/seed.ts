@@ -7,6 +7,20 @@ import { COAT_COLOR_MASTER_DATA } from "../coat-colors/coat-color-master.data";
 
 const prisma = new PrismaClient();
 
+/** Argon2 ハッシュ設定（セキュリティ一貫性のため共通化） */
+const ARGON2_CONFIG: argon2.Options = {
+  type: argon2.argon2id,
+  memoryCost: 65536,
+  timeCost: 3,
+  parallelism: 4,
+  hashLength: 64,
+};
+
+/** パスワードをArgon2でハッシュ化する共通関数 */
+async function hashPassword(password: string): Promise<string> {
+  return argon2.hash(password, ARGON2_CONFIG);
+}
+
 async function syncBreedMasterData() {
   console.log("➡️ Syncing breed master data...");
   for (const record of BREED_MASTER_DATA) {
@@ -95,13 +109,7 @@ async function main() {
 
   if (!existingAdmin) {
     // 新規作成
-    const hash = await argon2.hash(password, {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-      parallelism: 4,
-      hashLength: 64,
-    });
+    const hash = await hashPassword(password);
     admin = await prisma.user.create({
       data: {
         clerkId: "local_admin",
@@ -127,13 +135,7 @@ async function main() {
       needsUpdate = true;
     }
     if (forceUpdate) {
-      const hash = await argon2.hash(password, {
-        type: argon2.argon2id,
-        memoryCost: 65536,
-        timeCost: 3,
-        parallelism: 4,
-        hashLength: 64,
-      });
+      const hash = await hashPassword(password);
       updateData.passwordHash = hash;
       needsUpdate = true;
     }
@@ -161,13 +163,7 @@ async function main() {
 
     if (!existingSuperadmin) {
       // 新規作成
-      const hash = await argon2.hash(superadminPassword, {
-        type: argon2.argon2id,
-        memoryCost: 65536,
-        timeCost: 3,
-        parallelism: 4,
-        hashLength: 64,
-      });
+      const hash = await hashPassword(superadminPassword);
       superadmin = await prisma.user.create({
         data: {
           clerkId: "local_superadmin",
@@ -193,13 +189,7 @@ async function main() {
         needsUpdate = true;
       }
       if (superadminForceUpdate) {
-        const hash = await argon2.hash(superadminPassword, {
-          type: argon2.argon2id,
-          memoryCost: 65536,
-          timeCost: 3,
-          parallelism: 4,
-          hashLength: 64,
-        });
+        const hash = await hashPassword(superadminPassword);
         updateData.passwordHash = hash;
         needsUpdate = true;
       }
