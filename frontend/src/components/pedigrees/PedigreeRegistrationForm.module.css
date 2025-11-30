@@ -1,3 +1,9 @@
+/**
+ * 将来的に共通の InputWithFloatingLabel コンポーネントへ移行予定。
+ * 新規フォームでは frontend/src/components/ui/InputWithFloatingLabel を使用してください。
+ * @see frontend/src/components/ui/InputWithFloatingLabel.tsx
+ */
+
 .root {
   position: relative;
 }
