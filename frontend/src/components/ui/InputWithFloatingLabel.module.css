@@ -1,0 +1,40 @@
+/**
+ * InputWithFloatingLabel コンポーネント用のスタイル定義
+ * PedigreeRegistrationForm の基本項目入力スタイルを共通化
+ *
+ * @see frontend/src/components/ui/InputWithFloatingLabel.tsx
+ */
+
+.root {
+  position: relative;
+}
+
+.input {
+  height: 38px;
+  padding-top: 14px;
+}
+
+/* Textarea specific adjustment */
+textarea.input {
+  height: 38px;
+  min-height: 38px;
+  padding-top: 14px;
+}
+
+.label {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  top: 9px;
+  left: 10px;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+  transition: transform 150ms ease, color 150ms ease, font-size 150ms ease;
+}
+
+.label[data-floating] {
+  transform: translateY(-6px);
+  font-size: 10px;
+  color: var(--mantine-color-blue-4);
+  font-weight: 600;
+}
