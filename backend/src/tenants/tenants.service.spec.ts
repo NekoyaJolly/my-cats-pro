@@ -25,6 +25,7 @@ describe('TenantsService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
     invitationToken: {
       findUnique: jest.fn(),
@@ -524,6 +525,107 @@ describe('TenantsService', () => {
 
       await expect(service.getTenantById(tenantId, superAdminUser)).rejects.toThrow(NotFoundException);
       await expect(service.getTenantById(tenantId, superAdminUser)).rejects.toThrow('テナントが見つかりません');
+    });
+  });
+
+  describe('updateTenant', () => {
+    const tenantId = 'tenant-1';
+    
+    const superAdminUser: RequestUser = {
+      userId: 'super-admin-1',
+      email: 'superadmin@example.com',
+      role: UserRole.SUPER_ADMIN,
+      tenantId: undefined,
+    };
+
+    const tenantAdminUser: RequestUser = {
+      userId: 'tenant-admin-1',
+      email: 'tenantadmin@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    beforeEach(() => {
+      mockPrismaService.tenant.findUnique.mockReset();
+      mockPrismaService.tenant.update.mockReset();
+    });
+
+    it('SUPER_ADMIN がテナント名を正常に更新できる', async () => {
+      const existingTenant = {
+        id: tenantId,
+        name: 'Original Name',
+        slug: 'original-slug',
+        isActive: true,
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(existingTenant);
+      mockPrismaService.tenant.update.mockResolvedValue({
+        ...existingTenant,
+        name: 'Updated Name',
+        updatedAt: new Date(),
+      });
+
+      const result = await service.updateTenant(tenantId, { name: 'Updated Name' }, superAdminUser);
+
+      expect(result.success).toBe(true);
+      expect(result.data.name).toBe('Updated Name');
+      expect(mockPrismaService.tenant.update).toHaveBeenCalledWith({
+        where: { id: tenantId },
+        data: { name: 'Updated Name' },
+        select: expect.any(Object),
+      });
+    });
+
+    it('スラッグ変更時に重複チェックを行う', async () => {
+      const existingTenant = {
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+        isActive: true,
+      };
+
+      mockPrismaService.tenant.findUnique
+        .mockResolvedValueOnce(existingTenant) // 対象テナント
+        .mockResolvedValueOnce({ id: 'other-tenant', slug: 'new-slug' }); // 重複スラッグ
+
+      await expect(
+        service.updateTenant(tenantId, { slug: 'new-slug' }, superAdminUser)
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('テナントが見つからない場合はエラー', async () => {
+      mockPrismaService.tenant.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.updateTenant(tenantId, { name: 'Updated' }, superAdminUser)
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('TENANT_ADMIN は更新できない', async () => {
+      await expect(
+        service.updateTenant(tenantId, { name: 'Updated' }, tenantAdminUser)
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('isActive を false に更新できる', async () => {
+      const existingTenant = {
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+        isActive: true,
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(existingTenant);
+      mockPrismaService.tenant.update.mockResolvedValue({
+        ...existingTenant,
+        isActive: false,
+        updatedAt: new Date(),
+      });
+
+      const result = await service.updateTenant(tenantId, { isActive: false }, superAdminUser);
+
+      expect(result.success).toBe(true);
+      expect(result.data.isActive).toBe(false);
     });
   });
 });

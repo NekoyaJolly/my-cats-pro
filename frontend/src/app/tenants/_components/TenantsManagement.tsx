@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Stack, Title, Tabs, Alert, Loader, Center } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { Stack, Title, Tabs, Alert, Loader, Center, Group } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { IconAlertCircle, IconUserPlus } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { TenantsList } from './TenantsList';
 import { UsersList } from './UsersList';
 import { UserProfileForm } from './UserProfileForm';
-import { InviteTenantAdminModal } from './InviteTenantAdminModal';
 import { InviteUserModal } from './InviteUserModal';
+import { ActionMenu } from './ActionMenu';
 
 /**
  * ユーザー設定メインコンポーネント
@@ -22,11 +23,31 @@ export function TenantsManagement() {
   const { user, isAuthenticated, initialized } = useAuth();
   const [activeTab, setActiveTab] = useState<string | null>('profile');
 
+  // 招待モーダルの状態
+  const [inviteUserOpened, { open: openInviteUser, close: closeInviteUser }] = useDisclosure(false);
+
   // 権限チェック
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const isTenantAdmin = user?.role === 'TENANT_ADMIN';
   // ユーザー管理は SUPER_ADMIN と TENANT_ADMIN が可能
   const hasUserManagementAccess = isSuperAdmin || isTenantAdmin;
+
+  // 現在のタブに応じたアクションメニュー項目を生成
+  const getActionItems = () => {
+    // 「ユーザー一覧」タブで TENANT_ADMIN の場合のみ、ユーザー招待を表示
+    if (activeTab === 'users' && isTenantAdmin) {
+      return [
+        {
+          id: 'invite-user',
+          label: 'ユーザーを招待',
+          icon: <IconUserPlus size={16} />,
+          onClick: openInviteUser,
+        },
+      ];
+    }
+
+    return [];
+  };
 
   // 初期化待機
   if (!initialized) {
@@ -48,9 +69,16 @@ export function TenantsManagement() {
     );
   }
 
+  const actionItems = getActionItems();
+
   return (
     <Stack gap="lg" p="md">
-      <Title order={2}>ユーザー設定</Title>
+      <Group justify="space-between" align="center">
+        <Title order={2}>ユーザー設定</Title>
+        {actionItems.length > 0 && (
+          <ActionMenu items={actionItems} buttonLabel="アクション" />
+        )}
+      </Group>
 
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
@@ -72,11 +100,13 @@ export function TenantsManagement() {
         </Tabs.Panel>
       </Tabs>
 
-      {/* SUPER_ADMIN 専用: テナント管理者招待モーダル */}
-      {isSuperAdmin && <InviteTenantAdminModal />}
-
       {/* TENANT_ADMIN 専用: ユーザー招待モーダル */}
-      {isTenantAdmin && <InviteUserModal />}
+      {isTenantAdmin && (
+        <InviteUserModal
+          opened={inviteUserOpened}
+          onClose={closeInviteUser}
+        />
+      )}
     </Stack>
   );
 }

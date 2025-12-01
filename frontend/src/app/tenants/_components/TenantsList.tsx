@@ -15,11 +15,14 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { IconAlertCircle, IconPlus, IconUserPlus } from '@tabler/icons-react';
 import { apiClient, apiRequest } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
 import { ActionButton } from '@/components/ActionButton';
 import { useAuth } from '@/lib/auth/store';
+import { EditTenantModal } from './EditTenantModal';
+import { ActionMenu } from './ActionMenu';
+import { InviteTenantAdminModal } from './InviteTenantAdminModal';
 
 interface Tenant {
   id: string;
@@ -58,6 +61,13 @@ export function TenantsList() {
     name: '',
     slug: '',
   });
+
+  // 編集モーダルの状態
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [editModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
+
+  // 招待モーダルの状態
+  const [inviteAdminOpened, { open: openInviteAdmin, close: closeInviteAdmin }] = useDisclosure(false);
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
@@ -168,6 +178,37 @@ export function TenantsList() {
     }
   };
 
+  // 編集ボタンがクリックされたときのハンドラ
+  const handleEditClick = (tenant: Tenant) => {
+    setEditingTenant(tenant);
+    openEditModal();
+  };
+
+  // 編集成功時のハンドラ
+  const handleEditSuccess = () => {
+    fetchTenants();
+  };
+
+  // アクションメニュー項目を生成
+  const getActionItems = () => {
+    if (!isSuperAdmin) return [];
+
+    return [
+      {
+        id: 'create-tenant',
+        label: '新規テナント作成',
+        icon: <IconPlus size={16} />,
+        onClick: open,
+      },
+      {
+        id: 'invite-admin',
+        label: 'テナント管理者を招待',
+        icon: <IconUserPlus size={16} />,
+        onClick: openInviteAdmin,
+      },
+    ];
+  };
+
   if (loading) {
     return (
       <Center h={200}>
@@ -186,12 +227,10 @@ export function TenantsList() {
 
   return (
     <Stack gap="md">
-      {/* SUPER_ADMIN のみテナント作成ボタンを表示 */}
+      {/* SUPER_ADMIN のみアクションメニューを表示 */}
       {isSuperAdmin && (
         <Group justify="flex-end">
-          <ActionButton action="create" onClick={open}>
-            新規テナント作成
-          </ActionButton>
+          <ActionMenu items={getActionItems()} buttonLabel="アクション" />
         </Group>
       )}
 
@@ -210,6 +249,7 @@ export function TenantsList() {
                 <Table.Th>スラッグ</Table.Th>
                 <Table.Th>ステータス</Table.Th>
                 <Table.Th>作成日</Table.Th>
+                {isSuperAdmin && <Table.Th>操作</Table.Th>}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -233,6 +273,13 @@ export function TenantsList() {
                       {new Date(tenant.createdAt).toLocaleDateString('ja-JP')}
                     </Text>
                   </Table.Td>
+                  {isSuperAdmin && (
+                    <Table.Td>
+                      <ActionButton action="edit" size="xs" onClick={() => handleEditClick(tenant)}>
+                        編集
+                      </ActionButton>
+                    </Table.Td>
+                  )}
                 </Table.Tr>
               ))}
             </Table.Tbody>
@@ -276,6 +323,20 @@ export function TenantsList() {
           </Group>
         </Stack>
       </Modal>
+
+      {/* テナント編集モーダル */}
+      <EditTenantModal
+        tenant={editingTenant}
+        opened={editModalOpened}
+        onClose={closeEditModal}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* テナント管理者招待モーダル */}
+      <InviteTenantAdminModal
+        opened={inviteAdminOpened}
+        onClose={closeInviteAdmin}
+      />
     </Stack>
   );
 }
