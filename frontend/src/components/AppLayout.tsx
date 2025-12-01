@@ -374,7 +374,12 @@ export function AppLayout({ children }: AppLayoutProps) {
               size="sm"
             />
             <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
-              <Text fw={700} style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+              {/* モバイル以下ではタイトル非表示（バッジとの重なり防止） */}
+              <Text 
+                fw={700} 
+                visibleFrom="sm"
+                style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+              >
                 <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🐈</span> MyCats
               </Text>
               {pageTitle && (
