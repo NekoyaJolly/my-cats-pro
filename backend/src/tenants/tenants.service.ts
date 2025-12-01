@@ -21,6 +21,7 @@ import {
   InviteUserDto, 
   CompleteInvitationDto 
 } from './dto/invitation.dto';
+import { UpdateTenantDto } from './dto/update-tenant.dto';
 
 /**
  * テナント管理サービス
@@ -457,5 +458,75 @@ export class TenantsService {
       .replace(/\s+/g, '-') // スペースをハイフンに
       .replace(/-+/g, '-') // 連続するハイフンを1つに
       .replace(/^-|-$/g, ''); // 先頭と末尾のハイフンを削除
+  }
+
+  /**
+   * テナントを更新
+   * SUPER_ADMIN のみが実行可能
+   * 
+   * @param tenantId テナント ID
+   * @param dto 更新 DTO
+   * @param currentUser 現在のユーザー情報
+   * @returns 更新後のテナント
+   * @throws NotFoundException テナントが見つからない場合
+   * @throws ConflictException スラッグが重複している場合
+   */
+  async updateTenant(tenantId: string, dto: UpdateTenantDto, currentUser: RequestUser) {
+    // SUPER_ADMIN のみ更新可能
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('テナントを更新する権限がありません');
+    }
+
+    // テナントの存在確認
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('テナントが見つかりません');
+    }
+
+    // スラッグ変更時の重複チェック
+    if (dto.slug && dto.slug !== tenant.slug) {
+      const existingTenant = await this.prisma.tenant.findUnique({
+        where: { slug: dto.slug },
+      });
+
+      if (existingTenant) {
+        throw new ConflictException('このスラッグは既に使用されています');
+      }
+    }
+
+    // 更新データの構築
+    const updateData: { name?: string; slug?: string; isActive?: boolean } = {};
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.slug !== undefined) updateData.slug = dto.slug;
+    if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
+
+    // テナント更新
+    const updatedTenant = await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    this.logger.log({
+      message: 'Tenant updated',
+      tenantId: updatedTenant.id,
+      updatedFields: Object.keys(updateData),
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      data: updatedTenant,
+    };
   }
 }

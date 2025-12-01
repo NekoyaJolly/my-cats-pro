@@ -42,6 +42,7 @@ import {
   DashboardCardSettings,
   DashboardCardConfig,
 } from '@/components/dashboard/DashboardCardSettings';
+import { DialNavigation, type DialItem } from '@/components/dashboard/DialNavigation';
 import {
   loadDashboardSettings,
   saveDashboardSettings,
@@ -335,11 +336,10 @@ export default function Home() {
 
   return (
     <Container size="xl" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-      {/* ウェルカムメッセージと設定ボタン */}
+      {/* ヘッダーと設定ボタン */}
       <Stack gap="lg" mb="xl">
         <Group justify="space-between" align="flex-start">
           <Box style={{ flex: 1 }}>
-            <Title order={2} mb="xs">おかえりなさい 👋</Title>
             <Text size="sm" c="dimmed">{today}</Text>
           </Box>
           
@@ -369,77 +369,29 @@ export default function Home() {
 
       {/* レスポンシブレイアウト */}
       {isMobilePortrait ? (
-        // モバイル縦向き: iPhoneスタイルのシンプルアイコングリッド
-        <SimpleGrid
-          cols={3}
-          spacing="xl"
-          style={{
-            maxWidth: '400px',
-            margin: '0 auto',
-          }}
-        >
-          {visibleCards.map((card) => (
-            <Box
-              key={card.id}
-              style={{
-                cursor: 'pointer',
-                textAlign: 'center',
-                position: 'relative',
-              }}
-              onClick={() => router.push(card.href)}
-            >
-              <Stack gap="xs" align="center">
-                {/* アイコン部分 */}
-                <Box style={{ position: 'relative' }}>
-                  <ThemeIcon
-                    size={68}
-                    radius="lg"
-                    variant="light"
-                    color={card.color}
-                    style={{
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                    }}
-                  >
-                    {card.icon}
-                  </ThemeIcon>
-                  
-                  {/* バッジ */}
-                  {card.badge !== undefined && (
-                    <Badge
-                      variant="filled"
-                      color="red"
-                      size="sm"
-                      circle
-                      style={{
-                        position: 'absolute',
-                        top: -4,
-                        right: -4,
-                        minWidth: '20px',
-                        height: '20px',
-                        padding: '0 6px',
-                      }}
-                    >
-                      {card.badge}
-                    </Badge>
-                  )}
-                </Box>
-                
-                {/* ラベル */}
-                <Text
-                  size="xs"
-                  fw={500}
-                  style={{
-                    maxWidth: '80px',
-                    wordBreak: 'keep-all',
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {card.title}
-                </Text>
-              </Stack>
-            </Box>
-          ))}
-        </SimpleGrid>
+        // モバイル縦向き: ダイヤルナビゲーションUI
+        <DialNavigation
+          items={visibleCards.map((card): DialItem => ({
+            id: card.id,
+            title: card.title,
+            icon: card.icon,
+            color: card.color,
+            href: card.href,
+            badge: card.badge,
+            // サブアクション（選択時に扇状展開）
+            subActions: card.id === 'cats' ? [
+              { id: 'cats-new', title: '新規登録', icon: <IconPlus size={18} />, href: '/cats/new' },
+              { id: 'cats-list', title: '一覧', icon: <IconList size={18} />, href: '/cats' },
+            ] : card.id === 'breeding' ? [
+              { id: 'breeding-list', title: '一覧', icon: <IconList size={18} />, href: '/breeding' },
+              { id: 'breeding-schedule', title: 'スケジュール', icon: <IconCalendarTime size={18} />, href: '/breeding' },
+            ] : card.id === 'care' ? [
+              { id: 'care-schedule', title: 'スケジュール', icon: <IconCalendarTime size={18} />, href: '/care' },
+              { id: 'care-medical', title: '医療記録', icon: <IconStethoscope size={18} />, href: '/care' },
+            ] : undefined,
+          }))}
+          onNavigate={(href) => router.push(href)}
+        />
       ) : (
         // デスクトップ・横向き: 詳細カードグリッド
         <SimpleGrid

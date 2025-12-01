@@ -1,5 +1,5 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, IsUUID, IsNotEmpty, Matches, IsArray, IsIn, ValidateNested, IsInt, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsString, IsEmail, IsOptional, IsBoolean, IsUUID, IsNotEmpty, Matches, IsArray, IsIn, ValidateNested, IsInt, Min, Max } from 'class-validator';
 
 /**
  * 勤務時間テンプレートDTO
