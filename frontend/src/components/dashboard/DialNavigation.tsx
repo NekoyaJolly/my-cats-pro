@@ -58,7 +58,6 @@ const DIAL_SIZE = 260;           // ダイヤル全体のサイズ（少し小�
 const ICON_RADIUS = 88;          // アイコンを配置する円の半径
 const CENTER_SIZE = 76;          // 中央の穴のサイズ（90→76に縮小）
 const ICON_BUTTON_SIZE = 48;     // アイコンボタンサイズ（統一）
-const ICON_SIZE = 22;            // アイコンサイズ（22-24px）
 const SUB_RADIUS = 55;           // サブアクション配置の半径
 
 // ============================================
