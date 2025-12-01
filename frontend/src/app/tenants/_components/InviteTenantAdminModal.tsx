@@ -13,19 +13,22 @@ import {
   Button,
   Text,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
 import { IconCheck, IconCopy, IconMail } from '@tabler/icons-react';
 import { ActionButton } from '@/components/ActionButton';
 import { apiClient } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
 import { getInvitationUrl } from '@/lib/invitation-utils';
 
+interface InviteTenantAdminModalProps {
+  opened: boolean;
+  onClose: () => void;
+}
+
 /**
  * テナント管理者招待モーダル（SUPER_ADMIN専用）
  */
-export function InviteTenantAdminModal() {
+export function InviteTenantAdminModal({ opened, onClose }: InviteTenantAdminModalProps) {
   const router = useRouter();
-  const [opened, { open, close }] = useDisclosure(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -52,7 +55,7 @@ export function InviteTenantAdminModal() {
   const handleClose = () => {
     if (!loading) {
       resetForm();
-      close();
+      onClose();
     }
   };
 
@@ -132,103 +135,93 @@ export function InviteTenantAdminModal() {
   };
 
   return (
-    <>
-      <ActionButton
-        action="create"
-        onClick={open}
-        style={{ position: 'fixed', right: 24, bottom: 24, zIndex: 100 }}
-      >
-        テナント管理者を招待
-      </ActionButton>
-
-      <Modal
-        opened={opened}
-        onClose={handleClose}
-        title="テナント管理者を招待"
-        size="md"
-      >
-        {invitationResult ? (
-          // 招待成功後の表示
-          <Stack gap="md">
-            <Alert icon={<IconMail size={16} />} title="招待を作成しました" color="green">
-              <Text size="sm" mb="xs">
-                <strong>{invitationResult.email}</strong> 宛ての招待を作成しました。
-              </Text>
-              <Text size="sm" c="dimmed">
-                以下の招待URLをコピーして、招待者に共有してください。
-              </Text>
-            </Alert>
-
-            <Stack gap="xs">
-              <Text size="sm" fw={500}>招待URL:</Text>
-              <Code block style={{ wordBreak: 'break-all' }}>
-                {getInvitationUrl(invitationResult.invitationToken)}
-              </Code>
-              <CopyButton value={getInvitationUrl(invitationResult.invitationToken)}>
-                {({ copied, copy }) => (
-                  <Button
-                    color={copied ? 'teal' : 'blue'}
-                    leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                    onClick={copy}
-                    variant="light"
-                  >
-                    {copied ? 'コピーしました！' : 'URLをコピー'}
-                  </Button>
-                )}
-              </CopyButton>
-            </Stack>
-
-            <Text size="xs" c="dimmed">
-              ※ 招待URLは7日間有効です。
+    <Modal
+      opened={opened}
+      onClose={handleClose}
+      title="テナント管理者を招待"
+      size="md"
+    >
+      {invitationResult ? (
+        // 招待成功後の表示
+        <Stack gap="md">
+          <Alert icon={<IconMail size={16} />} title="招待を作成しました" color="green">
+            <Text size="sm" mb="xs">
+              <strong>{invitationResult.email}</strong> 宛ての招待を作成しました。
             </Text>
+            <Text size="sm" c="dimmed">
+              以下の招待URLをコピーして、招待者に共有してください。
+            </Text>
+          </Alert>
 
-            <Group justify="flex-end" mt="md">
-              <ActionButton action="save" onClick={handleFinish}>
-                閉じる
-              </ActionButton>
-            </Group>
+          <Stack gap="xs">
+            <Text size="sm" fw={500}>招待URL:</Text>
+            <Code block style={{ wordBreak: 'break-all' }}>
+              {getInvitationUrl(invitationResult.invitationToken)}
+            </Code>
+            <CopyButton value={getInvitationUrl(invitationResult.invitationToken)}>
+              {({ copied, copy }) => (
+                <Button
+                  color={copied ? 'teal' : 'blue'}
+                  leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                  onClick={copy}
+                  variant="light"
+                >
+                  {copied ? 'コピーしました！' : 'URLをコピー'}
+                </Button>
+              )}
+            </CopyButton>
           </Stack>
-        ) : (
-          // 招待フォーム
-          <Stack gap="md">
-            <TextInput
-              label="メールアドレス"
-              placeholder="admin@example.com"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              disabled={loading}
-            />
 
-            <TextInput
-              label="テナント名"
-              placeholder="サンプルテナント"
-              required
-              value={formData.tenantName}
-              onChange={(e) => setFormData({ ...formData, tenantName: e.target.value })}
-              disabled={loading}
-            />
+          <Text size="xs" c="dimmed">
+            ※ 招待URLは7日間有効です。
+          </Text>
 
-            <TextInput
-              label="テナントスラッグ（オプション）"
-              placeholder="sample-tenant"
-              description="未入力の場合、テナント名から自動生成されます"
-              value={formData.tenantSlug}
-              onChange={(e) => setFormData({ ...formData, tenantSlug: e.target.value })}
-              disabled={loading}
-            />
+          <Group justify="flex-end" mt="md">
+            <ActionButton action="save" onClick={handleFinish}>
+              閉じる
+            </ActionButton>
+          </Group>
+        </Stack>
+      ) : (
+        // 招待フォーム
+        <Stack gap="md">
+          <TextInput
+            label="メールアドレス"
+            placeholder="admin@example.com"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            disabled={loading}
+          />
 
-            <Group justify="flex-end" mt="md">
-              <ActionButton action="cancel" onClick={handleClose} disabled={loading}>
-                キャンセル
-              </ActionButton>
-              <ActionButton action="save" onClick={handleSubmit} loading={loading}>
-                招待を送信
-              </ActionButton>
-            </Group>
-          </Stack>
-        )}
-      </Modal>
-    </>
+          <TextInput
+            label="テナント名"
+            placeholder="サンプルテナント"
+            required
+            value={formData.tenantName}
+            onChange={(e) => setFormData({ ...formData, tenantName: e.target.value })}
+            disabled={loading}
+          />
+
+          <TextInput
+            label="テナントスラッグ（オプション）"
+            placeholder="sample-tenant"
+            description="未入力の場合、テナント名から自動生成されます"
+            value={formData.tenantSlug}
+            onChange={(e) => setFormData({ ...formData, tenantSlug: e.target.value })}
+            disabled={loading}
+          />
+
+          <Group justify="flex-end" mt="md">
+            <ActionButton action="cancel" onClick={handleClose} disabled={loading}>
+              キャンセル
+            </ActionButton>
+            <ActionButton action="save" onClick={handleSubmit} loading={loading}>
+              招待を送信
+            </ActionButton>
+          </Group>
+        </Stack>
+      )}
+    </Modal>
   );
 }
