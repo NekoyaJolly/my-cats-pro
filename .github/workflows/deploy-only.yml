@@ -58,7 +58,7 @@ jobs:
     if: inputs.environment == 'staging' || inputs.environment == 'both'
     environment:
       name: staging
-      url: https://mycats-pro-backend-staging-${{ secrets.GCP_PROJECT_ID_STAGING && '518939509282' || 'XXXXXX' }}.${{ env.REGION }}.run.app
+      url: https://mycats-pro-backend-staging.asia-northeast1.run.app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -215,7 +215,7 @@ jobs:
       (inputs.environment == 'production' || inputs.environment == 'both')
     environment:
       name: production
-      url: https://mycats-pro-backend-${{ secrets.GCP_PROJECT_ID && '518939509282' || 'XXXXXX' }}.${{ env.REGION }}.run.app
+      url: https://mycats-pro-backend.asia-northeast1.run.app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
