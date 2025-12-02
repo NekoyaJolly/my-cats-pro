@@ -421,8 +421,8 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
           animate={{ rotate: displayRotation }}
           transition={{ type: 'spring', stiffness: 120, damping: 18 }}
         >
-          {items.map((item, index) => {
-            // ∞軌道のパラメータ設定
+          {(() => {
+            // ∞軌道のパラメータ設定（すべてのアイテムで共通）
             const infinityOpts: InfinityPathOptions = {
               cxLeft: radius - INFINITY_CIRCLE_OFFSET,   // 左の円の中心
               cxRight: radius + INFINITY_CIRCLE_OFFSET,  // 右の円の中心
@@ -430,43 +430,42 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
               r: INFINITY_CIRCLE_RADIUS,                  // 円の半径
             };
 
-            // 回転角度とインデックスからtパラメータを計算
-            // displayRotationは角度（度）なので、0-1の範囲に正規化
+            // 回転角度を0-1の範囲に正規化（すべてのアイテムで共通）
             const rotationNormalized = ((displayRotation % 360) + 360) % 360;
             const tBase = rotationNormalized / 360;  // 1周で0→1
             
-            // 各アイテムの位置をインデックスに応じてオフセット
-            const itemT = tBase + (index / items.length);
-            
             // 下側中央を選択位置にするための位相調整
-            // Task 1で下側（6時方向）を基準にしているため、0.75（6時方向）にオフセット
             const phaseShift = 0.75;
-            const wrappedT = itemT + phaseShift;
 
-            // ∞軌道上の座標を取得
-            const pos = infinityPath(wrappedT, infinityOpts);
-            
-            const isSelected = index === selectedIndex;
-            const isHovered = index === hoveredIndex;
+            return items.map((item, index) => {
+              // 各アイテムの位置をインデックスに応じてオフセット
+              const itemT = tBase + (index / items.length);
+              const wrappedT = itemT + phaseShift;
 
-            return (
-              <div
-                key={item.id}
-                style={{
-                  position: 'absolute',
-                  left: pos.x,
-                  top: pos.y,
-                  transform: 'translate(-50%, -50%)',
-                  cursor: 'pointer',
-                  zIndex: isSelected ? 2 : 1,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleItemClick(index);
-                }}
-                onPointerEnter={() => setHoveredIndex(index)}
-                onPointerLeave={() => setHoveredIndex(null)}
-              >
+              // ∞軌道上の座標を取得
+              const pos = infinityPath(wrappedT, infinityOpts);
+              
+              const isSelected = index === selectedIndex;
+              const isHovered = index === hoveredIndex;
+
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    position: 'absolute',
+                    left: pos.x,
+                    top: pos.y,
+                    transform: 'translate(-50%, -50%)',
+                    cursor: 'pointer',
+                    zIndex: isSelected ? 2 : 1,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleItemClick(index);
+                  }}
+                  onPointerEnter={() => setHoveredIndex(index)}
+                  onPointerLeave={() => setHoveredIndex(null)}
+                >
                 {/* アイコンボタン（回転を打ち消す） */}
                 <motion.div
                   style={{ transformOrigin: '50% 50%' }}
@@ -536,7 +535,8 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
                 </motion.div>
               </div>
             );
-          })}
+          });
+          })()}
         </motion.div>
 
         {/* サブアクションリング */}
