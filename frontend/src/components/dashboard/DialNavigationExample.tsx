@@ -177,7 +177,7 @@ export function DialNavigationExample() {
       visible: visibleItems.length,
       hidden: menuConfig.length - visibleItems.length,
     });
-  }, [menuConfig, visibleItems]);
+  }, [menuConfig, visibleItems.length]);
 
   return (
     <div style={{ padding: 20 }}>
