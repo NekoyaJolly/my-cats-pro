@@ -52,23 +52,17 @@ async function bootstrap() {
       bufferLogs: true,
       cors: {
         origin: (origin, callback) => { 
-          const allowedOrigins =        
+          const allowedOrigins: string[] =        
             (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
-              ? (process.env.CORS_ORIGIN || '').split(',')                                    : [
-                  'http://localhost:3000',
+              ? (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim())
+              : ['http://localhost:3000'];
 
           if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
             return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
           }
 
           const isAllowed = allowedOrigins.some((allowedOrigin) => {
-            if (typeof allowedOrigin === 'string') {
-              return allowedOrigin === origin;
-            }
-            if (allowedOrigin instanceof RegExp) {
-              return allowedOrigin.test(origin);
-            }
-            return false;
+            return allowedOrigin === origin;
           });
 
           if (isAllowed || !origin) {
