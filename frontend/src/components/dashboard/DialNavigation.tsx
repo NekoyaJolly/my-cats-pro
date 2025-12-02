@@ -276,8 +276,8 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
         borderRadius: 16,
       }}
     >
-      {/* ラベル（上部に移動） */}
-      <div style={{ textAlign: 'center', minHeight: 46, order: -1 }}>
+      {/* ラベル（上部に配置） */}
+      <div style={{ textAlign: 'center', minHeight: 46 }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedItem?.id}
