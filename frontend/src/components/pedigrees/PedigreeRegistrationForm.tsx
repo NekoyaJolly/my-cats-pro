@@ -27,6 +27,7 @@ import {
   IconPlus,
 } from '@tabler/icons-react';
 import classes from './PedigreeRegistrationForm.module.css';
+import { InputWithFloatingLabel } from '../ui/InputWithFloatingLabel';
 
 // API レスポンスの型定義
 type BreedsResponse = Breed[];
@@ -979,48 +980,48 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
                   <Grid>
                     <Grid.Col span={12}><Divider label="父親（7項目）" /></Grid.Col>
                     <Grid.Col span={{ base: 12, md: 4 }}>
-                      <TextInput label="父親タイトル" value={formData.fatherTitle || ''} onChange={(e) => updateFormData('fatherTitle', e.target.value)} />
+                      <InputWithFloatingLabel label="父親タイトル" value={formData.fatherTitle} onChange={(e) => updateFormData('fatherTitle', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 4 }}>
-                      <TextInput label="父親名" value={formData.fatherCatName || ''} onChange={(e) => updateFormData('fatherCatName', e.target.value)} />
+                      <InputWithFloatingLabel label="父親名" value={formData.fatherCatName} onChange={(e) => updateFormData('fatherCatName', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 4 }}>
-                      <TextInput label="父親キャッテリー名" value={formData.fatherCatName2 || ''} onChange={(e) => updateFormData('fatherCatName2', e.target.value)} />
+                      <InputWithFloatingLabel label="父親キャッテリー名" value={formData.fatherCatName2} onChange={(e) => updateFormData('fatherCatName2', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                      <TextInput label="父親毛色" value={formData.fatherCoatColor || ''} onChange={(e) => updateFormData('fatherCoatColor', e.target.value)} />
+                      <InputWithFloatingLabel label="父親毛色" value={formData.fatherCoatColor} onChange={(e) => updateFormData('fatherCoatColor', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                      <TextInput label="父親目の色" value={formData.fatherEyeColor || ''} onChange={(e) => updateFormData('fatherEyeColor', e.target.value)} />
+                      <InputWithFloatingLabel label="父親目の色" value={formData.fatherEyeColor} onChange={(e) => updateFormData('fatherEyeColor', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                      <TextInput label="父親JCU" value={formData.fatherJCU || ''} onChange={(e) => updateFormData('fatherJCU', e.target.value)} />
+                      <InputWithFloatingLabel label="父親JCU" value={formData.fatherJCU} onChange={(e) => updateFormData('fatherJCU', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                      <TextInput label="父親他団体コード" value={formData.fatherOtherCode || ''} onChange={(e) => updateFormData('fatherOtherCode', e.target.value)} />
+                      <InputWithFloatingLabel label="父親他団体コード" value={formData.fatherOtherCode} onChange={(e) => updateFormData('fatherOtherCode', e.target.value)} />
                     </Grid.Col>
 
                     <Grid.Col span={12}><Divider label="母親（7項目）" /></Grid.Col>
                     <Grid.Col span={{ base: 12, md: 4 }}>
-                      <TextInput label="母親タイトル" value={formData.motherTitle || ''} onChange={(e) => updateFormData('motherTitle', e.target.value)} />
+                      <InputWithFloatingLabel label="母親タイトル" value={formData.motherTitle} onChange={(e) => updateFormData('motherTitle', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 4 }}>
-                      <TextInput label="母親名" value={formData.motherCatName || ''} onChange={(e) => updateFormData('motherCatName', e.target.value)} />
+                      <InputWithFloatingLabel label="母親名" value={formData.motherCatName} onChange={(e) => updateFormData('motherCatName', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 4 }}>
-                      <TextInput label="母親キャッテリー名" value={formData.motherCatName2 || ''} onChange={(e) => updateFormData('motherCatName2', e.target.value)} />
+                      <InputWithFloatingLabel label="母親キャッテリー名" value={formData.motherCatName2} onChange={(e) => updateFormData('motherCatName2', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                      <TextInput label="母親毛色" value={formData.motherCoatColor || ''} onChange={(e) => updateFormData('motherCoatColor', e.target.value)} />
+                      <InputWithFloatingLabel label="母親毛色" value={formData.motherCoatColor} onChange={(e) => updateFormData('motherCoatColor', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                      <TextInput label="母親目の色" value={formData.motherEyeColor || ''} onChange={(e) => updateFormData('motherEyeColor', e.target.value)} />
+                      <InputWithFloatingLabel label="母親目の色" value={formData.motherEyeColor} onChange={(e) => updateFormData('motherEyeColor', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                      <TextInput label="母親JCU" value={formData.motherJCU || ''} onChange={(e) => updateFormData('motherJCU', e.target.value)} />
+                      <InputWithFloatingLabel label="母親JCU" value={formData.motherJCU} onChange={(e) => updateFormData('motherJCU', e.target.value)} />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                      <TextInput label="母親他団体コード" value={formData.motherOtherCode || ''} onChange={(e) => updateFormData('motherOtherCode', e.target.value)} />
+                      <InputWithFloatingLabel label="母親他団体コード" value={formData.motherOtherCode} onChange={(e) => updateFormData('motherOtherCode', e.target.value)} />
                     </Grid.Col>
                   </Grid>
                 </Accordion.Panel>
@@ -1034,28 +1035,28 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
                 <Accordion.Panel>
                   <Grid>
                     <Grid.Col span={12}><Divider label="父方祖父（4項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="タイトル" value={formData.ffTitle || ''} onChange={(e) => updateFormData('ffTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="名前" value={formData.ffCatName || ''} onChange={(e) => updateFormData('ffCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="毛色" value={formData.ffCatColor || ''} onChange={(e) => updateFormData('ffCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="JCU" value={formData.ffjcu || ''} onChange={(e) => updateFormData('ffjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.ffTitle} onChange={(e) => updateFormData('ffTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="名前" value={formData.ffCatName} onChange={(e) => updateFormData('ffCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="毛色" value={formData.ffCatColor} onChange={(e) => updateFormData('ffCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="JCU" value={formData.ffjcu} onChange={(e) => updateFormData('ffjcu', e.target.value)} /></Grid.Col>
 
                     <Grid.Col span={12}><Divider label="父方祖母（4項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="タイトル" value={formData.fmTitle || ''} onChange={(e) => updateFormData('fmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="名前" value={formData.fmCatName || ''} onChange={(e) => updateFormData('fmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="毛色" value={formData.fmCatColor || ''} onChange={(e) => updateFormData('fmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="JCU" value={formData.fmjcu || ''} onChange={(e) => updateFormData('fmjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.fmTitle} onChange={(e) => updateFormData('fmTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="名前" value={formData.fmCatName} onChange={(e) => updateFormData('fmCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="毛色" value={formData.fmCatColor} onChange={(e) => updateFormData('fmCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="JCU" value={formData.fmjcu} onChange={(e) => updateFormData('fmjcu', e.target.value)} /></Grid.Col>
 
                     <Grid.Col span={12}><Divider label="母方祖父（4項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="タイトル" value={formData.mfTitle || ''} onChange={(e) => updateFormData('mfTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="名前" value={formData.mfCatName || ''} onChange={(e) => updateFormData('mfCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="毛色" value={formData.mfCatColor || ''} onChange={(e) => updateFormData('mfCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="JCU" value={formData.mfjcu || ''} onChange={(e) => updateFormData('mfjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.mfTitle} onChange={(e) => updateFormData('mfTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="名前" value={formData.mfCatName} onChange={(e) => updateFormData('mfCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="毛色" value={formData.mfCatColor} onChange={(e) => updateFormData('mfCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="JCU" value={formData.mfjcu} onChange={(e) => updateFormData('mfjcu', e.target.value)} /></Grid.Col>
 
                     <Grid.Col span={12}><Divider label="母方祖母（4項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="タイトル" value={formData.mmTitle || ''} onChange={(e) => updateFormData('mmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="名前" value={formData.mmCatName || ''} onChange={(e) => updateFormData('mmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="毛色" value={formData.mmCatColor || ''} onChange={(e) => updateFormData('mmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 3 }}><TextInput label="JCU" value={formData.mmjcu || ''} onChange={(e) => updateFormData('mmjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.mmTitle} onChange={(e) => updateFormData('mmTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="名前" value={formData.mmCatName} onChange={(e) => updateFormData('mmCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="毛色" value={formData.mmCatColor} onChange={(e) => updateFormData('mmCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 3 }}><InputWithFloatingLabel label="JCU" value={formData.mmjcu} onChange={(e) => updateFormData('mmjcu', e.target.value)} /></Grid.Col>
                   </Grid>
                 </Accordion.Panel>
               </Accordion.Item>
@@ -1069,59 +1070,59 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
                   <Grid>
                     {/* FFF */}
                     <Grid.Col span={12}><Divider label="父父父（FFF）" /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="タイトル" value={formData.fffTitle || ''} onChange={(e) => updateFormData('fffTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="名前" value={formData.fffCatName || ''} onChange={(e) => updateFormData('fffCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="毛色" value={formData.fffCatColor || ''} onChange={(e) => updateFormData('fffCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="JCU" value={formData.fffjcu || ''} onChange={(e) => updateFormData('fffjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="タイトル" value={formData.fffTitle} onChange={(e) => updateFormData('fffTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="名前" value={formData.fffCatName} onChange={(e) => updateFormData('fffCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="毛色" value={formData.fffCatColor} onChange={(e) => updateFormData('fffCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="JCU" value={formData.fffjcu} onChange={(e) => updateFormData('fffjcu', e.target.value)} /></Grid.Col>
 
                     {/* FFM */}
                     <Grid.Col span={12}><Divider label="父父母（FFM）" /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="タイトル" value={formData.ffmTitle || ''} onChange={(e) => updateFormData('ffmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="名前" value={formData.ffmCatName || ''} onChange={(e) => updateFormData('ffmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="毛色" value={formData.ffmCatColor || ''} onChange={(e) => updateFormData('ffmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="JCU" value={formData.ffmjcu || ''} onChange={(e) => updateFormData('ffmjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="タイトル" value={formData.ffmTitle} onChange={(e) => updateFormData('ffmTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="名前" value={formData.ffmCatName} onChange={(e) => updateFormData('ffmCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="毛色" value={formData.ffmCatColor} onChange={(e) => updateFormData('ffmCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="JCU" value={formData.ffmjcu} onChange={(e) => updateFormData('ffmjcu', e.target.value)} /></Grid.Col>
 
                     {/* FMF */}
                     <Grid.Col span={12}><Divider label="父母父（FMF）" /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="タイトル" value={formData.fmfTitle || ''} onChange={(e) => updateFormData('fmfTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="名前" value={formData.fmfCatName || ''} onChange={(e) => updateFormData('fmfCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="毛色" value={formData.fmfCatColor || ''} onChange={(e) => updateFormData('fmfCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="JCU" value={formData.fmfjcu || ''} onChange={(e) => updateFormData('fmfjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="タイトル" value={formData.fmfTitle} onChange={(e) => updateFormData('fmfTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="名前" value={formData.fmfCatName} onChange={(e) => updateFormData('fmfCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="毛色" value={formData.fmfCatColor} onChange={(e) => updateFormData('fmfCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="JCU" value={formData.fmfjcu} onChange={(e) => updateFormData('fmfjcu', e.target.value)} /></Grid.Col>
 
                     {/* FMM */}
                     <Grid.Col span={12}><Divider label="父母母（FMM）" /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="タイトル" value={formData.fmmTitle || ''} onChange={(e) => updateFormData('fmmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="名前" value={formData.fmmCatName || ''} onChange={(e) => updateFormData('fmmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="毛色" value={formData.fmmCatColor || ''} onChange={(e) => updateFormData('fmmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="JCU" value={formData.fmmjcu || ''} onChange={(e) => updateFormData('fmmjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="タイトル" value={formData.fmmTitle} onChange={(e) => updateFormData('fmmTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="名前" value={formData.fmmCatName} onChange={(e) => updateFormData('fmmCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="毛色" value={formData.fmmCatColor} onChange={(e) => updateFormData('fmmCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="JCU" value={formData.fmmjcu} onChange={(e) => updateFormData('fmmjcu', e.target.value)} /></Grid.Col>
 
                     {/* MFF */}
                     <Grid.Col span={12}><Divider label="母父父（MFF）" /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="タイトル" value={formData.mffTitle || ''} onChange={(e) => updateFormData('mffTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="名前" value={formData.mffCatName || ''} onChange={(e) => updateFormData('mffCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="毛色" value={formData.mffCatColor || ''} onChange={(e) => updateFormData('mffCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="JCU" value={formData.mffjcu || ''} onChange={(e) => updateFormData('mffjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="タイトル" value={formData.mffTitle} onChange={(e) => updateFormData('mffTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="名前" value={formData.mffCatName} onChange={(e) => updateFormData('mffCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="毛色" value={formData.mffCatColor} onChange={(e) => updateFormData('mffCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="JCU" value={formData.mffjcu} onChange={(e) => updateFormData('mffjcu', e.target.value)} /></Grid.Col>
 
                     {/* MFM */}
                     <Grid.Col span={12}><Divider label="母父母（MFM）" /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="タイトル" value={formData.mfmTitle || ''} onChange={(e) => updateFormData('mfmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="名前" value={formData.mfmCatName || ''} onChange={(e) => updateFormData('mfmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="毛色" value={formData.mfmCatColor || ''} onChange={(e) => updateFormData('mfmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="JCU" value={formData.mfmjcu || ''} onChange={(e) => updateFormData('mfmjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="タイトル" value={formData.mfmTitle} onChange={(e) => updateFormData('mfmTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="名前" value={formData.mfmCatName} onChange={(e) => updateFormData('mfmCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="毛色" value={formData.mfmCatColor} onChange={(e) => updateFormData('mfmCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="JCU" value={formData.mfmjcu} onChange={(e) => updateFormData('mfmjcu', e.target.value)} /></Grid.Col>
 
                     {/* MMF */}
                     <Grid.Col span={12}><Divider label="母母父（MMF）" /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="タイトル" value={formData.mmfTitle || ''} onChange={(e) => updateFormData('mmfTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="名前" value={formData.mmfCatName || ''} onChange={(e) => updateFormData('mmfCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="毛色" value={formData.mmfCatColor || ''} onChange={(e) => updateFormData('mmfCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="JCU" value={formData.mmfjcu || ''} onChange={(e) => updateFormData('mmfjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="タイトル" value={formData.mmfTitle} onChange={(e) => updateFormData('mmfTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="名前" value={formData.mmfCatName} onChange={(e) => updateFormData('mmfCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="毛色" value={formData.mmfCatColor} onChange={(e) => updateFormData('mmfCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="JCU" value={formData.mmfjcu} onChange={(e) => updateFormData('mmfjcu', e.target.value)} /></Grid.Col>
 
                     {/* MMM */}
                     <Grid.Col span={12}><Divider label="母母母（MMM）" /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="タイトル" value={formData.mmmTitle || ''} onChange={(e) => updateFormData('mmmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="名前" value={formData.mmmCatName || ''} onChange={(e) => updateFormData('mmmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="毛色" value={formData.mmmCatColor || ''} onChange={(e) => updateFormData('mmmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={3}><TextInput label="JCU" value={formData.mmmjcu || ''} onChange={(e) => updateFormData('mmmjcu', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="タイトル" value={formData.mmmTitle} onChange={(e) => updateFormData('mmmTitle', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="名前" value={formData.mmmCatName} onChange={(e) => updateFormData('mmmCatName', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="毛色" value={formData.mmmCatColor} onChange={(e) => updateFormData('mmmCatColor', e.target.value)} /></Grid.Col>
+                    <Grid.Col span={3}><InputWithFloatingLabel label="JCU" value={formData.mmmjcu} onChange={(e) => updateFormData('mmmjcu', e.target.value)} /></Grid.Col>
                   </Grid>
                 </Accordion.Panel>
               </Accordion.Item>

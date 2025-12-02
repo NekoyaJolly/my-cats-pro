@@ -2,6 +2,7 @@ import {
   Controller, 
   Get,
   Post, 
+  Patch,
   Body, 
   Param, 
   UseGuards,
@@ -25,6 +26,7 @@ import {
   InviteUserDto, 
   CompleteInvitationDto 
 } from './dto/invitation.dto';
+import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { TenantsService } from './tenants.service';
 
 /**
@@ -98,6 +100,31 @@ export class TenantsController {
     @GetUser() user: RequestUser,
   ) {
     return this.tenantsService.getTenantById(id, user);
+  }
+
+  /**
+   * テナント更新
+   * SUPER_ADMIN のみがアクセス可能
+   */
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'テナント更新',
+    description: 'SuperAdminのみが実行可能。指定IDのテナントを更新します。' 
+  })
+  @ApiResponse({ status: 200, description: 'テナントが更新されました' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  @ApiResponse({ status: 404, description: 'テナントが見つかりません' })
+  @ApiResponse({ status: 409, description: 'スラッグが既に使用されています' })
+  async updateTenant(
+    @Param('id') id: string,
+    @Body() dto: UpdateTenantDto,
+    @GetUser() user: RequestUser,
+  ) {
+    return this.tenantsService.updateTenant(id, dto, user);
   }
 
   /**
