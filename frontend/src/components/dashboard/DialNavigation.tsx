@@ -2,8 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
-import { Box, Text } from '@mantine/core';
-import { IconCat } from '@tabler/icons-react';
+import { Box, Text, ActionIcon, Tooltip } from '@mantine/core';
+import { IconCat, IconSettings } from '@tabler/icons-react';
 import { HexIconButton } from './HexIconButton';
 
 // ============================================
@@ -30,6 +30,7 @@ interface DialNavigationProps {
   items: DialItem[];
   onNavigate: (href: string) => void;
   centerLogo?: ReactNode;
+  onSettingsClick?: () => void;
 }
 
 // ============================================
@@ -136,7 +137,7 @@ const angleToIndex = (angle: number, itemCount: number): number => {
 // DialNavigation: メインコンポーネント
 // ============================================
 
-export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigationProps) {
+export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick }: DialNavigationProps) {
   // 回転角度（生の値）
   const rotationValue = useMotionValue(0);
   // スプリングで滑らかに（バウンス効果のためdamping低め）
@@ -316,8 +317,29 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
         background: `linear-gradient(180deg, ${COLORS.backgroundGradientStart} 0%, ${COLORS.backgroundGradientEnd} 100%)`,
         minHeight: 400,
         borderRadius: 16,
+        position: 'relative',
       }}
     >
+      {/* 設定ボタン（右上） */}
+      {onSettingsClick && (
+        <Tooltip label="メニューを編集" position="left">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="lg"
+            onClick={onSettingsClick}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              zIndex: 100,
+            }}
+          >
+            <IconSettings size={20} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+
       {/* ラベル（上部に配置） */}
       <div style={{ textAlign: 'center', minHeight: 46 }}>
         <AnimatePresence mode="wait">
