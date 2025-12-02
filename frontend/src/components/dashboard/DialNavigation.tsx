@@ -2,8 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
-import { Box, Text, Badge } from '@mantine/core';
+import { Box, Text } from '@mantine/core';
 import { IconCat } from '@tabler/icons-react';
+import { HexIconButton } from './HexIconButton';
 
 // ============================================
 // 型定義
@@ -466,7 +467,7 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
                   onPointerEnter={() => setHoveredIndex(index)}
                   onPointerLeave={() => setHoveredIndex(null)}
                 >
-                {/* アイコンボタン（回転を打ち消す） */}
+                {/* アイコンボタン（回転を打ち消す） - 六角形 */}
                 <motion.div
                   style={{ transformOrigin: '50% 50%' }}
                   animate={{
@@ -481,57 +482,15 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
                     scale: { duration: 0.15, ease: 'easeOut' },
                   }}
                 >
-                  <div
-                    style={{
-                      width: ICON_BUTTON_SIZE,
-                      height: ICON_BUTTON_SIZE,
-                      borderRadius: '50%',
-                      background: isSelected 
-                        ? COLORS.primary 
-                        : isHovered 
-                          ? COLORS.primaryLight 
-                          : COLORS.background,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: isSelected
-                        ? `0 4px 12px rgba(37, 99, 235, 0.35)`
-                        : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                      transition: 'background 0.15s ease, box-shadow 0.15s ease',
-                    }}
+                  <HexIconButton
+                    size={ICON_BUTTON_SIZE}
+                    selected={isSelected}
+                    hovered={isHovered}
+                    color={item.color || COLORS.primary}
+                    badge={item.badge}
                   >
-                    <div
-                      style={{
-                        color: isSelected ? COLORS.background : COLORS.primary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {item.icon}
-                    </div>
-                  </div>
-
-                  {item.badge !== undefined && item.badge !== 0 && item.badge !== '' && (
-                    <Badge
-                      variant="filled"
-                      color="red"
-                      size="sm"
-                      circle
-                      style={{
-                        position: 'absolute',
-                        top: -2,
-                        right: -2,
-                        minWidth: 16,
-                        height: 16,
-                        fontSize: 9,
-                        padding: 0,
-                        border: `2px solid ${COLORS.background}`,
-                      }}
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
+                    {item.icon}
+                  </HexIconButton>
                 </motion.div>
               </div>
             );
