@@ -78,10 +78,14 @@ const getSnapAngle = (currentAngle: number, itemCount: number): number => {
   return fullRotations + snappedNormalized;
 };
 
-/** 角度からインデックスを計算（上=12時位置が選択位置） */
+/** 
+ * 角度からインデックスを計算（下=6時位置が選択位置）
+ * 180度オフセットを加えることで、下方向を基準にする
+ */
 const angleToIndex = (angle: number, itemCount: number): number => {
   const step = 360 / itemCount;
-  const normalized = normalizeAngle(-angle);
+  // 下側（6時方向）を基準にするため、180度オフセットを追加
+  const normalized = normalizeAngle(-angle + 180);
   const rawIndex = Math.round(normalized / step) % itemCount;
   return rawIndex;
 };
@@ -272,6 +276,40 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
         borderRadius: 16,
       }}
     >
+      {/* ラベル（上部に移動） */}
+      <div style={{ textAlign: 'center', minHeight: 46, order: -1 }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedItem?.id}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.12 }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: COLORS.text,
+                marginBottom: 2,
+              }}
+              ta="center"
+            >
+              {selectedItem?.title}
+            </Text>
+          </motion.div>
+        </AnimatePresence>
+        <Text
+          style={{
+            fontSize: 12,
+            color: COLORS.textMuted,
+          }}
+          ta="center"
+        >
+          {isSubExpanded ? 'タップで機能を選択' : '回転で選択／タップで決定'}
+        </Text>
+      </div>
+
       {/* ダイヤル本体 */}
       <div
         ref={containerRef}
@@ -300,26 +338,26 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
           }}
         />
 
-        {/* 上部ハイライトセクター（三角矢印の代わり） */}
+        {/* 下部ハイライトセクター（選択位置インジケーター） */}
         <div
           style={{
             position: 'absolute',
-            top: 0,
+            bottom: 0,
             left: '50%',
             transform: 'translateX(-50%)',
             width: 60,
             height: 28,
-            background: `linear-gradient(180deg, rgba(37, 99, 235, 0.20) 0%, transparent 100%)`,
-            borderRadius: '0 0 30px 30px',
+            background: `linear-gradient(0deg, rgba(37, 99, 235, 0.20) 0%, transparent 100%)`,
+            borderRadius: '30px 30px 0 0',
             pointerEvents: 'none',
             zIndex: 15,
           }}
         />
-        {/* 選択位置のドットインジケーター */}
+        {/* 選択位置のドットインジケーター（下部） */}
         <div
           style={{
             position: 'absolute',
-            top: 10,
+            bottom: 10,
             left: '50%',
             transform: 'translateX(-50%)',
             width: 6,
@@ -608,40 +646,6 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
             </AnimatePresence>
           </motion.div>
         </div>
-      </div>
-
-      {/* ラベル */}
-      <div style={{ textAlign: 'center', minHeight: 46 }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedItem?.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.12 }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: 600,
-                color: COLORS.text,
-                marginBottom: 2,
-              }}
-              ta="center"
-            >
-              {selectedItem?.title}
-            </Text>
-          </motion.div>
-        </AnimatePresence>
-        <Text
-          style={{
-            fontSize: 12,
-            color: COLORS.textMuted,
-          }}
-          ta="center"
-        >
-          {isSubExpanded ? 'タップで機能を選択' : '回転で選択／タップで決定'}
-        </Text>
       </div>
     </Box>
   );
