@@ -18,7 +18,6 @@ import {
   IconMedicalCross,
   IconPhoto,
   IconSettings,
-  IconLogout,
 } from '@tabler/icons-react';
 
 /**
@@ -177,7 +176,7 @@ export function DialNavigationExample() {
       visible: visibleItems.length,
       hidden: menuConfig.length - visibleItems.length,
     });
-  }, []);
+  }, [menuConfig.length, visibleItems.length]);
 
   return (
     <div style={{ padding: 20 }}>
