@@ -154,7 +154,7 @@ images:
 substitutions:
   # Common settings
   _LOCATION: 'asia-northeast1' # Tokyo region
-  _REPO_NAME: 'mycats-pro-repo'
+  _REPO_NAME: 'mycats-pro'
   _ENVIRONMENT: 'production'
   
   # Service names (must be provided by caller)

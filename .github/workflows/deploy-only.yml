@@ -48,7 +48,7 @@ env:
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
   REGION: "asia-northeast1"
-  REPO_NAME: "mycats-pro-repo"
+  REPO_NAME: "mycats-pro"
 
 jobs:
   # Deploy to Staging Environment (mycats-pro-staging project)
