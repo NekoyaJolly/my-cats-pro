@@ -18,10 +18,28 @@ on:
         required: true
         type: string
     secrets:
+      # Staging secrets
+      GCP_SA_KEY_STAGING:
+        required: false
+      GCP_PROJECT_ID_STAGING:
+        required: false
+      GCP_SQL_INSTANCE_NAME_STAGING:
+        required: false
+      GCP_RUN_SA_BACKEND_STAGING:
+        required: false
+      GCP_RUN_SA_FRONTEND_STAGING:
+        required: false
+      # Production secrets
       GCP_SA_KEY:
-        required: true
+        required: false
       GCP_PROJECT_ID:
-        required: true
+        required: false
+      GCP_SQL_INSTANCE_NAME:
+        required: false
+      GCP_RUN_SA_BACKEND:
+        required: false
+      GCP_RUN_SA_FRONTEND:
+        required: false
 
 permissions:
   contents: read
@@ -29,77 +47,150 @@ permissions:
 env:
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
+  REGION: "asia-northeast1"
+  REPO_NAME: "mycats-pro-repo"
 
 jobs:
-  # Note: The 'inputs.environment' context works for both workflow_dispatch and workflow_call triggers
-  # - workflow_dispatch: Manual trigger from GitHub UI
-  # - workflow_call: Triggered automatically by trigger-deploy-from-ci.yml after CI/CD completion
-  
-  # Deploy to Staging Environment
+  # Deploy to Staging Environment (mycats-pro-staging project)
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     if: inputs.environment == 'staging' || inputs.environment == 'both'
     environment:
       name: staging
-      url: https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app
+      url: https://mycats-pro-backend-staging-${{ secrets.GCP_PROJECT_ID_STAGING && '518939509282' || 'XXXXXX' }}.${{ env.REGION }}.run.app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate required secrets
+      - name: Validate required secrets for Staging
         run: |
-          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
-            echo "❌ Error: GCP_SA_KEY secret is not set"
-            echo "Please configure the GCP_SA_KEY secret in repository settings:"
+          missing_secrets=()
+          
+          if [ -z "${{ secrets.GCP_SA_KEY_STAGING }}" ]; then
+            missing_secrets+=("GCP_SA_KEY_STAGING")
+          fi
+          if [ -z "${{ secrets.GCP_PROJECT_ID_STAGING }}" ]; then
+            missing_secrets+=("GCP_PROJECT_ID_STAGING")
+          fi
+          if [ -z "${{ secrets.GCP_SQL_INSTANCE_NAME_STAGING }}" ]; then
+            missing_secrets+=("GCP_SQL_INSTANCE_NAME_STAGING")
+          fi
+          if [ -z "${{ secrets.GCP_RUN_SA_BACKEND_STAGING }}" ]; then
+            missing_secrets+=("GCP_RUN_SA_BACKEND_STAGING")
+          fi
+          if [ -z "${{ secrets.GCP_RUN_SA_FRONTEND_STAGING }}" ]; then
+            missing_secrets+=("GCP_RUN_SA_FRONTEND_STAGING")
+          fi
+          
+          if [ ${#missing_secrets[@]} -gt 0 ]; then
+            echo "❌ Error: The following secrets are not set:"
+            for secret in "${missing_secrets[@]}"; do
+              echo "  - $secret"
+            done
+            echo ""
+            echo "Please configure these secrets in repository settings:"
             echo "  Settings > Secrets and variables > Actions > New repository secret"
-            echo "  Name: GCP_SA_KEY"
-            echo "  Value: <Full JSON content of GCP service account key>"
             exit 1
           fi
-          if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
-            echo "❌ Error: GCP_PROJECT_ID secret is not set"
-            echo "Please configure the GCP_PROJECT_ID secret in repository settings"
-            exit 1
-          fi
-          echo "✅ All required secrets are configured"
+          
+          echo "✅ All required staging secrets are configured"
 
-      - name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud (Staging)
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY_STAGING }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: ${{ secrets.GCP_PROJECT_ID_STAGING }}
 
       - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
       - name: Deploy to Staging using Cloud Build
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID_STAGING }}
+          SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE_NAME_STAGING }}
+          BACKEND_SA: ${{ secrets.GCP_RUN_SA_BACKEND_STAGING }}
+          FRONTEND_SA: ${{ secrets.GCP_RUN_SA_FRONTEND_STAGING }}
         run: |
           echo "🚀 Deploying to staging environment..."
+          echo "   Project: ${PROJECT_ID}"
+          echo "   SQL Instance: ${SQL_INSTANCE}"
+          
+          # Build Cloud SQL connection name
+          CLOUD_SQL_CONN="${PROJECT_ID}:${{ env.REGION }}:${SQL_INSTANCE}"
+          
+          # Build service URLs (will be updated after first deployment)
+          BACKEND_URL="https://mycats-pro-backend-staging-518939509282.${{ env.REGION }}.run.app"
+          FRONTEND_URL="https://mycats-pro-frontend-staging-518939509282.${{ env.REGION }}.run.app"
+          
           gcloud builds submit \
             --config=cloudbuild.yaml \
-            --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend-staging,_FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,_ENVIRONMENT=staging,_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-stg-db,_CORS_ORIGIN=https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app,_NEXT_PUBLIC_API_URL=https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app/api/v1,_DATABASE_URL_SECRET_NAME=DATABASE_URL_STAGING,_DATABASE_URL_SECRET_VERSION=3,_JWT_SECRET_NAME=JWT_SECRET_STAGING,_JWT_SECRET_VERSION=1,_JWT_REFRESH_SECRET_NAME=JWT_REFRESH_SECRET_STAGING,_JWT_REFRESH_SECRET_VERSION=1,_CSRF_TOKEN_SECRET_NAME=CSRF_TOKEN_SECRET_STAGING,_CSRF_TOKEN_SECRET_VERSION=1 \
-            --project=${{ secrets.GCP_PROJECT_ID }}
+            --substitutions="\
+          _ENVIRONMENT=staging,\
+          _REPO_NAME=${{ env.REPO_NAME }},\
+          _BACKEND_SERVICE_NAME=mycats-pro-backend-staging,\
+          _FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging,\
+          _CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN},\
+          _BACKEND_SERVICE_ACCOUNT=${BACKEND_SA},\
+          _FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA},\
+          _CORS_ORIGIN=${FRONTEND_URL},\
+          _NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1,\
+          _DATABASE_URL_SECRET_NAME=DATABASE_URL,\
+          _DATABASE_URL_SECRET_VERSION=latest,\
+          _JWT_SECRET_NAME=JWT_SECRET,\
+          _JWT_SECRET_VERSION=latest,\
+          _JWT_REFRESH_SECRET_NAME=JWT_REFRESH_SECRET,\
+          _JWT_REFRESH_SECRET_VERSION=latest,\
+          _CSRF_TOKEN_SECRET_NAME=CSRF_TOKEN_SECRET,\
+          _CSRF_TOKEN_SECRET_VERSION=latest" \
+            --project="${PROJECT_ID}"
 
       - name: Verify Staging Deployment
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID_STAGING }}
         run: |
           echo "✅ Staging deployment completed"
-          echo "Backend URL: https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app"
-          echo "Frontend URL: https://mycats-pro-frontend-staging-518939509282.asia-northeast1.run.app"
+          
+          # Get actual service URLs
+          BACKEND_URL=$(gcloud run services describe mycats-pro-backend-staging \
+            --region=${{ env.REGION }} \
+            --project="${PROJECT_ID}" \
+            --format='value(status.url)' 2>/dev/null || echo "Not available yet")
+          
+          FRONTEND_URL=$(gcloud run services describe mycats-pro-frontend-staging \
+            --region=${{ env.REGION }} \
+            --project="${PROJECT_ID}" \
+            --format='value(status.url)' 2>/dev/null || echo "Not available yet")
+          
+          echo "Backend URL: ${BACKEND_URL}"
+          echo "Frontend URL: ${FRONTEND_URL}"
 
       - name: Test Staging Health Endpoint
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID_STAGING }}
         run: |
           echo "🏥 Testing staging backend health endpoint..."
+          
+          BACKEND_URL=$(gcloud run services describe mycats-pro-backend-staging \
+            --region=${{ env.REGION }} \
+            --project="${PROJECT_ID}" \
+            --format='value(status.url)' 2>/dev/null || echo "")
+          
+          if [ -z "${BACKEND_URL}" ]; then
+            echo "⚠️ Could not retrieve backend URL, skipping health check"
+            exit 0
+          fi
+          
           sleep 30
           max_attempts=10
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
-            response=$(curl -s -o /dev/null -w "%{http_code}" https://mycats-pro-backend-staging-518939509282.asia-northeast1.run.app/health || echo "000")
+            response=$(curl -s -o /dev/null -w "%{http_code}" "${BACKEND_URL}/health" || echo "000")
             if [ "$response" = "200" ]; then
               echo "✅ Staging backend is healthy (HTTP 200)"
               break
@@ -113,40 +204,56 @@ jobs:
             echo "This may be normal for initial deployments. Please verify manually."
           fi
 
-  # Deploy to Production Environment
+  # Deploy to Production Environment (mycats-pro project)
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [ deploy-staging ]
+    needs: [deploy-staging]
     if: |
       always() &&
       (needs.deploy-staging.result == 'success' || needs.deploy-staging.result == 'skipped') &&
       (inputs.environment == 'production' || inputs.environment == 'both')
     environment:
       name: production
-      url: https://mycats-pro-frontend-518939509282.asia-northeast1.run.app
+      url: https://mycats-pro-backend-${{ secrets.GCP_PROJECT_ID && '518939509282' || 'XXXXXX' }}.${{ env.REGION }}.run.app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate required secrets
+      - name: Validate required secrets for Production
         run: |
+          missing_secrets=()
+          
           if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
-            echo "❌ Error: GCP_SA_KEY secret is not set"
-            echo "Please configure the GCP_SA_KEY secret in repository settings:"
-            echo "  Settings > Secrets and variables > Actions > New repository secret"
-            echo "  Name: GCP_SA_KEY"
-            echo "  Value: <Full JSON content of GCP service account key>"
-            exit 1
+            missing_secrets+=("GCP_SA_KEY")
           fi
           if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
-            echo "❌ Error: GCP_PROJECT_ID secret is not set"
-            echo "Please configure the GCP_PROJECT_ID secret in repository settings"
+            missing_secrets+=("GCP_PROJECT_ID")
+          fi
+          if [ -z "${{ secrets.GCP_SQL_INSTANCE_NAME }}" ]; then
+            missing_secrets+=("GCP_SQL_INSTANCE_NAME")
+          fi
+          if [ -z "${{ secrets.GCP_RUN_SA_BACKEND }}" ]; then
+            missing_secrets+=("GCP_RUN_SA_BACKEND")
+          fi
+          if [ -z "${{ secrets.GCP_RUN_SA_FRONTEND }}" ]; then
+            missing_secrets+=("GCP_RUN_SA_FRONTEND")
+          fi
+          
+          if [ ${#missing_secrets[@]} -gt 0 ]; then
+            echo "❌ Error: The following secrets are not set:"
+            for secret in "${missing_secrets[@]}"; do
+              echo "  - $secret"
+            done
+            echo ""
+            echo "Please configure these secrets in repository settings:"
+            echo "  Settings > Secrets and variables > Actions > New repository secret"
             exit 1
           fi
-          echo "✅ All required secrets are configured"
+          
+          echo "✅ All required production secrets are configured"
 
-      - name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud (Production)
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
@@ -158,30 +265,89 @@ jobs:
 
       - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
       - name: Deploy to Production using Cloud Build
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE_NAME }}
+          BACKEND_SA: ${{ secrets.GCP_RUN_SA_BACKEND }}
+          FRONTEND_SA: ${{ secrets.GCP_RUN_SA_FRONTEND }}
         run: |
           echo "🚀 Deploying to production environment..."
+          echo "   Project: ${PROJECT_ID}"
+          echo "   SQL Instance: ${SQL_INSTANCE}"
+          
+          # Build Cloud SQL connection name
+          CLOUD_SQL_CONN="${PROJECT_ID}:${{ env.REGION }}:${SQL_INSTANCE}"
+          
+          # Build service URLs (will be updated after first deployment)
+          BACKEND_URL="https://mycats-pro-backend-518939509282.${{ env.REGION }}.run.app"
+          FRONTEND_URL="https://mycats-pro-frontend-518939509282.${{ env.REGION }}.run.app"
+          
           gcloud builds submit \
             --config=cloudbuild.yaml \
-            --substitutions=_BACKEND_SERVICE_NAME=mycats-pro-backend,_FRONTEND_SERVICE_NAME=mycats-pro-frontend,_ENVIRONMENT=production,_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-prod-db,_CORS_ORIGIN=https://mycats-pro-frontend-518939509282.asia-northeast1.run.app,_NEXT_PUBLIC_API_URL=https://mycats-pro-backend-518939509282.asia-northeast1.run.app/api/v1,_DATABASE_URL_SECRET_NAME=DATABASE_URL,_DATABASE_URL_SECRET_VERSION=1,_JWT_SECRET_NAME=JWT_SECRET,_JWT_SECRET_VERSION=1,_JWT_REFRESH_SECRET_NAME=JWT_REFRESH_SECRET,_JWT_REFRESH_SECRET_VERSION=1,_CSRF_TOKEN_SECRET_NAME=CSRF_TOKEN_SECRET,_CSRF_TOKEN_SECRET_VERSION=1 \
-            --project=${{ secrets.GCP_PROJECT_ID }}
+            --substitutions="\
+          _ENVIRONMENT=production,\
+          _REPO_NAME=${{ env.REPO_NAME }},\
+          _BACKEND_SERVICE_NAME=mycats-pro-backend,\
+          _FRONTEND_SERVICE_NAME=mycats-pro-frontend,\
+          _CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN},\
+          _BACKEND_SERVICE_ACCOUNT=${BACKEND_SA},\
+          _FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA},\
+          _CORS_ORIGIN=${FRONTEND_URL},\
+          _NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1,\
+          _DATABASE_URL_SECRET_NAME=DATABASE_URL,\
+          _DATABASE_URL_SECRET_VERSION=latest,\
+          _JWT_SECRET_NAME=JWT_SECRET,\
+          _JWT_SECRET_VERSION=latest,\
+          _JWT_REFRESH_SECRET_NAME=JWT_REFRESH_SECRET,\
+          _JWT_REFRESH_SECRET_VERSION=latest,\
+          _CSRF_TOKEN_SECRET_NAME=CSRF_TOKEN_SECRET,\
+          _CSRF_TOKEN_SECRET_VERSION=latest" \
+            --project="${PROJECT_ID}"
 
       - name: Verify Production Deployment
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
           echo "✅ Production deployment completed"
-          echo "Backend URL: https://mycats-pro-backend-518939509282.asia-northeast1.run.app"
-          echo "Frontend URL: https://mycats-pro-frontend-518939509282.asia-northeast1.run.app"
+          
+          # Get actual service URLs
+          BACKEND_URL=$(gcloud run services describe mycats-pro-backend \
+            --region=${{ env.REGION }} \
+            --project="${PROJECT_ID}" \
+            --format='value(status.url)' 2>/dev/null || echo "Not available yet")
+          
+          FRONTEND_URL=$(gcloud run services describe mycats-pro-frontend \
+            --region=${{ env.REGION }} \
+            --project="${PROJECT_ID}" \
+            --format='value(status.url)' 2>/dev/null || echo "Not available yet")
+          
+          echo "Backend URL: ${BACKEND_URL}"
+          echo "Frontend URL: ${FRONTEND_URL}"
 
       - name: Test Production Health Endpoint
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
           echo "🏥 Testing production backend health endpoint..."
+          
+          BACKEND_URL=$(gcloud run services describe mycats-pro-backend \
+            --region=${{ env.REGION }} \
+            --project="${PROJECT_ID}" \
+            --format='value(status.url)' 2>/dev/null || echo "")
+          
+          if [ -z "${BACKEND_URL}" ]; then
+            echo "⚠️ Could not retrieve backend URL, skipping health check"
+            exit 0
+          fi
+          
           sleep 30
           max_attempts=10
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
-            response=$(curl -s -o /dev/null -w "%{http_code}" https://mycats-pro-backend-518939509282.asia-northeast1.run.app/health || echo "000")
+            response=$(curl -s -o /dev/null -w "%{http_code}" "${BACKEND_URL}/health" || echo "000")
             if [ "$response" = "200" ]; then
               echo "✅ Production backend is healthy (HTTP 200)"
               break
