@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DialNavigation } from '@/components/dashboard/DialNavigation';
 import { DialMenuSettings, DialMenuItemConfig } from '@/components/dashboard/DialMenuSettings';
 import {
@@ -130,10 +130,11 @@ export function DialNavigationExample() {
   // 設定モーダルの表示状態
   const [settingsOpened, setSettingsOpened] = useState(false);
 
-  // visible なアイテムのみを order でソート
-  const visibleItems = menuConfig
-    .filter(item => item.visible)
-    .sort((a, b) => a.order - b.order);
+  // visible なアイテムのみを order でソート (useMemo でメモ化)
+  const visibleItems = useMemo(
+    () => menuConfig.filter(item => item.visible).sort((a, b) => a.order - b.order),
+    [menuConfig]
+  );
 
   // ナビゲーション処理
   const handleNavigate = (href: string) => {
@@ -176,7 +177,7 @@ export function DialNavigationExample() {
       visible: visibleItems.length,
       hidden: menuConfig.length - visibleItems.length,
     });
-  }, [menuConfig.length, visibleItems.length]);
+  }, [menuConfig, visibleItems]);
 
   return (
     <div style={{ padding: 20 }}>
@@ -235,9 +236,10 @@ export function DialNavigationWithReset() {
   const [menuConfig, setMenuConfig] = useState<DialMenuItemConfig[]>(DEFAULT_MENU_CONFIG);
   const [settingsOpened, setSettingsOpened] = useState(false);
 
-  const visibleItems = menuConfig
-    .filter(item => item.visible)
-    .sort((a, b) => a.order - b.order);
+  const visibleItems = useMemo(
+    () => menuConfig.filter(item => item.visible).sort((a, b) => a.order - b.order),
+    [menuConfig]
+  );
 
   // 設定をリセット
   const handleReset = () => {
@@ -289,6 +291,12 @@ export function DialNavigationWithAPI() {
   const [settingsOpened, setSettingsOpened] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // visible なアイテムのみを order でソート (useMemo でメモ化)
+  const visibleItems = useMemo(
+    () => menuConfig.filter(item => item.visible).sort((a, b) => a.order - b.order),
+    [menuConfig]
+  );
+
   // 初期読み込み
   useEffect(() => {
     const loadSettings = async () => {
@@ -331,10 +339,6 @@ export function DialNavigationWithAPI() {
   if (loading) {
     return <div>読み込み中...</div>;
   }
-
-  const visibleItems = menuConfig
-    .filter(item => item.visible)
-    .sort((a, b) => a.order - b.order);
 
   return (
     <div>
