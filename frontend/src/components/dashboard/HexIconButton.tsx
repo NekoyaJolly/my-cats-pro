@@ -47,10 +47,26 @@ export function HexIconButton({
   // 選択状態に応じたアイコン色
   const iconColor = selected ? '#FFFFFF' : color;
 
-  // 選択状態に応じた影
-  const boxShadow = selected
-    ? `0 4px 12px ${color}66`
-    : '0 2px 8px rgba(0, 0, 0, 0.08)';
+  // 選択状態に応じた影（40%の透明度）
+  const getBoxShadow = () => {
+    if (!selected) {
+      return '0 2px 8px rgba(0, 0, 0, 0.08)';
+    }
+    // colorをRGBAに変換して透明度を追加
+    const rgb = color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+    if (rgb) {
+      const r = parseInt(rgb[1], 16);
+      const g = parseInt(rgb[2], 16);
+      const b = parseInt(rgb[3], 16);
+      return `0 4px 12px rgba(${r}, ${g}, ${b}, 0.4)`;
+    }
+    return `0 4px 12px ${color}`;
+  };
+
+  const boxShadow = getBoxShadow();
+
+  // バッジの表示判定（0は表示、undefined/null/空文字は非表示）
+  const shouldShowBadge = badge !== undefined && badge !== null && badge !== '';
 
   return (
     <div
@@ -71,12 +87,13 @@ export function HexIconButton({
           color: iconColor,
         }}
         onClick={onClick}
-        aria-label="Navigation icon"
+        aria-label="アイコンボタン"
+        aria-pressed={selected}
       >
         {children}
       </button>
 
-      {badge !== undefined && badge !== 0 && badge !== '' && (
+      {shouldShowBadge && (
         <Badge
           variant="filled"
           color="red"
