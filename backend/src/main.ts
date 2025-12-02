@@ -61,11 +61,16 @@ async function bootstrap() {
             return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
           }
 
+          // Allow same-origin requests (no origin header) or requests from allowed origins
+          if (!origin) {
+            return callback(null, true);
+          }
+
           const isAllowed = allowedOrigins.some((allowedOrigin) => {
             return allowedOrigin === origin;
           });
 
-          if (isAllowed || !origin) {
+          if (isAllowed) {
             callback(null, true);
           } else {
             callback(new Error('Not allowed by CORS'), false);
