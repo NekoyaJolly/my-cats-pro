@@ -125,8 +125,8 @@ jobs:
           CLOUD_SQL_CONN="${PROJECT_ID}:${{ env.REGION }}:${SQL_INSTANCE}"
           
           # Build service URLs (will be updated after first deployment)
-          BACKEND_URL="https://mycats-pro-backend-staging-518939509282.${{ env.REGION }}.run.app"
-          FRONTEND_URL="https://mycats-pro-frontend-staging-518939509282.${{ env.REGION }}.run.app"
+          BACKEND_URL="https://mycats-pro-backend-staging-687406216678.${{ env.REGION }}.run.app"
+          FRONTEND_URL="https://mycats-pro-frontend-staging-687406216678.${{ env.REGION }}.run.app"
           
           gcloud builds submit \
             --config=cloudbuild.yaml \
