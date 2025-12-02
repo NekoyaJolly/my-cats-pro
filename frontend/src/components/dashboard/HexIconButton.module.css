@@ -1,0 +1,60 @@
+/* 六角形アイコンボタンのスタイル */
+
+.hexContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.hexButton {
+  position: relative;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  padding: 0;
+  
+  /* 六角形のクリップパス */
+  clip-path: polygon(
+    25% 6.7%,
+    75% 6.7%,
+    100% 50%,
+    75% 93.3%,
+    25% 93.3%,
+    0% 50%
+  );
+  
+  /* アウトラインのリセット（カスタムフォーカスリングを使用） */
+  outline: none;
+}
+
+/* フォーカス時のアウトライン（アクセシビリティ対応） */
+.hexButton:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+/* ホバー時のスタイル */
+.hexButton.hovered {
+  transform: scale(1.06);
+}
+
+/* 選択時のスタイル */
+.hexButton.selected {
+  transform: translateY(-2px);
+}
+
+/* バッジの配置 */
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 9px;
+  padding: 0;
+  border: 2px solid #FFFFFF;
+  pointer-events: none;
+  z-index: 1;
+}

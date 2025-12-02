@@ -2,8 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
-import { Box, Text, Badge } from '@mantine/core';
-import { IconCat } from '@tabler/icons-react';
+import { Box, Text, ActionIcon, Tooltip } from '@mantine/core';
+import { IconCat, IconSettings } from '@tabler/icons-react';
+import { HexIconButton } from './HexIconButton';
 
 // ============================================
 // 型定義
@@ -29,6 +30,7 @@ interface DialNavigationProps {
   items: DialItem[];
   onNavigate: (href: string) => void;
   centerLogo?: ReactNode;
+  onSettingsClick?: () => void;
 }
 
 // ============================================
@@ -55,14 +57,55 @@ const COLORS = {
 // ============================================
 
 const DIAL_SIZE = 260;           // ダイヤル全体のサイズ（少し小さく）
-const ICON_RADIUS = 88;          // アイコンを配置する円の半径
 const CENTER_SIZE = 76;          // 中央の穴のサイズ（90→76に縮小）
 const ICON_BUTTON_SIZE = 48;     // アイコンボタンサイズ（統一）
 const SUB_RADIUS = 55;           // サブアクション配置の半径
 
+// ∞軌道レイアウト用の定数
+const INFINITY_CIRCLE_RADIUS = 55;     // 左右の円の半径
+const INFINITY_CIRCLE_OFFSET = 45;     // 中心から左右の円の中心までの距離
+
 // ============================================
 // ユーティリティ
 // ============================================
+
+/** ∞軌道パスのオプション */
+interface InfinityPathOptions {
+  cxLeft: number;   // 左の円の中心X座標
+  cxRight: number;  // 右の円の中心X座標
+  cy: number;       // 両円の中心Y座標
+  r: number;        // 円の半径
+}
+
+/**
+ * 疑似∞軌道上の座標を計算
+ * パラメータ t (0-1) に対して、2つの円をつないだ∞字型の軌道上の座標を返す
+ * - 0 ≦ t < 0.5: 右の円を1周
+ * - 0.5 ≦ t < 1: 左の円を1周
+ */
+const infinityPath = (t: number, opts: InfinityPathOptions): { x: number; y: number } => {
+  const { cxLeft, cxRight, cy, r } = opts;
+  // tを0-1の範囲に正規化
+  const tt = ((t % 1) + 1) % 1;
+
+  if (tt < 0.5) {
+    // 右の円（0 ≦ tt < 0.5）
+    const localT = tt / 0.5;             // 0-1に正規化
+    const angle = localT * 2 * Math.PI;  // 0-2πに変換
+    return {
+      x: cxRight + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle),
+    };
+  } else {
+    // 左の円（0.5 ≦ tt < 1）
+    const localT = (tt - 0.5) / 0.5;     // 0-1に正規化
+    const angle = localT * 2 * Math.PI;  // 0-2πに変換
+    return {
+      x: cxLeft + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle),
+    };
+  }
+};
 
 /** 角度を0-360に正規化 */
 const normalizeAngle = (angle: number): number => {
@@ -78,10 +121,14 @@ const getSnapAngle = (currentAngle: number, itemCount: number): number => {
   return fullRotations + snappedNormalized;
 };
 
-/** 角度からインデックスを計算（上=12時位置が選択位置） */
+/** 
+ * 角度からインデックスを計算（下=6時位置が選択位置）
+ * 180度オフセットを加えることで、下方向を基準にする
+ */
 const angleToIndex = (angle: number, itemCount: number): number => {
   const step = 360 / itemCount;
-  const normalized = normalizeAngle(-angle);
+  // 下側（6時方向）を基準にするため、180度オフセットを追加
+  const normalized = normalizeAngle(-angle + 180);
   const rawIndex = Math.round(normalized / step) % itemCount;
   return rawIndex;
 };
@@ -90,7 +137,7 @@ const angleToIndex = (angle: number, itemCount: number): number => {
 // DialNavigation: メインコンポーネント
 // ============================================
 
-export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigationProps) {
+export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick }: DialNavigationProps) {
   // 回転角度（生の値）
   const rotationValue = useMotionValue(0);
   // スプリングで滑らかに（バウンス効果のためdamping低め）
@@ -270,8 +317,63 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
         background: `linear-gradient(180deg, ${COLORS.backgroundGradientStart} 0%, ${COLORS.backgroundGradientEnd} 100%)`,
         minHeight: 400,
         borderRadius: 16,
+        position: 'relative',
       }}
     >
+      {/* 設定ボタン（右上） */}
+      {onSettingsClick && (
+        <Tooltip label="メニューを編集" position="left">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="lg"
+            onClick={onSettingsClick}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              zIndex: 100,
+            }}
+          >
+            <IconSettings size={20} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+
+      {/* ラベル（上部に配置） */}
+      <div style={{ textAlign: 'center', minHeight: 46 }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedItem?.id}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.12 }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: COLORS.text,
+                marginBottom: 2,
+              }}
+              ta="center"
+            >
+              {selectedItem?.title}
+            </Text>
+          </motion.div>
+        </AnimatePresence>
+        <Text
+          style={{
+            fontSize: 12,
+            color: COLORS.textMuted,
+          }}
+          ta="center"
+        >
+          {isSubExpanded ? 'タップで機能を選択' : '回転で選択／タップで決定'}
+        </Text>
+      </div>
+
       {/* ダイヤル本体 */}
       <div
         ref={containerRef}
@@ -300,26 +402,26 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
           }}
         />
 
-        {/* 上部ハイライトセクター（三角矢印の代わり） */}
+        {/* 下部ハイライトセクター（選択位置インジケーター） */}
         <div
           style={{
             position: 'absolute',
-            top: 0,
+            bottom: 0,
             left: '50%',
             transform: 'translateX(-50%)',
             width: 60,
             height: 28,
-            background: `linear-gradient(180deg, rgba(37, 99, 235, 0.20) 0%, transparent 100%)`,
-            borderRadius: '0 0 30px 30px',
+            background: `linear-gradient(0deg, rgba(37, 99, 235, 0.20) 0%, transparent 100%)`,
+            borderRadius: '30px 30px 0 0',
             pointerEvents: 'none',
             zIndex: 15,
           }}
         />
-        {/* 選択位置のドットインジケーター */}
+        {/* 選択位置のドットインジケーター（下部） */}
         <div
           style={{
             position: 'absolute',
-            top: 10,
+            bottom: 10,
             left: '50%',
             transform: 'translateX(-50%)',
             width: 6,
@@ -331,7 +433,7 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
           }}
         />
 
-        {/* アイコンリング - これだけ回転 */}
+        {/* アイコンリング - 疑似∞軌道に配置 */}
         <motion.div
           style={{
             position: 'absolute',
@@ -342,32 +444,52 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
           animate={{ rotate: displayRotation }}
           transition={{ type: 'spring', stiffness: 120, damping: 18 }}
         >
-          {items.map((item, index) => {
-            const theta = ((2 * Math.PI * index) / items.length) - (Math.PI / 2);
-            const cx = radius + ICON_RADIUS * Math.cos(theta);
-            const cy = radius + ICON_RADIUS * Math.sin(theta);
-            const isSelected = index === selectedIndex;
-            const isHovered = index === hoveredIndex;
+          {(() => {
+            // ∞軌道のパラメータ設定（すべてのアイテムで共通）
+            const infinityOpts: InfinityPathOptions = {
+              cxLeft: radius - INFINITY_CIRCLE_OFFSET,   // 左の円の中心
+              cxRight: radius + INFINITY_CIRCLE_OFFSET,  // 右の円の中心
+              cy: radius,                                 // Y軸中心
+              r: INFINITY_CIRCLE_RADIUS,                  // 円の半径
+            };
 
-            return (
-              <div
-                key={item.id}
-                style={{
-                  position: 'absolute',
-                  left: cx,
-                  top: cy,
-                  transform: 'translate(-50%, -50%)',
-                  cursor: 'pointer',
-                  zIndex: isSelected ? 2 : 1,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleItemClick(index);
-                }}
-                onPointerEnter={() => setHoveredIndex(index)}
-                onPointerLeave={() => setHoveredIndex(null)}
-              >
-                {/* アイコンボタン（回転を打ち消す） */}
+            // 回転角度を0-1の範囲に正規化（すべてのアイテムで共通）
+            const rotationNormalized = ((displayRotation % 360) + 360) % 360;
+            const tBase = rotationNormalized / 360;  // 1周で0→1
+            
+            // 下側中央を選択位置にするための位相調整
+            const phaseShift = 0.75;
+
+            return items.map((item, index) => {
+              // 各アイテムの位置をインデックスに応じてオフセット
+              const itemT = tBase + (index / items.length);
+              const wrappedT = itemT + phaseShift;
+
+              // ∞軌道上の座標を取得
+              const pos = infinityPath(wrappedT, infinityOpts);
+              
+              const isSelected = index === selectedIndex;
+              const isHovered = index === hoveredIndex;
+
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    position: 'absolute',
+                    left: pos.x,
+                    top: pos.y,
+                    transform: 'translate(-50%, -50%)',
+                    cursor: 'pointer',
+                    zIndex: isSelected ? 2 : 1,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleItemClick(index);
+                  }}
+                  onPointerEnter={() => setHoveredIndex(index)}
+                  onPointerLeave={() => setHoveredIndex(null)}
+                >
+                {/* アイコンボタン（回転を打ち消す） - 六角形 */}
                 <motion.div
                   style={{ transformOrigin: '50% 50%' }}
                   animate={{
@@ -382,61 +504,20 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
                     scale: { duration: 0.15, ease: 'easeOut' },
                   }}
                 >
-                  <div
-                    style={{
-                      width: ICON_BUTTON_SIZE,
-                      height: ICON_BUTTON_SIZE,
-                      borderRadius: '50%',
-                      background: isSelected 
-                        ? COLORS.primary 
-                        : isHovered 
-                          ? COLORS.primaryLight 
-                          : COLORS.background,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: isSelected
-                        ? `0 4px 12px rgba(37, 99, 235, 0.35)`
-                        : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                      transition: 'background 0.15s ease, box-shadow 0.15s ease',
-                    }}
+                  <HexIconButton
+                    size={ICON_BUTTON_SIZE}
+                    selected={isSelected}
+                    hovered={isHovered}
+                    color={item.color || COLORS.primary}
+                    badge={item.badge}
                   >
-                    <div
-                      style={{
-                        color: isSelected ? COLORS.background : COLORS.primary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {item.icon}
-                    </div>
-                  </div>
-
-                  {item.badge !== undefined && item.badge !== 0 && item.badge !== '' && (
-                    <Badge
-                      variant="filled"
-                      color="red"
-                      size="sm"
-                      circle
-                      style={{
-                        position: 'absolute',
-                        top: -2,
-                        right: -2,
-                        minWidth: 16,
-                        height: 16,
-                        fontSize: 9,
-                        padding: 0,
-                        border: `2px solid ${COLORS.background}`,
-                      }}
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
+                    {item.icon}
+                  </HexIconButton>
                 </motion.div>
               </div>
             );
-          })}
+          });
+          })()}
         </motion.div>
 
         {/* サブアクションリング */}
@@ -608,40 +689,6 @@ export function DialNavigation({ items, onNavigate, centerLogo }: DialNavigation
             </AnimatePresence>
           </motion.div>
         </div>
-      </div>
-
-      {/* ラベル */}
-      <div style={{ textAlign: 'center', minHeight: 46 }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedItem?.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.12 }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: 600,
-                color: COLORS.text,
-                marginBottom: 2,
-              }}
-              ta="center"
-            >
-              {selectedItem?.title}
-            </Text>
-          </motion.div>
-        </AnimatePresence>
-        <Text
-          style={{
-            fontSize: 12,
-            color: COLORS.textMuted,
-          }}
-          ta="center"
-        >
-          {isSubExpanded ? 'タップで機能を選択' : '回転で選択／タップで決定'}
-        </Text>
       </div>
     </Box>
   );
