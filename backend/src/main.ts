@@ -51,8 +51,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
       bufferLogs: true,
       cors: {
-        cors: {
-        origin: (origin, callback) => {
+        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
           const allowedOrigins =
             (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
               ? (process.env.CORS_ORIGIN || '').split(',')
@@ -81,7 +80,6 @@ async function bootstrap() {
           }
         },
         credentials: true,
-      },
       },
     });
 
