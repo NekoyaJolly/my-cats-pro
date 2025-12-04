@@ -111,3 +111,106 @@ export function resetDashboardSettings(): void {
     console.error('Failed to reset dashboard settings:', error);
   }
 }
+
+// ============================================
+// ダイアルメニュー設定（モバイル用）
+// ============================================
+
+const DIAL_STORAGE_KEY = 'dial_menu_settings';
+
+export interface DialMenuSettings {
+  items: {
+    id: string;
+    visible: boolean;
+    order: number;
+  }[];
+  version: number;
+}
+
+/**
+ * ダイアルメニュー設定をLocalStorageから読み込む
+ */
+export function loadDialMenuSettings(): DialMenuSettings | null {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const stored = localStorage.getItem(DIAL_STORAGE_KEY);
+    if (!stored) return null;
+    
+    const settings = JSON.parse(stored) as DialMenuSettings;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load dial menu settings:', error);
+    return null;
+  }
+}
+
+/**
+ * ダイアルメニュー設定をLocalStorageに保存
+ */
+export function saveDialMenuSettings(items: { id: string; visible: boolean; order: number }[]): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const settings: DialMenuSettings = {
+      items: items.map((item) => ({
+        id: item.id,
+        visible: item.visible,
+        order: item.order,
+      })),
+      version: 1,
+    };
+    
+    localStorage.setItem(DIAL_STORAGE_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save dial menu settings:', error);
+  }
+}
+
+/**
+ * 保存された設定をダイアルメニュー項目に適用
+ */
+export function applyDialMenuSettings<T extends { id: string; visible?: boolean; order?: number }>(
+  defaultItems: T[],
+  settings: DialMenuSettings | null
+): (T & { visible: boolean; order: number })[] {
+  if (!settings) {
+    // 設定がない場合はデフォルトを返す
+    return defaultItems.map((item, index) => ({
+      ...item,
+      visible: true,
+      order: index,
+    }));
+  }
+  
+  // 設定を適用
+  const itemsMap = new Map(defaultItems.map((item) => [item.id, item]));
+  
+  // 設定に基づいてアイテムを再構築
+  const result: (T & { visible: boolean; order: number })[] = [];
+  
+  // 保存されている順序でアイテムを追加
+  for (const savedItem of settings.items) {
+    const defaultItem = itemsMap.get(savedItem.id);
+    if (defaultItem) {
+      result.push({
+        ...defaultItem,
+        visible: savedItem.visible,
+        order: savedItem.order,
+      });
+      itemsMap.delete(savedItem.id);
+    }
+  }
+  
+  // 新しく追加されたアイテム（設定にないアイテム）を末尾に追加
+  for (const [, item] of itemsMap) {
+    result.push({
+      ...item,
+      visible: true,
+      order: result.length,
+    });
+  }
+  
+  // 順序でソート
+  return result.sort((a, b) => a.order - b.order);
+}
