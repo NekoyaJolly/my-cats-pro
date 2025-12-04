@@ -2,9 +2,26 @@
 
 import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
-import { Box, Text, ActionIcon, Tooltip } from '@mantine/core';
-import { IconCat, IconSettings } from '@tabler/icons-react';
+import { Box, Text, ActionIcon, Tooltip, Button, ScrollArea } from '@mantine/core';
+import { IconCat, IconSettings, IconCheck, IconX, IconPlus } from '@tabler/icons-react';
 import { HexIconButton } from './HexIconButton';
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // ============================================
 // 型定義
@@ -26,11 +43,21 @@ export interface DialItem {
   }[];
 }
 
+/** 編集可能なダイアル項目（表示/非表示情報付き） */
+export interface EditableDialItem extends DialItem {
+  visible: boolean;
+  order: number;
+}
+
 interface DialNavigationProps {
   items: DialItem[];
   onNavigate: (href: string) => void;
   centerLogo?: ReactNode;
   onSettingsClick?: () => void;
+  /** 編集モード用: 全アイテム（非表示含む） */
+  allItems?: EditableDialItem[];
+  /** 編集モード用: アイテム変更時のコールバック */
+  onItemsChange?: (items: EditableDialItem[]) => void;
 }
 
 // ============================================
@@ -118,10 +145,155 @@ const angleToIndex = (angle: number, itemCount: number): number => {
 };
 
 // ============================================
+// 編集モード用サブコンポーネント
+// ============================================
+
+/** フッターのドラッグ可能なアイコン */
+function DraggableFooterIcon({ item }: { item: EditableDialItem }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: `footer-${item.id}`,
+    data: { type: 'footer', item },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 4,
+          padding: 8,
+          cursor: 'grab',
+        }}
+      >
+        <HexIconButton
+          size={40}
+          selected={false}
+          hovered={false}
+          color={item.color}
+        >
+          {item.icon}
+        </HexIconButton>
+        <Text size="xs" c="dimmed" lineClamp={1} style={{ maxWidth: 56 }}>
+          {item.title}
+        </Text>
+      </div>
+    </div>
+  );
+}
+
+/** ダイアル上のドラッグ可能なアイコン */
+function SortableDialIcon({ 
+  item, 
+  position,
+  rotation,
+  isSelected,
+  onRemove,
+}: { 
+  item: DialItem; 
+  position: { x: number; y: number };
+  rotation: number;
+  isSelected: boolean;
+  onRemove: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: `dial-${item.id}`,
+    data: { type: 'dial', item },
+  });
+
+  const style = {
+    position: 'absolute' as const,
+    left: position.x,
+    top: position.y,
+    transform: `translate(-50%, -50%) ${CSS.Transform.toString(transform) || ''}`,
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 100 : isSelected ? 2 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div
+        {...attributes}
+        {...listeners}
+        style={{ cursor: 'grab', position: 'relative' }}
+      >
+        <motion.div
+          style={{ transformOrigin: '50% 50%' }}
+          animate={{ rotate: -rotation }}
+        >
+          <HexIconButton
+            size={ICON_BUTTON_SIZE}
+            selected={isSelected}
+            hovered={false}
+            color={item.color}
+            badge={item.badge}
+          >
+            {item.icon}
+          </HexIconButton>
+        </motion.div>
+        {/* 削除ボタン */}
+        <ActionIcon
+          size="xs"
+          color="red"
+          variant="filled"
+          radius="xl"
+          style={{
+            position: 'absolute',
+            top: -6,
+            right: -6,
+            zIndex: 10,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+        >
+          <IconX size={10} />
+        </ActionIcon>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // DialNavigation: メインコンポーネント
 // ============================================
 
-export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick }: DialNavigationProps) {
+export function DialNavigation({ 
+  items, 
+  onNavigate, 
+  centerLogo, 
+  onSettingsClick,
+  allItems,
+  onItemsChange,
+}: DialNavigationProps) {
   // 回転角度（生の値）
   const rotationValue = useMotionValue(0);
   // スプリングで滑らかに（バウンス効果のためdamping低め）
@@ -137,10 +309,24 @@ export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick 
   const [selectedIndex, setSelectedIndex] = useState(0);
   // サブアクション展開状態
   const [isSubExpanded, setIsSubExpanded] = useState(false);
-  // ドラッグ状態
+  // ドラッグ状態（ダイアル回転用）
   const [isDragging, setIsDragging] = useState(false);
   // ホバー状態
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  
+  // 編集モード state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editItems, setEditItems] = useState<EditableDialItem[]>([]);
+  const [draggedItem, setDraggedItem] = useState<EditableDialItem | null>(null);
+  
+  // dnd-kit センサー設定
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
   
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef({ angle: 0, rotation: 0 });
@@ -289,6 +475,282 @@ export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick 
   const spreadAngle = Math.min(160, subCount * 50);
   const subStartAngle = -90 - spreadAngle / 2;
 
+  // ============================================
+  // 編集モード関連のハンドラー
+  // ============================================
+
+  // 編集モード開始
+  const handleStartEdit = useCallback(() => {
+    if (allItems) {
+      setEditItems([...allItems]);
+      setIsEditMode(true);
+    }
+  }, [allItems]);
+
+  // 編集モード終了（保存）
+  const handleSaveEdit = useCallback(() => {
+    if (onItemsChange) {
+      onItemsChange(editItems);
+    }
+    setIsEditMode(false);
+  }, [editItems, onItemsChange]);
+
+  // 編集モードキャンセル
+  const handleCancelEdit = useCallback(() => {
+    setIsEditMode(false);
+    setEditItems([]);
+  }, []);
+
+  // ダイアルに表示中のアイテム（編集モード用）
+  const visibleEditItems = editItems.filter((item) => item.visible);
+  // フッターに表示するアイテム（非表示のもの）
+  const hiddenEditItems = editItems.filter((item) => !item.visible);
+
+  // dnd-kit: ドラッグ開始
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active } = event;
+    const itemId = String(active.id).replace(/^(footer-|dial-)/, '');
+    const item = editItems.find((i) => i.id === itemId);
+    if (item) {
+      setDraggedItem(item);
+    }
+  }, [editItems]);
+
+  // dnd-kit: ドラッグ終了
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    setDraggedItem(null);
+
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const activeType = activeId.startsWith('footer-') ? 'footer' : 'dial';
+    const overType = overId.startsWith('footer-') ? 'footer' : overId === 'dial-drop-zone' ? 'dial-zone' : 'dial';
+
+    const activeItemId = activeId.replace(/^(footer-|dial-)/, '');
+    const overItemId = overId.replace(/^(footer-|dial-)/, '');
+
+    setEditItems((current) => {
+      const newItems = [...current];
+      const activeIndex = newItems.findIndex((i) => i.id === activeItemId);
+
+      if (activeIndex === -1) return current;
+
+      // フッター→ダイアルゾーン: 表示に切り替え
+      if (activeType === 'footer' && (overType === 'dial-zone' || overType === 'dial')) {
+        newItems[activeIndex] = { ...newItems[activeIndex], visible: true };
+        // 順序を更新
+        const visibleItems = newItems.filter((i) => i.visible);
+        visibleItems.forEach((item, idx) => {
+          const itemIndex = newItems.findIndex((i) => i.id === item.id);
+          if (itemIndex !== -1) {
+            newItems[itemIndex] = { ...newItems[itemIndex], order: idx };
+          }
+        });
+        return newItems;
+      }
+
+      // ダイアル内の並べ替え
+      if (activeType === 'dial' && overType === 'dial' && activeId !== overId) {
+        const overIndex = newItems.findIndex((i) => i.id === overItemId);
+        if (overIndex === -1) return current;
+
+        const result = arrayMove(newItems, activeIndex, overIndex);
+        // 順序を更新
+        result.forEach((item, idx) => {
+          result[idx] = { ...item, order: idx };
+        });
+        return result;
+      }
+
+      return current;
+    });
+  }, []);
+
+  // アイテムをダイアルから削除（フッターへ移動）
+  const handleRemoveFromDial = useCallback((itemId: string) => {
+    setEditItems((current) => {
+      const newItems = current.map((item) =>
+        item.id === itemId ? { ...item, visible: false } : item
+      );
+      // 順序を更新
+      const visibleItems = newItems.filter((i) => i.visible);
+      visibleItems.forEach((item, idx) => {
+        const itemIndex = newItems.findIndex((i) => i.id === item.id);
+        if (itemIndex !== -1) {
+          newItems[itemIndex] = { ...newItems[itemIndex], order: idx };
+        }
+      });
+      return newItems;
+    });
+  }, []);
+
+  // ============================================
+  // レンダリング
+  // ============================================
+
+  // 編集モードのレンダリング
+  if (isEditMode) {
+    return (
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <Box
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: 20,
+            gap: 16,
+            background: `linear-gradient(180deg, ${COLORS.backgroundGradientStart} 0%, ${COLORS.backgroundGradientEnd} 100%)`,
+            minHeight: 400,
+            borderRadius: 16,
+            position: 'relative',
+          }}
+        >
+          {/* 編集モードヘッダー */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            width: '100%',
+            paddingBottom: 8,
+            borderBottom: `1px solid ${COLORS.border}`,
+          }}>
+            <Text fw={600} size="sm">メニューを編集</Text>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button
+                size="xs"
+                variant="subtle"
+                color="gray"
+                leftSection={<IconX size={14} />}
+                onClick={handleCancelEdit}
+              >
+                キャンセル
+              </Button>
+              <Button
+                size="xs"
+                leftSection={<IconCheck size={14} />}
+                onClick={handleSaveEdit}
+              >
+                保存
+              </Button>
+            </div>
+          </div>
+
+          {/* ダイアル編集エリア */}
+          <div
+            id="dial-drop-zone"
+            style={{
+              width: DIAL_SIZE,
+              height: DIAL_SIZE,
+              borderRadius: '50%',
+              position: 'relative',
+              background: COLORS.background,
+              boxShadow: `0 4px 20px ${COLORS.shadow}, inset 0 0 0 4px ${COLORS.primaryLight}`,
+              border: `2px dashed ${COLORS.primary}`,
+            }}
+          >
+            <SortableContext
+              items={visibleEditItems.map((item) => `dial-${item.id}`)}
+              strategy={rectSortingStrategy}
+            >
+              {visibleEditItems.map((item, index) => {
+                const pos = getCirclePosition(
+                  index,
+                  visibleEditItems.length,
+                  radius,
+                  radius,
+                  ICON_ORBIT_RADIUS
+                );
+                return (
+                  <SortableDialIcon
+                    key={item.id}
+                    item={item}
+                    position={pos}
+                    rotation={0}
+                    isSelected={false}
+                    onRemove={() => handleRemoveFromDial(item.id)}
+                  />
+                );
+              })}
+            </SortableContext>
+
+            {/* 中央のプラスアイコン（空の場合） */}
+            {visibleEditItems.length === 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  color: COLORS.textMuted,
+                  textAlign: 'center',
+                }}
+              >
+                <IconPlus size={32} />
+                <Text size="xs" c="dimmed">
+                  下からドラッグして追加
+                </Text>
+              </div>
+            )}
+          </div>
+
+          {/* フッター: 非表示アイコン一覧 */}
+          <div
+            style={{
+              width: '100%',
+              background: COLORS.background,
+              borderRadius: 12,
+              padding: 12,
+              boxShadow: `0 2px 8px ${COLORS.shadow}`,
+            }}
+          >
+            <Text size="xs" c="dimmed" mb={8}>
+              利用可能なメニュー（ドラッグして追加）
+            </Text>
+            <ScrollArea type="auto" offsetScrollbars>
+              <SortableContext
+                items={hiddenEditItems.map((item) => `footer-${item.id}`)}
+                strategy={rectSortingStrategy}
+              >
+                <div style={{ display: 'flex', gap: 8, minHeight: 80 }}>
+                  {hiddenEditItems.length === 0 ? (
+                    <Text size="xs" c="dimmed" style={{ padding: 20 }}>
+                      すべてのメニューが表示中です
+                    </Text>
+                  ) : (
+                    hiddenEditItems.map((item) => (
+                      <DraggableFooterIcon key={item.id} item={item} />
+                    ))
+                  )}
+                </div>
+              </SortableContext>
+            </ScrollArea>
+          </div>
+        </Box>
+
+        {/* ドラッグオーバーレイ */}
+        <DragOverlay>
+          {draggedItem && (
+            <HexIconButton
+              size={ICON_BUTTON_SIZE}
+              selected={false}
+              hovered={false}
+              color={draggedItem.color}
+            >
+              {draggedItem.icon}
+            </HexIconButton>
+          )}
+        </DragOverlay>
+      </DndContext>
+    );
+  }
+
   return (
     <Box
       style={{
@@ -305,13 +767,13 @@ export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick 
       }}
     >
       {/* 設定ボタン（右上） */}
-      {onSettingsClick && (
+      {(onSettingsClick || allItems) && (
         <Tooltip label="メニューを編集" position="left">
           <ActionIcon
             variant="subtle"
             color="gray"
             size="lg"
-            onClick={onSettingsClick}
+            onClick={allItems ? handleStartEdit : onSettingsClick}
             style={{
               position: 'absolute',
               top: 16,

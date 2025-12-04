@@ -42,7 +42,7 @@ import {
   DashboardCardSettings,
   DashboardCardConfig,
 } from '@/components/dashboard/DashboardCardSettings';
-import { DialNavigation, type DialItem } from '@/components/dashboard/DialNavigation';
+import { DialNavigation, type DialItem, type EditableDialItem } from '@/components/dashboard/DialNavigation';
 import { DialMenuSettings, type DialMenuItemConfig } from '@/components/dashboard/DialMenuSettings';
 import {
   loadDashboardSettings,
@@ -98,7 +98,7 @@ export default function Home() {
   const [dashboardCards, setDashboardCards] = useState<DashboardCardConfig[]>([]);
   const [dialMenuItems, setDialMenuItems] = useState<DialMenuItemConfig[]>([]);
   const [settingsOpened, { open: openSettings, close: closeSettings }] = useDisclosure(false);
-  const [dialSettingsOpened, { open: openDialSettings, close: closeDialSettings }] = useDisclosure(false);
+  const [dialSettingsOpened, { close: closeDialSettings }] = useDisclosure(false);
   const router = useRouter();
   const { setPageTitle } = usePageHeader();
   const { isAuthenticated, initialized, accessToken } = useAuth();
@@ -432,7 +432,8 @@ export default function Home() {
             subActions: item.subActions,
           }))}
           onNavigate={(href) => router.push(href)}
-          onSettingsClick={openDialSettings}
+          allItems={dialMenuItems as EditableDialItem[]}
+          onItemsChange={handleSaveDialMenuSettings}
         />
       ) : (
         // デスクトップ・横向き: 詳細カードグリッド
