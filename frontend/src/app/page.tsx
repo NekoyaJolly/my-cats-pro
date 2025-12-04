@@ -56,6 +56,9 @@ import {
   loadDialMenuSettings,
   saveDialMenuSettings,
   applyDialMenuSettings,
+  loadDialSizePreset,
+  saveDialSizePreset,
+  type DialSizePreset,
 } from '@/lib/storage/dashboard-settings';
 
 // 猫のデータ型
@@ -102,6 +105,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [dashboardCards, setDashboardCards] = useState<DashboardCardConfig[]>([]);
   const [dialMenuItems, setDialMenuItems] = useState<DialMenuItemConfig[]>([]);
+  const [dialSizePreset, setDialSizePreset] = useState<DialSizePreset>('medium');
   const [settingsOpened, { open: openSettings, close: closeSettings }] = useDisclosure(false);
   const [dialSettingsOpened, { close: closeDialSettings }] = useDisclosure(false);
   const router = useRouter();
@@ -391,6 +395,10 @@ export default function Home() {
     }));
     const appliedDialItems = applyDialMenuSettings(dialItemsWithDefaults, dialSettings);
     setDialMenuItems(appliedDialItems);
+
+    // ダイアルサイズプリセットを読み込み
+    const savedSizePreset = loadDialSizePreset();
+    setDialSizePreset(savedSizePreset);
   }, [cats.length, careSummary.pending, breedingSummary.today, breedingSummary.total]);
 
   // カード設定保存ハンドラー
@@ -413,6 +421,12 @@ export default function Home() {
       message: 'ダイアルメニューの設定を保存しました',
       color: 'green',
     });
+  };
+
+  // ダイアルサイズプリセット変更ハンドラー
+  const handleDialSizePresetChange = (preset: DialSizePreset) => {
+    setDialSizePreset(preset);
+    saveDialSizePreset(preset);
   };
 
   // 表示するカードのみフィルタリング
@@ -508,6 +522,8 @@ export default function Home() {
           onNavigate={(href) => router.push(href)}
           allItems={dialMenuItems as EditableDialItem[]}
           onItemsChange={handleSaveDialMenuSettings}
+          sizePreset={dialSizePreset}
+          onSizePresetChange={handleDialSizePresetChange}
         />
       ) : (
         // デスクトップ・横向き: 詳細カードグリッド

@@ -117,6 +117,95 @@ export function resetDashboardSettings(): void {
 // ============================================
 
 const DIAL_STORAGE_KEY = 'dial_menu_settings';
+const DIAL_SIZE_STORAGE_KEY = 'dial_size_preset';
+
+/** ダイアルサイズプリセットの種類 */
+export type DialSizePreset = 'small' | 'medium' | 'large';
+
+/** サイズプリセットの定義 */
+export interface DialSizeConfig {
+  dialSize: number;        // ダイアル全体のサイズ
+  centerSize: number;      // 中央の穴のサイズ
+  iconButtonSize: number;  // アイコンボタンサイズ
+  iconOrbitRadius: number; // アイコン配置の円軌道半径
+  subRadius: number;       // サブアクション配置半径
+  iconSize: number;        // アイコン自体のサイズ
+}
+
+/** サイズプリセットのマップ */
+export const DIAL_SIZE_PRESETS: Record<DialSizePreset, DialSizeConfig> = {
+  small: {
+    dialSize: 220,
+    centerSize: 64,
+    iconButtonSize: 40,
+    iconOrbitRadius: 68,
+    subRadius: 98,
+    iconSize: 24,
+  },
+  medium: {
+    dialSize: 260,
+    centerSize: 76,
+    iconButtonSize: 48,
+    iconOrbitRadius: 80,
+    subRadius: 115,
+    iconSize: 28,
+  },
+  large: {
+    dialSize: 320,
+    centerSize: 92,
+    iconButtonSize: 58,
+    iconOrbitRadius: 100,
+    subRadius: 140,
+    iconSize: 34,
+  },
+};
+
+/** プリセットのラベル（日本語） */
+export const DIAL_SIZE_PRESET_LABELS: Record<DialSizePreset, string> = {
+  small: '小',
+  medium: '中',
+  large: '大',
+};
+
+/**
+ * ダイアルサイズプリセットをLocalStorageから読み込む
+ */
+export function loadDialSizePreset(): DialSizePreset {
+  if (typeof window === 'undefined') return 'medium';
+  
+  try {
+    const stored = localStorage.getItem(DIAL_SIZE_STORAGE_KEY);
+    if (!stored) return 'medium';
+    
+    if (stored === 'small' || stored === 'medium' || stored === 'large') {
+      return stored;
+    }
+    return 'medium';
+  } catch (error) {
+    console.error('Failed to load dial size preset:', error);
+    return 'medium';
+  }
+}
+
+/**
+ * ダイアルサイズプリセットをLocalStorageに保存
+ */
+export function saveDialSizePreset(preset: DialSizePreset): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(DIAL_SIZE_STORAGE_KEY, preset);
+  } catch (error) {
+    console.error('Failed to save dial size preset:', error);
+  }
+}
+
+/**
+ * プリセットからサイズ設定を取得
+ */
+export function getDialSizeConfig(preset: DialSizePreset): DialSizeConfig {
+  return DIAL_SIZE_PRESETS[preset];
+}
 
 export interface DialMenuSettings {
   items: {

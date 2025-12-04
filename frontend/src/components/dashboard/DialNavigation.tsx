@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
-import { Box, Text, ActionIcon, Tooltip, Button, ScrollArea } from '@mantine/core';
+import { Box, Text, ActionIcon, Tooltip, Button, ScrollArea, SegmentedControl } from '@mantine/core';
 import { IconCat, IconSettings, IconCheck, IconX, IconPlus } from '@tabler/icons-react';
 import { HexIconButton } from './HexIconButton';
 import {
@@ -22,6 +22,11 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+  type DialSizePreset,
+  DIAL_SIZE_PRESETS,
+  DIAL_SIZE_PRESET_LABELS,
+} from '@/lib/storage/dashboard-settings';
 
 // ============================================
 // 型定義
@@ -58,6 +63,10 @@ interface DialNavigationProps {
   allItems?: EditableDialItem[];
   /** 編集モード用: アイテム変更時のコールバック */
   onItemsChange?: (items: EditableDialItem[]) => void;
+  /** サイズプリセット */
+  sizePreset?: DialSizePreset;
+  /** サイズプリセット変更時のコールバック */
+  onSizePresetChange?: (preset: DialSizePreset) => void;
 }
 
 // ============================================
@@ -83,14 +92,10 @@ const COLORS = {
 };
 
 // ============================================
-// 定数
+// 編集モード用の固定サイズ（mediumプリセット）
 // ============================================
 
-const DIAL_SIZE = 260;           // ダイヤル全体のサイズ
-const CENTER_SIZE = 76;          // 中央の穴のサイズ
-const ICON_BUTTON_SIZE = 48;     // アイコンボタンサイズ
-const SUB_RADIUS = 115;          // サブアクション配置の半径（リング外側に）
-const ICON_ORBIT_RADIUS = 80;    // アイコンが配置される円軌道の半径
+const EDIT_MODE_ICON_SIZE = 48;  // 編集モードでのアイコンサイズ
 
 // ============================================
 // ユーティリティ
@@ -259,7 +264,7 @@ function SortableDialIcon({
           animate={{ rotate: -rotation }}
         >
           <HexIconButton
-            size={ICON_BUTTON_SIZE}
+            size={EDIT_MODE_ICON_SIZE}
             selected={isSelected}
             hovered={false}
             color={item.color}
@@ -303,7 +308,19 @@ export function DialNavigation({
   onSettingsClick,
   allItems,
   onItemsChange,
+  sizePreset = 'medium',
+  onSizePresetChange,
 }: DialNavigationProps) {
+  // サイズ設定を取得
+  const sizeConfig = DIAL_SIZE_PRESETS[sizePreset];
+  const {
+    dialSize: DIAL_SIZE,
+    centerSize: CENTER_SIZE,
+    iconButtonSize: ICON_BUTTON_SIZE,
+    iconOrbitRadius: ICON_ORBIT_RADIUS,
+    subRadius: SUB_RADIUS,
+  } = sizeConfig;
+
   // 回転角度（生の値）
   const rotationValue = useMotionValue(0);
   // スプリングで滑らかに（バウンス効果のためdamping低め）
@@ -656,6 +673,28 @@ export function DialNavigation({
               </Button>
             </div>
           </div>
+
+          {/* サイズプリセット選択 */}
+          {onSizePresetChange && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 12,
+              width: '100%',
+            }}>
+              <Text size="sm" c="dimmed">サイズ:</Text>
+              <SegmentedControl
+                size="xs"
+                value={sizePreset}
+                onChange={(value) => onSizePresetChange(value as DialSizePreset)}
+                data={[
+                  { label: DIAL_SIZE_PRESET_LABELS.small, value: 'small' },
+                  { label: DIAL_SIZE_PRESET_LABELS.medium, value: 'medium' },
+                  { label: DIAL_SIZE_PRESET_LABELS.large, value: 'large' },
+                ]}
+              />
+            </div>
+          )}
 
           {/* ダイアル編集エリア */}
           <div
