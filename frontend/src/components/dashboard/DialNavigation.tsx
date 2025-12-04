@@ -56,55 +56,39 @@ const COLORS = {
 // 定数
 // ============================================
 
-const DIAL_SIZE = 260;           // ダイヤル全体のサイズ（少し小さく）
-const CENTER_SIZE = 76;          // 中央の穴のサイズ（90→76に縮小）
-const ICON_BUTTON_SIZE = 48;     // アイコンボタンサイズ（統一）
+const DIAL_SIZE = 260;           // ダイヤル全体のサイズ
+const CENTER_SIZE = 76;          // 中央の穴のサイズ
+const ICON_BUTTON_SIZE = 48;     // アイコンボタンサイズ
 const SUB_RADIUS = 55;           // サブアクション配置の半径
-
-// ∞軌道レイアウト用の定数
-const INFINITY_CIRCLE_RADIUS = 55;     // 左右の円の半径
-const INFINITY_CIRCLE_OFFSET = 45;     // 中心から左右の円の中心までの距離
+const ICON_ORBIT_RADIUS = 80;    // アイコンが配置される円軌道の半径
 
 // ============================================
 // ユーティリティ
 // ============================================
 
-/** ∞軌道パスのオプション */
-interface InfinityPathOptions {
-  cxLeft: number;   // 左の円の中心X座標
-  cxRight: number;  // 右の円の中心X座標
-  cy: number;       // 両円の中心Y座標
-  r: number;        // 円の半径
-}
-
 /**
- * 疑似∞軌道上の座標を計算
- * パラメータ t (0-1) に対して、2つの円をつないだ∞字型の軌道上の座標を返す
- * - 0 ≦ t < 0.5: 右の円を1周
- * - 0.5 ≦ t < 1: 左の円を1周
+ * 円軌道上の座標を計算
+ * @param index アイテムのインデックス
+ * @param totalItems 全アイテム数
+ * @param centerX 中心X座標
+ * @param centerY 中心Y座標
+ * @param radius 軌道半径
+ * @returns {x, y} 座標
  */
-const infinityPath = (t: number, opts: InfinityPathOptions): { x: number; y: number } => {
-  const { cxLeft, cxRight, cy, r } = opts;
-  // tを0-1の範囲に正規化
-  const tt = ((t % 1) + 1) % 1;
-
-  if (tt < 0.5) {
-    // 右の円（0 ≦ tt < 0.5）
-    const localT = tt / 0.5;             // 0-1に正規化
-    const angle = localT * 2 * Math.PI;  // 0-2πに変換
-    return {
-      x: cxRight + r * Math.cos(angle),
-      y: cy + r * Math.sin(angle),
-    };
-  } else {
-    // 左の円（0.5 ≦ tt < 1）
-    const localT = (tt - 0.5) / 0.5;     // 0-1に正規化
-    const angle = localT * 2 * Math.PI;  // 0-2πに変換
-    return {
-      x: cxLeft + r * Math.cos(angle),
-      y: cy + r * Math.sin(angle),
-    };
-  }
+const getCirclePosition = (
+  index: number,
+  totalItems: number,
+  centerX: number,
+  centerY: number,
+  radius: number
+): { x: number; y: number } => {
+  // 下（6時方向）を0番目の基準位置にする
+  const angleOffset = Math.PI / 2; // 90度オフセット（上から下へ）
+  const angle = (index / totalItems) * 2 * Math.PI + angleOffset;
+  return {
+    x: centerX + radius * Math.cos(angle),
+    y: centerY + radius * Math.sin(angle),
+  };
 };
 
 /** 角度を0-360に正規化 */
@@ -433,7 +417,7 @@ export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick 
           }}
         />
 
-        {/* アイコンリング - 疑似∞軌道に配置 */}
+        {/* アイコンリング - 円形軌道に配置 */}
         <motion.div
           style={{
             position: 'absolute',
@@ -444,51 +428,37 @@ export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick 
           animate={{ rotate: displayRotation }}
           transition={{ type: 'spring', stiffness: 120, damping: 18 }}
         >
-          {(() => {
-            // ∞軌道のパラメータ設定（すべてのアイテムで共通）
-            const infinityOpts: InfinityPathOptions = {
-              cxLeft: radius - INFINITY_CIRCLE_OFFSET,   // 左の円の中心
-              cxRight: radius + INFINITY_CIRCLE_OFFSET,  // 右の円の中心
-              cy: radius,                                 // Y軸中心
-              r: INFINITY_CIRCLE_RADIUS,                  // 円の半径
-            };
-
-            // 回転角度を0-1の範囲に正規化（すべてのアイテムで共通）
-            const rotationNormalized = ((displayRotation % 360) + 360) % 360;
-            const tBase = rotationNormalized / 360;  // 1周で0→1
+          {items.map((item, index) => {
+            // 円軌道上の座標を取得
+            const pos = getCirclePosition(
+              index,
+              items.length,
+              radius,  // centerX
+              radius,  // centerY
+              ICON_ORBIT_RADIUS
+            );
             
-            // 下側中央を選択位置にするための位相調整
-            const phaseShift = 0.75;
+            const isSelected = index === selectedIndex;
+            const isHovered = index === hoveredIndex;
 
-            return items.map((item, index) => {
-              // 各アイテムの位置をインデックスに応じてオフセット
-              const itemT = tBase + (index / items.length);
-              const wrappedT = itemT + phaseShift;
-
-              // ∞軌道上の座標を取得
-              const pos = infinityPath(wrappedT, infinityOpts);
-              
-              const isSelected = index === selectedIndex;
-              const isHovered = index === hoveredIndex;
-
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    position: 'absolute',
-                    left: pos.x,
-                    top: pos.y,
-                    transform: 'translate(-50%, -50%)',
-                    cursor: 'pointer',
-                    zIndex: isSelected ? 2 : 1,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleItemClick(index);
-                  }}
-                  onPointerEnter={() => setHoveredIndex(index)}
-                  onPointerLeave={() => setHoveredIndex(null)}
-                >
+            return (
+              <div
+                key={item.id}
+                style={{
+                  position: 'absolute',
+                  left: pos.x,
+                  top: pos.y,
+                  transform: 'translate(-50%, -50%)',
+                  cursor: 'pointer',
+                  zIndex: isSelected ? 2 : 1,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleItemClick(index);
+                }}
+                onPointerEnter={() => setHoveredIndex(index)}
+                onPointerLeave={() => setHoveredIndex(null)}
+              >
                 {/* アイコンボタン（回転を打ち消す） - 六角形 */}
                 <motion.div
                   style={{ transformOrigin: '50% 50%' }}
@@ -516,8 +486,7 @@ export function DialNavigation({ items, onNavigate, centerLogo, onSettingsClick 
                 </motion.div>
               </div>
             );
-          });
-          })()}
+          })}
         </motion.div>
 
         {/* サブアクションリング */}
