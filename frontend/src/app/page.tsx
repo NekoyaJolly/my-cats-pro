@@ -33,6 +33,11 @@ import {
   IconBabyCarriage,
   IconTag,
   IconCalendarTime,
+  IconUsers,
+  IconPhoto,
+  IconPalette,
+  IconPaw,
+  IconCalendarEvent,
 } from '@tabler/icons-react';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { notifications } from '@mantine/notifications';
@@ -203,13 +208,13 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    // デフォルトのダッシュボードカード定義（サイドバーの項目と同じ）
+    // デフォルトのダッシュボードカード定義（サイドバーの項目と同じ順序）
     const defaultDashboardCards: Omit<DashboardCardConfig, 'visible' | 'order'>[] = [
       {
         id: 'new-cat',
         title: '新規猫登録',
         description: '新しい猫を登録する',
-        icon: <IconPlus size={32} />,
+        icon: <IconPaw size={32} />,
         color: 'green',
         href: '/cats/new',
       },
@@ -245,11 +250,19 @@ export default function Home() {
         id: 'care',
         title: 'ケアスケジュール',
         description: '日々のケアとタスク管理',
-        icon: <IconStethoscope size={32} />,
+        icon: <IconCalendarEvent size={32} />,
         color: 'teal',
         href: '/care',
         badge: careSummary.pending > 0 ? careSummary.pending : undefined,
         stats: careSummary.pending > 0 ? `未完了${careSummary.pending}件` : '完了済み',
+      },
+      {
+        id: 'medical-records',
+        title: '医療データ',
+        description: '医療記録の閲覧・管理',
+        icon: <IconStethoscope size={32} />,
+        color: 'red',
+        href: '/medical-records',
       },
       {
         id: 'tags',
@@ -260,7 +273,7 @@ export default function Home() {
         href: '/tags',
       },
       {
-        id: 'pedigree',
+        id: 'pedigrees',
         title: '血統書データ',
         description: '血統情報の閲覧・管理',
         icon: <IconCertificate size={32} />,
@@ -275,12 +288,44 @@ export default function Home() {
         color: 'indigo',
         href: '/staff/shifts',
       },
+      {
+        id: 'tenants',
+        title: 'ユーザー設定',
+        description: 'ユーザーアカウントと権限の管理',
+        icon: <IconUsers size={32} />,
+        color: 'purple',
+        href: '/tenants',
+      },
+      {
+        id: 'more',
+        title: 'その他',
+        description: '追加の設定と機能',
+        icon: <IconSettings size={32} />,
+        color: 'gray',
+        href: '/more',
+      },
+      {
+        id: 'gallery',
+        title: 'ギャラリー',
+        description: '猫の写真ギャラリー',
+        icon: <IconPhoto size={32} />,
+        color: 'orange',
+        href: '/gallery',
+      },
+      {
+        id: 'demo',
+        title: 'デザインガイド',
+        description: 'UIコンポーネントのデモ',
+        icon: <IconPalette size={32} />,
+        color: 'grape',
+        href: '/demo/action-buttons',
+      },
     ];
     
     const settings = loadDashboardSettings();
     const cardsWithDefaults = defaultDashboardCards.map((card, index) => ({
       ...card,
-      visible: true,
+      visible: index < 8, // 最初の8項目のみデフォルトで表示
       order: index,
     }));
     
@@ -288,18 +333,32 @@ export default function Home() {
     setDashboardCards(appliedCards);
 
     // ダイアルメニュー項目の初期化（モバイル用）
+    // 色変換関数
+    const colorToHex = (color: string): string => {
+      const colorMap: Record<string, string> = {
+        green: '#22C55E',
+        blue: '#2563EB',
+        pink: '#EC4899',
+        cyan: '#06B6D4',
+        teal: '#14B8A6',
+        yellow: '#EAB308',
+        violet: '#8B5CF6',
+        indigo: '#6366F1',
+        purple: '#A855F7',
+        gray: '#6B7280',
+        orange: '#F97316',
+        red: '#EF4444',
+        grape: '#9333EA',
+        lime: '#84CC16',
+      };
+      return colorMap[color] || '#2563EB';
+    };
+
     const dialItems: Omit<DialMenuItemConfig, 'visible' | 'order'>[] = defaultDashboardCards.map((card) => ({
       id: card.id,
       title: card.title,
       icon: card.icon,
-      color: card.color === 'green' ? '#22C55E' :
-             card.color === 'blue' ? '#2563EB' :
-             card.color === 'pink' ? '#EC4899' :
-             card.color === 'cyan' ? '#06B6D4' :
-             card.color === 'teal' ? '#14B8A6' :
-             card.color === 'yellow' ? '#EAB308' :
-             card.color === 'violet' ? '#8B5CF6' :
-             card.color === 'indigo' ? '#6366F1' : '#2563EB',
+      color: colorToHex(card.color),
       href: card.href,
       badge: card.badge,
       subActions: card.id === 'cats' ? [
@@ -311,11 +370,26 @@ export default function Home() {
       ] : card.id === 'care' ? [
         { id: 'care-schedule', title: 'スケジュール', icon: <IconCalendarTime size={18} />, href: '/care' },
         { id: 'care-medical', title: '医療記録', icon: <IconStethoscope size={18} />, href: '/care' },
+      ] : card.id === 'kittens' ? [
+        { id: 'kittens-list', title: '一覧', icon: <IconList size={18} />, href: '/kittens' },
+        { id: 'kittens-new', title: '新規登録', icon: <IconPlus size={18} />, href: '/kittens/new' },
+      ] : card.id === 'pedigrees' ? [
+        { id: 'pedigrees-list', title: '一覧', icon: <IconList size={18} />, href: '/pedigrees' },
+        { id: 'pedigrees-new', title: '新規作成', icon: <IconPlus size={18} />, href: '/pedigrees/new' },
+      ] : card.id === 'medical-records' ? [
+        { id: 'medical-list', title: '一覧', icon: <IconList size={18} />, href: '/medical-records' },
+        { id: 'medical-new', title: '新規登録', icon: <IconPlus size={18} />, href: '/medical-records/new' },
       ] : undefined,
     }));
 
     const dialSettings = loadDialMenuSettings();
-    const appliedDialItems = applyDialMenuSettings(dialItems, dialSettings);
+    // ダイアルメニューの初期設定（最初の8項目のみ表示）
+    const dialItemsWithDefaults = dialItems.map((item, index) => ({
+      ...item,
+      visible: index < 8,
+      order: index,
+    }));
+    const appliedDialItems = applyDialMenuSettings(dialItemsWithDefaults, dialSettings);
     setDialMenuItems(appliedDialItems);
   }, [cats.length, careSummary.pending, breedingSummary.today, breedingSummary.total]);
 

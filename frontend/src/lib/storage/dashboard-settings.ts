@@ -175,10 +175,10 @@ export function applyDialMenuSettings<T extends { id: string; visible?: boolean;
   settings: DialMenuSettings | null
 ): (T & { visible: boolean; order: number })[] {
   if (!settings) {
-    // 設定がない場合はデフォルトを返す
+    // 設定がない場合はデフォルト（最初の8項目のみ表示）を返す
     return defaultItems.map((item, index) => ({
       ...item,
-      visible: true,
+      visible: index < 8,
       order: index,
     }));
   }
@@ -202,11 +202,11 @@ export function applyDialMenuSettings<T extends { id: string; visible?: boolean;
     }
   }
   
-  // 新しく追加されたアイテム（設定にないアイテム）を末尾に追加
+  // 新しく追加されたアイテム（設定にないアイテム）を末尾に追加（デフォルト非表示）
   for (const [, item] of itemsMap) {
     result.push({
       ...item,
-      visible: true,
+      visible: false,
       order: result.length,
     });
   }

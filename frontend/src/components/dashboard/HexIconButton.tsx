@@ -25,8 +25,31 @@ export interface HexIconButtonProps {
 }
 
 /**
+ * 六角形のSVGパスを生成
+ * clip-pathと同じ座標系を使用
+ */
+function getHexPath(size: number): string {
+  // clip-pathの座標をSVG用に変換
+  // clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%)
+  const points = [
+    [0.25 * size, 0.067 * size],  // 左上
+    [0.75 * size, 0.067 * size],  // 右上
+    [1.0 * size, 0.5 * size],     // 右
+    [0.75 * size, 0.933 * size],  // 右下
+    [0.25 * size, 0.933 * size],  // 左下
+    [0.0 * size, 0.5 * size],     // 左
+  ];
+  
+  const pathData = points
+    .map((point, i) => `${i === 0 ? 'M' : 'L'} ${point[0]} ${point[1]}`)
+    .join(' ');
+  
+  return `${pathData} Z`;
+}
+
+/**
  * 六角形のアイコンボタンコンポーネント
- * CSS clip-path を使用して六角形を描画
+ * CSS clip-path を使用して六角形を描画し、SVGで枠線を表示
  */
 export function HexIconButton({
   size,
@@ -41,7 +64,7 @@ export function HexIconButton({
   const backgroundColor = selected
     ? color
     : hovered
-      ? 'rgba(37, 99, 235, 0.10)'
+      ? `${color}15` // 色に透明度を付与
       : '#FFFFFF';
 
   // 選択状態に応じたアイコン色
@@ -68,20 +91,36 @@ export function HexIconButton({
   // バッジの表示判定（0は表示、undefined/null/空文字は非表示）
   const shouldShowBadge = badge !== undefined && badge !== null && badge !== '';
 
+  // 六角形の枠線クラス
+  const hexBorderClass = `${styles.hexBorder} ${selected ? styles.selected : ''} ${hovered ? styles.hovered : ''}`;
+
   return (
     <div
       className={styles.hexContainer}
       style={{
         width: size,
         height: size,
-      }}
+        '--hex-color': color,
+      } as React.CSSProperties}
     >
+      {/* 六角形の外枠（SVG） */}
+      <svg
+        className={hexBorderClass}
+        viewBox={`0 0 ${size} ${size}`}
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <path
+          className={styles.hexBorderPath}
+          d={getHexPath(size)}
+        />
+      </svg>
+
       <button
         type="button"
         className={`${styles.hexButton} ${selected ? styles.selected : ''} ${hovered ? styles.hovered : ''}`}
         style={{
-          width: size,
-          height: size,
+          width: size * 0.92, // 枠線の内側に収まるようにやや小さく
+          height: size * 0.92,
           backgroundColor,
           boxShadow,
           color: iconColor,

@@ -73,10 +73,13 @@ const COLORS = {
   text: '#111827',           // メインテキスト
   textMuted: '#6B7280',      // サブテキスト
   background: '#FFFFFF',
-  backgroundGradientStart: '#F5F7FA',
-  backgroundGradientEnd: '#F3F6FB',
+  backgroundGradientStart: '#F8FAFC',
+  backgroundGradientEnd: '#F1F5F9',
   border: '#E5E7EB',
   shadow: 'rgba(15, 23, 42, 0.12)',
+  // リング用のカラー
+  ringTrack: 'rgba(37, 99, 235, 0.06)',  // リングの軌道
+  ringBorder: 'rgba(37, 99, 235, 0.15)', // リング境界線
 };
 
 // ============================================
@@ -86,7 +89,7 @@ const COLORS = {
 const DIAL_SIZE = 260;           // ダイヤル全体のサイズ
 const CENTER_SIZE = 76;          // 中央の穴のサイズ
 const ICON_BUTTON_SIZE = 48;     // アイコンボタンサイズ
-const SUB_RADIUS = 55;           // サブアクション配置の半径
+const SUB_RADIUS = 115;          // サブアクション配置の半径（リング外側に）
 const ICON_ORBIT_RADIUS = 80;    // アイコンが配置される円軌道の半径
 
 // ============================================
@@ -110,7 +113,8 @@ const getCirclePosition = (
   radius: number
 ): { x: number; y: number } => {
   // 下（6時方向）を0番目の基準位置にする
-  const angleOffset = Math.PI / 2; // 90度オフセット（上から下へ）
+  // これにより、初期状態でindex=0が6時位置に来る
+  const angleOffset = Math.PI / 2; // +90度オフセット（下を基準）
   const angle = (index / totalItems) * 2 * Math.PI + angleOffset;
   return {
     x: centerX + radius * Math.cos(angle),
@@ -134,12 +138,18 @@ const getSnapAngle = (currentAngle: number, itemCount: number): number => {
 
 /** 
  * 角度からインデックスを計算（下=6時位置が選択位置）
- * 180度オフセットを加えることで、下方向を基準にする
+ * 
+ * 配置: index=0が6時位置、時計回りにindexが増える
+ * 回転: displayRotationが正の時、リングが時計回りに回転
+ * 
+ * つまり:
+ * - rotation=0: index=0が6時位置
+ * - rotation=+step: リングが時計回りに回転、index=0は右下へ、
+ *                   index=(n-1)が6時位置に来る
  */
 const angleToIndex = (angle: number, itemCount: number): number => {
   const step = 360 / itemCount;
-  // 下側（6時方向）を基準にするため、180度オフセットを追加
-  const normalized = normalizeAngle(-angle + 180);
+  const normalized = normalizeAngle(-angle); // 負にすることで回転方向を反転
   const rawIndex = Math.round(normalized / step) % itemCount;
   return rawIndex;
 };
@@ -429,25 +439,30 @@ export function DialNavigation({
   }, [rotationValue, anglePerItem, items.length]);
 
   // アイテムクリック
+  // 選択中のアイテムをタップ → 即座に遷移（サブメニューは中央から展開）
+  // 非選択のアイテムをタップ → そのアイテムを6時位置に移動
   const handleItemClick = useCallback((index: number) => {
     if (index === selectedIndex) {
+      // 選択中のアイテムをタップしたら即座に遷移
       const item = items[selectedIndex];
-      if (item.subActions && item.subActions.length > 0) {
-        setIsSubExpanded((prev) => !prev);
-      } else {
-        onNavigate(item.href);
-      }
+      setIsSubExpanded(false);
+      onNavigate(item.href);
     } else {
       setIsSubExpanded(false);
-      const currentNormalized = normalizeAngle(rotationValue.get());
-      const targetNormalizedIndex = (items.length - index) % items.length;
-      const targetAngle = targetNormalizedIndex * anglePerItem;
+      // index番目のアイテムを6時位置に持ってくる
+      // 回転は負の方向（反時計回り）でindexが増える方向
+      const targetRotation = -index * anglePerItem;
       
-      let delta = targetAngle - currentNormalized;
+      // 最短経路で回転
+      const currentRotation = rotationValue.get();
+      const currentNormalized = normalizeAngle(currentRotation);
+      const targetNormalized = normalizeAngle(targetRotation);
+      
+      let delta = targetNormalized - currentNormalized;
       if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
 
-      rotationValue.set(rotationValue.get() + delta);
+      rotationValue.set(currentRotation + delta);
     }
   }, [selectedIndex, items, rotationValue, anglePerItem, onNavigate]);
 
@@ -472,8 +487,8 @@ export function DialNavigation({
   const selectedItem = items[selectedIndex];
   const subActions = selectedItem?.subActions ?? [];
   const subCount = subActions.length;
-  const spreadAngle = Math.min(160, subCount * 50);
-  const subStartAngle = -90 - spreadAngle / 2;
+  const spreadAngle = Math.min(120, subCount * 40); // 展開角度を狭く
+  const subStartAngle = 90 - spreadAngle / 2; // 下向き（90度）を基準に展開
 
   // ============================================
   // 編集モード関連のハンドラー
@@ -651,10 +666,24 @@ export function DialNavigation({
               borderRadius: '50%',
               position: 'relative',
               background: COLORS.background,
-              boxShadow: `0 4px 20px ${COLORS.shadow}, inset 0 0 0 4px ${COLORS.primaryLight}`,
+              boxShadow: `0 4px 20px ${COLORS.shadow}`,
               border: `2px dashed ${COLORS.primary}`,
             }}
           >
+            {/* リングのトラック（軌道） - 編集モードでも表示 */}
+            <div
+              style={{
+                position: 'absolute',
+                left: radius - ICON_ORBIT_RADIUS - ICON_BUTTON_SIZE / 2 - 4,
+                top: radius - ICON_ORBIT_RADIUS - ICON_BUTTON_SIZE / 2 - 4,
+                width: (ICON_ORBIT_RADIUS + ICON_BUTTON_SIZE / 2 + 4) * 2,
+                height: (ICON_ORBIT_RADIUS + ICON_BUTTON_SIZE / 2 + 4) * 2,
+                borderRadius: '50%',
+                background: COLORS.ringTrack,
+                border: `1.5px solid ${COLORS.ringBorder}`,
+                pointerEvents: 'none',
+              }}
+            />
             <SortableContext
               items={visibleEditItems.map((item) => `dial-${item.id}`)}
               strategy={rectSortingStrategy}
@@ -848,6 +877,21 @@ export function DialNavigation({
           }}
         />
 
+        {/* リングのトラック（軌道） - アイコンが配置される円を可視化 */}
+        <div
+          style={{
+            position: 'absolute',
+            left: radius - ICON_ORBIT_RADIUS - ICON_BUTTON_SIZE / 2 - 4,
+            top: radius - ICON_ORBIT_RADIUS - ICON_BUTTON_SIZE / 2 - 4,
+            width: (ICON_ORBIT_RADIUS + ICON_BUTTON_SIZE / 2 + 4) * 2,
+            height: (ICON_ORBIT_RADIUS + ICON_BUTTON_SIZE / 2 + 4) * 2,
+            borderRadius: '50%',
+            background: COLORS.ringTrack,
+            border: `1.5px solid ${COLORS.ringBorder}`,
+            pointerEvents: 'none',
+          }}
+        />
+
         {/* 下部ハイライトセクター（選択位置インジケーター） */}
         <div
           style={{
@@ -855,10 +899,10 @@ export function DialNavigation({
             bottom: 0,
             left: '50%',
             transform: 'translateX(-50%)',
-            width: 60,
-            height: 28,
-            background: `linear-gradient(0deg, rgba(37, 99, 235, 0.20) 0%, transparent 100%)`,
-            borderRadius: '30px 30px 0 0',
+            width: 70,
+            height: 35,
+            background: `linear-gradient(0deg, rgba(37, 99, 235, 0.25) 0%, transparent 100%)`,
+            borderRadius: '35px 35px 0 0',
             pointerEvents: 'none',
             zIndex: 15,
           }}
@@ -867,14 +911,14 @@ export function DialNavigation({
         <div
           style={{
             position: 'absolute',
-            bottom: 10,
+            bottom: 12,
             left: '50%',
             transform: 'translateX(-50%)',
-            width: 6,
-            height: 6,
+            width: 8,
+            height: 8,
             borderRadius: '50%',
             background: COLORS.primary,
-            boxShadow: `0 0 8px ${COLORS.primary}`,
+            boxShadow: `0 0 10px ${COLORS.primary}`,
             zIndex: 16,
           }}
         />
@@ -961,12 +1005,13 @@ export function DialNavigation({
                 top: '50%',
                 width: 0,
                 height: 0,
-                zIndex: 5,
+                zIndex: 20, // リングより上に表示
               }}
             >
               {subActions.map((sub, index) => {
+                // 下向き（90度）を中心に扇状に展開
                 const angle = subCount === 1
-                  ? -90
+                  ? 90 // 1つの場合は真下
                   : subStartAngle + (index / (subCount - 1)) * spreadAngle;
                 const x = Math.cos((angle * Math.PI) / 180) * SUB_RADIUS;
                 const y = Math.sin((angle * Math.PI) / 180) * SUB_RADIUS;
@@ -1002,15 +1047,16 @@ export function DialNavigation({
                   >
                     <div
                       style={{
-                        width: 36,
-                        height: 36,
+                        width: 40,
+                        height: 40,
                         borderRadius: '50%',
                         background: COLORS.background,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.10)',
+                        boxShadow: '0 3px 12px rgba(0, 0, 0, 0.15)',
                         color: COLORS.primary,
+                        border: `2px solid ${COLORS.primary}20`,
                       }}
                     >
                       {sub.icon}
@@ -1021,14 +1067,14 @@ export function DialNavigation({
                       style={{
                         position: 'absolute',
                         top: '100%',
-                        marginTop: 2,
+                        marginTop: 4,
                         whiteSpace: 'nowrap',
-                        padding: '2px 6px',
+                        padding: '3px 8px',
                         background: COLORS.background,
-                        borderRadius: 4,
-                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.08)',
+                        borderRadius: 6,
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
                         color: COLORS.text,
-                        fontSize: 10,
+                        fontSize: 11,
                       }}
                     >
                       {sub.title}
