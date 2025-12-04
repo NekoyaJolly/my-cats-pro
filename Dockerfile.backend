@@ -1,7 +1,7 @@
 # ---- Base Stage ----
 FROM node:20-alpine3.22 AS base
 WORKDIR /app
-RUN npm install -g pnpm@9.15.9
+RUN npm install -g pnpm@10.18.1
 
 # ---- Build Stage ----
 FROM base AS build
@@ -30,7 +30,7 @@ ENV PORT=8080
 # Install required dependencies for Prisma on Alpine and pnpm, create user
 # hadolint ignore=DL3018
 RUN apk add --no-cache openssl libc6-compat && \
-    npm install -g pnpm@9.15.9 && \
+    npm install -g pnpm@10.18.1 && \
     addgroup -S nodejs && adduser -S nodeapp -G nodejs
 
 # Copy workspace config and package files for production install
