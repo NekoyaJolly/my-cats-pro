@@ -16,8 +16,6 @@ import {
   ThemeIcon,
   Box,
   Badge,
-  ActionIcon,
-  Button,
 } from '@mantine/core';
 import { useMediaQuery, useDisclosure } from '@mantine/hooks';
 import {
@@ -28,7 +26,6 @@ import {
   IconChevronRight,
   IconAlertCircle,
   IconSettings,
-  IconAdjustments,
   IconList,
   IconBabyCarriage,
   IconTag,
@@ -58,8 +55,12 @@ import {
   applyDialMenuSettings,
   loadDialSizePreset,
   saveDialSizePreset,
+  loadHomeDisplayMode,
+  saveHomeDisplayMode,
   type DialSizePreset,
+  type HomeDisplayMode,
 } from '@/lib/storage/dashboard-settings';
+import { DisplayModeToggle } from '@/components/dashboard/DisplayModeToggle';
 
 // 猫のデータ型
 interface Cat {
@@ -106,8 +107,9 @@ export default function Home() {
   const [dashboardCards, setDashboardCards] = useState<DashboardCardConfig[]>([]);
   const [dialMenuItems, setDialMenuItems] = useState<DialMenuItemConfig[]>([]);
   const [dialSizePreset, setDialSizePreset] = useState<DialSizePreset>('medium');
+  const [displayMode, setDisplayMode] = useState<HomeDisplayMode>('auto');
   const [settingsOpened, { open: openSettings, close: closeSettings }] = useDisclosure(false);
-  const [dialSettingsOpened, { close: closeDialSettings }] = useDisclosure(false);
+  const [dialSettingsOpened, { open: openDialSettings, close: closeDialSettings }] = useDisclosure(false);
   const router = useRouter();
   const { setPageTitle } = usePageHeader();
   const { isAuthenticated, initialized, accessToken } = useAuth();
@@ -399,6 +401,10 @@ export default function Home() {
     // ダイアルサイズプリセットを読み込み
     const savedSizePreset = loadDialSizePreset();
     setDialSizePreset(savedSizePreset);
+
+    // 表示モードを読み込み
+    const savedDisplayMode = loadHomeDisplayMode();
+    setDisplayMode(savedDisplayMode);
   }, [cats.length, careSummary.pending, breedingSummary.today, breedingSummary.total]);
 
   // カード設定保存ハンドラー
@@ -429,11 +435,38 @@ export default function Home() {
     saveDialSizePreset(preset);
   };
 
+  // 表示モード変更ハンドラー
+  const handleDisplayModeChange = (mode: HomeDisplayMode) => {
+    setDisplayMode(mode);
+    saveHomeDisplayMode(mode);
+    
+    // モード切り替え時に対応する設定モーダルを開く
+    if (mode === 'card') {
+      openSettings();
+    } else if (mode === 'dial') {
+      openDialSettings();
+    }
+  };
+
+  // 設定ボタンクリック時のハンドラー
+  const handleSettingsClick = () => {
+    // 現在の表示状態に応じて適切な設定モーダルを開く
+    const shouldShowDial = displayMode === 'dial' || (displayMode === 'auto' && isMobilePortrait);
+    if (shouldShowDial) {
+      openDialSettings();
+    } else {
+      openSettings();
+    }
+  };
+
   // 表示するカードのみフィルタリング
   const visibleCards = dashboardCards.filter((card) => card.visible);
 
   // 表示するダイアルメニュー項目のみフィルタリング
   const visibleDialItems = dialMenuItems.filter((item) => item.visible);
+
+  // 実際に表示するモードを決定
+  const shouldShowDial = displayMode === 'dial' || (displayMode === 'auto' && isMobilePortrait);
 
   // ローディング中の表示
   if (loading) {
@@ -482,33 +515,19 @@ export default function Home() {
             <Text size="sm" c="dimmed">{today}</Text>
           </Box>
           
-          {/* カスタマイズボタン */}
-          {isMobilePortrait ? (
-            <ActionIcon
-              variant="light"
-              color="gray"
-              size="lg"
-              onClick={openSettings}
-              title="ホーム画面をカスタマイズ"
-            >
-              <IconAdjustments size={20} />
-            </ActionIcon>
-          ) : (
-            <Button
-              variant="light"
-              color="gray"
-              leftSection={<IconSettings size={18} />}
-              onClick={openSettings}
-            >
-              カスタマイズ
-            </Button>
-          )}
+          {/* 表示モード切り替えと設定ボタン */}
+          <DisplayModeToggle
+            mode={displayMode}
+            onModeChange={handleDisplayModeChange}
+            onSettingsClick={handleSettingsClick}
+            compact={isMobilePortrait}
+          />
         </Group>
       </Stack>
 
-      {/* レスポンシブレイアウト */}
-      {isMobilePortrait ? (
-        // モバイル縦向き: ダイヤルナビゲーションUI
+      {/* 表示モードに応じたレイアウト */}
+      {shouldShowDial ? (
+        // ダイヤルナビゲーションUI
         <DialNavigation
           items={visibleDialItems.map((item): DialItem => ({
             id: item.id,
