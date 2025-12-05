@@ -1,6 +1,7 @@
 import { DashboardCardConfig } from '@/components/dashboard/DashboardCardSettings';
 
 const STORAGE_KEY = 'dashboard_card_settings';
+const DISPLAY_MODE_STORAGE_KEY = 'home_display_mode';
 
 export interface DashboardSettings {
   cards: {
@@ -109,6 +110,53 @@ export function resetDashboardSettings(): void {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
     console.error('Failed to reset dashboard settings:', error);
+  }
+}
+
+// ============================================
+// ホーム画面表示モード設定
+// ============================================
+
+/** ホーム画面の表示モード */
+export type HomeDisplayMode = 'auto' | 'card' | 'dial';
+
+/** 表示モードのラベル（日本語） */
+export const HOME_DISPLAY_MODE_LABELS: Record<HomeDisplayMode, string> = {
+  auto: '自動切り替え',
+  card: 'カード表示',
+  dial: 'ダイアル表示',
+};
+
+/**
+ * ホーム画面の表示モードをLocalStorageから読み込む
+ */
+export function loadHomeDisplayMode(): HomeDisplayMode {
+  if (typeof window === 'undefined') return 'auto';
+  
+  try {
+    const stored = localStorage.getItem(DISPLAY_MODE_STORAGE_KEY);
+    if (!stored) return 'auto';
+    
+    if (stored === 'auto' || stored === 'card' || stored === 'dial') {
+      return stored;
+    }
+    return 'auto';
+  } catch (error) {
+    console.error('Failed to load home display mode:', error);
+    return 'auto';
+  }
+}
+
+/**
+ * ホーム画面の表示モードをLocalStorageに保存
+ */
+export function saveHomeDisplayMode(mode: HomeDisplayMode): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(DISPLAY_MODE_STORAGE_KEY, mode);
+  } catch (error) {
+    console.error('Failed to save home display mode:', error);
   }
 }
 

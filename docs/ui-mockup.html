@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ホームページ表示切り替え機能 - UIモックアップ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1F2937;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #6B7280;
+            margin-bottom: 30px;
+        }
+        .mockup-section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            background: #F9FAFB;
+        }
+        .mockup-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 20px;
+        }
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        .date-text {
+            color: #6B7280;
+            font-size: 14px;
+        }
+        .toggle-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .segmented-control {
+            display: inline-flex;
+            background: #F3F4F6;
+            border-radius: 6px;
+            padding: 4px;
+            gap: 4px;
+        }
+        .segment-button {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6B7280;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .segment-button.active {
+            background: white;
+            color: #2563EB;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .segment-button:hover:not(.active) {
+            color: #374151;
+        }
+        .settings-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: #F3F4F6;
+            color: #6B7280;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .settings-button:hover {
+            background: #E5E7EB;
+            color: #374151;
+        }
+        .icon {
+            width: 18px;
+            height: 18px;
+        }
+        .compact-controls {
+            display: flex;
+            gap: 8px;
+        }
+        .compact-button {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563EB;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .compact-button.card {
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563EB;
+        }
+        .compact-button.dial {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8B5CF6;
+        }
+        .compact-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .feature-list {
+            margin-top: 20px;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 10px 0;
+            color: #4B5563;
+            line-height: 1.6;
+        }
+        .highlight {
+            background: #FEF3C7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #10B981;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ホームページ表示切り替え機能 🎨</h1>
+        <p class="description">ユーザーが好みの表示方式（カード式/ダイアル式）を選択できる機能を実装しました</p>
+
+        <!-- デスクトップ表示 -->
+        <div class="mockup-section">
+            <div class="mockup-title">📱 デスクトップ表示 <span class="badge">NEW</span></div>
+            <div class="header-bar">
+                <span class="date-text">2025年12月5日 木曜日</span>
+                <div class="toggle-controls">
+                    <div class="segmented-control">
+                        <button class="segment-button">自動</button>
+                        <button class="segment-button active">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="4" y="4" width="6" height="6" rx="1"></rect>
+                                <rect x="14" y="4" width="6" height="6" rx="1"></rect>
+                                <rect x="4" y="14" width="6" height="6" rx="1"></rect>
+                                <rect x="14" y="14" width="6" height="6" rx="1"></rect>
+                            </svg>
+                            カード
+                        </button>
+                        <button class="segment-button">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <circle cx="12" cy="12" r="1"></circle>
+                            </svg>
+                            ダイアル
+                        </button>
+                    </div>
+                    <button class="settings-button" title="設定を開く">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"></path>
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <ul class="feature-list">
+                <li><span class="highlight">セグメントコントロール</span>で「自動」「カード」「ダイアル」を選択可能</li>
+                <li>設定ボタン（歯車アイコン）で現在の表示モードに応じた設定を開く</li>
+                <li>選択はLocalStorageに保存され、次回訪問時も維持</li>
+            </ul>
+        </div>
+
+        <!-- モバイル表示 -->
+        <div class="mockup-section">
+            <div class="mockup-title">📱 モバイル表示（コンパクト） <span class="badge">NEW</span></div>
+            <div class="header-bar">
+                <span class="date-text">2025年12月5日</span>
+                <div class="compact-controls">
+                    <button class="compact-button card" title="ダイアル表示に切り替え">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <circle cx="12" cy="12" r="1"></circle>
+                        </svg>
+                    </button>
+                    <button class="settings-button" title="設定を開く">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"></path>
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <ul class="feature-list">
+                <li><span class="highlight">コンパクトなアイコンボタン</span>でカード⇔ダイアルを切り替え</li>
+                <li>画面スペースを節約しながら直感的な操作が可能</li>
+                <li>設定ボタンは同様に機能</li>
+            </ul>
+        </div>
+
+        <!-- 主な機能 -->
+        <div class="mockup-section">
+            <div class="mockup-title">✨ 主な機能と改善点</div>
+            <ul class="feature-list">
+                <li><strong>表示モード切り替え:</strong> モード変更時に対応する設定モーダルが自動で開く
+                    <ul>
+                        <li>カード表示 → カード設定モーダル</li>
+                        <li>ダイアル表示 → ダイアル設定モーダル</li>
+                    </ul>
+                </li>
+                <li><strong>設定の永続化:</strong> LocalStorageに保存し、次回訪問時も設定を維持</li>
+                <li><strong>柔軟な選択:</strong> 自動モードで従来のレスポンシブ動作も継続可能</li>
+                <li><strong>統一されたUI:</strong> デスクトップ/モバイルで一貫した操作体験</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
