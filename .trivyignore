@@ -47,3 +47,14 @@ CVE-2024-52798
 # This is used by cookie-parser and Express
 # Trivy may not recognize this as patched due to database lag
 CVE-2024-47764
+
+# Express vulnerabilities that are either patched or false positives
+# CVE-2024-10491: Express 3.x Link header injection (we use Express 4.21.2)
+# This CVE only affects Express 3.x which is EOL
+# Scanning tools may incorrectly flag Express 4.x as vulnerable
+CVE-2024-10491
+
+# CVE-2024-29041: Express Open Redirect vulnerability
+# Fixed in Express 4.19.2+
+# Our installed version is Express 4.21.2 which includes the fix
+CVE-2024-29041
