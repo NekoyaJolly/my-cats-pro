@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
@@ -451,7 +451,6 @@ export default function Home() {
   // 設定ボタンクリック時のハンドラー
   const handleSettingsClick = () => {
     // 現在の表示状態に応じて適切な設定モーダルを開く
-    const shouldShowDial = displayMode === 'dial' || (displayMode === 'auto' && isMobilePortrait);
     if (shouldShowDial) {
       openDialSettings();
     } else {
@@ -465,8 +464,10 @@ export default function Home() {
   // 表示するダイアルメニュー項目のみフィルタリング
   const visibleDialItems = dialMenuItems.filter((item) => item.visible);
 
-  // 実際に表示するモードを決定
-  const shouldShowDial = displayMode === 'dial' || (displayMode === 'auto' && isMobilePortrait);
+  // 実際に表示するモードを決定（メモ化して重複を避ける）
+  const shouldShowDial = useMemo(() => {
+    return displayMode === 'dial' || (displayMode === 'auto' && isMobilePortrait);
+  }, [displayMode, isMobilePortrait]);
 
   // ローディング中の表示
   if (loading) {
