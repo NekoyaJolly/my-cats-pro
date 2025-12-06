@@ -1,283 +1,201 @@
 'use client';
 
-import React, { useState } from 'react';
+/**
+ * ギャラリーページ
+ * 4つのカテゴリ（子猫 / 父猫 / 母猫 / 卒業猫）をタブ切り替えで表示
+ */
+
+import React, { Suspense, useState } from 'react';
 import {
   Container,
   Stack,
-  Text,
   Button,
-  Card,
   Group,
-  Badge,
   Skeleton,
-  Alert,
-  Modal,
-  Table,
-  Title,
+  Text,
 } from '@mantine/core';
-import { IconAlertCircle, IconTrophy, IconTrash } from '@tabler/icons-react';
-import { useGetGraduations, useGetGraduationDetail, useCancelGraduation } from '@/lib/api/hooks/use-graduation';
-import type { Cat } from '@/lib/api/hooks/use-cats';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
-import { GenderBadge } from '@/components/GenderBadge';
 import { useDisclosure } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
+import { IconPlus } from '@tabler/icons-react';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
+import {
+  useGalleryEntries,
+  useCreateGalleryEntry,
+  useDeleteGalleryEntry,
+  type GalleryEntry,
+  type GalleryCategory,
+} from '@/lib/api/hooks/use-gallery';
+import { GalleryTabs } from './components/GalleryTabs';
+import { GalleryGrid } from './components/GalleryGrid';
+import { GalleryAddModal } from './components/GalleryAddModal';
+import { MediaLightbox } from './components/MediaLightbox';
+import { useGalleryTab, useGalleryPagination } from './hooks/useGalleryTab';
 
-// 日付フォーマット関数
-function formatDate(value: string | null | undefined) {
-  if (!value) return '-';
-  try {
-    const date = new Date(value);
-    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  } catch {
-    return '-';
-  }
-}
-
-export default function GalleryPage() {
+/**
+ * ギャラリーコンテンツコンポーネント
+ * Suspense境界内で使用
+ */
+function GalleryContent() {
   const { setPageHeader } = usePageHeader();
-  const [selectedGraduationId, setSelectedGraduationId] = useState<string | null>(null);
-  const [detailModalOpened, { open: openDetailModal, close: closeDetailModal }] = useDisclosure(false);
+  const { currentTab } = useGalleryTab();
+  const { currentPage, setPage } = useGalleryPagination();
 
   // ページヘッダー設定
   React.useEffect(() => {
-    setPageHeader('ギャラリー（卒業猫）');
+    setPageHeader('ギャラリー');
   }, [setPageHeader]);
 
-  // 卒業猫（isGraduated=true）
-  const { data: graduations, isLoading: graduationsLoading, error: graduationsError } = useGetGraduations(1, 100);
+  // モーダル状態
+  const [addModalOpened, { open: openAddModal, close: closeAddModal }] =
+    useDisclosure(false);
+  const [lightboxOpened, { open: openLightbox, close: closeLightbox }] =
+    useDisclosure(false);
+  const [selectedEntry, setSelectedEntry] = useState<GalleryEntry | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  // 卒業猫詳細モーダル
-  const { data: graduationDetail, isLoading: detailLoading } = useGetGraduationDetail(selectedGraduationId);
+  // API フック
+  const {
+    data: galleryData,
+    isLoading,
+    error,
+  } = useGalleryEntries(currentTab, currentPage, 20);
 
-  // 卒業取り消し
-  const { mutate: cancelGraduation, isPending: isCancelling } = useCancelGraduation();
+  const { mutate: createEntry, isPending: isCreating } =
+    useCreateGalleryEntry();
+  const { mutate: deleteEntry } =
+    useDeleteGalleryEntry();
 
-  const handleViewGraduationDetail = (graduationId: string) => {
-    setSelectedGraduationId(graduationId);
-    openDetailModal();
+  // 全カテゴリの件数取得（カウント用）
+  const { data: kittenData } = useGalleryEntries('KITTEN', 1, 1);
+  const { data: fatherData } = useGalleryEntries('FATHER', 1, 1);
+  const { data: motherData } = useGalleryEntries('MOTHER', 1, 1);
+  const { data: graduationData } = useGalleryEntries('GRADUATION', 1, 1);
+
+  const counts: Record<GalleryCategory, number> = {
+    KITTEN: kittenData?.meta?.total ?? 0,
+    FATHER: fatherData?.meta?.total ?? 0,
+    MOTHER: motherData?.meta?.total ?? 0,
+    GRADUATION: graduationData?.meta?.total ?? 0,
   };
 
-  const handleCloseDetailModal = () => {
-    closeDetailModal();
-    setSelectedGraduationId(null);
+  // ハンドラ
+  const handleCardClick = (entry: GalleryEntry) => {
+    if (entry.media.length > 0) {
+      setSelectedEntry(entry);
+      setLightboxIndex(0);
+      openLightbox();
+    }
   };
 
-  const handleCancelGraduation = (graduationId: string, catName: string) => {
+  const handleEditClick = (entry: GalleryEntry) => {
+    // TODO: 編集モーダルを実装
+    console.log('Edit entry:', entry.id);
+  };
+
+  const handleDeleteClick = (entry: GalleryEntry) => {
     modals.openConfirmModal({
-      title: '卒業記録の取り消し',
+      title: '削除の確認',
       children: (
         <Text size="sm">
-          {catName}の卒業記録を取り消しますか？
+          「{entry.name}」をギャラリーから削除しますか？
           <br />
-          この猫は再び在舎猫一覧に表示されます。
+          この操作は取り消せません。
         </Text>
       ),
-      labels: { confirm: '取り消す', cancel: 'キャンセル' },
+      labels: { confirm: '削除', cancel: 'キャンセル' },
       confirmProps: { color: 'red' },
       onConfirm: () => {
-        cancelGraduation(graduationId, {
-          onSuccess: () => {
-            notifications.show({
-              title: '取り消し完了',
-              message: `${catName}の卒業記録を取り消しました`,
-              color: 'green',
-            });
-            if (detailModalOpened) {
-              handleCloseDetailModal();
-            }
-          },
-          onError: (error) => {
-            notifications.show({
-              title: '取り消し失敗',
-              message: error instanceof Error ? error.message : '卒業記録の取り消しに失敗しました',
-              color: 'red',
-            });
-          },
-        });
+        deleteEntry(entry.id);
       },
     });
   };
 
+  const handleAddSubmit = (dto: Parameters<typeof createEntry>[0]) => {
+    createEntry(dto, {
+      onSuccess: () => {
+        closeAddModal();
+      },
+    });
+  };
+
+  const handleCloseLightbox = () => {
+    closeLightbox();
+    setSelectedEntry(null);
+  };
+
   return (
-    <Container size="xl" py="xl">
-      <Stack gap="xl">
-        <Group justify="space-between" align="center">
-          <Group gap="sm">
-            <IconTrophy size={28} />
-            <Title order={2}>卒業猫一覧</Title>
-          </Group>
-          <Badge size="lg" variant="light" color="blue">
-            {graduations?.data?.length || 0}匹
-          </Badge>
+    <Container size="xl" py="md">
+      <Stack gap="lg">
+        {/* ヘッダー: タブとアクション */}
+        <Group justify="space-between" align="flex-start" wrap="wrap">
+          <GalleryTabs counts={counts} loading={isLoading} />
+          <Button
+            leftSection={<IconPlus size={16} />}
+            onClick={openAddModal}
+            disabled={isLoading}
+          >
+            追加
+          </Button>
         </Group>
 
-        {graduationsLoading && <Skeleton height={400} />}
-        
-        {graduationsError && (
-          <Alert icon={<IconAlertCircle size={16} />} color="red">
-            卒業猫データの取得に失敗しました
-          </Alert>
-        )}
-        
-        {graduations?.data && graduations.data.length === 0 && (
-          <Alert icon={<IconAlertCircle size={16} />} color="blue">
-            まだ卒業猫はいません
-          </Alert>
-        )}
-        
-        {graduations?.data && graduations.data.length > 0 && (
-          <Card shadow="sm" p="lg">
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>猫名</Table.Th>
-                  <Table.Th>性別</Table.Th>
-                  <Table.Th>譲渡日</Table.Th>
-                  <Table.Th>譲渡先</Table.Th>
-                  <Table.Th>備考</Table.Th>
-                  <Table.Th>操作</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {graduations.data.map((grad) => (
-                  <Table.Tr key={grad.id}>
-                    <Table.Td>
-                      <Text fw={500}>{grad.cat?.name || '-'}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      {grad.cat?.gender && <GenderBadge gender={grad.cat.gender as 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY'} />}
-                    </Table.Td>
-                    <Table.Td>{formatDate(grad.transferDate)}</Table.Td>
-                    <Table.Td>{grad.destination}</Table.Td>
-                    <Table.Td>
-                      <Text size="sm" c="dimmed" lineClamp={1}>
-                        {grad.notes || '-'}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Group gap="xs">
-                        <Button
-                          size="xs"
-                          variant="light"
-                          onClick={() => handleViewGraduationDetail(grad.id)}
-                        >
-                          詳細
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="light"
-                          color="red"
-                          leftSection={<IconTrash size={14} />}
-                          onClick={() => handleCancelGraduation(grad.id, grad.cat?.name || '不明')}
-                          loading={isCancelling}
-                        >
-                          取消
-                        </Button>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Card>
-        )}
+        {/* グリッド */}
+        <GalleryGrid
+          entries={galleryData?.data ?? []}
+          loading={isLoading}
+          error={error ? (error instanceof Error ? error.message : 'エラーが発生しました') : null}
+          category={currentTab}
+          onCardClick={handleCardClick}
+          onEditClick={handleEditClick}
+          onDeleteClick={handleDeleteClick}
+          currentPage={currentPage}
+          totalPages={galleryData?.meta?.totalPages}
+          onPageChange={setPage}
+        />
       </Stack>
 
-      {/* 卒業猫詳細モーダル */}
-      <Modal
-        opened={detailModalOpened}
-        onClose={handleCloseDetailModal}
-        title="卒業猫詳細"
-        size="lg"
-      >
-        {detailLoading && <Skeleton height={300} />}
-        {graduationDetail?.data && (
-          <Stack gap="md">
-            <Group justify="space-between">
-              <Text fw={700}>譲渡情報</Text>
-              <Button
-                size="xs"
-                variant="light"
-                color="red"
-                leftSection={<IconTrash size={14} />}
-                onClick={() =>
-                  handleCancelGraduation(
-                    graduationDetail.data.id,
-                    graduationDetail.data.catSnapshot.name || '不明'
-                  )
-                }
-                loading={isCancelling}
-              >
-                卒業記録を取り消す
-              </Button>
-            </Group>
-            <Card withBorder>
-              <Stack gap="sm">
-                <Group>
-                  <Text fw={500}>譲渡日:</Text>
-                  <Text>{formatDate(graduationDetail.data.transferDate)}</Text>
-                </Group>
-                <Group>
-                  <Text fw={500}>譲渡先:</Text>
-                  <Text>{graduationDetail.data.destination}</Text>
-                </Group>
-                {graduationDetail.data.notes && (
-                  <Group>
-                    <Text fw={500}>備考:</Text>
-                    <Text>{graduationDetail.data.notes}</Text>
-                  </Group>
-                )}
-              </Stack>
-            </Card>
+      {/* 追加モーダル */}
+      <GalleryAddModal
+        opened={addModalOpened}
+        onClose={closeAddModal}
+        category={currentTab}
+        onSubmit={handleAddSubmit}
+        loading={isCreating}
+      />
 
-            <Group justify="space-between">
-              <Text fw={700}>譲渡時点の猫データ</Text>
-            </Group>
-            <Card withBorder>
-              <Stack gap="sm">
-                <Group>
-                  <Text fw={500}>名前:</Text>
-                  <Text>{graduationDetail.data.catSnapshot.name}</Text>
-                </Group>
-                <Group>
-                  <Text fw={500}>性別:</Text>
-                  <GenderBadge gender={graduationDetail.data.catSnapshot.gender} />
-                </Group>
-                <Group>
-                  <Text fw={500}>生年月日:</Text>
-                  <Text>
-                    {graduationDetail.data.catSnapshot.birthDate
-                      ? formatDate(graduationDetail.data.catSnapshot.birthDate)
-                      : '-'}
-                  </Text>
-                </Group>
-                <Group>
-                  <Text fw={500}>品種:</Text>
-                  <Text>{graduationDetail.data.catSnapshot.breed?.name || '-'}</Text>
-                </Group>
-                <Group>
-                  <Text fw={500}>毛色:</Text>
-                  <Text>{graduationDetail.data.catSnapshot.coatColor?.name || '-'}</Text>
-                </Group>
-                {graduationDetail.data.catSnapshot.tags && graduationDetail.data.catSnapshot.tags.length > 0 && (
-                  <Group>
-                    <Text fw={500}>タグ:</Text>
-                    <Group gap="xs">
-                      {graduationDetail.data.catSnapshot.tags.map((tagRelation: NonNullable<Cat['tags']>[number]) => (
-                        <Badge key={tagRelation.tag.id} size="sm">
-                          {tagRelation.tag.name}
-                        </Badge>
-                      ))}
-                    </Group>
-                  </Group>
-                )}
-              </Stack>
-            </Card>
-          </Stack>
-        )}
-      </Modal>
+      {/* ライトボックス */}
+      {selectedEntry && (
+        <MediaLightbox
+          media={selectedEntry.media}
+          opened={lightboxOpened}
+          onClose={handleCloseLightbox}
+          initialIndex={lightboxIndex}
+        />
+      )}
     </Container>
+  );
+}
+
+/**
+ * ギャラリーページローディングスケルトン
+ */
+function GalleryLoading() {
+  return (
+    <Container size="xl" py="md">
+      <Stack gap="lg">
+        <Skeleton height={42} width={400} />
+        <Skeleton height={600} />
+      </Stack>
+    </Container>
+  );
+}
+
+/**
+ * ギャラリーページ
+ */
+export default function GalleryPage() {
+  return (
+    <Suspense fallback={<GalleryLoading />}>
+      <GalleryContent />
+    </Suspense>
   );
 }
