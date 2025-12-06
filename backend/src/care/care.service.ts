@@ -11,6 +11,7 @@ import {
 
 import { PrismaService } from "../prisma/prisma.service";
 
+
 import {
   CareQueryDto,
   CompleteCareDto,
@@ -31,6 +32,18 @@ import type {
   MedicalRecordMeta,
   MedicalRecordResponse,
 } from "./dto/medical-record-response.dto";
+import {
+  parseSymptomDetails,
+  parseMedications,
+  mapDtoToSymptomDetails,
+  mapDtoToMedications,
+  serializeSymptomDetails,
+  serializeMedications,
+} from "./json-value.utils";
+import {
+  parseRRule,
+  calculateNextScheduleDate,
+} from "./recurrence.utils";
 
 const scheduleListInclude = {
   cat: { select: { id: true, name: true } },
@@ -233,12 +246,14 @@ export class CareService {
     });
 
     if (!existing) {
-      throw new NotFoundException("Schedule not found");
+      throw new NotFoundException("スケジュールが見つかりません");
     }
 
-    const followUpDate = dto.nextScheduledDate ? new Date(dto.nextScheduledDate) : undefined;
     const completedDate = dto.completedDate ? new Date(dto.completedDate) : new Date();
     const hospitalName = this.normalizeOptionalText(dto.medicalRecord?.hospitalName);
+
+    // 次回予定日の決定: 明示的に指定がなければRRULEから自動計算
+    const followUpDate = this.calculateFollowUpDate(dto, existing, completedDate);
 
     const result = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.schedule.update({
@@ -246,30 +261,9 @@ export class CareService {
         data: { status: ScheduleStatus.COMPLETED },
       });
 
+      // 次回予定が存在する場合、新規スケジュールを作成
       if (followUpDate) {
-        await tx.schedule.create({
-          data: {
-            catId: existing.catId ?? undefined,
-            name: existing.name,
-            title: existing.name,
-            description: dto.notes ?? existing.description ?? undefined,
-            scheduleType: ScheduleType.CARE,
-            scheduleDate: followUpDate,
-            timezone: existing.timezone ?? undefined,
-            careType: (existing.careType as CareType | null) ?? null,
-            status: ScheduleStatus.PENDING,
-            priority: existing.priority ?? Priority.MEDIUM,
-            recurrenceRule: existing.recurrenceRule ?? undefined,
-            assignedTo: updated.assignedTo,
-            tags: existing.tags.length
-              ? {
-                  create: existing.tags.map(({ careTagId }) => ({
-                    careTag: { connect: { id: careTagId } },
-                  })),
-                }
-              : undefined,
-          },
-        });
+        await this.createFollowUpSchedule(tx, existing, updated.assignedTo, followUpDate, dto.notes);
       }
 
       const careRecord = await tx.careRecord.create({
@@ -556,8 +550,9 @@ export class CareService {
   private mapMedicalRecordToResponse(
     record: MedicalRecordWithRelations,
   ): MedicalRecordData {
-    const symptomDetails = this.normalizeSymptomDetails(record.symptomDetails);
-    const medications = this.normalizeMedications(record.medications);
+    // 型安全なJSON変換ユーティリティを使用
+    const symptomDetails = parseSymptomDetails(record.symptomDetails);
+    const medications = parseMedications(record.medications);
 
     const visitType = record.visitType
       ? {
@@ -627,44 +622,6 @@ export class CareService {
     };
   }
 
-  private normalizeSymptomDetails(
-    data: Prisma.JsonValue | null,
-  ): MedicalRecordData["symptomDetails"] {
-    if (!Array.isArray(data)) {
-      return [];
-    }
-
-    return data
-      .map((item) => {
-        if (!item || typeof item !== "object") return null;
-        const payload = item as Record<string, unknown>;
-        const label = payload.label;
-        if (typeof label !== "string") return null;
-        const note = typeof payload.note === "string" ? payload.note : null;
-        return { label, note };
-      })
-      .filter((item): item is { label: string; note: string | null } => item !== null);
-  }
-
-  private normalizeMedications(
-    data: Prisma.JsonValue | null,
-  ): MedicalRecordData["medications"] {
-    if (!Array.isArray(data)) {
-      return [];
-    }
-
-    return data
-      .map((item) => {
-        if (!item || typeof item !== "object") return null;
-        const payload = item as Record<string, unknown>;
-        const name = payload.name;
-        if (typeof name !== "string") return null;
-        const dosage = typeof payload.dosage === "string" ? payload.dosage : null;
-        return { name, dosage };
-      })
-      .filter((item): item is { name: string; dosage: string | null } => item !== null);
-  }
-
   private async createMedicalRecordEntity(
     executor: PrismaExecutor,
     dto: MedicalRecordCreateInput,
@@ -673,18 +630,12 @@ export class CareService {
   ): Promise<MedicalRecordWithRelations> {
     const catId = dto.catId ?? defaults.catId;
     if (!catId) {
-      throw new NotFoundException("Cat ID is required for medical record");
+      throw new NotFoundException("猫IDは必須です");
     }
 
-    const symptomDetails = (dto.symptomDetails ?? []).map((symptom) => ({
-      label: symptom.label,
-      note: symptom.note ?? null,
-    }));
-
-    const medications = (dto.medications ?? []).map((medication) => ({
-      name: medication.name,
-      dosage: medication.dosage ?? null,
-    }));
+    // 型安全なユーティリティを使用してDTOを変換
+    const symptomDetails = mapDtoToSymptomDetails(dto.symptomDetails);
+    const medications = mapDtoToMedications(dto.medications);
 
     const attachments = dto.attachments ?? [];
     const hospitalName = this.normalizeOptionalText(dto.hospitalName);
@@ -698,10 +649,10 @@ export class CareService {
         visitTypeId: dto.visitTypeId ?? defaults.visitTypeId,
         hospitalName,
         symptom: dto.symptom,
-        symptomDetails: symptomDetails.length ? (symptomDetails as Prisma.JsonArray) : Prisma.DbNull,
+        symptomDetails: serializeSymptomDetails(symptomDetails),
         diagnosis: dto.diagnosis,
         treatmentPlan: dto.treatmentPlan,
-        medications: medications.length ? (medications as Prisma.JsonArray) : Prisma.DbNull,
+        medications: serializeMedications(medications),
         followUpDate: dto.followUpDate ? new Date(dto.followUpDate) : undefined,
         status: dto.status ?? MedicalRecordStatus.TREATING,
         notes: dto.notes,
@@ -737,5 +688,80 @@ export class CareService {
     }
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  /**
+   * 次回予定日を計算する
+   * - 明示的な指定があればそれを使用
+   * - なければRRULEから自動計算
+   */
+  private calculateFollowUpDate(
+    dto: CompleteCareDto,
+    existing: {
+      recurrenceRule: string | null;
+      scheduleDate: Date;
+    },
+    completedDate: Date,
+  ): Date | undefined {
+    // 明示的に次回予定日が指定されている場合はそれを使用
+    if (dto.nextScheduledDate) {
+      return new Date(dto.nextScheduledDate);
+    }
+
+    // RRULEが存在する場合、次回予定日を自動計算
+    const parsedRule = parseRRule(existing.recurrenceRule);
+    if (!parsedRule) {
+      return undefined;
+    }
+
+    // 基準日: 完了日またはスケジュール日のうち新しい方
+    const baseDate = completedDate > existing.scheduleDate ? completedDate : existing.scheduleDate;
+    const nextDate = calculateNextScheduleDate(parsedRule, baseDate);
+
+    return nextDate ?? undefined;
+  }
+
+  /**
+   * フォローアップスケジュールを作成する
+   */
+  private async createFollowUpSchedule(
+    tx: Prisma.TransactionClient,
+    existing: {
+      catId: string | null;
+      name: string;
+      description: string | null;
+      timezone: string | null;
+      careType: CareType | null;
+      priority: Priority;
+      recurrenceRule: string | null;
+      tags: Array<{ careTagId: string }>;
+    },
+    assignedTo: string,
+    followUpDate: Date,
+    notes?: string,
+  ): Promise<void> {
+    await tx.schedule.create({
+      data: {
+        catId: existing.catId ?? undefined,
+        name: existing.name,
+        title: existing.name,
+        description: notes ?? existing.description ?? undefined,
+        scheduleType: ScheduleType.CARE,
+        scheduleDate: followUpDate,
+        timezone: existing.timezone ?? undefined,
+        careType: existing.careType,
+        status: ScheduleStatus.PENDING,
+        priority: existing.priority ?? Priority.MEDIUM,
+        recurrenceRule: existing.recurrenceRule ?? undefined,
+        assignedTo: assignedTo,
+        tags: existing.tags.length
+          ? {
+              create: existing.tags.map(({ careTagId }) => ({
+                careTag: { connect: { id: careTagId } },
+              })),
+            }
+          : undefined,
+      },
+    });
   }
 }

@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-12-04T20:33:29.711Z
+// Prisma Schema - Last Updated: 2025-12-06T06:51:39.174Z
 // Auto-generated from schema.prisma
 
 generator client {
@@ -267,6 +267,7 @@ model Cat {
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
   pedigree              Pedigree?              @relation("CatPedigree", fields: [pedigreeId], references: [pedigreeId])
   graduation            Graduation? // 卒業記録（譲渡情報）
+  galleryEntries        GalleryEntry[]         @relation("GalleryEntryCat") // ギャラリーエントリ
 
   // シングルカラムインデックス（検索頻度の高いフィールド）
   @@index([breedId])
@@ -1321,4 +1322,74 @@ model Graduation {
   @@index([transferDate])
   @@index([catId])
   @@map("graduations")
+}
+
+// ==========================================
+// Gallery Models
+// ==========================================
+
+model GalleryEntry {
+  id       String          @id @default(uuid())
+  category GalleryCategory
+
+  // スナップショット情報（登録時点でコピー、後から編集可能）
+  name      String
+  gender    String // MALE, FEMALE, NEUTER, SPAY
+  coatColor String? @map("coat_color")
+  breed     String?
+
+  // 元の猫への参照（任意）
+  catId String? @map("cat_id")
+  cat   Cat?    @relation("GalleryEntryCat", fields: [catId], references: [id], onDelete: SetNull)
+
+  // 卒業猫用フィールド（Graduation統合）
+  transferDate  DateTime? @map("transfer_date")
+  destination   String?
+  externalLink  String?   @map("external_link")
+  transferredBy String?   @map("transferred_by")
+  catSnapshot   Json?     @map("cat_snapshot")
+  notes         String?
+
+  // メディア
+  media GalleryMedia[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // インデックス
+  @@index([category])
+  @@index([catId])
+  @@index([createdAt])
+  @@index([category, createdAt])
+  @@map("gallery_entries")
+}
+
+enum GalleryCategory {
+  KITTEN
+  FATHER
+  MOTHER
+  GRADUATION
+}
+
+model GalleryMedia {
+  id             String       @id @default(uuid())
+  galleryEntryId String       @map("gallery_entry_id")
+  galleryEntry   GalleryEntry @relation(fields: [galleryEntryId], references: [id], onDelete: Cascade)
+
+  type         MediaType
+  url          String
+  thumbnailUrl String?   @map("thumbnail_url")
+  order        Int       @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // インデックス
+  @@index([galleryEntryId])
+  @@index([order])
+  @@map("gallery_media")
+}
+
+enum MediaType {
+  IMAGE
+  YOUTUBE
 }
