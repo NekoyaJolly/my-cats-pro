@@ -1,6 +1,6 @@
+import { CanActivate } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { CanActivate } from '@nestjs/common';
 
 /**
  * No-op guard for unit tests that don't need real rate limiting or authentication
