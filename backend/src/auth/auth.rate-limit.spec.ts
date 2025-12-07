@@ -1,4 +1,5 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerModule, ThrottlerStorage, ThrottlerStorageService } from '@nestjs/throttler';
@@ -78,6 +79,9 @@ describe('AuthController rate limiting (integration)', () => {
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+        }),
         ThrottlerModule.forRoot({
           throttlers: [
             {
@@ -98,6 +102,38 @@ describe('AuthController rate limiting (integration)', () => {
           provide: APP_GUARD,
           useClass: EnhancedThrottlerGuard,
         },
+        {
+          provide: ThrottlerStorage,
+          useFactory: () => {
+            const storage: Record<string, any> = {};
+            const timeoutIds: NodeJS.Timeout[] = [];
+            const storageService = {
+              get: async (key: string) => storage[key],
+              set: async (key: string, value: any, ttl?: number) => {
+                storage[key] = value;
+                if (ttl) {
+                  const id = setTimeout(() => delete storage[key], ttl);
+                  timeoutIds.push(id);
+                }
+              },
+              increment: async (key: string, ttl: number) => {
+                const record = storage[key] || { totalHits: 0, expiresAt: Date.now() + ttl };
+                record.totalHits += 1;
+                storage[key] = record;
+                const timeToExpire = Math.ceil((record.expiresAt - Date.now()) / 1000);
+                return {
+                  totalHits: record.totalHits,
+                  timeToExpire: Math.max(0, timeToExpire),
+                };
+              },
+              delete: async (key: string) => { delete storage[key]; },
+              // expose internals for test helpers
+              storage,
+              timeoutIds,
+            };
+            return storageService;
+          },
+        },
       ],
     }).compile();
 
@@ -114,7 +150,9 @@ describe('AuthController rate limiting (integration)', () => {
 
   afterAll(async () => {
     resetStorage();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   const pickHeader = (headers: Record<string, string | string[] | undefined>, key: string): string | undefined => (

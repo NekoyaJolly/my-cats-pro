@@ -1,4 +1,5 @@
 import { Injectable, ExecutionContext } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
 import { AuthGuard } from "@nestjs/passport";
 import type { Request } from "express";
@@ -7,11 +8,20 @@ import { IS_PUBLIC_KEY } from "../common/decorators/public.decorator";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {
-  constructor(private reflector: Reflector) {
+  constructor(
+    private reflector: Reflector,
+    private configService: ConfigService,
+  ) {
     super();
   }
 
   canActivate(context: ExecutionContext) {
+    // AUTH_DISABLED=1 の場合は認証をスキップ（開発環境専用）
+    const authDisabled = this.configService.get<number>('AUTH_DISABLED', 0);
+    if (authDisabled === 1) {
+      return true;
+    }
+
     // OPTIONS リクエスト（CORS プリフライト）は認証をスキップ
     const request = context.switchToHttp().getRequest<Request>();
     if (request.method === 'OPTIONS') {

@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { getTestModuleImports, getTestModuleProviders } from '../test-utils/test-module-setup';
+
 import { ShiftController } from './shift.controller';
 import { ShiftService } from './shift.service';
 
@@ -8,8 +10,10 @@ describe('ShiftController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: getTestModuleImports(),
       controllers: [ShiftController],
       providers: [
+        ...getTestModuleProviders(),
         {
           provide: ShiftService,
           useValue: {

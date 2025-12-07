@@ -1,6 +1,7 @@
 /**
  * InputWithFloatingLabel コンポーネント用のスタイル定義
  * PedigreeRegistrationForm の基本項目入力スタイルを共通化
+ * 高さ 36px、padding-top 11px で統一（2025-12-08 更新）
  *
  * @see frontend/src/components/ui/InputWithFloatingLabel.tsx
  */
@@ -10,15 +11,15 @@
 }
 
 .input {
-  height: 38px;
-  padding-top: 14px;
+  height: 36px;
+  padding-top: 11px;
 }
 
 /* Textarea specific adjustment */
 textarea.input {
-  height: 38px;
-  min-height: 38px;
-  padding-top: 14px;
+  height: 36px;
+  min-height: 36px;
+  padding-top: 11px;
 }
 
 .label {

@@ -3,6 +3,7 @@ import { Test, type TestingModule } from "@nestjs/testing";
 import { DisplayNameMode } from "@prisma/client";
 
 import type { RequestUser } from "../auth/auth.types";
+import { getTestModuleImports, getTestModuleProviders } from "../test-utils/test-module-setup";
 
 import { DisplayPreferencesController } from "./display-preferences.controller";
 import { DisplayPreferencesService } from "./display-preferences.service";
@@ -33,8 +34,10 @@ describe("DisplayPreferencesController", () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: getTestModuleImports(),
       controllers: [DisplayPreferencesController],
       providers: [
+        ...getTestModuleProviders(),
         {
           provide: DisplayPreferencesService,
           useValue: service,
