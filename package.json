@@ -70,7 +70,9 @@
       "cookie": ">=0.7.2",
       "cross-spawn": ">=7.0.6",
       "brace-expansion": ">=2.0.2 <3.0.0",
-      "tmp": ">=0.2.3"
+      "tmp": ">=0.2.3",
+      "jsonwebtoken": ">=9.0.3",
+      "jws": ">=4.0.1"
     },
     "ignoredBuiltDependencies": [
       "@nestjs/core",

@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-11-20T00:32:48.111Z
+// Prisma Schema - Last Updated: 2025-12-06T06:51:39.174Z
 // Auto-generated from schema.prisma
 
 generator client {
@@ -18,6 +18,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================================
+// Multi-Tenant Models
+// ==========================================
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users       User[]
+  invitations InvitationToken[]
+
+  // Indexes
+  @@index([slug])
+  @@index([isActive])
+  @@map("tenants")
+}
+
+model InvitationToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  role      UserRole
+  tenantId  String   @map("tenant_id")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([email])
+  @@index([token])
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@map("invitation_tokens")
+}
+
 model User {
   id                   String    @id @default(uuid())
   clerkId              String    @unique @map("clerk_id")
@@ -33,10 +76,12 @@ model User {
   failedLoginAttempts  Int       @default(0) @map("failed_login_attempts")
   lockedUntil          DateTime? @map("locked_until")
   lastLoginAt          DateTime? @map("last_login_at")
+  tenantId             String?   @map("tenant_id") // マルチテナント対応
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
   // Relations
+  tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   breedingRecords BreedingRecord[]
   careRecords     CareRecord[]
   schedules       Schedule[]
@@ -54,10 +99,12 @@ model User {
   @@index([role])
   @@index([isActive])
   @@index([lastLoginAt])
+  @@index([tenantId]) // テナント検索用
   
   // 複合インデックス（ユーザー検索パターン）
   @@index([role, isActive]) // ロール別アクティブユーザー検索
   @@index([isActive, lastLoginAt]) // アクティブユーザーのログイン履歴
+  @@index([tenantId, role]) // テナント内ロール検索
   
   @@map("users")
 }
@@ -220,6 +267,7 @@ model Cat {
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
   pedigree              Pedigree?              @relation("CatPedigree", fields: [pedigreeId], references: [pedigreeId])
   graduation            Graduation? // 卒業記録（譲渡情報）
+  galleryEntries        GalleryEntry[]         @relation("GalleryEntryCat") // ギャラリーエントリ
 
   // シングルカラムインデックス（検索頻度の高いフィールド）
   @@index([breedId])
@@ -910,6 +958,7 @@ enum UserRole {
   USER
   ADMIN
   SUPER_ADMIN
+  TENANT_ADMIN // テナント管理者
 }
 
 enum BreedingStatus {
@@ -1055,13 +1104,15 @@ enum TagAutomationRunStatus {
 // ==========================================
 
 model Staff {
-  id       String  @id @default(uuid())
-  userId   String? @unique @map("user_id") // User連携（任意）
-  name     String
-  email    String? @unique
-  role     String  @default("スタッフ") // 役職
-  color    String  @default("#4dabf7") // カレンダー表示色
-  isActive Boolean @default(true) @map("is_active")
+  id               String  @id @default(uuid())
+  userId           String? @unique @map("user_id") // User連携（任意）
+  name             String
+  email            String? @unique
+  role             String  @default("スタッフ") // 役職
+  color            String  @default("#4dabf7") // カレンダー表示色
+  isActive         Boolean @default(true) @map("is_active")
+  workingDays      Json?   @map("working_days") // 出勤曜日 ["mon", "tue", ...] 形式
+  workTimeTemplate Json?   @map("work_time_template") // 勤務時間テンプレート { startHour: number, endHour: number }
 
   user           User?               @relation(fields: [userId], references: [id])
   shifts         Shift[]
@@ -1271,4 +1322,74 @@ model Graduation {
   @@index([transferDate])
   @@index([catId])
   @@map("graduations")
+}
+
+// ==========================================
+// Gallery Models
+// ==========================================
+
+model GalleryEntry {
+  id       String          @id @default(uuid())
+  category GalleryCategory
+
+  // スナップショット情報（登録時点でコピー、後から編集可能）
+  name      String
+  gender    String // MALE, FEMALE, NEUTER, SPAY
+  coatColor String? @map("coat_color")
+  breed     String?
+
+  // 元の猫への参照（任意）
+  catId String? @map("cat_id")
+  cat   Cat?    @relation("GalleryEntryCat", fields: [catId], references: [id], onDelete: SetNull)
+
+  // 卒業猫用フィールド（Graduation統合）
+  transferDate  DateTime? @map("transfer_date")
+  destination   String?
+  externalLink  String?   @map("external_link")
+  transferredBy String?   @map("transferred_by")
+  catSnapshot   Json?     @map("cat_snapshot")
+  notes         String?
+
+  // メディア
+  media GalleryMedia[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // インデックス
+  @@index([category])
+  @@index([catId])
+  @@index([createdAt])
+  @@index([category, createdAt])
+  @@map("gallery_entries")
+}
+
+enum GalleryCategory {
+  KITTEN
+  FATHER
+  MOTHER
+  GRADUATION
+}
+
+model GalleryMedia {
+  id             String       @id @default(uuid())
+  galleryEntryId String       @map("gallery_entry_id")
+  galleryEntry   GalleryEntry @relation(fields: [galleryEntryId], references: [id], onDelete: Cascade)
+
+  type         MediaType
+  url          String
+  thumbnailUrl String?   @map("thumbnail_url")
+  order        Int       @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // インデックス
+  @@index([galleryEntryId])
+  @@index([order])
+  @@map("gallery_media")
+}
+
+enum MediaType {
+  IMAGE
+  YOUTUBE
 }

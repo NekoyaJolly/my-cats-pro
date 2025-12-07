@@ -459,8 +459,10 @@ export default function CarePage() {
     );
   };
 
-  // @ts-expect-error - 将来的に使用予定
-  const _openCompleteScheduleModal = (schedule: CareSchedule) => {
+  /**
+   * ケアスケジュールの完了モーダルを開く
+   */
+  const openCompleteScheduleModal = (schedule: CareSchedule) => {
     setTargetSchedule(schedule);
     setCompleteForm({
       completedDate: new Date(),
@@ -698,8 +700,19 @@ export default function CarePage() {
                         <Group gap="xs" justify="center">
                           <ActionIcon
                             variant="light"
+                            color="teal"
+                            size="sm"
+                            title="完了にする"
+                            onClick={() => openCompleteScheduleModal(schedule)}
+                            disabled={schedule.status === 'COMPLETED'}
+                          >
+                            <IconCheck size={16} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
                             color="gray"
                             size="sm"
+                            title="詳細を表示"
                             onClick={() => {
                               setDetailSchedule(schedule);
                               openDetailModal();
@@ -711,6 +724,7 @@ export default function CarePage() {
                             variant="light"
                             color="yellow"
                             size="sm"
+                            title="編集"
                             onClick={() => handleEditSchedule(schedule)}
                           >
                             <IconEdit size={16} />
@@ -719,6 +733,7 @@ export default function CarePage() {
                             variant="light"
                             color="red"
                             size="sm"
+                            title="削除"
                             onClick={() => handleDeleteSchedule(schedule)}
                           >
                             <IconTrash size={16} />

@@ -6,6 +6,7 @@
     "incremental": false,
     "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
+  "include": ["src/**/*"],
   "exclude": [
     "test",
     "src/**/*.spec.ts",

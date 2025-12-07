@@ -40,6 +40,65 @@ import {
   IconRuler,
   IconTemperature,
 } from '@tabler/icons-react';
+import { CatTexturedCard, CardSpreadDemo, type TextureType, type HoloPatternType, type RarityType, type DemoCat } from '@/components/cards';
+
+// サンプル猫データ（レアリティ別）
+const SAMPLE_CATS: Record<string, DemoCat> = {
+  common: { 
+    id: '1', 
+    name: 'ミケ', 
+    gender: 'FEMALE', 
+    breed: { id: '1', name: '雑種' }, 
+    coatColor: { id: '1', name: '三毛' } 
+  },
+  uncommon: { 
+    id: '2', 
+    name: 'タマ', 
+    gender: 'MALE', 
+    breed: { id: '2', name: 'アメショー' }, 
+    coatColor: { id: '2', name: 'シルバータビー' } 
+  },
+  rare: { 
+    id: '3', 
+    name: 'ソラ', 
+    gender: 'MALE', 
+    breed: { id: '3', name: 'スコティッシュ' }, 
+    coatColor: { id: '3', name: 'ブルー' } 
+  },
+  superRare: { 
+    id: '4', 
+    name: 'ルナ', 
+    gender: 'FEMALE', 
+    breed: { id: '4', name: 'ペルシャ' }, 
+    coatColor: { id: '4', name: 'チンチラシルバー' }, 
+    registrationNumber: 'ABC-12345' 
+  },
+  ultraRare: { 
+    id: '5', 
+    name: 'レオ', 
+    gender: 'MALE', 
+    breed: { id: '5', name: 'ベンガル' }, 
+    coatColor: { id: '5', name: 'ブラウンスポテッド' }, 
+    registrationNumber: 'XYZ-67890' 
+  },
+  legendary: { 
+    id: '6', 
+    name: 'キング', 
+    gender: 'MALE', 
+    breed: { id: '6', name: 'メインクーン' }, 
+    coatColor: { id: '6', name: 'ブラウンタビー' }, 
+    registrationNumber: 'LEGEND-001'
+  },
+};
+
+// 質感一覧（9種類）
+const TEXTURE_TYPES: TextureType[] = ['matte', 'glossy', 'embossed', 'linen', 'washi', 'metallic', 'metallicGold', 'leather', 'wood'];
+
+// ホログラム加工一覧（4種類）
+const HOLO_PATTERNS: HoloPatternType[] = ['stripe', 'dot', 'prism', 'stardust'];
+
+// レアリティ一覧（6段階）
+const RARITY_TYPES: RarityType[] = ['common', 'uncommon', 'rare', 'superRare', 'ultraRare', 'legendary'];
 
 export default function ActionButtonDemoPage() {
   return (
@@ -802,6 +861,216 @@ color: 色指定`}
             <Text size="sm" c="dimmed">
               その他のアイコンは <a href="https://tabler.io/icons" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--mantine-color-blue-6)' }}>Tabler Icons公式サイト</a> で検索できます。
             </Text>
+          </Stack>
+        </Card>
+
+        {/* カードUIデザインセクション */}
+        <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Title order={3} mb="md">
+            🎴 カードUI デザインシステム
+          </Title>
+          <Text size="sm" c="dimmed" mb="lg">
+            ベース質感 + ホログラム加工のレイヤー構造カード。ホバーで演出が確認できます。
+          </Text>
+          
+          <Stack gap="xl">
+            {/* ベース質感一覧 */}
+            <div>
+              <Title order={4} mb="md">ベース質感（9種類）</Title>
+              <Text size="sm" c="dimmed" mb="md">
+                カードの基本となる質感スタイル。ホバーすると軽いシマー演出が確認できます。
+              </Text>
+              <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
+                {TEXTURE_TYPES.map((texture, index) => (
+                  <CatTexturedCard
+                    key={texture}
+                    cat={Object.values(SAMPLE_CATS)[index % Object.values(SAMPLE_CATS).length]}
+                    texture={texture}
+                    holoPattern="none"
+                  />
+                ))}
+              </SimpleGrid>
+            </div>
+            
+            <Divider />
+            
+            {/* ホログラム加工一覧 */}
+            <div>
+              <Title order={4} mb="md">ホログラム加工（メタリックベース）</Title>
+              <Text size="sm" c="dimmed" mb="md">
+                4種類のホログラム加工パターン。ベース質感の上にオーバーレイとして重なります。
+              </Text>
+              <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+                {HOLO_PATTERNS.map((holo) => (
+                  <CatTexturedCard
+                    key={holo}
+                    cat={SAMPLE_CATS.superRare}
+                    texture="metallic"
+                    holoPattern={holo}
+                  />
+                ))}
+              </SimpleGrid>
+            </div>
+            
+            <Divider />
+            
+            {/* レアリティ別カード */}
+            <div>
+              <Title order={4} mb="md">レアリティ別カード（6段階）</Title>
+              <Text size="sm" c="dimmed" mb="md">
+                レアリティに応じて質感・ホログラム加工・レインボーボーダーが自動決定されます。
+              </Text>
+              <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="md">
+                {RARITY_TYPES.map((rarity) => (
+                  <Stack key={rarity} gap="xs" align="center">
+                    <CatTexturedCard
+                      cat={SAMPLE_CATS[rarity]}
+                      rarity={rarity}
+                    />
+                  </Stack>
+                ))}
+              </SimpleGrid>
+            </div>
+            
+            <Divider />
+
+            {/* カスタム組み合わせ例 */}
+            <div>
+              <Title order={4} mb="md">カスタム組み合わせ例</Title>
+              <Text size="sm" c="dimmed" mb="md">
+                ベース質感とホログラム加工を自由に組み合わせて独自のカードを作成できます。
+              </Text>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+                <Stack gap="xs" align="center">
+                  <CatTexturedCard 
+                    cat={SAMPLE_CATS.legendary} 
+                    texture="metallicGold" 
+                    holoPattern="stardust" 
+                    rainbowBorder 
+                  />
+                  <Text size="xs" c="dimmed">ゴールド + スターダスト + レインボー枠</Text>
+                </Stack>
+                <Stack gap="xs" align="center">
+                  <CatTexturedCard 
+                    cat={SAMPLE_CATS.rare} 
+                    texture="glossy" 
+                    holoPattern="dot" 
+                  />
+                  <Text size="xs" c="dimmed">グロッシー + ドットホロ</Text>
+                </Stack>
+                <Stack gap="xs" align="center">
+                  <CatTexturedCard 
+                    cat={SAMPLE_CATS.ultraRare} 
+                    texture="leather" 
+                    holoPattern="prism" 
+                  />
+                  <Text size="xs" c="dimmed">レザー + プリズムホロ</Text>
+                </Stack>
+              </SimpleGrid>
+            </div>
+            
+            <Divider />
+            
+            {/* 使用方法 */}
+            <div>
+              <Title order={4} mb="md">使用方法</Title>
+              <Paper bg="gray.0" p="sm">
+                <Code block>
+{`import { CatTexturedCard } from '@/components/cards';
+
+// ベース質感のみ
+<CatTexturedCard cat={cat} texture="metallic" />
+
+// ベース質感 + ホログラム加工
+<CatTexturedCard cat={cat} texture="metallicGold" holoPattern="prism" />
+
+// レアリティで自動決定
+<CatTexturedCard cat={cat} rarity="legendary" />
+
+// フルカスタマイズ
+<CatTexturedCard 
+  cat={cat} 
+  texture="metallic" 
+  holoPattern="stardust" 
+  rainbowBorder 
+  enableHoverEffect={false}  // ギャラリー等で大量表示時
+/>`}
+                </Code>
+              </Paper>
+            </div>
+
+            {/* レアリティプリセット設定表 */}
+            <div>
+              <Title order={4} mb="md">レアリティプリセット設定</Title>
+              <Paper bg="gray.0" p="sm">
+                <Code block>
+{`const RARITY_PRESETS = {
+  common:    { texture: 'matte',       holoPattern: 'none',     rainbowBorder: false },
+  uncommon:  { texture: 'linen',       holoPattern: 'none',     rainbowBorder: false },
+  rare:      { texture: 'glossy',      holoPattern: 'none',     rainbowBorder: false },
+  superRare: { texture: 'metallic',    holoPattern: 'stripe',   rainbowBorder: false },
+  ultraRare: { texture: 'metallicGold',holoPattern: 'prism',    rainbowBorder: false },
+  legendary: { texture: 'embossed',    holoPattern: 'stardust', rainbowBorder: true  },
+};`}
+                </Code>
+              </Paper>
+            </div>
+          </Stack>
+        </Card>
+
+        {/* カード展開デモ */}
+        <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Title order={3} mb="md">
+            🃏 カード展開デモ
+          </Title>
+          <Text size="sm" c="dimmed" mb="lg">
+            カジノディーラー風のカード展開アニメーション。ファン・リボン・カスケードの3パターンを確認できます。
+          </Text>
+          
+          <CardSpreadDemo />
+          
+          <Divider my="lg" />
+          
+          <div>
+            <Title order={4} mb="md">使用方法</Title>
+            <Paper bg="gray.0" p="sm">
+              <Code block>
+{`import { CardSpreadDemo } from '@/components/cards';
+
+// デモコンポーネントをそのまま配置
+<CardSpreadDemo />
+
+// カスタムの猫データを渡す場合（将来拡張用）
+<CardSpreadDemo cats={myCats} />`}
+              </Code>
+            </Paper>
+          </div>
+          
+          <Stack gap="xs" mt="md">
+            <Text size="sm" fw={500}>展開パターン</Text>
+            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+              <Paper p="sm" withBorder>
+                <Group gap="xs" mb="xs">
+                  <Text size="lg">🌀</Text>
+                  <Text fw={500}>ファン</Text>
+                </Group>
+                <Text size="xs" c="dimmed">扇状に広げる。トランプの手札表示風。</Text>
+              </Paper>
+              <Paper p="sm" withBorder>
+                <Group gap="xs" mb="xs">
+                  <Text size="lg">➡️</Text>
+                  <Text fw={500}>リボン</Text>
+                </Group>
+                <Text size="xs" c="dimmed">横一列に広げる。カード一覧表示風。</Text>
+              </Paper>
+              <Paper p="sm" withBorder>
+                <Group gap="xs" mb="xs">
+                  <Text size="lg">📐</Text>
+                  <Text fw={500}>カスケード</Text>
+                </Group>
+                <Text size="xs" c="dimmed">階段状に重ねる。ソリティア風。</Text>
+              </Paper>
+            </SimpleGrid>
           </Stack>
         </Card>
       </Stack>
