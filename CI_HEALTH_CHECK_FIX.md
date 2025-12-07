@@ -94,6 +94,8 @@ fi
 ```
 
 - 正しいパス (`backend/backend.pid`) を参照
+  - **注**: "Start backend service" ステップは `working-directory: backend` で実行されるため、`backend.pid` ファイルは `backend/` ディレクトリ内に作成されます
+  - Cleanup ステップはリポジトリルートから実行されるため、`backend/backend.pid` として参照する必要があります
 - 常に最終的なログを表示してデバッグを支援
 
 ## テスト
