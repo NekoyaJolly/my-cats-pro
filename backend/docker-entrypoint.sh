@@ -51,4 +51,4 @@ echo "Seeding database..."
 node dist/prisma/seed.js
 
 echo "Starting application..."
-exec node dist/src/main.js
+exec node dist/main.js

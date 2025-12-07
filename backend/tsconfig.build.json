@@ -2,11 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "./src",
     "incremental": false,
     "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
-  "include": ["src/**/*", "prisma/seed.ts"],
+  "include": ["src/**/*"],
   "exclude": [
     "test",
     "src/**/*.spec.ts",
