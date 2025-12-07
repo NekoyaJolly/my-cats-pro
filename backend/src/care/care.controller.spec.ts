@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { getTestModuleImports, getTestModuleProviders } from '../test-utils/test-module-setup';
+
 import { CareController } from './care.controller';
 import { CareService } from './care.service';
 
@@ -19,8 +21,10 @@ describe('CareController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: getTestModuleImports(),
       controllers: [CareController],
       providers: [
+        ...getTestModuleProviders(),
         {
           provide: CareService,
           useValue: mockCareService,
