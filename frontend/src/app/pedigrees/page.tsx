@@ -7,9 +7,12 @@ import { PedigreeFamilyTree } from '@/components/pedigrees/PedigreeFamilyTree';
 import { IconPlus, IconList, IconBinaryTree } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { useSearchParams } from 'next/navigation';
 
 export default function PedigreesPage() {
-  const [activeTab, setActiveTab] = useState<string | null>('register');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'register';
+  const [activeTab, setActiveTab] = useState<string | null>(initialTab);
   const [selectedFamilyTreeId, setSelectedFamilyTreeId] = useState<string | null>(null);
   const { setPageTitle } = usePageHeader();
 

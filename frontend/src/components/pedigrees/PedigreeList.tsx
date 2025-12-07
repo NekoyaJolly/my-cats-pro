@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Paper,
   TextInput,
@@ -20,7 +20,7 @@ import {
 } from '@mantine/core';
 import { IconSearch, IconEye, IconFilter, IconFileText, IconRefresh } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
-import { apiGet } from '../../lib/api';
+import { useGetPedigrees } from '../../lib/api/hooks/use-pedigrees';
 
 interface PedigreeData {
   id: string;
@@ -40,29 +40,15 @@ interface PedigreeData {
   motherPedigree?: { pedigreeId: string; catName: string } | null;
 }
 
-interface PedigreeResponse {
-  data: PedigreeData[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
-
 interface PedigreeListProps {
   onSelectFamilyTree?: (id: string) => void;
 }
 
 export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
   const router = useRouter();
-  const [pedigrees, setPedigrees] = useState<PedigreeData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [genderFilter, setGenderFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
 
   const genderOptions = [
     { value: '', label: '全て' },
@@ -70,49 +56,25 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
     { value: '2', label: '雌' },
   ];
 
-  const fetchPedigrees = useCallback(async (page = 1) => {
-    try {
-      setLoading(true);
-      const queryParams: Record<string, string> = {
-        page: page.toString(),
-        limit: '20',
-      };
+  // React Query フックでデータ取得
+  const { data, isLoading, refetch } = useGetPedigrees({
+    page: currentPage,
+    limit: 20,
+    search: searchTerm || undefined,
+    gender: genderFilter || undefined,
+  });
 
-      if (searchTerm) {
-        queryParams.search = searchTerm;
-      }
-      if (genderFilter) {
-        queryParams.gender = genderFilter;
-      }
-
-      const response = await apiGet('/pedigrees', queryParams);
-      if (!response.ok) {
-        throw new Error('Failed to fetch pedigrees');
-      }
-
-      const data: PedigreeResponse = await response.json();
-      setPedigrees(data.data);
-      setTotalPages(data.meta.totalPages);
-      setTotal(data.meta.total);
-      setCurrentPage(data.meta.page);
-    } catch (error) {
-      console.error('Error fetching pedigrees:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [genderFilter, searchTerm]);
-
-  useEffect(() => {
-    fetchPedigrees(1);
-  }, [fetchPedigrees]);
+  const pedigrees = (data?.data || []) as unknown as PedigreeData[];
+  const total = data?.meta?.total || 0;
+  const totalPages = data?.meta?.totalPages || 1;
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchPedigrees(1);
+    refetch();
   };
 
   const handlePageChange = (page: number) => {
-    fetchPedigrees(page);
+    setCurrentPage(page);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -187,7 +149,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
               </Button>
               <ActionIcon 
                 variant="light" 
-                onClick={() => fetchPedigrees(currentPage)}
+                onClick={() => refetch()}
                 size="lg"
               >
                 <IconRefresh size={16} />
@@ -199,7 +161,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
 
       {/* 血統書リストテーブル */}
       <Paper shadow="sm" style={{ position: 'relative' }}>
-        <LoadingOverlay visible={loading} overlayProps={{ radius: "sm", blur: 2 }} />
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} />
         
         <Table striped highlightOnHover>
           <Table.Thead>
@@ -291,7 +253,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
           </Table.Tbody>
         </Table>
 
-        {pedigrees.length === 0 && !loading && (
+        {pedigrees.length === 0 && !isLoading && (
           <Card mt="md" p="xl" style={{ textAlign: 'center' }}>
             <Text size="lg" c="dimmed">
               血統書データが見つかりませんでした
