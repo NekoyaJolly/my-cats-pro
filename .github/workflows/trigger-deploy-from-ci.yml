@@ -16,11 +16,15 @@ permissions:
 
 jobs:
   call-deploy:
-    name: Call Deploy Workflow for Both Environments
+    name: Call Deploy Workflow for Production
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     uses: ./.github/workflows/deploy-only.yml
     with:
-      environment: "both"
+      environment: "production"
     secrets:
+      # Production secrets only (staging is deployed from separate project)
       GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
       GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_SQL_INSTANCE_NAME: ${{ secrets.GCP_SQL_INSTANCE_NAME }}
+      GCP_RUN_SA_BACKEND: ${{ secrets.GCP_RUN_SA_BACKEND }}
+      GCP_RUN_SA_FRONTEND: ${{ secrets.GCP_RUN_SA_FRONTEND }}
