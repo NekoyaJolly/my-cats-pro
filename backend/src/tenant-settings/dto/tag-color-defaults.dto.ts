@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsHexColor, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsHexColor, IsOptional, ValidateNested } from 'class-validator';
 
 /**
  * カラー設定（背景色とテキスト色）

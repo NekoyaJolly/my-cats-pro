@@ -40,8 +40,10 @@ export interface UpdateTagColorDefaultsRequest {
  * テナントのタグカラーデフォルト設定を取得
  */
 export function useGetTagColorDefaults() {
+  const queryKey = tenantSettingsKeys.extras?.tagColorDefaults?.() ?? ['tenant-settings', 'tagColorDefaults'];
+  
   return useQuery<TagColorDefaults>({
-    queryKey: tenantSettingsKeys.extras!.tagColorDefaults(),
+    queryKey,
     queryFn: async () => {
       const response = await apiClient.get('/tenant-settings/tag-color-defaults' as never);
       return (response.data ?? {}) as TagColorDefaults;
@@ -55,6 +57,7 @@ export function useGetTagColorDefaults() {
  */
 export function useUpdateTagColorDefaults() {
   const queryClient = useQueryClient();
+  const queryKey = tenantSettingsKeys.extras?.tagColorDefaults?.() ?? ['tenant-settings', 'tagColorDefaults'];
 
   return useMutation<TagColorDefaults, Error, UpdateTagColorDefaultsRequest>({
     mutationFn: async (request: UpdateTagColorDefaultsRequest) => {
@@ -66,10 +69,7 @@ export function useUpdateTagColorDefaults() {
     },
     onSuccess: (data) => {
       // キャッシュを更新
-      queryClient.setQueryData(
-        tenantSettingsKeys.extras!.tagColorDefaults(),
-        data
-      );
+      queryClient.setQueryData(queryKey, data);
     },
   });
 }

@@ -17,8 +17,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RoleGuard } from '../auth/role.guard';
 import { Roles } from '../auth/roles.decorator';
 
-import { TenantSettingsService } from './tenant-settings.service';
 import { TagColorDefaultsDto, UpdateTagColorDefaultsDto } from './dto/tag-color-defaults.dto';
+import { TenantSettingsService } from './tenant-settings.service';
 
 /**
  * テナント設定コントローラ

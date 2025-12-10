@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
+
+import { PrismaModule } from '../prisma/prisma.module';
+
 import { TenantSettingsController } from './tenant-settings.controller';
 import { TenantSettingsService } from './tenant-settings.service';
-import { PrismaModule } from '../prisma/prisma.module';
 
 /**
  * テナント設定モジュール
