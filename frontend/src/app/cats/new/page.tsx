@@ -7,7 +7,6 @@ import {
   Group,
   Stack,
   TextInput,
-  Textarea,
   Select,
   Switch,
   Alert,
@@ -28,6 +27,7 @@ import { ALPHANUM_SPACE_HYPHEN_PATTERN, MasterDataCombobox } from '@/components/
 import { useSelectionHistory } from '@/lib/hooks/use-selection-history';
 import { buildMasterOptions, createDisplayNameMap } from '@/lib/master-data/master-options';
 import { catFormSchema, type CatFormSchema as CatFormValues } from '@/lib/schemas';
+import { TextareaWithFloatingLabel } from '@/components/ui/TextareaWithFloatingLabel';
 const COAT_COLOR_DESCRIPTION = '半角英数字・スペース・ハイフンで検索できます。候補一覧からも選択できます。';
 
 export default function CatRegistrationPage() {
@@ -265,7 +265,7 @@ export default function CatRegistrationPage() {
                   name="description"
                   control={control}
                   render={({ field }) => (
-                    <Textarea
+                    <TextareaWithFloatingLabel
                       label="備考"
                       placeholder="特徴や性格などを記入してください"
                       minRows={3}
