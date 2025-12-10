@@ -44,7 +44,7 @@ export function useGetTagColorDefaults() {
     queryKey: tenantSettingsKeys.extras!.tagColorDefaults(),
     queryFn: async () => {
       const response = await apiClient.get('/tenant-settings/tag-color-defaults' as never);
-      return response.data as TagColorDefaults;
+      return (response.data ?? {}) as TagColorDefaults;
     },
     staleTime: 5 * 60 * 1000, // 5分間はキャッシュを使用
   });
@@ -62,7 +62,7 @@ export function useUpdateTagColorDefaults() {
         '/tenant-settings/tag-color-defaults' as never,
         { body: request } as never
       );
-      return response.data as TagColorDefaults;
+      return (response.data ?? {}) as TagColorDefaults;
     },
     onSuccess: (data) => {
       // キャッシュを更新

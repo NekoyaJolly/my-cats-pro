@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { TagColorDefaultsDto, UpdateTagColorDefaultsDto } from './dto/tag-color-defaults.dto';
 
 // フロントエンドのデフォルト値と同期
+// 参照: frontend/src/app/tags/page.tsx の DEFAULT_*_COLOR 定数
 const FRONTEND_DEFAULTS: TagColorDefaultsDto = {
   category: {
     color: '#6366F1',
@@ -17,6 +19,17 @@ const FRONTEND_DEFAULTS: TagColorDefaultsDto = {
     textColor: '#FFFFFF',
   },
 };
+
+interface ColorSetting {
+  color: string;
+  textColor: string;
+}
+
+interface StoredDefaults {
+  category?: ColorSetting;
+  group?: ColorSetting;
+  tag?: ColorSetting;
+}
 
 /**
  * テナント設定サービス
@@ -35,24 +48,29 @@ export class TenantSettingsService {
    * @returns タグカラーデフォルト設定（設定がない場合はフロントエンドのデフォルト値を返す）
    */
   async getTagColorDefaults(tenantId: string): Promise<TagColorDefaultsDto> {
-    // テナントの存在確認
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
-    if (!tenant) {
-      throw new NotFoundException('テナントが見つかりません');
-    }
-
-    // 設定を取得
+    // 設定とテナントを同時に取得
     const settings = await this.prisma.tenantSettings.findUnique({
       where: { tenantId },
+      include: { tenant: true },
     });
 
-    // 設定が存在する場合はそれを返す
-    if (settings?.tagColorDefaults) {
-      const stored = settings.tagColorDefaults as Record<string, unknown>;
-      return this.mergeWithDefaults(stored);
+    if (settings) {
+      // テナントが存在しない場合（外部キー制約により通常は発生しない）
+      if (!settings.tenant) {
+        throw new NotFoundException('テナントが見つかりません');
+      }
+      // 設定が存在する場合はそれを返す
+      if (settings.tagColorDefaults) {
+        return this.mergeWithDefaults(settings.tagColorDefaults as StoredDefaults);
+      }
+    } else {
+      // 設定が存在しない場合はテナントの存在のみ確認
+      const tenant = await this.prisma.tenant.findUnique({
+        where: { id: tenantId },
+      });
+      if (!tenant) {
+        throw new NotFoundException('テナントが見つかりません');
+      }
     }
 
     // 設定が存在しない場合はフロントエンドのデフォルト値を返す
@@ -70,15 +88,6 @@ export class TenantSettingsService {
     tenantId: string,
     dto: UpdateTagColorDefaultsDto,
   ): Promise<TagColorDefaultsDto> {
-    // テナントの存在確認
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
-    if (!tenant) {
-      throw new NotFoundException('テナントが見つかりません');
-    }
-
     // 既存の設定を取得
     const existingSettings = await this.prisma.tenantSettings.findUnique({
       where: { tenantId },
@@ -86,37 +95,46 @@ export class TenantSettingsService {
 
     // 既存の設定とマージ
     const currentDefaults = existingSettings?.tagColorDefaults
-      ? (existingSettings.tagColorDefaults as Record<string, unknown>)
+      ? (existingSettings.tagColorDefaults as StoredDefaults)
       : {};
 
-    const updatedDefaults = {
+    const updatedDefaults: StoredDefaults = {
       category: {
-        ...(currentDefaults.category as Record<string, unknown> || FRONTEND_DEFAULTS.category),
+        ...(currentDefaults.category || FRONTEND_DEFAULTS.category),
         ...(dto.category || {}),
       },
       group: {
-        ...(currentDefaults.group as Record<string, unknown> || FRONTEND_DEFAULTS.group),
+        ...(currentDefaults.group || FRONTEND_DEFAULTS.group),
         ...(dto.group || {}),
       },
       tag: {
-        ...(currentDefaults.tag as Record<string, unknown> || FRONTEND_DEFAULTS.tag),
+        ...(currentDefaults.tag || FRONTEND_DEFAULTS.tag),
         ...(dto.tag || {}),
       },
     };
 
-    // 設定を更新（upsert）
-    const updated = await this.prisma.tenantSettings.upsert({
-      where: { tenantId },
-      create: {
-        tenantId,
-        tagColorDefaults: updatedDefaults,
-      },
-      update: {
-        tagColorDefaults: updatedDefaults,
-      },
-    });
+    try {
+      // 設定を更新（upsert）
+      // 外部キー制約により、存在しないテナントIDに対しては自動的に失敗する
+      const updated = await this.prisma.tenantSettings.upsert({
+        where: { tenantId },
+        create: {
+          tenantId,
+          tagColorDefaults: updatedDefaults as Prisma.InputJsonValue,
+        },
+        update: {
+          tagColorDefaults: updatedDefaults as Prisma.InputJsonValue,
+        },
+      });
 
-    return this.mergeWithDefaults(updated.tagColorDefaults as Record<string, unknown>);
+      return this.mergeWithDefaults(updated.tagColorDefaults as StoredDefaults);
+    } catch (error) {
+      // Prisma の外部キー制約エラーをキャッチ
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw new NotFoundException('テナントが見つかりません');
+      }
+      throw error;
+    }
   }
 
   /**
@@ -125,20 +143,20 @@ export class TenantSettingsService {
    * @param stored ストアされた設定
    * @returns マージ後の設定
    */
-  private mergeWithDefaults(stored: Record<string, unknown>): TagColorDefaultsDto {
+  private mergeWithDefaults(stored: StoredDefaults): TagColorDefaultsDto {
     return {
       category: {
         ...FRONTEND_DEFAULTS.category,
-        ...(stored.category as Record<string, unknown> || {}),
+        ...(stored.category || {}),
       },
       group: {
         ...FRONTEND_DEFAULTS.group,
-        ...(stored.group as Record<string, unknown> || {}),
+        ...(stored.group || {}),
       },
       tag: {
         ...FRONTEND_DEFAULTS.tag,
-        ...(stored.tag as Record<string, unknown> || {}),
+        ...(stored.tag || {}),
       },
-    } as TagColorDefaultsDto;
+    };
   }
 }

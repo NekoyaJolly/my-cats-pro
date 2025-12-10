@@ -6,6 +6,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
@@ -52,7 +53,7 @@ export class TenantSettingsController {
   @ApiResponse({ status: 404, description: 'テナントが見つかりません' })
   async getTagColorDefaults(@GetUser() user: RequestUser): Promise<TagColorDefaultsDto> {
     if (!user.tenantId) {
-      throw new Error('ユーザーにテナントが関連付けられていません');
+      throw new BadRequestException('テナント情報が不足しています');
     }
     return this.tenantSettingsService.getTagColorDefaults(user.tenantId);
   }
@@ -83,7 +84,7 @@ export class TenantSettingsController {
     @Body() dto: UpdateTagColorDefaultsDto,
   ): Promise<TagColorDefaultsDto> {
     if (!user.tenantId) {
-      throw new Error('ユーザーにテナントが関連付けられていません');
+      throw new BadRequestException('テナント情報が不足しています');
     }
     return this.tenantSettingsService.updateTagColorDefaults(user.tenantId, dto);
   }

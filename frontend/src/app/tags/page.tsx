@@ -1372,6 +1372,26 @@ export default function TagsPage() {
   const { data: colorDefaults } = useGetTagColorDefaults();
   const updateTagColorDefaults = useUpdateTagColorDefaults();
 
+  // デフォルト設定更新のヘルパー関数
+  const updateColorDefaultsIfNeeded = async (
+    type: 'category' | 'group' | 'tag',
+    setBg: boolean,
+    setText: boolean,
+    values: { color: string; textColor: string }
+  ) => {
+    if (!setBg && !setText) return;
+    
+    const updates: { color?: string; textColor?: string } = {};
+    if (setBg) {
+      updates.color = values.color;
+    }
+    if (setText) {
+      updates.textColor = values.textColor;
+    }
+    
+    await updateTagColorDefaults.mutateAsync({ [type]: updates });
+  };
+
   // 自動化ルール関連
   const { data: automationRulesData, isLoading: isLoadingAutomationRules } = useGetAutomationRules();
   const createAutomationRule = useCreateAutomationRule();
@@ -1519,16 +1539,12 @@ export default function TagsPage() {
       }
 
       // デフォルト設定の更新
-      if (setAsGroupDefaultBgColor || setAsGroupDefaultTextColor) {
-        const updates: Record<string, string> = {};
-        if (setAsGroupDefaultBgColor) {
-          updates.color = values.color;
-        }
-        if (setAsGroupDefaultTextColor) {
-          updates.textColor = values.textColor;
-        }
-        await updateTagColorDefaults.mutateAsync({ group: updates });
-      }
+      await updateColorDefaultsIfNeeded(
+        'group',
+        setAsGroupDefaultBgColor,
+        setAsGroupDefaultTextColor,
+        values
+      );
 
       closeGroupModal();
     } catch {
@@ -1640,16 +1656,12 @@ export default function TagsPage() {
       }
 
       // デフォルト設定の更新
-      if (setAsCategoryDefaultBgColor || setAsCategoryDefaultTextColor) {
-        const updates: Record<string, string> = {};
-        if (setAsCategoryDefaultBgColor) {
-          updates.color = values.color;
-        }
-        if (setAsCategoryDefaultTextColor) {
-          updates.textColor = values.textColor;
-        }
-        await updateTagColorDefaults.mutateAsync({ category: updates });
-      }
+      await updateColorDefaultsIfNeeded(
+        'category',
+        setAsCategoryDefaultBgColor,
+        setAsCategoryDefaultTextColor,
+        values
+      );
 
       closeCategoryModal();
     } catch {
@@ -1667,16 +1679,12 @@ export default function TagsPage() {
       }
 
       // デフォルト設定の更新
-      if (setAsTagDefaultBgColor || setAsTagDefaultTextColor) {
-        const updates: Record<string, string> = {};
-        if (setAsTagDefaultBgColor) {
-          updates.color = values.color;
-        }
-        if (setAsTagDefaultTextColor) {
-          updates.textColor = values.textColor;
-        }
-        await updateTagColorDefaults.mutateAsync({ tag: updates });
-      }
+      await updateColorDefaultsIfNeeded(
+        'tag',
+        setAsTagDefaultBgColor,
+        setAsTagDefaultTextColor,
+        values
+      );
 
       closeTagModal();
     } catch {
