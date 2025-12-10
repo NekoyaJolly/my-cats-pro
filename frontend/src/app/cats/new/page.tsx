@@ -141,7 +141,6 @@ export default function CatRegistrationPage() {
                   render={({ field }) => (
                     <InputWithFloatingLabel
                       label="猫の名前"
-                      placeholder="名前を入力してください"
                       required
                       error={errors.name?.message}
                       {...field}
@@ -177,7 +176,6 @@ export default function CatRegistrationPage() {
                     render={({ field }) => (
                       <SelectWithFloatingLabel
                         label="性別"
-                        placeholder="性別を選択"
                         data={[
                           { value: 'MALE', label: 'Male (オス)' },
                           { value: 'FEMALE', label: 'Female (メス)' },
@@ -200,7 +198,6 @@ export default function CatRegistrationPage() {
                     render={({ field }) => (
                       <InputWithFloatingLabel
                         label="生年月日"
-                        placeholder="YYYY-MM-DD"
                         error={errors.birthDate?.message}
                         {...field}
                         value={field.value ?? ''}
@@ -238,7 +235,6 @@ export default function CatRegistrationPage() {
                     render={({ field }) => (
                       <InputWithFloatingLabel
                         label="マイクロチップ番号"
-                        placeholder="マイクロチップ番号"
                         error={errors.microchipNumber?.message}
                         {...field}
                         value={field.value ?? ''}
@@ -252,7 +248,6 @@ export default function CatRegistrationPage() {
                     render={({ field }) => (
                       <InputWithFloatingLabel
                         label="登録番号"
-                        placeholder="登録番号"
                         error={errors.registrationId?.message}
                         {...field}
                         value={field.value ?? ''}
