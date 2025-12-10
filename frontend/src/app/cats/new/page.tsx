@@ -7,7 +7,6 @@ import {
   Group,
   Stack,
   Textarea,
-  Select,
   Switch,
   Alert,
   LoadingOverlay,
@@ -28,6 +27,7 @@ import { ALPHANUM_SPACE_HYPHEN_PATTERN, MasterDataCombobox } from '@/components/
 import { useSelectionHistory } from '@/lib/hooks/use-selection-history';
 import { buildMasterOptions, createDisplayNameMap } from '@/lib/master-data/master-options';
 import { catFormSchema, type CatFormSchema as CatFormValues } from '@/lib/schemas';
+import { SelectWithFloatingLabel } from '@/components/ui/SelectWithFloatingLabel';
 const COAT_COLOR_DESCRIPTION = '半角英数字・スペース・ハイフンで検索できます。候補一覧からも選択できます。';
 
 export default function CatRegistrationPage() {
@@ -175,7 +175,7 @@ export default function CatRegistrationPage() {
                     name="gender"
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <SelectWithFloatingLabel
                         label="性別"
                         placeholder="性別を選択"
                         data={[
@@ -187,7 +187,7 @@ export default function CatRegistrationPage() {
                         required
                         error={errors.gender?.message}
                         value={field.value}
-                        onChange={(value) => field.onChange(value ?? field.value)}
+                        onChange={field.onChange}
                       />
                     )}
                   />
