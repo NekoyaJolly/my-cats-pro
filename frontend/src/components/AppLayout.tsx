@@ -126,6 +126,10 @@ const bottomNavigationItems = [
   { label: '交配', href: '/breeding', icon: IconHeartHandshake },
   { label: '子猫', href: '/kittens', icon: IconPaw },
   { label: 'ケア', href: '/care', icon: IconStethoscope },
+  { label: '医療', href: '/medical-records', icon: IconStethoscope },
+  { label: 'タグ', href: '/tags', icon: IconTag },
+  { label: '血統書', href: '/pedigrees', icon: IconCertificate },
+  { label: 'その他', href: '/more', icon: IconSettings },
 ];
 
 // 猫の統計情報の型
@@ -539,45 +543,60 @@ function BottomNavigation({ pathname }: { pathname: string }) {
         height: 64,
         backgroundColor: 'var(--surface)',
         borderTop: '1px solid var(--border-subtle)',
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
         zIndex: 100,
         boxShadow: '0 -4px 12px rgba(15, 23, 42, 0.05)',
         color: 'var(--text-muted)',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        WebkitOverflowScrolling: 'touch', // iOS用スムーススクロール
       }}
     >
-  {bottomNavigationItems.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const IconComponent = item.icon;
-        return (
-          <Box
-            key={item.href}
-            component={Link}
-            href={item.href}
-            style={{
-              textAlign: 'center',
-              textDecoration: 'none',
-              color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              fontSize: '0.8rem',
-            }}
-          >
-            <IconComponent size={24} stroke={1.5} />
-            <Text
-              size="xs"
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          height: '100%',
+          minWidth: 'max-content', // 子要素が収まる幅を確保
+          gap: 8,
+          paddingLeft: 12,
+          paddingRight: 12,
+        }}
+      >
+        {bottomNavigationItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const IconComponent = item.icon;
+          return (
+            <Box
+              key={item.href}
+              component={Link}
+              href={item.href}
               style={{
-                color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                fontWeight: 500,
+                textAlign: 'center',
+                textDecoration: 'none',
+                color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                fontSize: '0.8rem',
+                minWidth: 56, // アイテムの最小幅を固定
+                padding: '8px 4px',
               }}
             >
-              {item.label}
-            </Text>
-          </Box>
-        );
-      })}
+              <IconComponent size={24} stroke={1.5} />
+              <Text
+                size="xs"
+                style={{
+                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {item.label}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
     </Box>
   );
 }
