@@ -100,16 +100,16 @@ export class TenantSettingsService {
 
     const updatedDefaults: StoredDefaults = {
       category: {
-        ...(currentDefaults.category || FRONTEND_DEFAULTS.category),
-        ...(dto.category || {}),
+        color: dto.category?.color ?? currentDefaults.category?.color ?? FRONTEND_DEFAULTS.category.color,
+        textColor: dto.category?.textColor ?? currentDefaults.category?.textColor ?? FRONTEND_DEFAULTS.category.textColor,
       },
       group: {
-        ...(currentDefaults.group || FRONTEND_DEFAULTS.group),
-        ...(dto.group || {}),
+        color: dto.group?.color ?? currentDefaults.group?.color ?? FRONTEND_DEFAULTS.group.color,
+        textColor: dto.group?.textColor ?? currentDefaults.group?.textColor ?? FRONTEND_DEFAULTS.group.textColor,
       },
       tag: {
-        ...(currentDefaults.tag || FRONTEND_DEFAULTS.tag),
-        ...(dto.tag || {}),
+        color: dto.tag?.color ?? currentDefaults.tag?.color ?? FRONTEND_DEFAULTS.tag.color,
+        textColor: dto.tag?.textColor ?? currentDefaults.tag?.textColor ?? FRONTEND_DEFAULTS.tag.textColor,
       },
     };
 
@@ -146,16 +146,16 @@ export class TenantSettingsService {
   private mergeWithDefaults(stored: StoredDefaults): TagColorDefaultsDto {
     return {
       category: {
-        ...FRONTEND_DEFAULTS.category,
-        ...(stored.category || {}),
+        color: stored.category?.color ?? FRONTEND_DEFAULTS.category.color,
+        textColor: stored.category?.textColor ?? FRONTEND_DEFAULTS.category.textColor,
       },
       group: {
-        ...FRONTEND_DEFAULTS.group,
-        ...(stored.group || {}),
+        color: stored.group?.color ?? FRONTEND_DEFAULTS.group.color,
+        textColor: stored.group?.textColor ?? FRONTEND_DEFAULTS.group.textColor,
       },
       tag: {
-        ...FRONTEND_DEFAULTS.tag,
-        ...(stored.tag || {}),
+        color: stored.tag?.color ?? FRONTEND_DEFAULTS.tag.color,
+        textColor: stored.tag?.textColor ?? FRONTEND_DEFAULTS.tag.textColor,
       },
     };
   }
