@@ -100,16 +100,16 @@ export class TenantSettingsService {
 
     const updatedDefaults: StoredDefaults = {
       category: {
-        color: dto.category?.color ?? currentDefaults.category?.color ?? FRONTEND_DEFAULTS.category.color,
-        textColor: dto.category?.textColor ?? currentDefaults.category?.textColor ?? FRONTEND_DEFAULTS.category.textColor,
+        color: dto.category?.color ?? currentDefaults.category?.color ?? FRONTEND_DEFAULTS.category?.color ?? '#6366F1',
+        textColor: dto.category?.textColor ?? currentDefaults.category?.textColor ?? FRONTEND_DEFAULTS.category?.textColor ?? '#111827',
       },
       group: {
-        color: dto.group?.color ?? currentDefaults.group?.color ?? FRONTEND_DEFAULTS.group.color,
-        textColor: dto.group?.textColor ?? currentDefaults.group?.textColor ?? FRONTEND_DEFAULTS.group.textColor,
+        color: dto.group?.color ?? currentDefaults.group?.color ?? FRONTEND_DEFAULTS.group?.color ?? '#3B82F6',
+        textColor: dto.group?.textColor ?? currentDefaults.group?.textColor ?? FRONTEND_DEFAULTS.group?.textColor ?? '#111827',
       },
       tag: {
-        color: dto.tag?.color ?? currentDefaults.tag?.color ?? FRONTEND_DEFAULTS.tag.color,
-        textColor: dto.tag?.textColor ?? currentDefaults.tag?.textColor ?? FRONTEND_DEFAULTS.tag.textColor,
+        color: dto.tag?.color ?? currentDefaults.tag?.color ?? FRONTEND_DEFAULTS.tag?.color ?? '#3B82F6',
+        textColor: dto.tag?.textColor ?? currentDefaults.tag?.textColor ?? FRONTEND_DEFAULTS.tag?.textColor ?? '#FFFFFF',
       },
     };
 
@@ -146,16 +146,16 @@ export class TenantSettingsService {
   private mergeWithDefaults(stored: StoredDefaults): TagColorDefaultsDto {
     return {
       category: {
-        color: stored.category?.color ?? FRONTEND_DEFAULTS.category.color,
-        textColor: stored.category?.textColor ?? FRONTEND_DEFAULTS.category.textColor,
+        color: stored.category?.color ?? FRONTEND_DEFAULTS.category?.color ?? '#6366F1',
+        textColor: stored.category?.textColor ?? FRONTEND_DEFAULTS.category?.textColor ?? '#111827',
       },
       group: {
-        color: stored.group?.color ?? FRONTEND_DEFAULTS.group.color,
-        textColor: stored.group?.textColor ?? FRONTEND_DEFAULTS.group.textColor,
+        color: stored.group?.color ?? FRONTEND_DEFAULTS.group?.color ?? '#3B82F6',
+        textColor: stored.group?.textColor ?? FRONTEND_DEFAULTS.group?.textColor ?? '#111827',
       },
       tag: {
-        color: stored.tag?.color ?? FRONTEND_DEFAULTS.tag.color,
-        textColor: stored.tag?.textColor ?? FRONTEND_DEFAULTS.tag.textColor,
+        color: stored.tag?.color ?? FRONTEND_DEFAULTS.tag?.color ?? '#3B82F6',
+        textColor: stored.tag?.textColor ?? FRONTEND_DEFAULTS.tag?.textColor ?? '#FFFFFF',
       },
     };
   }
