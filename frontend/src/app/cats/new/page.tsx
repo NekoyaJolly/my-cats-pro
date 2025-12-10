@@ -2,10 +2,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Box,
   Card,
   Container,
   Group,
   Stack,
+  Text,
   TextInput,
   Textarea,
   Select,
@@ -28,7 +30,6 @@ import { ALPHANUM_SPACE_HYPHEN_PATTERN, MasterDataCombobox } from '@/components/
 import { useSelectionHistory } from '@/lib/hooks/use-selection-history';
 import { buildMasterOptions, createDisplayNameMap } from '@/lib/master-data/master-options';
 import { catFormSchema, type CatFormSchema as CatFormValues } from '@/lib/schemas';
-const COAT_COLOR_DESCRIPTION = '半角英数字・スペース・ハイフンで検索できます。候補一覧からも選択できます。';
 
 export default function CatRegistrationPage() {
   const router = useRouter();
@@ -150,14 +151,20 @@ export default function CatRegistrationPage() {
                   )}
                 />
 
+                <Box mb="xs">
+                  <Text size="sm" c="dimmed">
+                    品種・色柄はコードまたは名称で検索できます。候補一覧から選択してください。
+                  </Text>
+                </Box>
                 <Group grow>
                   <Controller
                     name="breedId"
                     control={control}
                     render={({ field }) => (
                       <MasterDataCombobox
-                        label="品種"
-                        placeholder="コードや名称を入力"
+                        label=""
+                        placeholder="品種を入力"
+                        description=""
                         value={field.value ?? undefined}
                         onChange={(next) => field.onChange(next ?? undefined)}
                         options={breedOptions}
@@ -213,8 +220,9 @@ export default function CatRegistrationPage() {
                     control={control}
                     render={({ field }) => (
                       <MasterDataCombobox
-                        label="色柄"
-                        placeholder="コードや名称を入力"
+                        label=""
+                        placeholder="色柄を入力"
+                        description=""
                         value={field.value ?? undefined}
                         onChange={(next) => field.onChange(next ?? undefined)}
                         options={coatColorOptions}
@@ -224,7 +232,6 @@ export default function CatRegistrationPage() {
                         loading={isCoatColorsLoading || isCoatMasterLoading}
                         historyLabel="最近の色柄"
                         onOptionSelected={recordCoatSelection}
-                        description={COAT_COLOR_DESCRIPTION}
                         sanitizePattern={ALPHANUM_SPACE_HYPHEN_PATTERN}
                       />
                     )}
