@@ -6,7 +6,6 @@ import {
   Container,
   Group,
   Stack,
-  TextInput,
   Textarea,
   Select,
   Switch,
@@ -14,6 +13,7 @@ import {
   LoadingOverlay,
   Tabs,
 } from '@mantine/core';
+import { InputWithFloatingLabel } from '@/components/ui/InputWithFloatingLabel';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus } from '@tabler/icons-react';
@@ -139,7 +139,7 @@ export default function CatRegistrationPage() {
                   name="name"
                   control={control}
                   render={({ field }) => (
-                    <TextInput
+                    <InputWithFloatingLabel
                       label="猫の名前"
                       placeholder="名前を入力してください"
                       required
@@ -198,7 +198,7 @@ export default function CatRegistrationPage() {
                     name="birthDate"
                     control={control}
                     render={({ field }) => (
-                      <TextInput
+                      <InputWithFloatingLabel
                         label="生年月日"
                         placeholder="YYYY-MM-DD"
                         error={errors.birthDate?.message}
@@ -236,7 +236,7 @@ export default function CatRegistrationPage() {
                     name="microchipNumber"
                     control={control}
                     render={({ field }) => (
-                      <TextInput
+                      <InputWithFloatingLabel
                         label="マイクロチップ番号"
                         placeholder="マイクロチップ番号"
                         error={errors.microchipNumber?.message}
@@ -250,7 +250,7 @@ export default function CatRegistrationPage() {
                     name="registrationId"
                     control={control}
                     render={({ field }) => (
-                      <TextInput
+                      <InputWithFloatingLabel
                         label="登録番号"
                         placeholder="登録番号"
                         error={errors.registrationId?.message}
