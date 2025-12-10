@@ -187,7 +187,7 @@ export default function CatRegistrationPage() {
                         required
                         error={errors.gender?.message}
                         value={field.value}
-                        onChange={(value) => field.onChange(value ?? field.value)}
+                        onChange={field.onChange}
                       />
                     )}
                   />
