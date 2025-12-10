@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../client';
+import { apiClient } from '../client';
 import { createDomainQueryKeys } from './query-key-factory';
 
 // テナント設定用のクエリキーファクトリ
@@ -43,8 +43,8 @@ export function useGetTagColorDefaults() {
   return useQuery<TagColorDefaults>({
     queryKey: tenantSettingsKeys.extras!.tagColorDefaults(),
     queryFn: async () => {
-      const response = await api.get<TagColorDefaults>('/tenant-settings/tag-color-defaults');
-      return response.data;
+      const response = await apiClient.get('/tenant-settings/tag-color-defaults' as never);
+      return response.data as TagColorDefaults;
     },
     staleTime: 5 * 60 * 1000, // 5分間はキャッシュを使用
   });
@@ -58,11 +58,11 @@ export function useUpdateTagColorDefaults() {
 
   return useMutation<TagColorDefaults, Error, UpdateTagColorDefaultsRequest>({
     mutationFn: async (request: UpdateTagColorDefaultsRequest) => {
-      const response = await api.put<TagColorDefaults>(
-        '/tenant-settings/tag-color-defaults',
-        request
+      const response = await apiClient.put(
+        '/tenant-settings/tag-color-defaults' as never,
+        { body: request } as never
       );
-      return response.data;
+      return response.data as TagColorDefaults;
     },
     onSuccess: (data) => {
       // キャッシュを更新
