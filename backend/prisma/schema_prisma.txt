@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-12-07T17:19:14.446Z
+// Prisma Schema - Last Updated: 2025-12-11T11:44:21.056Z
 // Auto-generated from schema.prisma
 
 generator client {
@@ -33,11 +33,34 @@ model Tenant {
   // Relations
   users       User[]
   invitations InvitationToken[]
+  settings    TenantSettings?
 
   // Indexes
   @@index([slug])
   @@index([isActive])
   @@map("tenants")
+}
+
+model TenantSettings {
+  id        String   @id @default(uuid())
+  tenantId  String   @unique @map("tenant_id")
+  
+  // タグカラーデフォルト設定（JSON型）
+  // 期待される構造:
+  // {
+  //   category: { color: "#6366F1", textColor: "#111827" },
+  //   group: { color: "#3B82F6", textColor: "#111827" },
+  //   tag: { color: "#3B82F6", textColor: "#FFFFFF" }
+  // }
+  tagColorDefaults Json?  @map("tag_color_defaults")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_settings")
 }
 
 model InvitationToken {

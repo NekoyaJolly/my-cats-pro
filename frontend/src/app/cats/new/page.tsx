@@ -6,13 +6,13 @@ import {
   Container,
   Group,
   Stack,
-  Textarea,
   Switch,
   Alert,
   LoadingOverlay,
   Tabs,
 } from '@mantine/core';
 import { InputWithFloatingLabel } from '@/components/ui/InputWithFloatingLabel';
+import { TextareaWithFloatingLabel } from '@/components/ui/TextareaWithFloatingLabel';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus } from '@tabler/icons-react';
@@ -28,7 +28,6 @@ import { useSelectionHistory } from '@/lib/hooks/use-selection-history';
 import { buildMasterOptions, createDisplayNameMap } from '@/lib/master-data/master-options';
 import { catFormSchema, type CatFormSchema as CatFormValues } from '@/lib/schemas';
 import { SelectWithFloatingLabel } from '@/components/ui/SelectWithFloatingLabel';
-const COAT_COLOR_DESCRIPTION = '半角英数字・スペース・ハイフンで検索できます。候補一覧からも選択できます。';
 
 export default function CatRegistrationPage() {
   const router = useRouter();
@@ -62,7 +61,7 @@ export default function CatRegistrationPage() {
     resolver: zodResolver(catFormSchema),
     defaultValues: {
       name: '',
-      gender: 'MALE',
+      gender: undefined,
       birthDate: '',
       breedId: undefined,
       coatColorId: undefined,
@@ -134,38 +133,19 @@ export default function CatRegistrationPage() {
         <Tabs.Panel value="register" pt="md">
           <Card shadow="sm" padding="lg" radius="md" withBorder>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <Stack gap="md">
-                <Controller
-                  name="name"
-                  control={control}
-                  render={({ field }) => (
-                    <InputWithFloatingLabel
-                      label="猫の名前"
-                      required
-                      error={errors.name?.message}
-                      {...field}
-                      value={field.value}
-                    />
-                  )}
-                />
-
-                <Group grow>
+              <Stack gap={10}>
+                {/* 1行目: 猫の名前、性別 */}
+                <Group grow gap={10}>
                   <Controller
-                    name="breedId"
+                    name="name"
                     control={control}
                     render={({ field }) => (
-                      <MasterDataCombobox
-                        label="品種"
-                        placeholder="コードや名称を入力"
-                        value={field.value ?? undefined}
-                        onChange={(next) => field.onChange(next ?? undefined)}
-                        options={breedOptions}
-                        historyItems={breedHistory}
-                        error={errors.breedId?.message}
-                        disabled={isSubmitting}
-                        loading={isBreedsLoading || isBreedMasterLoading}
-                        historyLabel="最近の品種"
-                        onOptionSelected={recordBreedSelection}
+                      <InputWithFloatingLabel
+                        label="猫の名前"
+                        required
+                        error={errors.name?.message}
+                        {...field}
+                        value={field.value}
                       />
                     )}
                   />
@@ -184,14 +164,61 @@ export default function CatRegistrationPage() {
                         ]}
                         required
                         error={errors.gender?.message}
-                        value={field.value}
+                        value={field.value ?? null}
                         onChange={field.onChange}
                       />
                     )}
                   />
                 </Group>
 
-                <Group grow>
+                {/* 2行目: 猫種コンボ、色柄コンボ */}
+                <Group grow gap={10}>
+                  <Controller
+                    name="breedId"
+                    control={control}
+                    render={({ field }) => (
+                      <MasterDataCombobox
+                        label=""
+                        placeholder="猫種コードや名称を入力"
+                        description=""
+                        value={field.value ?? undefined}
+                        onChange={(next) => field.onChange(next ?? undefined)}
+                        options={breedOptions}
+                        historyItems={breedHistory}
+                        error={errors.breedId?.message}
+                        disabled={isSubmitting}
+                        loading={isBreedsLoading || isBreedMasterLoading}
+                        historyLabel="最近の品種"
+                        onOptionSelected={recordBreedSelection}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="coatColorId"
+                    control={control}
+                    render={({ field }) => (
+                      <MasterDataCombobox
+                        label=""
+                        placeholder="色柄コードや名称を入力"
+                        description=""
+                        value={field.value ?? undefined}
+                        onChange={(next) => field.onChange(next ?? undefined)}
+                        options={coatColorOptions}
+                        historyItems={coatHistory}
+                        error={errors.coatColorId?.message}
+                        disabled={isSubmitting}
+                        loading={isCoatColorsLoading || isCoatMasterLoading}
+                        historyLabel="最近の色柄"
+                        onOptionSelected={recordCoatSelection}
+                        sanitizePattern={ALPHANUM_SPACE_HYPHEN_PATTERN}
+                      />
+                    )}
+                  />
+                </Group>
+
+                {/* 3行目: 生年月日、マイクロチップ番号、登録番号 */}
+                <Group grow gap={10}>
                   <Controller
                     name="birthDate"
                     control={control}
@@ -205,30 +232,6 @@ export default function CatRegistrationPage() {
                     )}
                   />
 
-                  <Controller
-                    name="coatColorId"
-                    control={control}
-                    render={({ field }) => (
-                      <MasterDataCombobox
-                        label="色柄"
-                        placeholder="コードや名称を入力"
-                        value={field.value ?? undefined}
-                        onChange={(next) => field.onChange(next ?? undefined)}
-                        options={coatColorOptions}
-                        historyItems={coatHistory}
-                        error={errors.coatColorId?.message}
-                        disabled={isSubmitting}
-                        loading={isCoatColorsLoading || isCoatMasterLoading}
-                        historyLabel="最近の色柄"
-                        onOptionSelected={recordCoatSelection}
-                        description={COAT_COLOR_DESCRIPTION}
-                        sanitizePattern={ALPHANUM_SPACE_HYPHEN_PATTERN}
-                      />
-                    )}
-                  />
-                </Group>
-
-                <Group grow>
                   <Controller
                     name="microchipNumber"
                     control={control}
@@ -256,11 +259,12 @@ export default function CatRegistrationPage() {
                   />
                 </Group>
 
+                {/* 4行目: 備考 */}
                 <Controller
                   name="description"
                   control={control}
                   render={({ field }) => (
-                    <Textarea
+                    <TextareaWithFloatingLabel
                       label="備考"
                       placeholder="特徴や性格などを記入してください"
                       minRows={3}
@@ -271,18 +275,7 @@ export default function CatRegistrationPage() {
                   )}
                 />
 
-                <Controller
-                  name="isInHouse"
-                  control={control}
-                  render={({ field }) => (
-                    <Switch
-                      label="施設内に在舎している猫です"
-                      checked={field.value}
-                      onChange={(event) => field.onChange(event.currentTarget.checked)}
-                    />
-                  )}
-                />
-
+                {/* 5行目: タグ */}
                 <Controller
                   name="tagIds"
                   control={control}
@@ -293,6 +286,19 @@ export default function CatRegistrationPage() {
                       label="タグ"
                       placeholder="猫の特徴タグを選択"
                       disabled={isSubmitting}
+                    />
+                  )}
+                />
+
+                {/* 6行目: 在舎スイッチ */}
+                <Controller
+                  name="isInHouse"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      label="施設内に在舎している猫です"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.currentTarget.checked)}
                     />
                   )}
                 />

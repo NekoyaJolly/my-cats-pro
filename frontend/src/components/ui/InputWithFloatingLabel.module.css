@@ -17,9 +17,29 @@
 
 /* Textarea specific adjustment */
 textarea.input {
-  height: 36px;
-  min-height: 36px;
-  padding-top: 11px;
+  height: auto !important;
+  min-height: 80px !important;
+  padding-top: 22px !important;
+  padding-left: 12px !important;
+  padding-bottom: 8px !important;
+  line-height: 1.5 !important;
+}
+
+/* Textarea placeholder positioning */
+textarea.input::placeholder {
+  line-height: 1.5;
+}
+
+/* Textarea label positioning - align with text start */
+.root:has(textarea) .label {
+  top: 6px;
+  left: 12px;
+}
+
+/* Textarea floating label adjustment */
+.root:has(textarea) .label[data-floating] {
+  transform: translateY(-4px);
+  font-size: 10px;
 }
 
 .label {
