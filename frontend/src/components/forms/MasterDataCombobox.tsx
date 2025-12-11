@@ -188,6 +188,14 @@ export function MasterDataCombobox({
             onClick={() => combobox.openDropdown()}
             placeholder={placeholder}
             disabled={disabled}
+            styles={{
+              input: {
+                height: '36px',
+                paddingTop: '0',
+                paddingBottom: '0',
+                lineHeight: '36px',
+              },
+            }}
             rightSection={(
               <Group gap={4} wrap="nowrap">
                 {value && !disabled && (

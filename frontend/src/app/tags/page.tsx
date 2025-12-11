@@ -26,6 +26,7 @@ import {
   Button,
   Card,
   Center,
+  Checkbox,
   Collapse,
   ColorInput,
   Container,
@@ -90,6 +91,10 @@ import {
   type UpdateTagGroupRequest,
   type UpdateTagRequest,
 } from '@/lib/api/hooks/use-tags';
+import {
+  useGetTagColorDefaults,
+  useUpdateTagColorDefaults,
+} from '@/lib/api/hooks/use-tenant-settings';
 import {
   useGetAutomationRules,
   useCreateAutomationRule,
@@ -1075,6 +1080,18 @@ export default function TagsPage() {
   const [executeRuleModalOpened, { open: openExecuteRuleModal, close: closeExecuteRuleModal }] = useDisclosure(false);
   const [executingRule, setExecutingRule] = useState<TagAutomationRule | null>(null);
 
+  // デフォルト設定用のチェックボックス状態
+  const [setAsCategoryDefaultBgColor, setSetAsCategoryDefaultBgColor] = useState(false);
+  const [setAsCategoryDefaultTextColor, setSetAsCategoryDefaultTextColor] = useState(false);
+  const [setAsGroupDefaultBgColor, setSetAsGroupDefaultBgColor] = useState(false);
+  const [setAsGroupDefaultTextColor, setSetAsGroupDefaultTextColor] = useState(false);
+  const [setAsTagDefaultBgColor, setSetAsTagDefaultBgColor] = useState(false);
+  const [setAsTagDefaultTextColor, setSetAsTagDefaultTextColor] = useState(false);
+  
+  // 親階層からの継承用のチェックボックス状態
+  const [inheritGroupColorFromCategory, setInheritGroupColorFromCategory] = useState(false);
+  const [inheritTagColorFromGroup, setInheritTagColorFromGroup] = useState(false);
+
   const queryFilters = useMemo<TagCategoryFilters | undefined>(() => {
     const payload: TagCategoryFilters = {};
     if (filters.scopes.length) {
@@ -1351,6 +1368,30 @@ export default function TagsPage() {
   const deleteTag = useDeleteTag();
   const reorderTagsMutation = useReorderTags();
 
+  // テナントのデフォルトカラー設定
+  const { data: colorDefaults } = useGetTagColorDefaults();
+  const updateTagColorDefaults = useUpdateTagColorDefaults();
+
+  // デフォルト設定更新のヘルパー関数
+  const updateColorDefaultsIfNeeded = async (
+    type: 'category' | 'group' | 'tag',
+    setBg: boolean,
+    setText: boolean,
+    values: { color: string; textColor: string }
+  ) => {
+    if (!setBg && !setText) return;
+    
+    const updates: { color?: string; textColor?: string } = {};
+    if (setBg) {
+      updates.color = values.color;
+    }
+    if (setText) {
+      updates.textColor = values.textColor;
+    }
+    
+    await updateTagColorDefaults.mutateAsync({ [type]: updates });
+  };
+
   // 自動化ルール関連
   const { data: automationRulesData, isLoading: isLoadingAutomationRules } = useGetAutomationRules();
   const createAutomationRule = useCreateAutomationRule();
@@ -1418,12 +1459,15 @@ export default function TagsPage() {
       key: '',
       name: '',
       description: '',
-      color: DEFAULT_CATEGORY_COLOR,
-      textColor: DEFAULT_CATEGORY_TEXT_COLOR,
+      color: colorDefaults?.category?.color || DEFAULT_CATEGORY_COLOR,
+      textColor: colorDefaults?.category?.textColor || DEFAULT_CATEGORY_TEXT_COLOR,
       scopes: [],
       isActive: true,
     });
     setScopeDraft('');
+    // チェックボックスをリセット
+    setSetAsCategoryDefaultBgColor(false);
+    setSetAsCategoryDefaultTextColor(false);
     openCategoryModal();
   };
 
@@ -1450,10 +1494,14 @@ export default function TagsPage() {
       categoryId: selectedCategoryId,
       name: '',
       description: '',
-      color: DEFAULT_GROUP_COLOR,
-      textColor: DEFAULT_GROUP_TEXT_COLOR,
+      color: colorDefaults?.group?.color || DEFAULT_GROUP_COLOR,
+      textColor: colorDefaults?.group?.textColor || DEFAULT_GROUP_TEXT_COLOR,
       isActive: true,
     });
+    // チェックボックスをリセット
+    setSetAsGroupDefaultBgColor(false);
+    setSetAsGroupDefaultTextColor(false);
+    setInheritGroupColorFromCategory(false);
     openGroupModal();
   };
 
@@ -1489,6 +1537,15 @@ export default function TagsPage() {
       } else {
         await createGroup.mutateAsync(payload);
       }
+
+      // デフォルト設定の更新
+      await updateColorDefaultsIfNeeded(
+        'group',
+        setAsGroupDefaultBgColor,
+        setAsGroupDefaultTextColor,
+        values
+      );
+
       closeGroupModal();
     } catch {
       // noop
@@ -1542,12 +1599,16 @@ export default function TagsPage() {
       categoryId: selectedCategoryId ?? '',
       groupId: selectedGroupId ?? '',
       description: '',
-      color: DEFAULT_TAG_COLOR,
-      textColor: DEFAULT_TAG_TEXT_COLOR,
+      color: colorDefaults?.tag?.color || DEFAULT_TAG_COLOR,
+      textColor: colorDefaults?.tag?.textColor || DEFAULT_TAG_TEXT_COLOR,
       allowsManual: true,
       allowsAutomation: true,
       isActive: true,
     });
+    // チェックボックスをリセット
+    setSetAsTagDefaultBgColor(false);
+    setSetAsTagDefaultTextColor(false);
+    setInheritTagColorFromGroup(false);
     openTagModal();
   };
 
@@ -1593,6 +1654,15 @@ export default function TagsPage() {
       } else {
         await createCategory.mutateAsync(payload);
       }
+
+      // デフォルト設定の更新
+      await updateColorDefaultsIfNeeded(
+        'category',
+        setAsCategoryDefaultBgColor,
+        setAsCategoryDefaultTextColor,
+        values
+      );
+
       closeCategoryModal();
     } catch {
       // エラーハンドリングはミューテーション側の通知に委譲
@@ -1607,6 +1677,15 @@ export default function TagsPage() {
       } else {
         await createTag.mutateAsync(payload);
       }
+
+      // デフォルト設定の更新
+      await updateColorDefaultsIfNeeded(
+        'tag',
+        setAsTagDefaultBgColor,
+        setAsTagDefaultTextColor,
+        values
+      );
+
       closeTagModal();
     } catch {
       // 通知はミューテーション側で実施
@@ -2206,22 +2285,34 @@ export default function TagsPage() {
                 onChange={(event) => categoryForm.setFieldValue('description', event.currentTarget.value)}
               />
               <Group gap="md" align="flex-end">
-                <ColorInput
-                  label="背景カラー"
-                  swatches={PRESET_COLORS}
-                  value={categoryForm.values.color}
-                  onChange={(value) => categoryForm.setFieldValue('color', value || DEFAULT_CATEGORY_COLOR)}
-                  style={{ flex: 1 }}
-                />
-                <ColorInput
-                  label="テキストカラー"
-                  swatches={PRESET_COLORS}
-                  value={categoryForm.values.textColor}
-                  onChange={(value) =>
-                    categoryForm.setFieldValue('textColor', value || DEFAULT_CATEGORY_TEXT_COLOR)
-                  }
-                  style={{ flex: 1 }}
-                />
+                <Stack gap="xs" style={{ flex: 1 }}>
+                  <ColorInput
+                    label="背景カラー"
+                    swatches={PRESET_COLORS}
+                    value={categoryForm.values.color}
+                    onChange={(value) => categoryForm.setFieldValue('color', value || DEFAULT_CATEGORY_COLOR)}
+                  />
+                  <Checkbox
+                    label="新規カテゴリのデフォルトに設定"
+                    checked={setAsCategoryDefaultBgColor}
+                    onChange={(e) => setSetAsCategoryDefaultBgColor(e.currentTarget.checked)}
+                  />
+                </Stack>
+                <Stack gap="xs" style={{ flex: 1 }}>
+                  <ColorInput
+                    label="テキストカラー"
+                    swatches={PRESET_COLORS}
+                    value={categoryForm.values.textColor}
+                    onChange={(value) =>
+                      categoryForm.setFieldValue('textColor', value || DEFAULT_CATEGORY_TEXT_COLOR)
+                    }
+                  />
+                  <Checkbox
+                    label="新規カテゴリのデフォルトに設定"
+                    checked={setAsCategoryDefaultTextColor}
+                    onChange={(e) => setSetAsCategoryDefaultTextColor(e.currentTarget.checked)}
+                  />
+                </Stack>
               </Group>
               <Card
                 withBorder
@@ -2319,23 +2410,49 @@ export default function TagsPage() {
                 value={groupForm.values.description}
                 onChange={(event) => groupForm.setFieldValue('description', event.currentTarget.value)}
               />
-              <Group gap="md" align="flex-end">
-                <ColorInput
-                  label="背景カラー"
-                  swatches={PRESET_COLORS}
-                  value={groupForm.values.color}
-                  onChange={(value) => groupForm.setFieldValue('color', value || DEFAULT_GROUP_COLOR)}
-                  style={{ flex: 1 }}
-                />
-                <ColorInput
-                  label="テキストカラー"
-                  swatches={PRESET_COLORS}
-                  value={groupForm.values.textColor}
-                  onChange={(value) =>
-                    groupForm.setFieldValue('textColor', value || DEFAULT_GROUP_TEXT_COLOR)
+              <Checkbox
+                label="親カテゴリのカラーを継承"
+                checked={inheritGroupColorFromCategory}
+                onChange={(e) => {
+                  setInheritGroupColorFromCategory(e.currentTarget.checked);
+                  if (e.currentTarget.checked) {
+                    const selectedCategory = sortedCategories.find(c => c.id === groupForm.values.categoryId);
+                    if (selectedCategory) {
+                      groupForm.setFieldValue('color', selectedCategory.color || DEFAULT_CATEGORY_COLOR);
+                      groupForm.setFieldValue('textColor', selectedCategory.textColor || DEFAULT_CATEGORY_TEXT_COLOR);
+                    }
                   }
-                  style={{ flex: 1 }}
-                />
+                }}
+              />
+              <Group gap="md" align="flex-end">
+                <Stack gap="xs" style={{ flex: 1 }}>
+                  <ColorInput
+                    label="背景カラー"
+                    swatches={PRESET_COLORS}
+                    value={groupForm.values.color}
+                    onChange={(value) => groupForm.setFieldValue('color', value || DEFAULT_GROUP_COLOR)}
+                  />
+                  <Checkbox
+                    label="新規グループのデフォルトに設定"
+                    checked={setAsGroupDefaultBgColor}
+                    onChange={(e) => setSetAsGroupDefaultBgColor(e.currentTarget.checked)}
+                  />
+                </Stack>
+                <Stack gap="xs" style={{ flex: 1 }}>
+                  <ColorInput
+                    label="テキストカラー"
+                    swatches={PRESET_COLORS}
+                    value={groupForm.values.textColor}
+                    onChange={(value) =>
+                      groupForm.setFieldValue('textColor', value || DEFAULT_GROUP_TEXT_COLOR)
+                    }
+                  />
+                  <Checkbox
+                    label="新規グループのデフォルトに設定"
+                    checked={setAsGroupDefaultTextColor}
+                    onChange={(e) => setSetAsGroupDefaultTextColor(e.currentTarget.checked)}
+                  />
+                </Stack>
               </Group>
               <Card
                 withBorder
@@ -2414,23 +2531,50 @@ export default function TagsPage() {
                 value={tagForm.values.description}
                 onChange={(event) => tagForm.setFieldValue('description', event.currentTarget.value)}
               />
-              <Group gap="md" align="flex-end">
-                <ColorInput
-                  label="背景カラー"
-                  swatches={PRESET_COLORS}
-                  value={tagForm.values.color}
-                  onChange={(value) => tagForm.setFieldValue('color', value || DEFAULT_TAG_COLOR)}
-                  style={{ flex: 1 }}
-                />
-                <ColorInput
-                  label="テキストカラー"
-                  swatches={PRESET_COLORS}
-                  value={tagForm.values.textColor}
-                  onChange={(value) =>
-                    tagForm.setFieldValue('textColor', value || DEFAULT_TAG_TEXT_COLOR)
+              <Checkbox
+                label="親グループのカラーを継承"
+                checked={inheritTagColorFromGroup}
+                onChange={(e) => {
+                  setInheritTagColorFromGroup(e.currentTarget.checked);
+                  if (e.currentTarget.checked) {
+                    const selectedCategory = sortedCategories.find(c => c.id === tagForm.values.categoryId);
+                    const selectedGroup = selectedCategory?.groups.find(g => g.id === tagForm.values.groupId);
+                    if (selectedGroup) {
+                      tagForm.setFieldValue('color', selectedGroup.color || DEFAULT_GROUP_COLOR);
+                      tagForm.setFieldValue('textColor', selectedGroup.textColor || DEFAULT_GROUP_TEXT_COLOR);
+                    }
                   }
-                  style={{ flex: 1 }}
-                />
+                }}
+              />
+              <Group gap="md" align="flex-end">
+                <Stack gap="xs" style={{ flex: 1 }}>
+                  <ColorInput
+                    label="背景カラー"
+                    swatches={PRESET_COLORS}
+                    value={tagForm.values.color}
+                    onChange={(value) => tagForm.setFieldValue('color', value || DEFAULT_TAG_COLOR)}
+                  />
+                  <Checkbox
+                    label="新規タグのデフォルトに設定"
+                    checked={setAsTagDefaultBgColor}
+                    onChange={(e) => setSetAsTagDefaultBgColor(e.currentTarget.checked)}
+                  />
+                </Stack>
+                <Stack gap="xs" style={{ flex: 1 }}>
+                  <ColorInput
+                    label="テキストカラー"
+                    swatches={PRESET_COLORS}
+                    value={tagForm.values.textColor}
+                    onChange={(value) =>
+                      tagForm.setFieldValue('textColor', value || DEFAULT_TAG_TEXT_COLOR)
+                    }
+                  />
+                  <Checkbox
+                    label="新規タグのデフォルトに設定"
+                    checked={setAsTagDefaultTextColor}
+                    onChange={(e) => setSetAsTagDefaultTextColor(e.currentTarget.checked)}
+                  />
+                </Stack>
               </Group>
               <Card
                 withBorder

@@ -6,14 +6,13 @@ import {
   Container,
   Group,
   Stack,
-  TextInput,
-  Textarea,
-  Select,
   Switch,
   Alert,
   LoadingOverlay,
   Tabs,
 } from '@mantine/core';
+import { InputWithFloatingLabel } from '@/components/ui/InputWithFloatingLabel';
+import { TextareaWithFloatingLabel } from '@/components/ui/TextareaWithFloatingLabel';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus } from '@tabler/icons-react';
@@ -28,7 +27,7 @@ import { ALPHANUM_SPACE_HYPHEN_PATTERN, MasterDataCombobox } from '@/components/
 import { useSelectionHistory } from '@/lib/hooks/use-selection-history';
 import { buildMasterOptions, createDisplayNameMap } from '@/lib/master-data/master-options';
 import { catFormSchema, type CatFormSchema as CatFormValues } from '@/lib/schemas';
-const COAT_COLOR_DESCRIPTION = '半角英数字・スペース・ハイフンで検索できます。候補一覧からも選択できます。';
+import { SelectWithFloatingLabel } from '@/components/ui/SelectWithFloatingLabel';
 
 export default function CatRegistrationPage() {
   const router = useRouter();
@@ -62,7 +61,7 @@ export default function CatRegistrationPage() {
     resolver: zodResolver(catFormSchema),
     defaultValues: {
       name: '',
-      gender: 'MALE',
+      gender: undefined,
       birthDate: '',
       breedId: undefined,
       coatColorId: undefined,
@@ -134,30 +133,54 @@ export default function CatRegistrationPage() {
         <Tabs.Panel value="register" pt="md">
           <Card shadow="sm" padding="lg" radius="md" withBorder>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <Stack gap="md">
-                <Controller
-                  name="name"
-                  control={control}
-                  render={({ field }) => (
-                    <TextInput
-                      label="猫の名前"
-                      placeholder="名前を入力してください"
-                      required
-                      error={errors.name?.message}
-                      {...field}
-                      value={field.value}
-                    />
-                  )}
-                />
+              <Stack gap={10}>
+                {/* 1行目: 猫の名前、性別 */}
+                <Group grow gap={10}>
+                  <Controller
+                    name="name"
+                    control={control}
+                    render={({ field }) => (
+                      <InputWithFloatingLabel
+                        label="猫の名前"
+                        required
+                        error={errors.name?.message}
+                        {...field}
+                        value={field.value}
+                      />
+                    )}
+                  />
 
-                <Group grow>
+                  <Controller
+                    name="gender"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectWithFloatingLabel
+                        label="性別"
+                        data={[
+                          { value: 'MALE', label: 'Male (オス)' },
+                          { value: 'FEMALE', label: 'Female (メス)' },
+                          { value: 'NEUTER', label: 'Neuter (去勢オス)' },
+                          { value: 'SPAY', label: 'Spay (避妊メス)' },
+                        ]}
+                        required
+                        error={errors.gender?.message}
+                        value={field.value ?? null}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                </Group>
+
+                {/* 2行目: 猫種コンボ、色柄コンボ */}
+                <Group grow gap={10}>
                   <Controller
                     name="breedId"
                     control={control}
                     render={({ field }) => (
                       <MasterDataCombobox
-                        label="品種"
-                        placeholder="コードや名称を入力"
+                        label=""
+                        placeholder="猫種コードや名称を入力"
+                        description=""
                         value={field.value ?? undefined}
                         onChange={(next) => field.onChange(next ?? undefined)}
                         options={breedOptions}
@@ -172,49 +195,13 @@ export default function CatRegistrationPage() {
                   />
 
                   <Controller
-                    name="gender"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        label="性別"
-                        placeholder="性別を選択"
-                        data={[
-                          { value: 'MALE', label: 'Male (オス)' },
-                          { value: 'FEMALE', label: 'Female (メス)' },
-                          { value: 'NEUTER', label: 'Neuter (去勢オス)' },
-                          { value: 'SPAY', label: 'Spay (避妊メス)' },
-                        ]}
-                        required
-                        error={errors.gender?.message}
-                        value={field.value}
-                        onChange={(value) => field.onChange(value ?? field.value)}
-                      />
-                    )}
-                  />
-                </Group>
-
-                <Group grow>
-                  <Controller
-                    name="birthDate"
-                    control={control}
-                    render={({ field }) => (
-                      <TextInput
-                        label="生年月日"
-                        placeholder="YYYY-MM-DD"
-                        error={errors.birthDate?.message}
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    )}
-                  />
-
-                  <Controller
                     name="coatColorId"
                     control={control}
                     render={({ field }) => (
                       <MasterDataCombobox
-                        label="色柄"
-                        placeholder="コードや名称を入力"
+                        label=""
+                        placeholder="色柄コードや名称を入力"
+                        description=""
                         value={field.value ?? undefined}
                         onChange={(next) => field.onChange(next ?? undefined)}
                         options={coatColorOptions}
@@ -224,21 +211,33 @@ export default function CatRegistrationPage() {
                         loading={isCoatColorsLoading || isCoatMasterLoading}
                         historyLabel="最近の色柄"
                         onOptionSelected={recordCoatSelection}
-                        description={COAT_COLOR_DESCRIPTION}
                         sanitizePattern={ALPHANUM_SPACE_HYPHEN_PATTERN}
                       />
                     )}
                   />
                 </Group>
 
-                <Group grow>
+                {/* 3行目: 生年月日、マイクロチップ番号、登録番号 */}
+                <Group grow gap={10}>
+                  <Controller
+                    name="birthDate"
+                    control={control}
+                    render={({ field }) => (
+                      <InputWithFloatingLabel
+                        label="生年月日"
+                        error={errors.birthDate?.message}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    )}
+                  />
+
                   <Controller
                     name="microchipNumber"
                     control={control}
                     render={({ field }) => (
-                      <TextInput
+                      <InputWithFloatingLabel
                         label="マイクロチップ番号"
-                        placeholder="マイクロチップ番号"
                         error={errors.microchipNumber?.message}
                         {...field}
                         value={field.value ?? ''}
@@ -250,9 +249,8 @@ export default function CatRegistrationPage() {
                     name="registrationId"
                     control={control}
                     render={({ field }) => (
-                      <TextInput
+                      <InputWithFloatingLabel
                         label="登録番号"
-                        placeholder="登録番号"
                         error={errors.registrationId?.message}
                         {...field}
                         value={field.value ?? ''}
@@ -261,11 +259,12 @@ export default function CatRegistrationPage() {
                   />
                 </Group>
 
+                {/* 4行目: 備考 */}
                 <Controller
                   name="description"
                   control={control}
                   render={({ field }) => (
-                    <Textarea
+                    <TextareaWithFloatingLabel
                       label="備考"
                       placeholder="特徴や性格などを記入してください"
                       minRows={3}
@@ -276,18 +275,7 @@ export default function CatRegistrationPage() {
                   )}
                 />
 
-                <Controller
-                  name="isInHouse"
-                  control={control}
-                  render={({ field }) => (
-                    <Switch
-                      label="施設内に在舎している猫です"
-                      checked={field.value}
-                      onChange={(event) => field.onChange(event.currentTarget.checked)}
-                    />
-                  )}
-                />
-
+                {/* 5行目: タグ */}
                 <Controller
                   name="tagIds"
                   control={control}
@@ -298,6 +286,19 @@ export default function CatRegistrationPage() {
                       label="タグ"
                       placeholder="猫の特徴タグを選択"
                       disabled={isSubmitting}
+                    />
+                  )}
+                />
+
+                {/* 6行目: 在舎スイッチ */}
+                <Controller
+                  name="isInHouse"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      label="施設内に在舎している猫です"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.currentTarget.checked)}
                     />
                   )}
                 />

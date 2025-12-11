@@ -29,6 +29,7 @@ import { ScheduleModule } from "./schedule/schedule.module";
 import { ShiftModule } from './shift/shift.module';
 import { StaffModule } from './staff/staff.module';
 import { TagsModule } from "./tags/tags.module";
+import { TenantSettingsModule } from "./tenant-settings/tenant-settings.module";
 import { TenantsModule } from "./tenants/tenants.module";
 import { UploadModule } from "./upload/upload.module";
 import { UsersModule } from "./users/users.module";
@@ -100,6 +101,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     AuthModule,
     UsersModule,
     TenantsModule,
+    TenantSettingsModule,
     CatsModule,
     PedigreeModule,
     BreedsModule,

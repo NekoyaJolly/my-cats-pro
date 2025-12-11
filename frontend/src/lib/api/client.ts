@@ -596,6 +596,13 @@ export async function post<P extends FilterPathsByMethod<'post'>>(
   return request(path, 'post', options);
 }
 
+export async function put<P extends FilterPathsByMethod<'put'>>(
+  path: P,
+  options: ApiRequestOptions<P, 'put'> = {},
+): Promise<ApiResponse<ApiSuccessData<P, 'put'>>> {
+  return request(path, 'put', options);
+}
+
 export async function patch<P extends FilterPathsByMethod<'patch'>>(
   path: P,
   options: ApiRequestOptions<P, 'patch'> = {},
@@ -614,6 +621,7 @@ export type ApiClient = {
   request: typeof request;
   get: typeof get;
   post: typeof post;
+  put: typeof put;
   patch: typeof patch;
   delete: typeof del;
 };
@@ -622,6 +630,7 @@ export const apiClient: ApiClient = {
   request,
   get,
   post,
+  put,
   patch,
   delete: del,
 };

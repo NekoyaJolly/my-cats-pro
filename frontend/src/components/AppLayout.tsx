@@ -47,6 +47,7 @@ import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuManager } from '@/components/context-menu';
 import { apiClient, type ApiQueryParams } from '@/lib/api/client';
 import type { Cat } from '@/lib/api/hooks/use-cats';
+import { useBottomNavSettings } from '@/lib/hooks/use-bottom-nav-settings';
 
 const navigationItems = [
   {
@@ -100,6 +101,11 @@ const navigationItems = [
     icon: IconUsers,
   },
   {
+    label: '表示設定',
+    href: '/settings',
+    icon: IconSettings,
+  },
+  {
     label: 'その他',
     href: '/more',
     icon: IconSettings,
@@ -120,12 +126,16 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-const bottomNavigationItems = [
-  { label: 'ホーム', href: '/', icon: IconHome },
-  { label: '在舎猫', href: '/cats', icon: IconCat },
-  { label: '交配', href: '/breeding', icon: IconHeartHandshake },
-  { label: '子猫', href: '/kittens', icon: IconPaw },
-  { label: 'ケア', href: '/care', icon: IconStethoscope },
+export const bottomNavigationItems = [
+  { id: 'home', label: 'ホーム', href: '/', icon: IconHome },
+  { id: 'cats', label: '在舎猫', href: '/cats', icon: IconCat },
+  { id: 'breeding', label: '交配', href: '/breeding', icon: IconHeartHandshake },
+  { id: 'kittens', label: '子猫', href: '/kittens', icon: IconPaw },
+  { id: 'care', label: 'ケア', href: '/care', icon: IconStethoscope },
+  { id: 'medical', label: '医療', href: '/medical-records', icon: IconStethoscope },
+  { id: 'tags', label: 'タグ', href: '/tags', icon: IconTag },
+  { id: 'pedigrees', label: '血統書', href: '/pedigrees', icon: IconCertificate },
+  { id: 'more', label: 'その他', href: '/more', icon: IconSettings },
 ];
 
 // 猫の統計情報の型
@@ -528,6 +538,15 @@ export function AppLayout({ children }: AppLayoutProps) {
 }
 
 function BottomNavigation({ pathname }: { pathname: string }) {
+  const { visibleItems, isLoading } = useBottomNavSettings(bottomNavigationItems);
+
+  if (isLoading) {
+    return null;
+  }
+
+  // アイテム数が5個以下の場合は均等配置、それ以上はスクロール
+  const shouldScroll = visibleItems.length > 5;
+
   return (
     <Box
       component="footer"
@@ -539,45 +558,65 @@ function BottomNavigation({ pathname }: { pathname: string }) {
         height: 64,
         backgroundColor: 'var(--surface)',
         borderTop: '1px solid var(--border-subtle)',
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
         zIndex: 100,
         boxShadow: '0 -4px 12px rgba(15, 23, 42, 0.05)',
         color: 'var(--text-muted)',
+        overflowX: shouldScroll ? 'auto' : 'hidden',
+        overflowY: 'hidden',
+        WebkitOverflowScrolling: 'touch', // iOS用スムーススクロール
       }}
     >
-  {bottomNavigationItems.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const IconComponent = item.icon;
-        return (
-          <Box
-            key={item.href}
-            component={Link}
-            href={item.href}
-            style={{
-              textAlign: 'center',
-              textDecoration: 'none',
-              color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              fontSize: '0.8rem',
-            }}
-          >
-            <IconComponent size={24} stroke={1.5} />
-            <Text
-              size="xs"
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: shouldScroll ? 'flex-start' : 'space-around',
+          height: '100%',
+          minWidth: shouldScroll ? 'max-content' : '100%',
+          gap: shouldScroll ? 8 : 0,
+          paddingLeft: shouldScroll ? 12 : 0,
+          paddingRight: shouldScroll ? 12 : 0,
+        }}
+      >
+        {visibleItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const IconComponent = item.icon;
+          return (
+            <Box
+              key={item.href}
+              component={Link}
+              href={item.href}
               style={{
-                color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                fontWeight: 500,
+                textAlign: 'center',
+                textDecoration: 'none',
+                color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.8rem',
+                minWidth: shouldScroll ? 56 : 'auto',
+                flex: shouldScroll ? 'none' : '1',
+                padding: '8px 4px',
+                transition: 'color 0.2s ease',
               }}
             >
-              {item.label}
-            </Text>
-          </Box>
-        );
-      })}
+              <IconComponent size={24} stroke={1.5} />
+              <Text
+                size="xs"
+                style={{
+                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  marginTop: 2,
+                }}
+              >
+                {item.label}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
     </Box>
   );
 }
