@@ -47,6 +47,7 @@ import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuManager } from '@/components/context-menu';
 import { apiClient, type ApiQueryParams } from '@/lib/api/client';
 import type { Cat } from '@/lib/api/hooks/use-cats';
+import { useFooterNavSettings } from '@/lib/hooks/use-footer-nav-settings';
 
 const navigationItems = [
   {
@@ -100,6 +101,11 @@ const navigationItems = [
     icon: IconUsers,
   },
   {
+    label: '表示設定',
+    href: '/settings',
+    icon: IconSettings,
+  },
+  {
     label: 'その他',
     href: '/more',
     icon: IconSettings,
@@ -120,16 +126,16 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-const bottomNavigationItems = [
-  { label: 'ホーム', href: '/', icon: IconHome },
-  { label: '在舎猫', href: '/cats', icon: IconCat },
-  { label: '交配', href: '/breeding', icon: IconHeartHandshake },
-  { label: '子猫', href: '/kittens', icon: IconPaw },
-  { label: 'ケア', href: '/care', icon: IconStethoscope },
-  { label: '医療', href: '/medical-records', icon: IconStethoscope },
-  { label: 'タグ', href: '/tags', icon: IconTag },
-  { label: '血統書', href: '/pedigrees', icon: IconCertificate },
-  { label: 'その他', href: '/more', icon: IconSettings },
+export const bottomNavigationItems = [
+  { id: 'home', label: 'ホーム', href: '/', icon: IconHome },
+  { id: 'cats', label: '在舎猫', href: '/cats', icon: IconCat },
+  { id: 'breeding', label: '交配', href: '/breeding', icon: IconHeartHandshake },
+  { id: 'kittens', label: '子猫', href: '/kittens', icon: IconPaw },
+  { id: 'care', label: 'ケア', href: '/care', icon: IconStethoscope },
+  { id: 'medical', label: '医療', href: '/medical-records', icon: IconStethoscope },
+  { id: 'tags', label: 'タグ', href: '/tags', icon: IconTag },
+  { id: 'pedigrees', label: '血統書', href: '/pedigrees', icon: IconCertificate },
+  { id: 'more', label: 'その他', href: '/more', icon: IconSettings },
 ];
 
 // 猫の統計情報の型
@@ -532,6 +538,15 @@ export function AppLayout({ children }: AppLayoutProps) {
 }
 
 function BottomNavigation({ pathname }: { pathname: string }) {
+  const { visibleItems, isLoading } = useFooterNavSettings(bottomNavigationItems);
+
+  if (isLoading) {
+    return null;
+  }
+
+  // アイテム数が5個以下の場合は均等配置、それ以上はスクロール
+  const shouldScroll = visibleItems.length > 5;
+
   return (
     <Box
       component="footer"
@@ -546,7 +561,7 @@ function BottomNavigation({ pathname }: { pathname: string }) {
         zIndex: 100,
         boxShadow: '0 -4px 12px rgba(15, 23, 42, 0.05)',
         color: 'var(--text-muted)',
-        overflowX: 'auto',
+        overflowX: shouldScroll ? 'auto' : 'hidden',
         overflowY: 'hidden',
         WebkitOverflowScrolling: 'touch', // iOS用スムーススクロール
       }}
@@ -555,14 +570,15 @@ function BottomNavigation({ pathname }: { pathname: string }) {
         style={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: shouldScroll ? 'flex-start' : 'space-around',
           height: '100%',
-          minWidth: 'max-content', // 子要素が収まる幅を確保
-          gap: 8,
-          paddingLeft: 12,
-          paddingRight: 12,
+          minWidth: shouldScroll ? 'max-content' : '100%',
+          gap: shouldScroll ? 8 : 0,
+          paddingLeft: shouldScroll ? 12 : 0,
+          paddingRight: shouldScroll ? 12 : 0,
         }}
       >
-        {bottomNavigationItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const IconComponent = item.icon;
           return (
@@ -577,9 +593,12 @@ function BottomNavigation({ pathname }: { pathname: string }) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                justifyContent: 'center',
                 fontSize: '0.8rem',
-                minWidth: 56, // アイテムの最小幅を固定
+                minWidth: shouldScroll ? 56 : 'auto',
+                flex: shouldScroll ? 'none' : '1',
                 padding: '8px 4px',
+                transition: 'color 0.2s ease',
               }}
             >
               <IconComponent size={24} stroke={1.5} />
@@ -589,6 +608,7 @@ function BottomNavigation({ pathname }: { pathname: string }) {
                   color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
                   fontWeight: 500,
                   whiteSpace: 'nowrap',
+                  marginTop: 2,
                 }}
               >
                 {item.label}
