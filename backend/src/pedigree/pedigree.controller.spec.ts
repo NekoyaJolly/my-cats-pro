@@ -4,6 +4,7 @@ import { getTestModuleImports, getTestModuleProviders } from '../test-utils/test
 
 import { PedigreeController } from './pedigree.controller';
 import { PedigreeService } from './pedigree.service';
+import { PedigreePdfService } from './pdf/pedigree-pdf.service';
 
 describe('PedigreeController', () => {
   let controller: PedigreeController;
@@ -18,6 +19,10 @@ describe('PedigreeController', () => {
     findByCat: jest.fn(),
   };
 
+  const mockPedigreePdfService = {
+    generatePdf: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: getTestModuleImports(),
@@ -27,6 +32,10 @@ describe('PedigreeController', () => {
         {
           provide: PedigreeService,
           useValue: mockPedigreeService,
+        },
+        {
+          provide: PedigreePdfService,
+          useValue: mockPedigreePdfService,
         },
       ],
     }).compile();
