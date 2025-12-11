@@ -25,6 +25,7 @@ import { Response } from 'express';
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RoleGuard } from "../auth/role.guard";
 import { Roles } from "../auth/roles.decorator";
+import { Public } from "../common/decorators/public.decorator";
 
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
 import { PedigreeService } from "./pedigree.service";
@@ -108,6 +109,8 @@ export class PedigreeController {
   }
 
   @Get("pedigree-id/:pedigreeId/pdf")
+  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
+  @Public()
   @ApiOperation({ summary: "血統書PDFを生成してダウンロード" })
   @ApiResponse({ status: HttpStatus.OK, description: "PDF生成成功", type: 'application/pdf' })
   @ApiResponse({

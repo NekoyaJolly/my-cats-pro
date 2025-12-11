@@ -12,13 +12,14 @@ export class PedigreePdfService {
   private printer: PdfPrinter;
 
   constructor(private readonly prisma: PrismaService) {
-    // フォント設定（Phase 1: デフォルトフォント使用）
+    // フォント設定（Phase 1: Robotoフォント使用）
+    // pdfmakeに組み込みのフォントを使用
     const fonts: TFontDictionary = {
       Roboto: {
-        normal: Buffer.from(require('pdfmake/build/vfs_fonts').pdfMake.vfs['Roboto-Regular.ttf'], 'base64'),
-        bold: Buffer.from(require('pdfmake/build/vfs_fonts').pdfMake.vfs['Roboto-Medium.ttf'], 'base64'),
-        italics: Buffer.from(require('pdfmake/build/vfs_fonts').pdfMake.vfs['Roboto-Italic.ttf'], 'base64'),
-        bolditalics: Buffer.from(require('pdfmake/build/vfs_fonts').pdfMake.vfs['Roboto-MediumItalic.ttf'], 'base64'),
+        normal: 'Helvetica',
+        bold: 'Helvetica-Bold',
+        italics: 'Helvetica-Oblique',
+        bolditalics: 'Helvetica-BoldOblique',
       },
     };
 
