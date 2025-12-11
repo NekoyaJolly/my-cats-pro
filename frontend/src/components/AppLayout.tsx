@@ -47,7 +47,7 @@ import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuManager } from '@/components/context-menu';
 import { apiClient, type ApiQueryParams } from '@/lib/api/client';
 import type { Cat } from '@/lib/api/hooks/use-cats';
-import { useFooterNavSettings } from '@/lib/hooks/use-footer-nav-settings';
+import { useBottomNavSettings } from '@/lib/hooks/use-bottom-nav-settings';
 
 const navigationItems = [
   {
@@ -538,7 +538,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 }
 
 function BottomNavigation({ pathname }: { pathname: string }) {
-  const { visibleItems, isLoading } = useFooterNavSettings(bottomNavigationItems);
+  const { visibleItems, isLoading } = useBottomNavSettings(bottomNavigationItems);
 
   if (isLoading) {
     return null;

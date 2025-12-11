@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import type { Icon } from '@tabler/icons-react';
 
-const STORAGE_KEY = 'footer-nav-settings';
+const STORAGE_KEY = 'bottom-nav-settings';
 
-export interface FooterNavItem {
+export interface BottomNavItem {
   id: string;
   label: string;
   href: string;
@@ -14,11 +14,11 @@ export interface FooterNavItem {
 }
 
 /**
- * フッターナビゲーション設定を管理するカスタムフック
+ * ボトムナビゲーション設定を管理するカスタムフック
  * localStorageにユーザーの設定を保存
  */
-export function useFooterNavSettings(defaultItems: Omit<FooterNavItem, 'visible'>[]) {
-  const [items, setItems] = useState<FooterNavItem[]>(() => {
+export function useBottomNavSettings(defaultItems: Omit<BottomNavItem, 'visible'>[]) {
+  const [items, setItems] = useState<BottomNavItem[]>(() => {
     // 初期状態は全て表示
     return defaultItems.map(item => ({ ...item, visible: true }));
   });

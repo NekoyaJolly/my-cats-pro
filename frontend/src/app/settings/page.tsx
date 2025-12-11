@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { Container, Card, Stack, Title, Text, Switch, Group, Button, Divider } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
-import { useFooterNavSettings } from '@/lib/hooks/use-footer-nav-settings';
+import { useBottomNavSettings } from '@/lib/hooks/use-bottom-nav-settings';
 import { bottomNavigationItems } from '@/components/AppLayout';
 
 export default function SettingsPage() {
@@ -18,7 +18,7 @@ export default function SettingsPage() {
     hideAll,
     resetToDefault,
     saveSettings,
-  } = useFooterNavSettings(bottomNavigationItems);
+  } = useBottomNavSettings(bottomNavigationItems);
 
   useEffect(() => {
     setPageHeader('ユーザー設定');
@@ -32,7 +32,7 @@ export default function SettingsPage() {
     if (success) {
       notifications.show({
         title: '保存しました',
-        message: 'フッターナビゲーションの設定を保存しました',
+        message: 'ボトムナビゲーションの設定を保存しました',
         color: 'green',
       });
     } else {
@@ -57,7 +57,7 @@ export default function SettingsPage() {
       <Stack gap="lg">
         <Card shadow="sm" padding="lg" radius="md" withBorder>
           <Stack gap="md">
-            <Title order={3}>フッターナビゲーション設定</Title>
+            <Title order={3}>ボトムナビゲーション設定</Title>
             <Text size="sm" c="dimmed">
               表示したい項目を選択してください。設定はこのデバイスに保存されます。
             </Text>
