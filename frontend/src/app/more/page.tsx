@@ -6,8 +6,6 @@ import {
   Card,
   Group,
   Text,
-  Stack,
-  Button,
   SimpleGrid,
   Box,
 } from '@mantine/core';

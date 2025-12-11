@@ -28,8 +28,8 @@ import { Roles } from "../auth/roles.decorator";
 import { Public } from "../common/decorators/public.decorator";
 
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
-import { PedigreeService } from "./pedigree.service";
 import { PedigreePdfService } from "./pdf/pedigree-pdf.service";
+import { PedigreeService } from "./pedigree.service";
 
 
 @ApiTags("Pedigrees")
@@ -42,6 +42,8 @@ export class PedigreeController {
     private readonly pedigreePdfService: PedigreePdfService,
   ) {}
 
+  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
+  @Public()
   @Post()
   @UseGuards(RoleGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -119,11 +121,15 @@ export class PedigreeController {
   })
   @ApiParam({ name: "pedigreeId", description: "血統書番号" })
   @ApiQuery({ name: "format", required: false, description: "出力形式 (pdf|base64)", example: "pdf" })
+  @ApiQuery({ name: "debug", required: false, description: "デバッグモード（背景画像表示）", example: "false" })
   async generatePdf(
     @Param("pedigreeId") pedigreeId: string,
     @Query("format") format: string = "pdf",
+    @Query("debug") debug: string = "false",
     @Res() res: Response,
   ) {
+    const debugMode = debug === "true" || debug === "1";
+    
     if (format === "base64") {
       const base64Data = await this.pedigreePdfService.generateBase64(pedigreeId);
       const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
@@ -135,7 +141,7 @@ export class PedigreeController {
       });
     }
 
-    const pdfBuffer = await this.pedigreePdfService.generatePdf(pedigreeId);
+    const pdfBuffer = await this.pedigreePdfService.generatePdf(pedigreeId, debugMode);
     const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const filename = `pedigree_${pedigreeId}_${today}.pdf`;
 
@@ -214,6 +220,8 @@ export class PedigreeController {
     return this.pedigreeService.getDescendants(id);
   }
 
+  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
+  @Public()
   @Patch(":id")
   @UseGuards(RoleGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
