@@ -9,6 +9,7 @@ import {
   Query,
   HttpStatus,
   UseGuards,
+  Res,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -19,6 +20,7 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { UserRole } from "@prisma/client";
+import { Response } from 'express';
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RoleGuard } from "../auth/role.guard";
@@ -26,6 +28,7 @@ import { Roles } from "../auth/roles.decorator";
 
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
 import { PedigreeService } from "./pedigree.service";
+import { PedigreePdfService } from "./pdf/pedigree-pdf.service";
 
 
 @ApiTags("Pedigrees")
@@ -33,7 +36,10 @@ import { PedigreeService } from "./pedigree.service";
 @UseGuards(JwtAuthGuard)
 @Controller("pedigrees")
 export class PedigreeController {
-  constructor(private readonly pedigreeService: PedigreeService) {}
+  constructor(
+    private readonly pedigreeService: PedigreeService,
+    private readonly pedigreePdfService: PedigreePdfService,
+  ) {}
 
   @Post()
   @UseGuards(RoleGuard)
@@ -99,6 +105,41 @@ export class PedigreeController {
   @ApiResponse({ status: HttpStatus.OK, description: "次の血統書番号" })
   getNextId() {
     return this.pedigreeService.getNextId();
+  }
+
+  @Get("pedigree-id/:pedigreeId/pdf")
+  @ApiOperation({ summary: "血統書PDFを生成してダウンロード" })
+  @ApiResponse({ status: HttpStatus.OK, description: "PDF生成成功", type: 'application/pdf' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "血統書データが見つかりません",
+  })
+  @ApiParam({ name: "pedigreeId", description: "血統書番号" })
+  @ApiQuery({ name: "format", required: false, description: "出力形式 (pdf|base64)", example: "pdf" })
+  async generatePdf(
+    @Param("pedigreeId") pedigreeId: string,
+    @Query("format") format: string = "pdf",
+    @Res() res: Response,
+  ) {
+    if (format === "base64") {
+      const base64Data = await this.pedigreePdfService.generateBase64(pedigreeId);
+      const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      return res.json({
+        pedigreeId,
+        format: "base64",
+        data: base64Data,
+        filename: `pedigree_${pedigreeId}_${today}.pdf`,
+      });
+    }
+
+    const pdfBuffer = await this.pedigreePdfService.generatePdf(pedigreeId);
+    const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const filename = `pedigree_${pedigreeId}_${today}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
   }
 
   @Get("pedigree-id/:pedigreeId")
