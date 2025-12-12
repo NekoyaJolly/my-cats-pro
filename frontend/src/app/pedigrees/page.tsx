@@ -4,7 +4,8 @@ import { Container, Tabs } from '@mantine/core';
 import { PedigreeRegistrationForm } from '@/components/pedigrees/PedigreeRegistrationForm';
 import { PedigreeList } from '@/components/pedigrees/PedigreeList';
 import { PedigreeFamilyTree } from '@/components/pedigrees/PedigreeFamilyTree';
-import { IconPlus, IconList, IconBinaryTree } from '@tabler/icons-react';
+import { PrintSettingsEditor } from '@/components/pedigrees/PrintSettingsEditor';
+import { IconPlus, IconList, IconBinaryTree, IconSettings } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { useSearchParams } from 'next/navigation';
@@ -39,6 +40,9 @@ export default function PedigreesPage() {
           <Tabs.Tab value="tree" leftSection={<IconBinaryTree size={14} />}>
             Family Tree
           </Tabs.Tab>
+          <Tabs.Tab value="print-settings" leftSection={<IconSettings size={14} />}>
+            印刷設定
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="register" pt="md">
@@ -51,6 +55,10 @@ export default function PedigreesPage() {
 
         <Tabs.Panel value="tree" pt="md">
           <PedigreeFamilyTree pedigreeId={selectedFamilyTreeId} />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="print-settings" pt="md">
+          <PrintSettingsEditor />
         </Tabs.Panel>
       </Tabs>
     </Container>

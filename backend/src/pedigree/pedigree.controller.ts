@@ -29,6 +29,7 @@ import { Public } from "../common/decorators/public.decorator";
 
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
 import { PedigreePdfService } from "./pdf/pedigree-pdf.service";
+import { PrintSettingsService, PositionsConfig } from "./pdf/print-settings.service";
 import { PedigreeService } from "./pedigree.service";
 
 
@@ -40,6 +41,7 @@ export class PedigreeController {
   constructor(
     private readonly pedigreeService: PedigreeService,
     private readonly pedigreePdfService: PedigreePdfService,
+    private readonly printSettingsService: PrintSettingsService,
   ) {}
 
   // TODO: 本番リリース前に削除 - @Public()は開発環境専用
@@ -269,5 +271,31 @@ export class PedigreeController {
   @ApiParam({ name: "id", description: "血統書データのID" })
   remove(@Param("id") id: string) {
     return this.pedigreeService.remove(id);
+  }
+
+  // ===== 印刷設定 API =====
+
+  @Get("print-settings")
+  @Public()
+  @ApiOperation({ summary: "印刷設定を取得" })
+  @ApiResponse({ status: HttpStatus.OK, description: "現在の印刷設定" })
+  getPrintSettings() {
+    return this.printSettingsService.getSettings();
+  }
+
+  @Patch("print-settings")
+  @Public()
+  @ApiOperation({ summary: "印刷設定を更新" })
+  @ApiResponse({ status: HttpStatus.OK, description: "更新後の印刷設定" })
+  updatePrintSettings(@Body() settings: PositionsConfig) {
+    return this.printSettingsService.updateSettings(settings);
+  }
+
+  @Post("print-settings/reset")
+  @Public()
+  @ApiOperation({ summary: "印刷設定をデフォルトにリセット" })
+  @ApiResponse({ status: HttpStatus.OK, description: "リセット後の印刷設定" })
+  resetPrintSettings() {
+    return this.printSettingsService.resetToDefault();
   }
 }
