@@ -9,6 +9,7 @@ import {
   Query,
   HttpStatus,
   UseGuards,
+  Res,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -19,12 +20,15 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { UserRole } from "@prisma/client";
+import { Response } from 'express';
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RoleGuard } from "../auth/role.guard";
 import { Roles } from "../auth/roles.decorator";
+import { Public } from "../common/decorators/public.decorator";
 
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
+import { PedigreePdfService } from "./pdf/pedigree-pdf.service";
 import { PedigreeService } from "./pedigree.service";
 
 
@@ -33,8 +37,13 @@ import { PedigreeService } from "./pedigree.service";
 @UseGuards(JwtAuthGuard)
 @Controller("pedigrees")
 export class PedigreeController {
-  constructor(private readonly pedigreeService: PedigreeService) {}
+  constructor(
+    private readonly pedigreeService: PedigreeService,
+    private readonly pedigreePdfService: PedigreePdfService,
+  ) {}
 
+  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
+  @Public()
   @Post()
   @UseGuards(RoleGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -99,6 +108,47 @@ export class PedigreeController {
   @ApiResponse({ status: HttpStatus.OK, description: "次の血統書番号" })
   getNextId() {
     return this.pedigreeService.getNextId();
+  }
+
+  @Get("pedigree-id/:pedigreeId/pdf")
+  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
+  @Public()
+  @ApiOperation({ summary: "血統書PDFを生成してダウンロード" })
+  @ApiResponse({ status: HttpStatus.OK, description: "PDF生成成功", type: 'application/pdf' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "血統書データが見つかりません",
+  })
+  @ApiParam({ name: "pedigreeId", description: "血統書番号" })
+  @ApiQuery({ name: "format", required: false, description: "出力形式 (pdf|base64)", example: "pdf" })
+  @ApiQuery({ name: "debug", required: false, description: "デバッグモード（背景画像表示）", example: "false" })
+  async generatePdf(
+    @Param("pedigreeId") pedigreeId: string,
+    @Query("format") format: string = "pdf",
+    @Query("debug") debug: string = "false",
+    @Res() res: Response,
+  ) {
+    const debugMode = debug === "true" || debug === "1";
+    
+    if (format === "base64") {
+      const base64Data = await this.pedigreePdfService.generateBase64(pedigreeId);
+      const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      return res.json({
+        pedigreeId,
+        format: "base64",
+        data: base64Data,
+        filename: `pedigree_${pedigreeId}_${today}.pdf`,
+      });
+    }
+
+    const pdfBuffer = await this.pedigreePdfService.generatePdf(pedigreeId, debugMode);
+    const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const filename = `pedigree_${pedigreeId}_${today}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
   }
 
   @Get("pedigree-id/:pedigreeId")
@@ -170,6 +220,8 @@ export class PedigreeController {
     return this.pedigreeService.getDescendants(id);
   }
 
+  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
+  @Public()
   @Patch(":id")
   @UseGuards(RoleGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
