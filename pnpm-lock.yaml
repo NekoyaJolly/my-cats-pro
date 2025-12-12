@@ -15,6 +15,7 @@ overrides:
   jsonwebtoken: '>=9.0.3'
   jws: '>=4.0.1'
   path-to-regexp: '>=0.1.12'
+  dotenv: '>=16.6.1'
 
 importers:
 
@@ -135,7 +136,7 @@ importers:
         specifier: ^1.11.13
         version: 1.11.19
       dotenv:
-        specifier: ^16.4.5
+        specifier: '>=16.6.1'
         version: 16.6.1
       express:
         specifier: ^4.21.2
@@ -3331,10 +3332,6 @@ packages:
 
   dotenv-expand@10.0.0:
     resolution: {integrity: sha512-GopVGCpVS1UKH75VKHGuQFqS1Gusej0z4FyQkPdwjil2gNIv+LNsqBlboOzpJFZKVT95GkCyWJbBSdFEFUWI2A==}
-    engines: {node: '>=12'}
-
-  dotenv@16.4.5:
-    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
     engines: {node: '>=12'}
 
   dotenv@16.6.1:
@@ -7474,7 +7471,7 @@ snapshots:
   '@nestjs/config@3.3.0(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      dotenv: 16.4.5
+      dotenv: 16.6.1
       dotenv-expand: 10.0.0
       lodash: 4.17.21
       rxjs: 7.8.2
@@ -9699,8 +9696,6 @@ snapshots:
       minimist: 1.2.8
 
   dotenv-expand@10.0.0: {}
-
-  dotenv@16.4.5: {}
 
   dotenv@16.6.1: {}
 

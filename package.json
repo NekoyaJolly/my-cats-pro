@@ -73,7 +73,8 @@
       "tmp": ">=0.2.3",
       "jsonwebtoken": ">=9.0.3",
       "jws": ">=4.0.1",
-      "path-to-regexp": ">=0.1.12"
+      "path-to-regexp": ">=0.1.12",
+      "dotenv": ">=16.6.1"
     },
     "ignoredBuiltDependencies": [
       "@nestjs/core",
