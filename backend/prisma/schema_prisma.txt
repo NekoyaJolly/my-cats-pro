@@ -1,82 +1,53 @@
-// Prisma Schema - Last Updated: 2025-12-12T22:15:13.286Z
+// Prisma Schema - Last Updated: 2025-12-12T23:12:20.234Z
 // Auto-generated from schema.prisma
 
 generator client {
   provider = "prisma-client-js"
-  // engineType = "library" // ← Node-API を明示（一時的にコメントアウト）
 }
-
-// generator seed は無効（ts-nodeは正式なgeneratorではない）
-// シードはpackage.jsonの"prisma": { "seed": "ts-node prisma/seed.ts" }で定義
-// generator seed {
-//   provider = "ts-node"
-//   output   = "./src/prisma/seed.ts"
-// }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// ==========================================
-// Multi-Tenant Models
-// ==========================================
-
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  users       User[]
+  id          String            @id @default(uuid())
+  name        String
+  slug        String            @unique
+  isActive    Boolean           @default(true) @map("is_active")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
   invitations InvitationToken[]
   settings    TenantSettings?
+  users       User[]
 
-  // Indexes
   @@index([slug])
   @@index([isActive])
   @@map("tenants")
 }
 
 model TenantSettings {
-  id        String   @id @default(uuid())
-  tenantId  String   @unique @map("tenant_id")
-  
-  // タグカラーデフォルト設定（JSON型）
-  // 期待される構造:
-  // {
-  //   category: { color: "#6366F1", textColor: "#111827" },
-  //   group: { color: "#3B82F6", textColor: "#111827" },
-  //   tag: { color: "#3B82F6", textColor: "#FFFFFF" }
-  // }
-  tagColorDefaults Json?  @map("tag_color_defaults")
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id               String   @id @default(uuid())
+  tenantId         String   @unique @map("tenant_id")
+  tagColorDefaults Json?    @map("tag_color_defaults")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("tenant_settings")
 }
 
 model InvitationToken {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   email     String
-  token     String   @unique
+  token     String    @unique
   role      UserRole
-  tenantId  String   @map("tenant_id")
-  expiresAt DateTime @map("expires_at")
+  tenantId  String    @map("tenant_id")
+  expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  // Relations
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Indexes
   @@index([email])
   @@index([token])
   @@index([tenantId])
@@ -85,70 +56,55 @@ model InvitationToken {
 }
 
 model User {
-  id                   String    @id @default(uuid())
-  clerkId              String    @unique @map("clerk_id")
-  email                String    @unique
-  firstName            String?   @map("first_name")
-  lastName             String?   @map("last_name")
-  role                 UserRole  @default(USER)
-  isActive             Boolean   @default(true) @map("is_active")
-  passwordHash         String?   @map("password_hash")
-  refreshToken         String?   @map("refresh_token") // JWT refresh token storage
-  resetPasswordToken   String?   @map("reset_password_token") // Password reset token
-  resetPasswordExpires DateTime? @map("reset_password_expires") // Token expiration
-  failedLoginAttempts  Int       @default(0) @map("failed_login_attempts")
-  lockedUntil          DateTime? @map("locked_until")
-  lastLoginAt          DateTime? @map("last_login_at")
-  tenantId             String?   @map("tenant_id") // マルチテナント対応
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
+  id                   String             @id @default(uuid())
+  clerkId              String             @unique @map("clerk_id")
+  email                String             @unique
+  firstName            String?            @map("first_name")
+  lastName             String?            @map("last_name")
+  role                 UserRole           @default(USER)
+  isActive             Boolean            @default(true) @map("is_active")
+  passwordHash         String?            @map("password_hash")
+  refreshToken         String?            @map("refresh_token")
+  failedLoginAttempts  Int                @default(0) @map("failed_login_attempts")
+  lockedUntil          DateTime?          @map("locked_until")
+  lastLoginAt          DateTime?          @map("last_login_at")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  resetPasswordExpires DateTime?          @map("reset_password_expires")
+  resetPasswordToken   String?            @map("reset_password_token")
+  tenantId             String?            @map("tenant_id")
+  birthPlans           BirthPlan[]
+  breedingRecords      BreedingRecord[]
+  careRecords          CareRecord[]
+  displayPreference    DisplayPreference?
+  loginAttempts        LoginAttempt[]
+  medicalRecords       MedicalRecord[]
+  pregnancyChecks      PregnancyCheck[]
+  schedules            Schedule[]
+  staff                Staff?
+  tenant               Tenant?            @relation(fields: [tenantId], references: [id])
 
-  // Relations
-  tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  breedingRecords BreedingRecord[]
-  careRecords     CareRecord[]
-  schedules       Schedule[]
-  medicalRecords  MedicalRecord[]
-  loginAttempts   LoginAttempt[]
-  pregnancyChecks PregnancyCheck[]
-  birthPlans      BirthPlan[]
-  staff           Staff? // Staff management relation
-  // cats            Cat[]  // Removed: not using user relation for cats
-
-  displayPreference DisplayPreference?
-
-  // シングルカラムインデックス
   @@index([email])
   @@index([role])
   @@index([isActive])
   @@index([lastLoginAt])
-  @@index([tenantId]) // テナント検索用
-  
-  // 複合インデックス（ユーザー検索パターン）
-  @@index([role, isActive]) // ロール別アクティブユーザー検索
-  @@index([isActive, lastLoginAt]) // アクティブユーザーのログイン履歴
-  @@index([tenantId, role]) // テナント内ロール検索
-  
+  @@index([tenantId])
+  @@index([role, isActive])
+  @@index([isActive, lastLoginAt])
+  @@index([tenantId, role])
   @@map("users")
 }
 
-enum DisplayNameMode {
-  CANONICAL
-  CODE_AND_NAME
-  CUSTOM
-}
-
 model DisplayPreference {
-  id                    String           @id @default(uuid())
-  userId                String           @unique @map("user_id")
-  breedNameMode         DisplayNameMode  @default(CANONICAL) @map("breed_name_mode")
-  coatColorNameMode     DisplayNameMode  @default(CANONICAL) @map("coat_color_name_mode")
-  breedNameOverrides    Json?            @map("breed_name_overrides")
+  id                     String          @id @default(uuid())
+  userId                 String          @unique @map("user_id")
+  breedNameMode          DisplayNameMode @default(CANONICAL) @map("breed_name_mode")
+  coatColorNameMode      DisplayNameMode @default(CANONICAL) @map("coat_color_name_mode")
+  breedNameOverrides     Json?           @map("breed_name_overrides")
   coatColorNameOverrides Json?           @map("coat_color_name_overrides")
-  createdAt             DateTime         @default(now()) @map("created_at")
-  updatedAt             DateTime         @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt              DateTime        @default(now()) @map("created_at")
+  updatedAt              DateTime        @updatedAt @map("updated_at")
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("display_preferences")
 }
@@ -162,155 +118,120 @@ model LoginAttempt {
   success   Boolean
   reason    String?
   createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // シングルカラムインデックス
   @@index([userId])
   @@index([email])
   @@index([success])
   @@index([createdAt])
-  
-  // 複合インデックス（ログイン試行分析パターン）
-  @@index([email, createdAt]) // メール別時系列検索
-  @@index([userId, createdAt]) // ユーザー別ログイン履歴
-  @@index([success, createdAt]) // 成功/失敗別時系列
-  
+  @@index([email, createdAt])
+  @@index([userId, createdAt])
+  @@index([success, createdAt])
   @@map("login_attempts")
 }
 
 model Breed {
-  id          String  @id @default(uuid())
-  code        Int     @unique // キー from CSV
-  name        String  @unique // 種類名称 from CSV
+  id          String     @id @default(uuid())
+  code        Int        @unique
+  name        String     @unique
   description String?
-  isActive    Boolean @default(true) @map("is_active")
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  cats        Cat[]
+  pedigrees   Pedigree[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  cats      Cat[]
-  pedigrees Pedigree[]
-
-  // シングルカラムインデックス
   @@index([code])
   @@index([name])
   @@index([isActive])
-
   @@map("breeds")
 }
 
 model CoatColor {
-  id          String  @id @default(uuid())
-  code        Int     @unique // キー from CSV
-  name        String  // 毛色名称 from CSV
+  id          String     @id @default(uuid())
+  code        Int        @unique
+  name        String
   description String?
-  isActive    Boolean @default(true) @map("is_active")
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  cats        Cat[]
+  pedigrees   Pedigree[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  cats      Cat[]
-  pedigrees Pedigree[]
-
-  // シングルカラムインデックス
   @@index([code])
   @@index([name])
   @@index([isActive])
-
   @@map("coat_colors")
 }
 
 model Gender {
-  id          String  @id @default(uuid())
-  code        Int     @unique // 性別コード from CSV (0-4)
-  name        String  @unique // 性別名称 from CSV (Male, Female, Neuter, Spay)
+  id          String     @id @default(uuid())
+  code        Int        @unique
+  name        String     @unique
   description String?
-  isActive    Boolean @default(true) @map("is_active")
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  pedigrees   Pedigree[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  pedigrees Pedigree[]
-
-  // シングルカラムインデックス
   @@index([code])
   @@index([name])
-
   @@map("genders")
 }
 
 model Cat {
-  id                 String   @id @default(uuid())
-  registrationNumber String?  @unique @map("registration_number") // 登録番号
-  name               String
-  gender             String // MALE, FEMALE, NEUTER, SPAY
-  birthDate          DateTime @map("birth_date")
-
-  // Breed and Color stored by ID (for relations) but also can store names
-  breedId     String?    @map("breed_id")
-  breed       Breed?     @relation(fields: [breedId], references: [id])
-  coatColorId String?    @map("coat_color_id")
-  coatColor   CoatColor? @relation(fields: [coatColorId], references: [id])
-
-  microchipNumber String? @unique @map("microchip_number")
-  description     String? @map("notes") // 説明・備考
-  isInHouse       Boolean @default(true) @map("is_in_house") // 施設内在舎
-  isGraduated     Boolean @default(false) @map("is_graduated") // 卒業済み（譲渡済み）
-
-  // Parent information
-  fatherId String? @map("father_id")
-  motherId String? @map("mother_id")
-  father   Cat?    @relation("CatFather", fields: [fatherId], references: [id])
-  mother   Cat?    @relation("CatMother", fields: [motherId], references: [id])
-
-  // Children relations
-  fatherOf Cat[] @relation("CatFather")
-  motherOf Cat[] @relation("CatMother")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  maleBreedingRecords   BreedingRecord[]       @relation("MaleBreeding")
-  femaleBreedingRecords BreedingRecord[]       @relation("FemaleBreeding")
-  careRecords           CareRecord[]
-  schedules             Schedule[]
-  scheduleCats          ScheduleCat[]
-  tags                  CatTag[]
-  medicalRecords        MedicalRecord[]
-  tagHistory            TagAssignmentHistory[]
-  pregnancyChecks       PregnancyCheck[]       @relation("PregnancyCheckMother")
+  id                    String                 @id @default(uuid())
+  registrationNumber    String?                @unique @map("registration_number")
+  name                  String
+  breedId               String?                @map("breed_id")
+  birthDate             DateTime               @map("birth_date")
+  description           String?                @map("notes")
+  fatherId              String?                @map("father_id")
+  motherId              String?                @map("mother_id")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  pedigreeId            String?                @map("pedigree_id")
+  gender                String
+  coatColorId           String?                @map("coat_color_id")
+  isInHouse             Boolean                @default(true) @map("is_in_house")
+  microchipNumber       String?                @unique @map("microchip_number")
+  isGraduated           Boolean                @default(false) @map("is_graduated")
   birthPlans            BirthPlan[]            @relation("BirthPlanMother")
-  kittenDispositions    KittenDisposition[] // 子猫処遇記録
-  pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
+  femaleBreedingRecords BreedingRecord[]       @relation("FemaleBreeding")
+  maleBreedingRecords   BreedingRecord[]       @relation("MaleBreeding")
+  careRecords           CareRecord[]
+  tags                  CatTag[]
+  breed                 Breed?                 @relation(fields: [breedId], references: [id])
+  coatColor             CoatColor?             @relation(fields: [coatColorId], references: [id])
+  father                Cat?                   @relation("CatFather", fields: [fatherId], references: [id])
+  fatherOf              Cat[]                  @relation("CatFather")
+  mother                Cat?                   @relation("CatMother", fields: [motherId], references: [id])
+  motherOf              Cat[]                  @relation("CatMother")
   pedigree              Pedigree?              @relation("CatPedigree", fields: [pedigreeId], references: [pedigreeId])
-  graduation            Graduation? // 卒業記録（譲渡情報）
-  galleryEntries        GalleryEntry[]         @relation("GalleryEntryCat") // ギャラリーエントリ
+  galleryEntries        GalleryEntry[]         @relation("GalleryEntryCat")
+  graduation            Graduation?
+  kittenDispositions    KittenDisposition[]
+  medicalRecords        MedicalRecord[]
+  pregnancyChecks       PregnancyCheck[]       @relation("PregnancyCheckMother")
+  scheduleCats          ScheduleCat[]
+  schedules             Schedule[]
+  tagHistory            TagAssignmentHistory[]
 
-  // シングルカラムインデックス（検索頻度の高いフィールド）
   @@index([breedId])
   @@index([coatColorId])
   @@index([fatherId])
   @@index([motherId])
   @@index([birthDate])
-  @@index([name]) // 名前検索
-  @@index([gender]) // 性別フィルター
-  @@index([isInHouse]) // 在舎状態フィルター
-  @@index([isGraduated]) // 卒業済みフィルター
-  @@index([registrationNumber]) // 登録番号検索
+  @@index([name])
+  @@index([gender])
+  @@index([isInHouse])
+  @@index([isGraduated])
+  @@index([registrationNumber])
   @@index([createdAt])
   @@index([updatedAt])
-  
-  // 複合インデックス（複合検索パターン）
-  @@index([breedId, name]) // 品種別名前検索
-  @@index([isInHouse, isGraduated]) // 在舎・卒業状態の組み合わせ
-  @@index([birthDate, gender]) // 誕生日・性別での検索
-  
+  @@index([breedId, name])
+  @@index([isInHouse, isGraduated])
+  @@index([birthDate, gender])
   @@map("cats")
 }
 
@@ -324,29 +245,22 @@ model BreedingRecord {
   numberOfKittens Int?           @map("number_of_kittens")
   notes           String?
   status          BreedingStatus @default(PLANNED)
+  recordedBy      String         @map("recorded_by")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  female          Cat            @relation("FemaleBreeding", fields: [femaleId], references: [id])
+  male            Cat            @relation("MaleBreeding", fields: [maleId], references: [id])
+  recorder        User           @relation(fields: [recordedBy], references: [id])
 
-  male   Cat @relation("MaleBreeding", fields: [maleId], references: [id])
-  female Cat @relation("FemaleBreeding", fields: [femaleId], references: [id])
-
-  recordedBy String @map("recorded_by")
-  recorder   User   @relation(fields: [recordedBy], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
   @@index([maleId])
   @@index([femaleId])
   @@index([breedingDate])
   @@index([status])
-  @@index([recordedBy]) // 記録者フィルター
-  
-  // 複合インデックス（交配記録検索パターン）
-  @@index([maleId, femaleId]) // ペア検索
-  @@index([maleId, breedingDate]) // オス別時系列
-  @@index([femaleId, breedingDate]) // メス別時系列
-  @@index([breedingDate, status]) // 日付・ステータスフィルター
-  
+  @@index([recordedBy])
+  @@index([maleId, femaleId])
+  @@index([maleId, breedingDate])
+  @@index([femaleId, breedingDate])
+  @@index([breedingDate, status])
   @@map("breeding_records")
 }
 
@@ -369,100 +283,75 @@ model BreedingNgRule {
 
 model PregnancyCheck {
   id         String          @id @default(uuid())
-  motherId   String          @map("mother_id")
-  fatherId   String?         @map("father_id")
-  matingDate DateTime?       @map("mating_date")
   checkDate  DateTime        @map("check_date")
   status     PregnancyStatus @default(SUSPECTED)
   notes      String?
+  recordedBy String          @map("recorded_by")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+  motherId   String          @map("mother_id")
+  fatherId   String?         @map("father_id")
+  matingDate DateTime?       @map("mating_date")
+  mother     Cat             @relation("PregnancyCheckMother", fields: [motherId], references: [id])
+  recorder   User            @relation(fields: [recordedBy], references: [id])
 
-  mother Cat @relation("PregnancyCheckMother", fields: [motherId], references: [id])
-
-  recordedBy String @map("recorded_by")
-  recorder   User   @relation(fields: [recordedBy], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
   @@index([motherId])
   @@index([fatherId])
   @@index([checkDate])
-  @@index([status]) // ステータスフィルター
-  @@index([recordedBy]) // 記録者フィルター
-  
-  // 複合インデックス
-  @@index([motherId, checkDate]) // 母猫別時系列
-  @@index([status, checkDate]) // ステータス別時系列
-  
+  @@index([status])
+  @@index([recordedBy])
+  @@index([motherId, checkDate])
+  @@index([status, checkDate])
   @@map("pregnancy_checks")
 }
 
 model BirthPlan {
-  id                String      @id @default(uuid())
-  motherId          String      @map("mother_id")
-  fatherId          String?     @map("father_id")
-  matingDate        DateTime?   @map("mating_date")
-  expectedBirthDate DateTime    @map("expected_birth_date")
-  actualBirthDate   DateTime?   @map("actual_birth_date")
-  status            BirthStatus @default(EXPECTED)
-  expectedKittens   Int?        @map("expected_kittens")
-  actualKittens     Int?        @map("actual_kittens")
-  completedAt       DateTime?   @map("completed_at") // 出産記録完了日時
-  notes             String?
-
-  mother Cat @relation("BirthPlanMother", fields: [motherId], references: [id])
-
-  recordedBy String @map("recorded_by")
-  recorder   User   @relation(fields: [recordedBy], references: [id])
-
-  // Relations
+  id                 String              @id @default(uuid())
+  status             BirthStatus         @default(EXPECTED)
+  notes              String?
+  recordedBy         String              @map("recorded_by")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  actualBirthDate    DateTime?           @map("actual_birth_date")
+  actualKittens      Int?                @map("actual_kittens")
+  expectedBirthDate  DateTime            @map("expected_birth_date")
+  expectedKittens    Int?                @map("expected_kittens")
+  motherId           String              @map("mother_id")
+  fatherId           String?             @map("father_id")
+  matingDate         DateTime?           @map("mating_date")
+  completedAt        DateTime?           @map("completed_at")
+  mother             Cat                 @relation("BirthPlanMother", fields: [motherId], references: [id])
+  recorder           User                @relation(fields: [recordedBy], references: [id])
   kittenDispositions KittenDisposition[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
   @@index([motherId])
   @@index([fatherId])
   @@index([expectedBirthDate])
-  @@index([status]) // ステータスフィルター
-  @@index([recordedBy]) // 記録者フィルター
-  @@index([actualBirthDate]) // 実際の出産日検索
-  
-  // 複合インデックス
-  @@index([motherId, expectedBirthDate]) // 母猫別予定日
-  @@index([status, expectedBirthDate]) // ステータス別予定日
-  @@index([expectedBirthDate, status]) // 予定日・ステータスフィルター
-  
+  @@index([status])
+  @@index([recordedBy])
+  @@index([actualBirthDate])
+  @@index([motherId, expectedBirthDate])
+  @@index([status, expectedBirthDate])
+  @@index([expectedBirthDate, status])
   @@map("birth_plans")
 }
 
 model KittenDisposition {
-  id            String          @id @default(uuid())
-  birthRecordId String          @map("birth_record_id")
-  kittenId      String?         @map("kitten_id") // 養成の場合のみ
-  name          String
-  gender        String // MALE or FEMALE
-  disposition   DispositionType // 処遇タイプ
-
-  // 養成の場合
-  trainingStartDate DateTime? @map("training_start_date")
-
-  // 出荷の場合
-  saleInfo Json? @map("sale_info") // { buyer, price, saleDate, notes }
-
-  // 死亡の場合
-  deathDate   DateTime? @map("death_date")
-  deathReason String?   @map("death_reason")
-
-  notes String?
-
-  birthRecord BirthPlan @relation(fields: [birthRecordId], references: [id], onDelete: Cascade)
-  kitten      Cat?      @relation(fields: [kittenId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                String          @id @default(uuid())
+  birthRecordId     String          @map("birth_record_id")
+  kittenId          String?         @map("kitten_id")
+  name              String
+  gender            String
+  disposition       DispositionType
+  trainingStartDate DateTime?       @map("training_start_date")
+  saleInfo          Json?           @map("sale_info")
+  deathDate         DateTime?       @map("death_date")
+  deathReason       String?         @map("death_reason")
+  notes             String?
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  birthRecord       BirthPlan       @relation(fields: [birthRecordId], references: [id], onDelete: Cascade)
+  kitten            Cat?            @relation(fields: [kittenId], references: [id])
 
   @@index([birthRecordId])
   @@index([kittenId])
@@ -479,78 +368,61 @@ model CareRecord {
   cost         Float?
   veterinarian String?
   notes        String?
+  recordedBy   String    @map("recorded_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  cat          Cat       @relation(fields: [catId], references: [id])
+  recorder     User      @relation(fields: [recordedBy], references: [id])
 
-  cat Cat @relation(fields: [catId], references: [id])
-
-  recordedBy String @map("recorded_by")
-  recorder   User   @relation(fields: [recordedBy], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
   @@index([catId])
   @@index([careDate])
   @@index([careType])
-  @@index([recordedBy]) // 記録者フィルター
-  @@index([nextDueDate]) // 次回予定日検索
-  
-  // 複合インデックス（ケア記録検索パターン）
-  @@index([catId, careDate]) // 猫別時系列検索
-  @@index([catId, careType]) // 猫別ケアタイプ
-  @@index([careType, careDate]) // ケアタイプ別時系列
-  @@index([nextDueDate, careType]) // 次回予定の検索
-  
+  @@index([recordedBy])
+  @@index([nextDueDate])
+  @@index([catId, careDate])
+  @@index([catId, careType])
+  @@index([careType, careDate])
+  @@index([nextDueDate, careType])
   @@map("care_records")
 }
 
 model Schedule {
-  id             String         @id @default(uuid())
+  id             String             @id @default(uuid())
   title          String
-  name           String         @map("name")
   description    String?
-  scheduleDate   DateTime       @map("schedule_date")
-  endDate        DateTime?      @map("end_date")
-  timezone       String?        @map("timezone")
-  scheduleType   ScheduleType   @map("schedule_type")
-  careType       CareType?      @map("care_type")
-  status         ScheduleStatus @default(PENDING)
-  priority       Priority       @default(MEDIUM)
-  recurrenceRule String?        @map("recurrence_rule")
-
-  // Optional cat relation
-  catId String? @map("cat_id")
-  cat   Cat?    @relation(fields: [catId], references: [id])
-
-  assignedTo String @map("assigned_to")
-  assignee   User   @relation(fields: [assignedTo], references: [id])
-
-  // Relations
-  reminders      ScheduleReminder[]
-  tags           ScheduleTag[]
+  scheduleDate   DateTime           @map("schedule_date")
+  scheduleType   ScheduleType       @map("schedule_type")
+  status         ScheduleStatus     @default(PENDING)
+  priority       Priority           @default(MEDIUM)
+  catId          String?            @map("cat_id")
+  assignedTo     String             @map("assigned_to")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  careType       CareType?          @map("care_type")
+  endDate        DateTime?          @map("end_date")
+  name           String             @map("name")
+  recurrenceRule String?            @map("recurrence_rule")
+  timezone       String?            @map("timezone")
   medicalRecords MedicalRecord[]
   scheduleCats   ScheduleCat[]
+  reminders      ScheduleReminder[]
+  tags           ScheduleTag[]
+  assignee       User               @relation(fields: [assignedTo], references: [id])
+  cat            Cat?               @relation(fields: [catId], references: [id])
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
   @@index([scheduleDate])
   @@index([endDate])
   @@index([status])
   @@index([catId])
   @@index([assignedTo])
   @@index([careType])
-  @@index([scheduleType]) // スケジュールタイプフィルター
-  @@index([priority]) // 優先度フィルター
-  
-  // 複合インデックス（スケジュール検索パターン）
-  @@index([scheduleDate, status]) // 日付・ステータスフィルター
-  @@index([catId, scheduleDate]) // 猫別スケジュール
-  @@index([assignedTo, scheduleDate]) // 担当者別スケジュール
-  @@index([scheduleType, scheduleDate]) // タイプ別時系列
-  @@index([status, priority]) // ステータス・優先度フィルター
-  
+  @@index([scheduleType])
+  @@index([priority])
+  @@index([scheduleDate, status])
+  @@index([catId, scheduleDate])
+  @@index([assignedTo, scheduleDate])
+  @@index([scheduleType, scheduleDate])
+  @@index([status, priority])
   @@map("schedules")
 }
 
@@ -569,32 +441,28 @@ model ScheduleReminder {
   repeatUntil     DateTime?                @map("repeat_until")
   notes           String?
   isActive        Boolean                  @default(true) @map("is_active")
-
-  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  schedule        Schedule                 @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@index([scheduleId])
   @@map("schedule_reminders")
 }
 
 model CareTag {
-  id          String  @id @default(uuid())
-  slug        String  @unique
-  label       String
-  level       Int     @default(1)
-  parentId    String? @map("parent_id")
-  description String?
-  isActive    Boolean @default(true) @map("is_active")
-  priority    Int?
-
+  id           String        @id @default(uuid())
+  slug         String        @unique
+  label        String
+  level        Int           @default(1)
+  parentId     String?       @map("parent_id")
+  description  String?
+  isActive     Boolean       @default(true) @map("is_active")
+  priority     Int?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
   parent       CareTag?      @relation("CareTagHierarchy", fields: [parentId], references: [id])
   children     CareTag[]     @relation("CareTagHierarchy")
   scheduleTags ScheduleTag[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([parentId])
   @@index([level])
@@ -602,183 +470,161 @@ model CareTag {
 }
 
 model ScheduleTag {
-  scheduleId String @map("schedule_id")
-  careTagId  String @map("care_tag_id")
-
-  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  careTag  CareTag  @relation(fields: [careTagId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
+  scheduleId String   @map("schedule_id")
+  careTagId  String   @map("care_tag_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  careTag    CareTag  @relation(fields: [careTagId], references: [id], onDelete: Cascade)
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@id([scheduleId, careTagId])
   @@map("schedule_tags")
 }
 
 model ScheduleCat {
-  scheduleId String @map("schedule_id")
-  catId      String @map("cat_id")
-
-  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  cat      Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
+  scheduleId String   @map("schedule_id")
+  catId      String   @map("cat_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  cat        Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@id([scheduleId, catId])
   @@map("schedule_cats")
 }
 
 model MedicalVisitType {
-  id           String  @id @default(uuid())
-  key          String? @unique
+  id           String          @id @default(uuid())
+  key          String?         @unique
   name         String
   description  String?
-  displayOrder Int     @default(0) @map("display_order")
-  isActive     Boolean @default(true) @map("is_active")
-
-  records MedicalRecord[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  displayOrder Int             @default(0) @map("display_order")
+  isActive     Boolean         @default(true) @map("is_active")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  records      MedicalRecord[]
 
   @@index([displayOrder])
   @@map("medical_visit_types")
 }
 
 model MedicalRecord {
-  id             String              @id @default(uuid())
-  catId          String              @map("cat_id")
-  scheduleId     String?             @map("schedule_id")
-  recordedBy     String              @map("recorded_by")
-  visitDate      DateTime            @map("visit_date")
-  visitTypeId    String?             @map("visit_type_id")
-  visitType      MedicalVisitType?   @relation(fields: [visitTypeId], references: [id])
-  hospitalName   String?             @map("hospital_name")
-  symptom        String?             @map("symptom")
-  symptomDetails Json?               @map("symptom_details")
-  diseaseName    String?             @map("disease_name")
-  diagnosis      String?             @map("diagnosis")
-  treatmentPlan  String?             @map("treatment_plan")
-  medications    Json?               @map("medications")
-  followUpDate   DateTime?           @map("follow_up_date")
-  status         MedicalRecordStatus @default(TREATING)
+  id             String                    @id @default(uuid())
+  catId          String                    @map("cat_id")
+  scheduleId     String?                   @map("schedule_id")
+  recordedBy     String                    @map("recorded_by")
+  visitDate      DateTime                  @map("visit_date")
+  symptomDetails Json?                     @map("symptom_details")
+  diagnosis      String?                   @map("diagnosis")
+  treatmentPlan  String?                   @map("treatment_plan")
+  medications    Json?                     @map("medications")
+  followUpDate   DateTime?                 @map("follow_up_date")
+  status         MedicalRecordStatus       @default(TREATING)
   notes          String?
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+  diseaseName    String?                   @map("disease_name")
+  symptom        String?                   @map("symptom")
+  hospitalName   String?                   @map("hospital_name")
+  visitTypeId    String?                   @map("visit_type_id")
+  attachments    MedicalRecordAttachment[]
+  tags           MedicalRecordTag[]
+  cat            Cat                       @relation(fields: [catId], references: [id])
+  recorder       User                      @relation(fields: [recordedBy], references: [id])
+  schedule       Schedule?                 @relation(fields: [scheduleId], references: [id])
+  visitType      MedicalVisitType?         @relation(fields: [visitTypeId], references: [id])
 
-  cat         Cat                       @relation(fields: [catId], references: [id])
-  schedule    Schedule?                 @relation(fields: [scheduleId], references: [id])
-  recorder    User                      @relation(fields: [recordedBy], references: [id])
-  attachments MedicalRecordAttachment[]
-  tags        MedicalRecordTag[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
   @@index([catId])
   @@index([visitDate])
   @@index([scheduleId])
   @@index([visitTypeId])
-  @@index([status]) // ステータスフィルター
-  @@index([recordedBy]) // 記録者フィルター
-  
-  // 複合インデックス
-  @@index([catId, visitDate]) // 猫別時系列
-  @@index([visitTypeId, visitDate]) // 診療タイプ別時系列
-  @@index([status, visitDate]) // ステータス別時系列
-  
+  @@index([status])
+  @@index([recordedBy])
+  @@index([catId, visitDate])
+  @@index([visitTypeId, visitDate])
+  @@index([status, visitDate])
   @@map("medical_records")
 }
 
 model MedicalRecordAttachment {
-  id              String    @id @default(uuid())
-  medicalRecordId String    @map("medical_record_id")
+  id              String        @id @default(uuid())
+  medicalRecordId String        @map("medical_record_id")
   url             String
-  fileName        String?   @map("file_name")
-  fileType        String?   @map("file_type")
-  fileSize        Int?      @map("file_size")
-  capturedAt      DateTime? @map("captured_at")
+  fileName        String?       @map("file_name")
+  fileType        String?       @map("file_type")
+  fileSize        Int?          @map("file_size")
+  capturedAt      DateTime?     @map("captured_at")
   description     String?
-
-  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
 
   @@index([medicalRecordId])
   @@map("medical_record_attachments")
 }
 
 model MedicalRecordTag {
-  medicalRecordId String @map("medical_record_id")
-  tagId           String @map("tag_id")
-
-  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
-  tag           Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
+  medicalRecordId String        @map("medical_record_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  tagId           String        @map("tag_id")
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+  tag             Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([medicalRecordId, tagId])
   @@map("medical_record_tags")
 }
 
 model TagCategory {
-  id           String   @id @default(uuid())
-  key          String   @unique
+  id           String     @id @default(uuid())
+  key          String     @unique
   name         String
   description  String?
-  color        String?  @default("#3B82F6")
-  textColor    String?  @default("#111827") @map("text_color")
-  displayOrder Int      @default(0) @map("display_order")
-  scopes       String[] @default([])
-  isActive     Boolean  @default(true) @map("is_active")
-
-  groups TagGroup[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  color        String?    @default("#3B82F6")
+  displayOrder Int        @default(0) @map("display_order")
+  scopes       String[]   @default([])
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  textColor    String?    @default("#111827") @map("text_color")
+  groups       TagGroup[]
 
   @@map("tag_categories")
 }
 
 model TagGroup {
-  id           String  @id @default(uuid())
-  categoryId   String  @map("category_id")
+  id           String      @id @default(uuid())
+  categoryId   String      @map("category_id")
   name         String
   description  String?
-  color        String? @default("#3B82F6")
-  textColor    String? @default("#111827") @map("text_color")
-  displayOrder Int     @default(0) @map("display_order")
-  isActive     Boolean @default(true) @map("is_active")
-
-  category TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  tags     Tag[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  displayOrder Int         @default(0) @map("display_order")
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  color        String?     @default("#3B82F6")
+  textColor    String?     @default("#111827") @map("text_color")
+  category     TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tags         Tag[]
 
   @@unique([categoryId, name])
   @@map("tag_groups")
 }
 
 model Tag {
-  id               String  @id @default(uuid())
-  groupId          String  @map("group_id")
-  name             String
-  color            String  @default("#3B82F6")
-  textColor        String  @default("#FFFFFF") @map("text_color")
-  description      String?
-  displayOrder     Int     @default(0) @map("display_order")
-  allowsManual     Boolean @default(true) @map("allows_manual")
-  allowsAutomation Boolean @default(true) @map("allows_automation")
-  metadata         Json?
-  isActive         Boolean @default(true) @map("is_active")
-
-  group             TagGroup               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  id                String                 @id @default(uuid())
+  name              String
+  color             String                 @default("#3B82F6")
+  description       String?
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
+  displayOrder      Int                    @default(0) @map("display_order")
+  allowsManual      Boolean                @default(true) @map("allows_manual")
+  allowsAutomation  Boolean                @default(true) @map("allows_automation")
+  metadata          Json?
+  isActive          Boolean                @default(true) @map("is_active")
+  groupId           String                 @map("group_id")
+  textColor         String                 @default("#FFFFFF") @map("text_color")
   cats              CatTag[]
   medicalRecordTags MedicalRecordTag[]
   history           TagAssignmentHistory[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  group             TagGroup               @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, name])
   @@index([groupId])
@@ -786,103 +632,99 @@ model Tag {
 }
 
 model Pedigree {
-  id               String  @id @default(uuid())
-  pedigreeId       String  @unique @map("pedigree_id")
-  title            String? @map("title")
-  catName          String? @map("cat_name")
-  catName2         String? @map("cat_name2")
-  breedCode        Int?    @map("breed_code")
-  genderCode       Int?    @map("gender_code")
-  eyeColor         String? @map("eye_color")
-  coatColorCode    Int?    @map("coat_color_code")
-  birthDate        String? @map("birth_date")
-  breederName      String? @map("breeder_name")
-  ownerName        String? @map("owner_name")
-  registrationDate String? @map("registration_date")
-  brotherCount     Int?    @map("brother_count")
-  sisterCount      Int?    @map("sister_count")
-  notes            String? @map("notes")
-  notes2           String? @map("notes2")
-  otherNo          String? @map("other_no")
-  fatherTitle      String? @map("father_title")
-  fatherCatName    String? @map("father_cat_name")
-  fatherCatName2   String? @map("father_cat_name2")
-  fatherCoatColor  String? @map("father_coat_color")
-  fatherEyeColor   String? @map("father_eye_color")
-  fatherJCU        String? @map("father_jcu")
-  fatherOtherCode  String? @map("father_other_code")
-  motherTitle      String? @map("mother_title")
-  motherCatName    String? @map("mother_cat_name")
-  motherCatName2   String? @map("mother_cat_name2")
-  motherCoatColor  String? @map("mother_coat_color")
-  motherEyeColor   String? @map("mother_eye_color")
-  motherJCU        String? @map("mother_jcu")
-  motherOtherCode  String? @map("mother_other_code")
-  ffTitle          String? @map("ff_title")
-  ffCatName        String? @map("ff_cat_name")
-  ffCatColor       String? @map("ff_cat_color")
-  ffjcu            String? @map("ffjcu")
-  fmTitle          String? @map("fm_title")
-  fmCatName        String? @map("fm_cat_name")
-  fmCatColor       String? @map("fm_cat_color")
-  fmjcu            String? @map("fmjcu")
-  mfTitle          String? @map("mf_title")
-  mfCatName        String? @map("mf_cat_name")
-  mfCatColor       String? @map("mf_cat_color")
-  mfjcu            String? @map("mfjcu")
-  mmTitle          String? @map("mm_title")
-  mmCatName        String? @map("mm_cat_name")
-  mmCatColor       String? @map("mm_cat_color")
-  mmjcu            String? @map("mmjcu")
-  fffTitle         String? @map("fff_title")
-  fffCatName       String? @map("fff_cat_name")
-  fffCatColor      String? @map("fff_cat_color")
-  fffjcu           String? @map("fffjcu")
-  ffmTitle         String? @map("ffm_title")
-  ffmCatName       String? @map("ffm_cat_name")
-  ffmCatColor      String? @map("ffm_cat_color")
-  ffmjcu           String? @map("ffmjcu")
-  fmfTitle         String? @map("fmf_title")
-  fmfCatName       String? @map("fmf_cat_name")
-  fmfCatColor      String? @map("fmf_cat_color")
-  fmfjcu           String? @map("fmfjcu")
-  fmmTitle         String? @map("fmm_title")
-  fmmCatName       String? @map("fmm_cat_name")
-  fmmCatColor      String? @map("fmm_cat_color")
-  fmmjcu           String? @map("fmmjcu")
-  mffTitle         String? @map("mff_title")
-  mffCatName       String? @map("mff_cat_name")
-  mffCatColor      String? @map("mff_cat_color")
-  mffjcu           String? @map("mffjcu")
-  mfmTitle         String? @map("mfm_title")
-  mfmCatName       String? @map("mfm_cat_name")
-  mfmCatColor      String? @map("mfm_cat_color")
-  mfmjcu           String? @map("mfmjcu")
-  mmfTitle         String? @map("mmf_title")
-  mmfCatName       String? @map("mmf_cat_name")
-  mmfCatColor      String? @map("mmf_cat_color")
-  mmfjcu           String? @map("mmfjcu")
-  mmmTitle         String? @map("mmm_title")
-  mmmCatName       String? @map("mmm_cat_name")
-  mmmCatColor      String? @map("mmm_cat_color")
-  mmmjcu           String? @map("mmmjcu")
-  oldCode          String? @map("old_code")
+  id               String     @id @default(uuid())
+  pedigreeId       String     @unique @map("pedigree_id")
+  title            String?    @map("title")
+  catName          String?    @map("cat_name")
+  catName2         String?    @map("cat_name2")
+  breedCode        Int?       @map("breed_code")
+  genderCode       Int?       @map("gender_code")
+  eyeColor         String?    @map("eye_color")
+  coatColorCode    Int?       @map("coat_color_code")
+  birthDate        String?    @map("birth_date")
+  breederName      String?    @map("breeder_name")
+  ownerName        String?    @map("owner_name")
+  registrationDate String?    @map("registration_date")
+  brotherCount     Int?       @map("brother_count")
+  sisterCount      Int?       @map("sister_count")
+  notes            String?    @map("notes")
+  notes2           String?    @map("notes2")
+  otherNo          String?    @map("other_no")
+  fatherTitle      String?    @map("father_title")
+  fatherCatName    String?    @map("father_cat_name")
+  fatherCatName2   String?    @map("father_cat_name2")
+  fatherCoatColor  String?    @map("father_coat_color")
+  fatherEyeColor   String?    @map("father_eye_color")
+  fatherJCU        String?    @map("father_jcu")
+  fatherOtherCode  String?    @map("father_other_code")
+  motherTitle      String?    @map("mother_title")
+  motherCatName    String?    @map("mother_cat_name")
+  motherCatName2   String?    @map("mother_cat_name2")
+  motherCoatColor  String?    @map("mother_coat_color")
+  motherEyeColor   String?    @map("mother_eye_color")
+  motherJCU        String?    @map("mother_jcu")
+  motherOtherCode  String?    @map("mother_other_code")
+  ffTitle          String?    @map("ff_title")
+  ffCatName        String?    @map("ff_cat_name")
+  ffCatColor       String?    @map("ff_cat_color")
+  fmTitle          String?    @map("fm_title")
+  fmCatName        String?    @map("fm_cat_name")
+  fmCatColor       String?    @map("fm_cat_color")
+  mfTitle          String?    @map("mf_title")
+  mfCatName        String?    @map("mf_cat_name")
+  mfCatColor       String?    @map("mf_cat_color")
+  mmTitle          String?    @map("mm_title")
+  mmCatName        String?    @map("mm_cat_name")
+  mmCatColor       String?    @map("mm_cat_color")
+  fffTitle         String?    @map("fff_title")
+  fffCatName       String?    @map("fff_cat_name")
+  fffCatColor      String?    @map("fff_cat_color")
+  ffmTitle         String?    @map("ffm_title")
+  ffmCatName       String?    @map("ffm_cat_name")
+  ffmCatColor      String?    @map("ffm_cat_color")
+  fmfTitle         String?    @map("fmf_title")
+  fmfCatName       String?    @map("fmf_cat_name")
+  fmfCatColor      String?    @map("fmf_cat_color")
+  fmmTitle         String?    @map("fmm_title")
+  fmmCatName       String?    @map("fmm_cat_name")
+  fmmCatColor      String?    @map("fmm_cat_color")
+  mffTitle         String?    @map("mff_title")
+  mffCatName       String?    @map("mff_cat_name")
+  mffCatColor      String?    @map("mff_cat_color")
+  mfmTitle         String?    @map("mfm_title")
+  mfmCatName       String?    @map("mfm_cat_name")
+  mfmCatColor      String?    @map("mfm_cat_color")
+  mmfTitle         String?    @map("mmf_title")
+  mmfCatName       String?    @map("mmf_cat_name")
+  mmfCatColor      String?    @map("mmf_cat_color")
+  mmmTitle         String?    @map("mmm_title")
+  mmmCatName       String?    @map("mmm_cat_name")
+  mmmCatColor      String?    @map("mmm_cat_color")
+  oldCode          String?    @map("old_code")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  fffjcu           String?    @map("fffjcu")
+  ffjcu            String?    @map("ffjcu")
+  ffmjcu           String?    @map("ffmjcu")
+  fmfjcu           String?    @map("fmfjcu")
+  fmjcu            String?    @map("fmjcu")
+  fmmjcu           String?    @map("fmmjcu")
+  mffjcu           String?    @map("mffjcu")
+  mfjcu            String?    @map("mfjcu")
+  mfmjcu           String?    @map("mfmjcu")
+  mmfjcu           String?    @map("mmfjcu")
+  mmjcu            String?    @map("mmjcu")
+  mmmjcu           String?    @map("mmmjcu")
+  cats             Cat[]      @relation("CatPedigree")
+  breed            Breed?     @relation(fields: [breedCode], references: [code])
+  coatColor        CoatColor? @relation(fields: [coatColorCode], references: [code])
+  gender           Gender?    @relation(fields: [genderCode], references: [code])
 
-  // Relations
-  breed     Breed?     @relation(fields: [breedCode], references: [code])
-  coatColor CoatColor? @relation(fields: [coatColorCode], references: [code])
-  gender    Gender?    @relation(fields: [genderCode], references: [code])
-  cats      Cat[]      @relation("CatPedigree")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
   @@index([breedCode])
   @@index([genderCode])
   @@index([coatColorCode])
   @@index([catName])
-  @@index([pedigreeId]) // pedigreeId検索用（追加）
+  @@index([pedigreeId])
   @@index([catName2])
   @@index([eyeColor])
   @@index([breederName])
@@ -891,21 +733,16 @@ model Pedigree {
   @@index([registrationDate])
   @@index([createdAt])
   @@index([updatedAt])
-  
-  // 複合インデックス（血統検索パターン）
-  @@index([breedCode, catName]) // 品種別名前検索
-  
+  @@index([breedCode, catName])
   @@map("pedigrees")
 }
 
 model CatTag {
-  catId String @map("cat_id")
-  tagId String @map("tag_id")
-
-  cat Cat @relation(fields: [catId], references: [id], onDelete: Cascade)
-  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
+  catId     String   @map("cat_id")
+  tagId     String   @map("tag_id")
   createdAt DateTime @default(now()) @map("created_at")
+  cat       Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([catId, tagId])
   @@map("cat_tags")
@@ -922,12 +759,10 @@ model TagAutomationRule {
   isActive    Boolean                  @default(true) @map("is_active")
   priority    Int                      @default(0)
   config      Json?                    @map("config")
-
-  runs    TagAutomationRun[]
-  history TagAssignmentHistory[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  updatedAt   DateTime                 @updatedAt @map("updated_at")
+  history     TagAssignmentHistory[]
+  runs        TagAutomationRun[]
 
   @@map("tag_automation_rules")
 }
@@ -940,12 +775,10 @@ model TagAutomationRun {
   startedAt    DateTime?              @map("started_at")
   completedAt  DateTime?              @map("completed_at")
   errorMessage String?                @map("error_message")
-
-  rule    TagAutomationRule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-  history TagAssignmentHistory[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+  history      TagAssignmentHistory[]
+  rule         TagAutomationRule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
 
   @@index([ruleId])
   @@map("tag_automation_runs")
@@ -961,13 +794,11 @@ model TagAssignmentHistory {
   source          TagAssignmentSource @default(MANUAL)
   reason          String?
   metadata        Json?
-
-  cat           Cat                @relation(fields: [catId], references: [id], onDelete: Cascade)
-  tag           Tag                @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  rule          TagAutomationRule? @relation(fields: [ruleId], references: [id])
-  automationRun TagAutomationRun?  @relation(fields: [automationRunId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  automationRun   TagAutomationRun?   @relation(fields: [automationRunId], references: [id])
+  cat             Cat                 @relation(fields: [catId], references: [id], onDelete: Cascade)
+  rule            TagAutomationRule?  @relation(fields: [ruleId], references: [id])
+  tag             Tag                 @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@index([catId])
   @@index([tagId])
@@ -976,12 +807,247 @@ model TagAssignmentHistory {
   @@map("tag_assignment_history")
 }
 
-// Enums
+model Staff {
+  id               String              @id @default(uuid())
+  userId           String?             @unique @map("user_id")
+  name             String
+  email            String?             @unique
+  role             String              @default("スタッフ")
+  color            String              @default("#4dabf7")
+  isActive         Boolean             @default(true) @map("is_active")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  workTimeTemplate Json?               @map("work_time_template")
+  workingDays      Json?               @map("working_days")
+  shifts           Shift[]
+  user             User?               @relation(fields: [userId], references: [id])
+  availabilities   StaffAvailability[]
+
+  @@index([userId])
+  @@index([name])
+  @@index([email])
+  @@index([isActive])
+  @@index([isActive, role])
+  @@map("staff")
+}
+
+model ShiftTemplate {
+  id           String   @id @default(uuid())
+  name         String
+  startTime    String   @map("start_time")
+  endTime      String   @map("end_time")
+  duration     Int
+  color        String   @default("#4dabf7")
+  breakTime    Int      @default(0) @map("break_time")
+  isActive     Boolean  @default(true) @map("is_active")
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  shifts       Shift[]
+
+  @@index([name])
+  @@index([displayOrder])
+  @@map("shift_templates")
+}
+
+model Shift {
+  id              String         @id @default(uuid())
+  staffId         String         @map("staff_id")
+  shiftDate       DateTime       @map("shift_date")
+  displayName     String?        @map("display_name")
+  templateId      String?        @map("template_id")
+  startTime       DateTime?      @map("start_time")
+  endTime         DateTime?      @map("end_time")
+  breakDuration   Int?           @map("break_duration")
+  status          ShiftStatus    @default(SCHEDULED)
+  notes           String?
+  actualStartTime DateTime?      @map("actual_start_time")
+  actualEndTime   DateTime?      @map("actual_end_time")
+  metadata        Json?
+  mode            ShiftMode      @default(SIMPLE)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  tasks           ShiftTask[]
+  staff           Staff          @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  template        ShiftTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([staffId])
+  @@index([templateId])
+  @@index([shiftDate])
+  @@index([status])
+  @@index([mode])
+  @@index([staffId, shiftDate])
+  @@index([shiftDate, status])
+  @@index([status, shiftDate])
+  @@map("shifts")
+}
+
+model ShiftTask {
+  id          String     @id @default(uuid())
+  shiftId     String     @map("shift_id")
+  taskType    String     @map("task_type")
+  description String
+  priority    Priority   @default(MEDIUM)
+  status      TaskStatus @default(PENDING)
+  startTime   DateTime?  @map("start_time")
+  endTime     DateTime?  @map("end_time")
+  notes       String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  shift       Shift      @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@index([shiftId])
+  @@index([status])
+  @@map("shift_tasks")
+}
+
+model StaffAvailability {
+  id          String   @id @default(uuid())
+  staffId     String   @map("staff_id")
+  dayOfWeek   Int      @map("day_of_week")
+  startTime   String   @map("start_time")
+  endTime     String   @map("end_time")
+  isAvailable Boolean  @default(true) @map("is_available")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([staffId])
+  @@index([dayOfWeek])
+  @@index([isAvailable])
+  @@index([staffId, dayOfWeek])
+  @@index([dayOfWeek, isAvailable])
+  @@map("staff_availabilities")
+}
+
+model ShiftSettings {
+  id                       String    @id @default(uuid())
+  organizationId           String?   @map("organization_id")
+  defaultMode              ShiftMode @default(SIMPLE) @map("default_mode")
+  enabledModes             String[]  @default(["SIMPLE", "DETAILED"]) @map("enabled_modes")
+  simpleRequireDisplayName Boolean   @default(false) @map("simple_require_display_name")
+  detailedRequireTime      Boolean   @default(true) @map("detailed_require_time")
+  detailedRequireTemplate  Boolean   @default(false) @map("detailed_require_template")
+  detailedEnableTasks      Boolean   @default(true) @map("detailed_enable_tasks")
+  detailedEnableActual     Boolean   @default(true) @map("detailed_enable_actual")
+  customFields             Json?     @map("custom_fields")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  @@map("shift_settings")
+}
+
+model Graduation {
+  id            String   @id @default(uuid())
+  catId         String   @unique @map("cat_id")
+  transferDate  DateTime @map("transfer_date")
+  destination   String
+  notes         String?
+  catSnapshot   Json     @map("cat_snapshot")
+  transferredBy String?  @map("transferred_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  cat           Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  @@index([transferDate])
+  @@index([catId])
+  @@map("graduations")
+}
+
+model GalleryEntry {
+  id            String          @id @default(uuid())
+  category      GalleryCategory
+  name          String
+  gender        String
+  coatColor     String?         @map("coat_color")
+  breed         String?
+  catId         String?         @map("cat_id")
+  transferDate  DateTime?       @map("transfer_date")
+  destination   String?
+  externalLink  String?         @map("external_link")
+  transferredBy String?         @map("transferred_by")
+  catSnapshot   Json?           @map("cat_snapshot")
+  notes         String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  cat           Cat?            @relation("GalleryEntryCat", fields: [catId], references: [id])
+  media         GalleryMedia[]
+
+  @@index([category])
+  @@index([catId])
+  @@index([createdAt])
+  @@index([category, createdAt])
+  @@map("gallery_entries")
+}
+
+model GalleryMedia {
+  id             String       @id @default(uuid())
+  galleryEntryId String       @map("gallery_entry_id")
+  type           MediaType
+  url            String
+  thumbnailUrl   String?      @map("thumbnail_url")
+  order          Int          @default(0)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  galleryEntry   GalleryEntry @relation(fields: [galleryEntryId], references: [id], onDelete: Cascade)
+
+  @@index([galleryEntryId])
+  @@index([order])
+  @@map("gallery_media")
+}
+
+// ==========================================
+// Print Template Management
+// ==========================================
+
+model PrintTemplate {
+  id                String                @id @default(uuid())
+  tenantId          String?               @map("tenant_id") // null = 共通テンプレート
+  name              String
+  description       String?
+  category          PrintTemplateCategory @default(PEDIGREE)
+  paperWidth        Int                   @map("paper_width")    // mm単位
+  paperHeight       Int                   @map("paper_height")   // mm単位
+  backgroundUrl     String?               @map("background_url")
+  backgroundOpacity Int                   @default(100) @map("background_opacity") // 0-100%
+  positions         Json                  // フィールド座標設定
+  fontSizes         Json?                 @map("font_sizes")     // フォントサイズ設定
+  isActive          Boolean               @default(true) @map("is_active")
+  isDefault         Boolean               @default(false) @map("is_default")
+  displayOrder      Int                   @default(0) @map("display_order")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([isActive])
+  @@index([name])
+  @@index([tenantId, category, isActive])
+  @@map("print_templates")
+}
+
+enum PrintTemplateCategory {
+  PEDIGREE           // 血統書
+  KITTEN_TRANSFER    // 子猫譲渡証明書
+  HEALTH_CERTIFICATE // 健康診断書
+  VACCINATION_RECORD // ワクチン接種記録
+  BREEDING_RECORD    // 繁殖記録
+  CONTRACT           // 契約書
+  INVOICE            // 請求書/領収書
+  CUSTOM             // カスタム書類
+}
+
+enum DisplayNameMode {
+  CANONICAL
+  CODE_AND_NAME
+  CUSTOM
+}
+
 enum UserRole {
   USER
   ADMIN
   SUPER_ADMIN
-  TENANT_ADMIN // テナント管理者
+  TENANT_ADMIN
 }
 
 enum BreedingStatus {
@@ -1006,9 +1072,9 @@ enum BirthStatus {
 }
 
 enum DispositionType {
-  TRAINING // 養成
-  SALE // 出荷
-  DECEASED // 死亡
+  TRAINING
+  SALE
+  DECEASED
 }
 
 enum BreedingNgRuleType {
@@ -1112,8 +1178,8 @@ enum TagAutomationEventType {
   PREGNANCY_CONFIRMED
   KITTEN_REGISTERED
   AGE_THRESHOLD
-  PAGE_ACTION // ページ・アクション駆動イベント（柔軟な設定が可能）
   CUSTOM
+  PAGE_ACTION
 }
 
 enum TagAutomationRunStatus {
@@ -1122,194 +1188,19 @@ enum TagAutomationRunStatus {
   FAILED
 }
 
-// ==========================================
-// Staff & Shift Management Models
-// ==========================================
-
-model Staff {
-  id               String  @id @default(uuid())
-  userId           String? @unique @map("user_id") // User連携（任意）
-  name             String
-  email            String? @unique
-  role             String  @default("スタッフ") // 役職
-  color            String  @default("#4dabf7") // カレンダー表示色
-  isActive         Boolean @default(true) @map("is_active")
-  workingDays      Json?   @map("working_days") // 出勤曜日 ["mon", "tue", ...] 形式
-  workTimeTemplate Json?   @map("work_time_template") // 勤務時間テンプレート { startHour: number, endHour: number }
-
-  user           User?               @relation(fields: [userId], references: [id])
-  shifts         Shift[]
-  availabilities StaffAvailability[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
-  @@index([userId])
-  @@index([name])
-  @@index([email])
-  @@index([isActive])
-  
-  // 複合インデックス（スタッフ検索パターン）
-  @@index([isActive, role]) // アクティブスタッフの役職フィルター
-  
-  @@map("staff")
-}
-
-model ShiftTemplate {
-  id           String  @id @default(uuid())
-  name         String // "午前", "午後", "終日", "夜間"
-  startTime    String  @map("start_time") // HH:mm 形式
-  endTime      String  @map("end_time") // HH:mm 形式
-  duration     Int // 分単位
-  color        String  @default("#4dabf7")
-  breakTime    Int     @default(0) @map("break_time") // 休憩時間（分）
-  isActive     Boolean @default(true) @map("is_active")
-  displayOrder Int     @default(0) @map("display_order")
-
-  shifts Shift[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
-  @@index([name])
-  @@index([displayOrder])
-  
-  @@map("shift_templates")
-}
-
-model Shift {
-  id        String   @id @default(uuid())
-  staffId   String   @map("staff_id")
-  shiftDate DateTime @map("shift_date") // シフトの日付【必須】
-
-  // 簡易モード: ここまでで十分
-  displayName String? @map("display_name") // 表示名（カスタム可能）
-
-  // 詳細モード: 以下はオプション
-  templateId    String?     @map("template_id")
-  startTime     DateTime?   @map("start_time") // 予定開始時刻
-  endTime       DateTime?   @map("end_time") // 予定終了時刻
-  breakDuration Int?        @map("break_duration") // 休憩時間（分）
-  status        ShiftStatus @default(SCHEDULED)
-  notes         String?
-
-  // 実績記録（詳細モード）
-  actualStartTime DateTime? @map("actual_start_time") // 実際の出勤時刻
-  actualEndTime   DateTime? @map("actual_end_time") // 実際の退勤時刻
-
-  // メタデータ
-  metadata Json? // カスタムフィールド用JSON
-  mode     ShiftMode @default(SIMPLE) // シフトの作成モード
-
-  staff    Staff          @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  template ShiftTemplate? @relation(fields: [templateId], references: [id])
-  tasks    ShiftTask[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
-  @@index([staffId])
-  @@index([templateId])
-  @@index([shiftDate])
-  @@index([status])
-  @@index([mode])
-  
-  // 複合インデックス（シフト検索パターン）
-  @@index([staffId, shiftDate]) // スタッフ別日付検索
-  @@index([shiftDate, status]) // 日付・ステータスフィルター
-  @@index([status, shiftDate]) // ステータス別時系列
-  
-  @@map("shifts")
-}
-
-model ShiftTask {
-  id          String     @id @default(uuid())
-  shiftId     String     @map("shift_id")
-  taskType    String     @map("task_type") // 猫の世話、清掃、健康チェックなど
-  description String
-  priority    Priority   @default(MEDIUM)
-  status      TaskStatus @default(PENDING)
-  startTime   DateTime?  @map("start_time")
-  endTime     DateTime?  @map("end_time")
-  notes       String?
-
-  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([shiftId])
-  @@index([status])
-  @@map("shift_tasks")
-}
-
-model StaffAvailability {
-  id          String  @id @default(uuid())
-  staffId     String  @map("staff_id")
-  dayOfWeek   Int     @map("day_of_week") // 0=日曜, 1=月曜, ..., 6=土曜
-  startTime   String  @map("start_time") // HH:mm 形式
-  endTime     String  @map("end_time") // HH:mm 形式
-  isAvailable Boolean @default(true) @map("is_available")
-  notes       String?
-
-  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // シングルカラムインデックス
-  @@index([staffId])
-  @@index([dayOfWeek])
-  @@index([isAvailable])
-  
-  // 複合インデックス（利用可能時間検索パターン）
-  @@index([staffId, dayOfWeek]) // スタッフ別曜日検索
-  @@index([dayOfWeek, isAvailable]) // 曜日別利用可能性
-  
-  @@map("staff_availabilities")
-}
-
-model ShiftSettings {
-  id             String    @id @default(uuid())
-  organizationId String?   @map("organization_id") // 将来の多組織対応用
-  defaultMode    ShiftMode @default(SIMPLE) @map("default_mode")
-  enabledModes   String[]  @default(["SIMPLE", "DETAILED"]) @map("enabled_modes")
-
-  // 簡易モード設定
-  simpleRequireDisplayName Boolean @default(false) @map("simple_require_display_name")
-
-  // 詳細モード設定
-  detailedRequireTime     Boolean @default(true) @map("detailed_require_time")
-  detailedRequireTemplate Boolean @default(false) @map("detailed_require_template")
-  detailedEnableTasks     Boolean @default(true) @map("detailed_enable_tasks")
-  detailedEnableActual    Boolean @default(true) @map("detailed_enable_actual")
-
-  // カスタムモード設定
-  customFields Json? @map("custom_fields") // カスタムフィールド定義
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("shift_settings")
-}
-
-// Shift Management Enums
 enum ShiftMode {
-  SIMPLE // 簡易モード: 名前のみ
-  DETAILED // 詳細モード: 時刻・業務管理
-  CUSTOM // カスタムモード: 組織定義
+  SIMPLE
+  DETAILED
+  CUSTOM
 }
 
 enum ShiftStatus {
-  SCHEDULED // 予定
-  CONFIRMED // 確定
-  IN_PROGRESS // 勤務中
-  COMPLETED // 完了
-  CANCELLED // キャンセル
-  ABSENT // 欠勤
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ABSENT
 }
 
 enum TaskStatus {
@@ -1319,97 +1210,11 @@ enum TaskStatus {
   SKIPPED
 }
 
-// ========== 卒業記録（譲渡情報アーカイブ） ==========
-
-model Graduation {
-  id String @id @default(uuid())
-
-  // 猫との関連（1対1）
-  catId String @unique @map("cat_id")
-  cat   Cat    @relation(fields: [catId], references: [id], onDelete: Cascade)
-
-  // 譲渡情報
-  transferDate DateTime @map("transfer_date") // 譲渡日
-  destination  String // 譲渡先
-  notes        String? // 備考
-
-  // 猫データのスナップショット（譲渡時点の状態を保存）
-  catSnapshot Json @map("cat_snapshot")
-
-  // 譲渡時の担当者
-  transferredBy String? @map("transferred_by") // ユーザーID
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([transferDate])
-  @@index([catId])
-  @@map("graduations")
-}
-
-// ==========================================
-// Gallery Models
-// ==========================================
-
-model GalleryEntry {
-  id       String          @id @default(uuid())
-  category GalleryCategory
-
-  // スナップショット情報（登録時点でコピー、後から編集可能）
-  name      String
-  gender    String // MALE, FEMALE, NEUTER, SPAY
-  coatColor String? @map("coat_color")
-  breed     String?
-
-  // 元の猫への参照（任意）
-  catId String? @map("cat_id")
-  cat   Cat?    @relation("GalleryEntryCat", fields: [catId], references: [id], onDelete: SetNull)
-
-  // 卒業猫用フィールド（Graduation統合）
-  transferDate  DateTime? @map("transfer_date")
-  destination   String?
-  externalLink  String?   @map("external_link")
-  transferredBy String?   @map("transferred_by")
-  catSnapshot   Json?     @map("cat_snapshot")
-  notes         String?
-
-  // メディア
-  media GalleryMedia[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // インデックス
-  @@index([category])
-  @@index([catId])
-  @@index([createdAt])
-  @@index([category, createdAt])
-  @@map("gallery_entries")
-}
-
 enum GalleryCategory {
   KITTEN
   FATHER
   MOTHER
   GRADUATION
-}
-
-model GalleryMedia {
-  id             String       @id @default(uuid())
-  galleryEntryId String       @map("gallery_entry_id")
-  galleryEntry   GalleryEntry @relation(fields: [galleryEntryId], references: [id], onDelete: Cascade)
-
-  type         MediaType
-  url          String
-  thumbnailUrl String?   @map("thumbnail_url")
-  order        Int       @default(0)
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // インデックス
-  @@index([galleryEntryId])
-  @@index([order])
-  @@map("gallery_media")
 }
 
 enum MediaType {

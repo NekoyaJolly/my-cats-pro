@@ -1,0 +1,1 @@
+export { PrintTemplateManager } from './PrintTemplateManager';
