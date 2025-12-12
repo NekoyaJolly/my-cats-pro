@@ -194,9 +194,11 @@ export function PrintSettingsEditor() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiUrl}/api/pedigrees/print-settings`);
+      const response = await fetch(`${apiUrl}/api/v1/pedigrees/print-settings`);
       if (!response.ok) throw new Error('設定の取得に失敗しました');
-      const data = await response.json();
+      const json = await response.json();
+      // APIレスポンスは { success: true, data: {...} } 形式
+      const data = json.data || json;
       setSettings(data);
       setHasChanges(false);
     } catch (err) {
@@ -245,7 +247,7 @@ export function PrintSettingsEditor() {
     if (!settings) return;
     setSaving(true);
     try {
-      const response = await fetch(`${apiUrl}/api/pedigrees/print-settings`, {
+      const response = await fetch(`${apiUrl}/api/v1/pedigrees/print-settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
@@ -275,11 +277,13 @@ export function PrintSettingsEditor() {
     if (!confirm('設定をデフォルトにリセットしますか？')) return;
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/api/pedigrees/print-settings/reset`, {
+      const response = await fetch(`${apiUrl}/api/v1/pedigrees/print-settings/reset`, {
         method: 'POST',
       });
       if (!response.ok) throw new Error('リセットに失敗しました');
-      const data = await response.json();
+      const json = await response.json();
+      // APIレスポンスは { success: true, data: {...} } 形式
+      const data = json.data || json;
       setSettings(data);
       setHasChanges(false);
       notifications.show({

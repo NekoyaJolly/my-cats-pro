@@ -87,7 +87,15 @@ export class PrintSettingsService {
   private readonly positionsFilePath: string;
 
   constructor() {
-    this.positionsFilePath = path.join(__dirname, 'positions.json');
+    // 開発時はsrc、本番時はdistからの相対パスでsrcを参照
+    // process.cwd() はプロジェクトルート（backend/）を指す
+    this.positionsFilePath = path.join(
+      process.cwd(),
+      'src',
+      'pedigree',
+      'pdf',
+      'positions.json'
+    );
   }
 
   /**
