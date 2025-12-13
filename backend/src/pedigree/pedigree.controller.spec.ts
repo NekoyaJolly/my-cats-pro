@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getTestModuleImports, getTestModuleProviders } from '../test-utils/test-module-setup';
 
 import { PedigreePdfService } from './pdf/pedigree-pdf.service';
+import { PrintSettingsService } from './pdf/print-settings.service';
 import { PedigreeController } from './pedigree.controller';
 import { PedigreeService } from './pedigree.service';
 
@@ -23,6 +24,12 @@ describe('PedigreeController', () => {
     generatePdf: jest.fn(),
   };
 
+  const mockPrintSettingsService = {
+    getSettings: jest.fn(),
+    updateSettings: jest.fn(),
+    resetToDefault: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: getTestModuleImports(),
@@ -36,6 +43,10 @@ describe('PedigreeController', () => {
         {
           provide: PedigreePdfService,
           useValue: mockPedigreePdfService,
+        },
+        {
+          provide: PrintSettingsService,
+          useValue: mockPrintSettingsService,
         },
       ],
     }).compile();
