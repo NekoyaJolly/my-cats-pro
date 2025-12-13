@@ -36,6 +36,10 @@ export const PrintTemplateCategoryLabels: Record<PrintTemplateCategory, string> 
 
 /** テンプレート作成DTO */
 export class CreatePrintTemplateDto {
+  @IsOptional()
+  @IsString()
+  tenantId?: string;
+
   @IsString()
   name: string;
 

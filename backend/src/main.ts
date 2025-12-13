@@ -8,7 +8,7 @@ import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import cookieParser from 'cookie-parser';
 import { config as loadEnv } from 'dotenv';
-import { Request, Response, NextFunction } from 'express';
+import { json, urlencoded, Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { Logger as PinoLogger } from 'nestjs-pino';
 
@@ -82,6 +82,10 @@ async function bootstrap() {
         credentials: true,
       },
     });
+
+  // Body parser limit を拡張（Base64画像対応：最大50MB）
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
 
   // Pino logger
   app.useLogger(app.get(PinoLogger));

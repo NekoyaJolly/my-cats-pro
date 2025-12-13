@@ -13,6 +13,7 @@ import { PageTitle } from '@/components/PageTitle';
 import { 
   IconFileExport,
   IconFileImport,
+  IconPrinter,
   IconChevronRight
 } from '@tabler/icons-react';
 
@@ -25,6 +26,13 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
+  {
+    title: '印刷テンプレート管理',
+    description: '血統書や各種書類の印刷レイアウトを設定',
+    icon: <IconPrinter size={24} />,
+    href: '/print-templates',
+    color: 'orange'
+  },
   {
     title: 'データエクスポート',
     description: '猫の情報をCSVやPDFで出力',

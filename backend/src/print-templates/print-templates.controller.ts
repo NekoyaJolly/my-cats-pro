@@ -99,11 +99,8 @@ export class PrintTemplatesController {
    * POST /api/v1/print-templates
    */
   @Post()
-  async create(
-    @Body() dto: CreatePrintTemplateDto,
-    @Query('tenantId') tenantId?: string,
-  ) {
-    const template = await this.service.create(dto, tenantId);
+  async create(@Body() dto: CreatePrintTemplateDto) {
+    const template = await this.service.create(dto, dto.tenantId);
     return {
       success: true,
       data: template,
