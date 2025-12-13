@@ -30,6 +30,7 @@ import {
   IconPlus,
   IconTrash,
   IconCopy,
+  IconPrinter,
   IconSettings,
   IconEye,
   IconCheck,
@@ -39,6 +40,108 @@ import {
   IconUpload,
   IconX,
 } from '@tabler/icons-react';
+
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function buildPrintHtml(params: {
+  template: PrintTemplate;
+  showSampleData: boolean;
+  sampleData?: Record<string, string>;
+}): string {
+  const { template, showSampleData, sampleData } = params;
+
+  const safeTitle = escapeHtml(template.name);
+  const pageWidthMm = template.paperWidth;
+  const pageHeightMm = template.paperHeight;
+
+  const fieldHtml = Object.entries(template.positions)
+    .map(([fieldName, pos]) => {
+      const text = showSampleData
+        ? (sampleData?.[fieldName] ?? FIELD_LABELS[fieldName] ?? fieldName)
+        : (FIELD_LABELS[fieldName] ?? fieldName);
+
+      const align: 'left' | 'center' | 'right' = pos.align ?? 'left';
+      const fontWeight: 'normal' | 'bold' = pos.fontWeight ?? 'normal';
+      const fontSizePx = pos.fontSize ?? 12;
+      const color = showSampleData ? (pos.color ?? '#333') : '#333';
+      const widthMm = pos.width ?? 50;
+      const heightMm = pos.height ?? 15;
+
+      return `
+        <div
+          class="field"
+          style="
+            left: ${pos.x}mm;
+            top: ${pos.y}mm;
+            width: ${widthMm}mm;
+            height: ${heightMm}mm;
+            font-size: ${fontSizePx}px;
+            text-align: ${align};
+            font-weight: ${fontWeight};
+            color: ${escapeHtml(color)};
+          "
+        >${escapeHtml(text)}</div>
+      `.trim();
+    })
+    .join('\n');
+
+  const backgroundImageStyle = template.backgroundUrl
+    ? `background-image: url(${escapeHtml(template.backgroundUrl)});`
+    : '';
+  const showOverlay = !!template.backgroundUrl && template.backgroundOpacity < 100;
+  const overlayAlpha = (100 - template.backgroundOpacity) / 100;
+
+  return `
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${safeTitle} - 印刷</title>
+    <style>
+      @page { size: ${pageWidthMm}mm ${pageHeightMm}mm; margin: 0; }
+      html, body { margin: 0; padding: 0; width: ${pageWidthMm}mm; height: ${pageHeightMm}mm; }
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .paper {
+        position: relative;
+        width: ${pageWidthMm}mm;
+        height: ${pageHeightMm}mm;
+        background-color: #fff;
+        background-size: cover;
+        background-position: center;
+        ${backgroundImageStyle}
+        overflow: hidden;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, ${overlayAlpha});
+        pointer-events: none;
+      }
+      .field {
+        position: absolute;
+        white-space: pre-wrap;
+        overflow: hidden;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="paper">
+      ${showOverlay ? '<div class="overlay"></div>' : ''}
+      ${fieldHtml}
+    </div>
+  </body>
+</html>
+  `.trim();
+}
 
 // 型定義
 interface Position {
@@ -254,6 +357,12 @@ export function PrintTemplateManager() {
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
+  const [printModalOpened, { open: openPrintModal, close: closePrintModal }] = useDisclosure(false);
+  const [printTarget, setPrintTarget] = useState<PrintTemplate | null>(null);
+  const [printUseSampleData, setPrintUseSampleData] = useState(false);
+  const [printHtml, setPrintHtml] = useState<string | null>(null);
+  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const hasRequestedPrintRef = useRef(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateCategory, setNewTemplateCategory] = useState<string | null>(null);
   const [newTemplateTenant, setNewTemplateTenant] = useState<string | null>(null);
@@ -537,6 +646,25 @@ export function PrintTemplateManager() {
     }
   };
 
+  const handleOpenPrint = (template: PrintTemplate) => {
+    setPrintTarget(template);
+    setPrintUseSampleData(showSampleData);
+    openPrintModal();
+  };
+
+  const handlePrint = () => {
+    if (!printTarget) return;
+
+    const html = buildPrintHtml({
+      template: printTarget,
+      showSampleData: printUseSampleData,
+      sampleData: SAMPLE_DATA[printTarget.category],
+    });
+
+    hasRequestedPrintRef.current = false;
+    setPrintHtml(html);
+  };
+
   // フィールド位置を更新
   const updateFieldPosition = (fieldName: string, updates: Partial<Position>) => {
     if (!selectedTemplate) return;
@@ -677,6 +805,18 @@ export function PrintTemplateManager() {
                       </Group>
                     </Stack>
                     <Group gap={4}>
+                      <Tooltip label="印刷">
+                        <ActionIcon
+                          variant="subtle"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenPrint(template);
+                          }}
+                        >
+                          <IconPrinter size={14} />
+                        </ActionIcon>
+                      </Tooltip>
                       <Tooltip label="複製">
                         <ActionIcon
                           variant="subtle"
@@ -1089,6 +1229,104 @@ export function PrintTemplateManager() {
           )}
         </Grid.Col>
       </Grid>
+
+      {/* 印刷モーダル */}
+      <Modal
+        opened={printModalOpened}
+        onClose={closePrintModal}
+        title="印刷"
+        size="xl"
+      >
+        {printTarget ? (
+          <Stack gap="md">
+            <Group justify="space-between" wrap="nowrap">
+              <Stack gap={2}>
+                <Text fw={600} size="sm" lineClamp={2}>
+                  {printTarget.name}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  用紙サイズ: {printTarget.paperWidth}mm × {printTarget.paperHeight}mm
+                </Text>
+              </Stack>
+              <Badge size="sm" variant="light">
+                {CATEGORY_LABELS[printTarget.category] || printTarget.category}
+              </Badge>
+            </Group>
+
+            <Switch
+              label="サンプルデータで印刷"
+              checked={printUseSampleData}
+              onChange={(e) => setPrintUseSampleData(e.currentTarget.checked)}
+            />
+
+            <TemplatePreview
+              template={printTarget}
+              sampleData={SAMPLE_DATA[printTarget.category]}
+              showSampleData={printUseSampleData}
+            />
+
+            <Group justify="flex-end">
+              <Button variant="default" onClick={closePrintModal}>
+                キャンセル
+              </Button>
+              <Button
+                leftSection={<IconPrinter size={16} />}
+                onClick={() => {
+                  handlePrint();
+                  closePrintModal();
+                }}
+              >
+                印刷する
+              </Button>
+            </Group>
+          </Stack>
+        ) : (
+          <Text c="dimmed">テンプレートが選択されていません</Text>
+        )}
+      </Modal>
+
+      {/* 印刷用（非表示）iframe: srcDoc 経由でOS/ブラウザの印刷ダイアログを開く */}
+      <iframe
+        ref={printFrameRef}
+        title="print-frame"
+        style={{ display: 'none' }}
+        srcDoc={printHtml ?? ''}
+        onLoad={() => {
+          if (!printHtml) return;
+          if (hasRequestedPrintRef.current) return;
+
+          const printWindow = printFrameRef.current?.contentWindow;
+          if (!printWindow) {
+            notifications.show({
+              title: '印刷できません',
+              message: '印刷用フレームを初期化できませんでした。再度お試しください。',
+              color: 'red',
+            });
+            setPrintHtml(null);
+            return;
+          }
+
+          hasRequestedPrintRef.current = true;
+
+          const cleanup = () => {
+            setPrintHtml(null);
+            hasRequestedPrintRef.current = false;
+          };
+
+          try {
+            printWindow.addEventListener('afterprint', cleanup, { once: true });
+          } catch {
+            // 一部ブラウザで addEventListener が制限される場合のフォールバック
+          }
+
+          // afterprint が来ない環境向けフォールバック
+          window.setTimeout(cleanup, 5_000);
+
+          // 印刷実行（ユーザー操作起点）
+          printWindow.focus();
+          printWindow.print();
+        }}
+      />
 
       {/* 新規作成モーダル */}
       <Modal
