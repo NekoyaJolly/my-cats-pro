@@ -90,6 +90,11 @@
 3. **自動化チェック**: 変更に影響するテスト / Lint / 型チェックを即時実行し、失敗を解消。
 4. **自己レビュー**: 影響範囲、例外処理、翻訳の整合性、doc 更新を確認。
 
+補足（ユニットテストの再発防止）:
+
+- Controller のコンストラクタ依存（注入する Service）を追加・変更した場合、対応する `*.controller.spec.ts` の `Test.createTestingModule` の `providers`（または `overrideProvider`）も必ず追随させる。
+
+
 最低限、以下の品質ゲートを PASS させてから作業完了とする:
 
 - `pnpm lint`（root + frontend + backend）。

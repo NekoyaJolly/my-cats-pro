@@ -24,6 +24,7 @@ import { GalleryUploadModule } from "./gallery-upload/gallery-upload.module";
 import { GraduationModule } from "./graduation/graduation.module";
 import { HealthModule } from "./health/health.module";
 import { PedigreeModule } from "./pedigree/pedigree.module";
+import { PrintTemplatesModule } from "./print-templates/print-templates.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ScheduleModule } from "./schedule/schedule.module";
 import { ShiftModule } from './shift/shift.module';
@@ -104,6 +105,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     TenantSettingsModule,
     CatsModule,
     PedigreeModule,
+    PrintTemplatesModule,
     BreedsModule,
     CoatColorsModule,
   BreedingModule,

@@ -18,7 +18,7 @@ import {
   Tooltip,
   LoadingOverlay,
 } from '@mantine/core';
-import { IconSearch, IconEye, IconFilter, IconFileText, IconRefresh } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useGetPedigrees } from '../../lib/api/hooks/use-pedigrees';
 
@@ -228,22 +228,25 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                 </Table.Td>
                 <Table.Td>
                   <Group gap="xs">
-                    <Tooltip label="詳細を見る">
-                      <ActionIcon
-                        variant="light"
-                        color="blue"
-                        onClick={() => router.push(`/pedigrees/${pedigree.id}`)}
-                      >
-                        <IconEye size={16} />
-                      </ActionIcon>
-                    </Tooltip>
                     <Tooltip label="家系図を見る">
                       <ActionIcon
                         variant="light"
                         color="green"
-                        onClick={() => onSelectFamilyTree ? onSelectFamilyTree(pedigree.id) : router.push(`/pedigrees/${pedigree.id}/family-tree`)}
+                        onClick={() => onSelectFamilyTree ? onSelectFamilyTree(pedigree.id) : router.push(`/pedigrees?tab=tree&id=${pedigree.id}`)}
                       >
                         <IconFileText size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="血統書PDFを印刷">
+                      <ActionIcon
+                        variant="light"
+                        color="orange"
+                        onClick={() => {
+                          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
+                          window.open(`${apiUrl}/api/v1/pedigrees/pedigree-id/${pedigree.pedigreeId}/pdf`, '_blank');
+                        }}
+                      >
+                        <IconPrinter size={16} />
                       </ActionIcon>
                     </Tooltip>
                   </Group>
