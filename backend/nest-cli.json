@@ -7,7 +7,20 @@
     "deleteOutDir": true,
     "tsConfigPath": "tsconfig.build.json",
     "webpack": false,
-    "assets": [],
+    "assets": [
+      {
+        "include": "pedigree/pdf/positions.json",
+        "outDir": "dist"
+      },
+      {
+        "include": "pedigree/pdf/\u8840\u7d71\u66f8\u898b\u672c.png",
+        "outDir": "dist"
+      },
+      {
+        "include": "pedigree/pdf/backgrounds/**/*",
+        "outDir": "dist"
+      }
+    ],
     "watchAssets": false
   }
 }

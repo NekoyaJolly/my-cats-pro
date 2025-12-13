@@ -114,11 +114,28 @@ export class PedigreePdfService {
     this.printer = new PdfPrinter(fonts);
   }
 
+  private resolvePdfAssetPath(fileName: string): string {
+    const candidates = [
+      path.join(__dirname, fileName),
+      // nest start --watch 等で実行時の __dirname とアセット配置がズレる場合のフォールバック
+      path.join(process.cwd(), 'src', 'pedigree', 'pdf', fileName),
+      path.join(process.cwd(), 'backend', 'src', 'pedigree', 'pdf', fileName),
+    ];
+
+    for (const candidate of candidates) {
+      if (fsModule.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+
+    return candidates[0];
+  }
+
   /**
    * JSONファイルから座標設定を読み込む（毎回読み込み、キャッシュなし）
    */
   private loadPositions(): PositionsConfig {
-    const jsonPath = path.join(__dirname, 'positions.json');
+    const jsonPath = this.resolvePdfAssetPath('positions.json');
     const jsonContent = fsModule.readFileSync(jsonPath, 'utf-8');
     return JSON.parse(jsonContent) as PositionsConfig;
   }
@@ -133,7 +150,7 @@ export class PedigreePdfService {
     });
 
     if (!pedigree) {
-      throw new NotFoundException(`Pedigree with ID ${pedigreeId} not found`);
+      throw new NotFoundException(`血統書ID「${pedigreeId}」のデータが見つかりません`);
     }
 
     const masterData = await this.fetchMasterData(pedigree);
@@ -200,7 +217,7 @@ export class PedigreePdfService {
 
     // デバッグモード: 背景画像を半透明で表示
     if (debugMode) {
-      const templatePath = path.join(__dirname, '血統書見本.png');
+      const templatePath = this.resolvePdfAssetPath('血統書見本.png');
       if (fsModule.existsSync(templatePath)) {
         const imageData = fsModule.readFileSync(templatePath);
         const base64Image = imageData.toString('base64');

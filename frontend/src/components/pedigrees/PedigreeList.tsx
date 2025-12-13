@@ -50,6 +50,8 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
   const [genderFilter, setGenderFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
+
   const genderOptions = [
     { value: '', label: '全て' },
     { value: '1', label: '雄' },
@@ -107,6 +109,16 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
       case 3: return 'cyan';
       case 4: return 'violet';
       default: return 'gray';
+    }
+  };
+
+  const openPedigreePdf = (pedigreeId: string) => {
+    const pdfUrl = `${apiUrl}/api/v1/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
+
+    const newTab = window.open(pdfUrl, '_blank');
+    if (!newTab) {
+      // ポップアップがブロックされた場合は同一タブで開く
+      window.location.assign(pdfUrl);
     }
   };
 
@@ -242,8 +254,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                         variant="light"
                         color="orange"
                         onClick={() => {
-                          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
-                          window.open(`${apiUrl}/api/v1/pedigrees/pedigree-id/${pedigree.pedigreeId}/pdf`, '_blank');
+                          openPedigreePdf(pedigree.pedigreeId);
                         }}
                       >
                         <IconPrinter size={16} />

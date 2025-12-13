@@ -174,7 +174,8 @@ export class PedigreeController {
     const filename = `pedigree_${pedigreeId}_${today}.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    // ブラウザ内プレビュー（PDFビューア）を優先し、印刷に進みやすくする
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);
   }

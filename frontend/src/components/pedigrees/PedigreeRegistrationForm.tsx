@@ -34,6 +34,7 @@ import {
   IconRefresh,
   IconTrash,
   IconChevronDown,
+  IconPrinter,
 } from '@tabler/icons-react';
 import { InputWithFloatingLabel } from '../ui/InputWithFloatingLabel';
 
@@ -195,6 +196,7 @@ interface PedigreeRegistrationFormProps {
 
 export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegistrationFormProps) {
   const router = useRouter();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [breeds, setBreeds] = useState<Breed[]>([]);
@@ -206,6 +208,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   const [isEditMode, setIsEditMode] = useState(false);
   const [originalId, setOriginalId] = useState<string | null>(null);
   const [pedigreeIdInput, setPedigreeIdInput] = useState('');
+
+  const normalizedPedigreeIdInput = pedigreeIdInput.trim();
   
   const createMutation = useCreatePedigree();
   const updateMutationHook = useUpdatePedigree(originalId || '');
@@ -245,8 +249,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   
   // 血統書番号入力時に既存レコードを取得
   const { data: existingPedigree, isLoading: isLoadingExisting } = useGetPedigreeByNumber(
-    pedigreeIdInput,
-    { enabled: pedigreeIdInput.length >= 5 }
+    normalizedPedigreeIdInput,
+    { enabled: normalizedPedigreeIdInput.length >= 5 }
   );
 
   // 既存レコードが見つかった場合、全フィールドをセット
@@ -710,6 +714,14 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const openPedigreePdf = (pedigreeId: string) => {
+    const pdfUrl = `${apiUrl}/api/v1/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
+    const newTab = window.open(pdfUrl, '_blank');
+    if (!newTab) {
+      window.location.assign(pdfUrl);
+    }
+  };
+
   // コードと名称の同期ロジック
   const handleCodeChange = (type: 'breed' | 'gender' | 'coatColor', codeStr: string) => {
     const code = parseInt(codeStr);
@@ -781,6 +793,23 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
                   <Tooltip label="次の血統書番号を自動取得">
                     <ActionIcon variant="filled" color="blue" size="lg" onClick={handleGetNextId} style={{ height: 36 }}>
                       <IconPlus size={18} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label={isEditMode ? '血統書PDFを印刷' : '登録済みデータを読み込むと印刷できます'}>
+                    <ActionIcon
+                      variant="light"
+                      color="orange"
+                      size="lg"
+                      disabled={!isEditMode || !formData.pedigreeId.trim()}
+                      onClick={() => {
+                        if (!isEditMode) return;
+                        const id = formData.pedigreeId.trim();
+                        if (!id) return;
+                        openPedigreePdf(id);
+                      }}
+                      style={{ height: 36 }}
+                    >
+                      <IconPrinter size={18} />
                     </ActionIcon>
                   </Tooltip>
                   <InputWithFloatingLabel
