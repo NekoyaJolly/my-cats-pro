@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Title,
   Button,
   Group,
   Stack,
@@ -11,7 +10,6 @@ import {
   Text,
   Box,
   Paper,
-  Accordion,
   Divider,
   ActionIcon,
   Tooltip,
@@ -22,6 +20,7 @@ import { apiClient, type ApiResponse } from '../../lib/api/client';
 import {
   useCreatePedigree,
   useUpdatePedigree,
+  useGetPedigree,
   useGetPedigreeByNumber,
   type PedigreeRecord,
   type UpdatePedigreeRequest,
@@ -29,7 +28,6 @@ import {
 import { 
   IconDeviceFloppy, 
   IconArrowLeft,
-  IconDna,
   IconPlus,
   IconRefresh,
   IconTrash,
@@ -194,8 +192,94 @@ interface PedigreeRegistrationFormProps {
   onCancel?: () => void;
 }
 
+function mapPedigreeRecordToFormData(record: PedigreeRecord, fallbackPedigreeId: string): PedigreeFormData {
+  return {
+    pedigreeId: record.pedigreeId || fallbackPedigreeId,
+    title: record.title || undefined,
+    catName: record.catName || undefined,
+    catName2: (record as PedigreeFormData).catName2 || undefined,
+    breedCode: record.breedCode || undefined,
+    genderCode: record.genderCode || undefined,
+    eyeColor: record.eyeColor || undefined,
+    coatColorCode: record.coatColorCode || undefined,
+    birthDate: record.birthDate || undefined,
+    breederName: record.breederName || undefined,
+    ownerName: record.ownerName || undefined,
+    registrationDate: record.registrationDate || undefined,
+    brotherCount: (record as PedigreeFormData).brotherCount || undefined,
+    sisterCount: (record as PedigreeFormData).sisterCount || undefined,
+    notes: (record as PedigreeFormData).notes || undefined,
+    notes2: (record as PedigreeFormData).notes2 || undefined,
+    otherNo: (record as PedigreeFormData).otherNo || undefined,
+    fatherTitle: (record as PedigreeFormData).fatherTitle || undefined,
+    fatherCatName: (record as PedigreeFormData).fatherCatName || undefined,
+    fatherCatName2: (record as PedigreeFormData).fatherCatName2 || undefined,
+    fatherCoatColor: (record as PedigreeFormData).fatherCoatColor || undefined,
+    fatherEyeColor: (record as PedigreeFormData).fatherEyeColor || undefined,
+    fatherJCU: (record as PedigreeFormData).fatherJCU || undefined,
+    fatherOtherCode: (record as PedigreeFormData).fatherOtherCode || undefined,
+    motherTitle: (record as PedigreeFormData).motherTitle || undefined,
+    motherCatName: (record as PedigreeFormData).motherCatName || undefined,
+    motherCatName2: (record as PedigreeFormData).motherCatName2 || undefined,
+    motherCoatColor: (record as PedigreeFormData).motherCoatColor || undefined,
+    motherEyeColor: (record as PedigreeFormData).motherEyeColor || undefined,
+    motherJCU: (record as PedigreeFormData).motherJCU || undefined,
+    motherOtherCode: (record as PedigreeFormData).motherOtherCode || undefined,
+    ffTitle: (record as PedigreeFormData).ffTitle || undefined,
+    ffCatName: (record as PedigreeFormData).ffCatName || undefined,
+    ffCatColor: (record as PedigreeFormData).ffCatColor || undefined,
+    ffjcu: (record as PedigreeFormData).ffjcu || undefined,
+    fmTitle: (record as PedigreeFormData).fmTitle || undefined,
+    fmCatName: (record as PedigreeFormData).fmCatName || undefined,
+    fmCatColor: (record as PedigreeFormData).fmCatColor || undefined,
+    fmjcu: (record as PedigreeFormData).fmjcu || undefined,
+    mfTitle: (record as PedigreeFormData).mfTitle || undefined,
+    mfCatName: (record as PedigreeFormData).mfCatName || undefined,
+    mfCatColor: (record as PedigreeFormData).mfCatColor || undefined,
+    mfjcu: (record as PedigreeFormData).mfjcu || undefined,
+    mmTitle: (record as PedigreeFormData).mmTitle || undefined,
+    mmCatName: (record as PedigreeFormData).mmCatName || undefined,
+    mmCatColor: (record as PedigreeFormData).mmCatColor || undefined,
+    mmjcu: (record as PedigreeFormData).mmjcu || undefined,
+    fffTitle: (record as PedigreeFormData).fffTitle || undefined,
+    fffCatName: (record as PedigreeFormData).fffCatName || undefined,
+    fffCatColor: (record as PedigreeFormData).fffCatColor || undefined,
+    fffjcu: (record as PedigreeFormData).fffjcu || undefined,
+    ffmTitle: (record as PedigreeFormData).ffmTitle || undefined,
+    ffmCatName: (record as PedigreeFormData).ffmCatName || undefined,
+    ffmCatColor: (record as PedigreeFormData).ffmCatColor || undefined,
+    ffmjcu: (record as PedigreeFormData).ffmjcu || undefined,
+    fmfTitle: (record as PedigreeFormData).fmfTitle || undefined,
+    fmfCatName: (record as PedigreeFormData).fmfCatName || undefined,
+    fmfCatColor: (record as PedigreeFormData).fmfCatColor || undefined,
+    fmfjcu: (record as PedigreeFormData).fmfjcu || undefined,
+    fmmTitle: (record as PedigreeFormData).fmmTitle || undefined,
+    fmmCatName: (record as PedigreeFormData).fmmCatName || undefined,
+    fmmCatColor: (record as PedigreeFormData).fmmCatColor || undefined,
+    fmmjcu: (record as PedigreeFormData).fmmjcu || undefined,
+    mffTitle: (record as PedigreeFormData).mffTitle || undefined,
+    mffCatName: (record as PedigreeFormData).mffCatName || undefined,
+    mffCatColor: (record as PedigreeFormData).mffCatColor || undefined,
+    mffjcu: (record as PedigreeFormData).mffjcu || undefined,
+    mfmTitle: (record as PedigreeFormData).mfmTitle || undefined,
+    mfmCatName: (record as PedigreeFormData).mfmCatName || undefined,
+    mfmCatColor: (record as PedigreeFormData).mfmCatColor || undefined,
+    mfmjcu: (record as PedigreeFormData).mfmjcu || undefined,
+    mmfTitle: (record as PedigreeFormData).mmfTitle || undefined,
+    mmfCatName: (record as PedigreeFormData).mmfCatName || undefined,
+    mmfCatColor: (record as PedigreeFormData).mmfCatColor || undefined,
+    mmfjcu: (record as PedigreeFormData).mmfjcu || undefined,
+    mmmTitle: (record as PedigreeFormData).mmmTitle || undefined,
+    mmmCatName: (record as PedigreeFormData).mmmCatName || undefined,
+    mmmCatColor: (record as PedigreeFormData).mmmCatColor || undefined,
+    mmmjcu: (record as PedigreeFormData).mmmjcu || undefined,
+    oldCode: (record as PedigreeFormData).oldCode || undefined,
+  };
+}
+
 export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegistrationFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -209,10 +293,16 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   const [originalId, setOriginalId] = useState<string | null>(null);
   const [pedigreeIdInput, setPedigreeIdInput] = useState('');
 
+  const copyFromId = searchParams.get('copyFromId') || '';
+
   const normalizedPedigreeIdInput = pedigreeIdInput.trim();
   
   const createMutation = useCreatePedigree();
   const updateMutationHook = useUpdatePedigree(originalId || '');
+
+  const { data: copySourcePedigree } = useGetPedigree(copyFromId, {
+    enabled: !!copyFromId,
+  });
 
   // 名称入力用のローカルステート
   const [inputValues, setInputValues] = useState({
@@ -257,91 +347,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   useEffect(() => {
     if (existingPedigree && pedigreeIdInput) {
       const record = existingPedigree as PedigreeRecord;
-      setFormData({
-        pedigreeId: record.pedigreeId || pedigreeIdInput,
-        title: record.title || undefined,
-        catName: record.catName || undefined,
-        catName2: (record as PedigreeFormData).catName2 || undefined,
-        breedCode: record.breedCode || undefined,
-        genderCode: record.genderCode || undefined,
-        eyeColor: record.eyeColor || undefined,
-        coatColorCode: record.coatColorCode || undefined,
-        birthDate: record.birthDate || undefined,
-        breederName: record.breederName || undefined,
-        ownerName: record.ownerName || undefined,
-        registrationDate: record.registrationDate || undefined,
-        brotherCount: (record as PedigreeFormData).brotherCount || undefined,
-        sisterCount: (record as PedigreeFormData).sisterCount || undefined,
-        notes: (record as PedigreeFormData).notes || undefined,
-        notes2: (record as PedigreeFormData).notes2 || undefined,
-        otherNo: (record as PedigreeFormData).otherNo || undefined,
-        // 血統情報62項目も全てセット
-        fatherTitle: (record as PedigreeFormData).fatherTitle || undefined,
-        fatherCatName: (record as PedigreeFormData).fatherCatName || undefined,
-        fatherCatName2: (record as PedigreeFormData).fatherCatName2 || undefined,
-        fatherCoatColor: (record as PedigreeFormData).fatherCoatColor || undefined,
-        fatherEyeColor: (record as PedigreeFormData).fatherEyeColor || undefined,
-        fatherJCU: (record as PedigreeFormData).fatherJCU || undefined,
-        fatherOtherCode: (record as PedigreeFormData).fatherOtherCode || undefined,
-        motherTitle: (record as PedigreeFormData).motherTitle || undefined,
-        motherCatName: (record as PedigreeFormData).motherCatName || undefined,
-        motherCatName2: (record as PedigreeFormData).motherCatName2 || undefined,
-        motherCoatColor: (record as PedigreeFormData).motherCoatColor || undefined,
-        motherEyeColor: (record as PedigreeFormData).motherEyeColor || undefined,
-        motherJCU: (record as PedigreeFormData).motherJCU || undefined,
-        motherOtherCode: (record as PedigreeFormData).motherOtherCode || undefined,
-        // 祖父母16項目
-        ffTitle: (record as PedigreeFormData).ffTitle || undefined,
-        ffCatName: (record as PedigreeFormData).ffCatName || undefined,
-        ffCatColor: (record as PedigreeFormData).ffCatColor || undefined,
-        ffjcu: (record as PedigreeFormData).ffjcu || undefined,
-        fmTitle: (record as PedigreeFormData).fmTitle || undefined,
-        fmCatName: (record as PedigreeFormData).fmCatName || undefined,
-        fmCatColor: (record as PedigreeFormData).fmCatColor || undefined,
-        fmjcu: (record as PedigreeFormData).fmjcu || undefined,
-        mfTitle: (record as PedigreeFormData).mfTitle || undefined,
-        mfCatName: (record as PedigreeFormData).mfCatName || undefined,
-        mfCatColor: (record as PedigreeFormData).mfCatColor || undefined,
-        mfjcu: (record as PedigreeFormData).mfjcu || undefined,
-        mmTitle: (record as PedigreeFormData).mmTitle || undefined,
-        mmCatName: (record as PedigreeFormData).mmCatName || undefined,
-        mmCatColor: (record as PedigreeFormData).mmCatColor || undefined,
-        mmjcu: (record as PedigreeFormData).mmjcu || undefined,
-        // 曾祖父母32項目
-        fffTitle: (record as PedigreeFormData).fffTitle || undefined,
-        fffCatName: (record as PedigreeFormData).fffCatName || undefined,
-        fffCatColor: (record as PedigreeFormData).fffCatColor || undefined,
-        fffjcu: (record as PedigreeFormData).fffjcu || undefined,
-        ffmTitle: (record as PedigreeFormData).ffmTitle || undefined,
-        ffmCatName: (record as PedigreeFormData).ffmCatName || undefined,
-        ffmCatColor: (record as PedigreeFormData).ffmCatColor || undefined,
-        ffmjcu: (record as PedigreeFormData).ffmjcu || undefined,
-        fmfTitle: (record as PedigreeFormData).fmfTitle || undefined,
-        fmfCatName: (record as PedigreeFormData).fmfCatName || undefined,
-        fmfCatColor: (record as PedigreeFormData).fmfCatColor || undefined,
-        fmfjcu: (record as PedigreeFormData).fmfjcu || undefined,
-        fmmTitle: (record as PedigreeFormData).fmmTitle || undefined,
-        fmmCatName: (record as PedigreeFormData).fmmCatName || undefined,
-        fmmCatColor: (record as PedigreeFormData).fmmCatColor || undefined,
-        fmmjcu: (record as PedigreeFormData).fmmjcu || undefined,
-        mffTitle: (record as PedigreeFormData).mffTitle || undefined,
-        mffCatName: (record as PedigreeFormData).mffCatName || undefined,
-        mffCatColor: (record as PedigreeFormData).mffCatColor || undefined,
-        mffjcu: (record as PedigreeFormData).mffjcu || undefined,
-        mfmTitle: (record as PedigreeFormData).mfmTitle || undefined,
-        mfmCatName: (record as PedigreeFormData).mfmCatName || undefined,
-        mfmCatColor: (record as PedigreeFormData).mfmCatColor || undefined,
-        mfmjcu: (record as PedigreeFormData).mfmjcu || undefined,
-        mmfTitle: (record as PedigreeFormData).mmfTitle || undefined,
-        mmfCatName: (record as PedigreeFormData).mmfCatName || undefined,
-        mmfCatColor: (record as PedigreeFormData).mmfCatColor || undefined,
-        mmfjcu: (record as PedigreeFormData).mmfjcu || undefined,
-        mmmTitle: (record as PedigreeFormData).mmmTitle || undefined,
-        mmmCatName: (record as PedigreeFormData).mmmCatName || undefined,
-        mmmCatColor: (record as PedigreeFormData).mmmCatColor || undefined,
-        mmmjcu: (record as PedigreeFormData).mmmjcu || undefined,
-        oldCode: (record as PedigreeFormData).oldCode || undefined,
-      });
+      setFormData(mapPedigreeRecordToFormData(record, pedigreeIdInput));
       setIsEditMode(true);
       setOriginalId(record.id);
       notifications.show({
@@ -351,6 +357,34 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
       });
     }
   }, [existingPedigree, pedigreeIdInput]);
+
+  // 一覧から「新規登録にコピー」された場合、血統書番号と猫名以外をコピーして新規登録モードにする
+  useEffect(() => {
+    if (!copyFromId) return;
+    if (!copySourcePedigree) return;
+
+    const record = copySourcePedigree as PedigreeRecord;
+    const copied = mapPedigreeRecordToFormData(record, '');
+
+    setFormData({
+      ...copied,
+      pedigreeId: '',
+      catName: undefined,
+      catName2: undefined,
+    });
+
+    setPedigreeIdInput('');
+    setIsEditMode(false);
+    setOriginalId(null);
+    setCallId({ both: '', father: '', mother: '' });
+    setInputValues({ breedName: '', genderName: '', coatColorName: '' });
+
+    notifications.show({
+      title: '新規登録にコピーしました',
+      message: '血統書番号と猫名以外の項目をコピーしました。血統書番号と猫名を入力して登録してください。',
+      color: 'teal',
+    });
+  }, [copyFromId, copySourcePedigree]);
 
   // +ボタンクリック時に最新血統書番号+1を取得
   const handleGetNextId = async () => {
@@ -1021,169 +1055,151 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
           {/* 血統情報（62項目）*/}
           <Paper p="lg" withBorder>
-            <Group mb="md">
-              <IconDna size={20} />
-              <Title order={3}>血統情報（62項目）</Title>
-              <Text size="sm" c="dimmed">Call IDで自動入力 または 手動入力</Text>
-            </Group>
-
-            <Accordion variant="separated">
+            <Stack gap="lg">
               {/* 第1世代: 両親（14項目）*/}
-              <Accordion.Item value="gen1">
-                <Accordion.Control>
-                  <Text fw={500}>第1世代: 両親（14項目）</Text>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Grid gutter={10}>
-                    <Grid.Col span={12}><Divider label="父親（7項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="父親タイトル" value={formData.fatherTitle} onChange={(e) => updateFormData('fatherTitle', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="父親名" value={formData.fatherCatName} onChange={(e) => updateFormData('fatherCatName', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="父親キャッテリー名" value={formData.fatherCatName2} onChange={(e) => updateFormData('fatherCatName2', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="父親毛色" value={formData.fatherCoatColor} onChange={(e) => updateFormData('fatherCoatColor', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="父親目の色" value={formData.fatherEyeColor} onChange={(e) => updateFormData('fatherEyeColor', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="父親JCU" value={formData.fatherJCU} onChange={(e) => updateFormData('fatherJCU', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="父親他団体コード" value={formData.fatherOtherCode} onChange={(e) => updateFormData('fatherOtherCode', e.target.value)} />
-                    </Grid.Col>
+              <Box>
+                <Divider label="第1世代: 両親（14項目）" mb="md" />
+                <Grid gutter={10}>
+                  <Grid.Col span={12}><Divider label="父親（7項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親タイトル" value={formData.fatherTitle} onChange={(e) => updateFormData('fatherTitle', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親名" value={formData.fatherCatName} onChange={(e) => updateFormData('fatherCatName', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親キャッテリー名" value={formData.fatherCatName2} onChange={(e) => updateFormData('fatherCatName2', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親毛色" value={formData.fatherCoatColor} onChange={(e) => updateFormData('fatherCoatColor', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親目の色" value={formData.fatherEyeColor} onChange={(e) => updateFormData('fatherEyeColor', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親JCU" value={formData.fatherJCU} onChange={(e) => updateFormData('fatherJCU', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親他団体コード" value={formData.fatherOtherCode} onChange={(e) => updateFormData('fatherOtherCode', e.target.value)} />
+                  </Grid.Col>
 
-                    <Grid.Col span={12}><Divider label="母親（7項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="母親タイトル" value={formData.motherTitle} onChange={(e) => updateFormData('motherTitle', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="母親名" value={formData.motherCatName} onChange={(e) => updateFormData('motherCatName', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="母親キャッテリー名" value={formData.motherCatName2} onChange={(e) => updateFormData('motherCatName2', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="母親毛色" value={formData.motherCoatColor} onChange={(e) => updateFormData('motherCoatColor', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="母親目の色" value={formData.motherEyeColor} onChange={(e) => updateFormData('motherEyeColor', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="母親JCU" value={formData.motherJCU} onChange={(e) => updateFormData('motherJCU', e.target.value)} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}>
-                      <InputWithFloatingLabel label="母親他団体コード" value={formData.motherOtherCode} onChange={(e) => updateFormData('motherOtherCode', e.target.value)} />
-                    </Grid.Col>
-                  </Grid>
-                </Accordion.Panel>
-              </Accordion.Item>
+                  <Grid.Col span={12}><Divider label="母親（7項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親タイトル" value={formData.motherTitle} onChange={(e) => updateFormData('motherTitle', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親名" value={formData.motherCatName} onChange={(e) => updateFormData('motherCatName', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親キャッテリー名" value={formData.motherCatName2} onChange={(e) => updateFormData('motherCatName2', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親毛色" value={formData.motherCoatColor} onChange={(e) => updateFormData('motherCoatColor', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親目の色" value={formData.motherEyeColor} onChange={(e) => updateFormData('motherEyeColor', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親JCU" value={formData.motherJCU} onChange={(e) => updateFormData('motherJCU', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親他団体コード" value={formData.motherOtherCode} onChange={(e) => updateFormData('motherOtherCode', e.target.value)} />
+                  </Grid.Col>
+                </Grid>
+              </Box>
 
               {/* 第2世代: 祖父母（16項目）*/}
-              <Accordion.Item value="gen2">
-                <Accordion.Control>
-                  <Text fw={500}>第2世代: 祖父母（16項目）</Text>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Grid gutter={10}>
-                    <Grid.Col span={12}><Divider label="父方祖父（4項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.ffTitle} onChange={(e) => updateFormData('ffTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.ffCatName} onChange={(e) => updateFormData('ffCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.ffCatColor} onChange={(e) => updateFormData('ffCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.ffjcu} onChange={(e) => updateFormData('ffjcu', e.target.value)} /></Grid.Col>
+              <Box>
+                <Divider label="第2世代: 祖父母（16項目）" mb="md" />
+                <Grid gutter={10}>
+                  <Grid.Col span={12}><Divider label="父方祖父（4項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFタイトル" value={formData.ffTitle} onChange={(e) => updateFormData('ffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FF名前" value={formData.ffCatName} onChange={(e) => updateFormData('ffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FF色柄" value={formData.ffCatColor} onChange={(e) => updateFormData('ffCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFナンバー" value={formData.ffjcu} onChange={(e) => updateFormData('ffjcu', e.target.value)} /></Grid.Col>
 
-                    <Grid.Col span={12}><Divider label="父方祖母（4項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.fmTitle} onChange={(e) => updateFormData('fmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.fmCatName} onChange={(e) => updateFormData('fmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.fmCatColor} onChange={(e) => updateFormData('fmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.fmjcu} onChange={(e) => updateFormData('fmjcu', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={12}><Divider label="父方祖母（4項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMタイトル" value={formData.fmTitle} onChange={(e) => updateFormData('fmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FM名前" value={formData.fmCatName} onChange={(e) => updateFormData('fmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FM色柄" value={formData.fmCatColor} onChange={(e) => updateFormData('fmCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMナンバー" value={formData.fmjcu} onChange={(e) => updateFormData('fmjcu', e.target.value)} /></Grid.Col>
 
-                    <Grid.Col span={12}><Divider label="母方祖父（4項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.mfTitle} onChange={(e) => updateFormData('mfTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.mfCatName} onChange={(e) => updateFormData('mfCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.mfCatColor} onChange={(e) => updateFormData('mfCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.mfjcu} onChange={(e) => updateFormData('mfjcu', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={12}><Divider label="母方祖父（4項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFタイトル" value={formData.mfTitle} onChange={(e) => updateFormData('mfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MF名前" value={formData.mfCatName} onChange={(e) => updateFormData('mfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MF色柄" value={formData.mfCatColor} onChange={(e) => updateFormData('mfCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFナンバー" value={formData.mfjcu} onChange={(e) => updateFormData('mfjcu', e.target.value)} /></Grid.Col>
 
-                    <Grid.Col span={12}><Divider label="母方祖母（4項目）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.mmTitle} onChange={(e) => updateFormData('mmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.mmCatName} onChange={(e) => updateFormData('mmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.mmCatColor} onChange={(e) => updateFormData('mmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.mmjcu} onChange={(e) => updateFormData('mmjcu', e.target.value)} /></Grid.Col>
-                  </Grid>
-                </Accordion.Panel>
-              </Accordion.Item>
+                  <Grid.Col span={12}><Divider label="母方祖母（4項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMタイトル" value={formData.mmTitle} onChange={(e) => updateFormData('mmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MM名前" value={formData.mmCatName} onChange={(e) => updateFormData('mmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MM色柄" value={formData.mmCatColor} onChange={(e) => updateFormData('mmCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMナンバー" value={formData.mmjcu} onChange={(e) => updateFormData('mmjcu', e.target.value)} /></Grid.Col>
+                </Grid>
+              </Box>
 
               {/* 第3世代: 曾祖父母（32項目）*/}
-              <Accordion.Item value="gen3">
-                <Accordion.Control>
-                  <Text fw={500}>第3世代: 曾祖父母（32項目）</Text>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Grid gutter={10}>
-                    {/* FFF */}
-                    <Grid.Col span={12}><Divider label="父父父（FFF）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.fffTitle} onChange={(e) => updateFormData('fffTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.fffCatName} onChange={(e) => updateFormData('fffCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.fffCatColor} onChange={(e) => updateFormData('fffCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.fffjcu} onChange={(e) => updateFormData('fffjcu', e.target.value)} /></Grid.Col>
+              <Box>
+                <Divider label="第3世代: 曾祖父母（32項目）" mb="md" />
+                <Grid gutter={10}>
+                  {/* FFF */}
+                  <Grid.Col span={12}><Divider label="父父父（FFF）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFFタイトル" value={formData.fffTitle} onChange={(e) => updateFormData('fffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFF名前" value={formData.fffCatName} onChange={(e) => updateFormData('fffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFF色柄" value={formData.fffCatColor} onChange={(e) => updateFormData('fffCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFFナンバー" value={formData.fffjcu} onChange={(e) => updateFormData('fffjcu', e.target.value)} /></Grid.Col>
 
-                    {/* FFM */}
-                    <Grid.Col span={12}><Divider label="父父母（FFM）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.ffmTitle} onChange={(e) => updateFormData('ffmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.ffmCatName} onChange={(e) => updateFormData('ffmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.ffmCatColor} onChange={(e) => updateFormData('ffmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.ffmjcu} onChange={(e) => updateFormData('ffmjcu', e.target.value)} /></Grid.Col>
+                  {/* FFM */}
+                  <Grid.Col span={12}><Divider label="父父母（FFM）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFMタイトル" value={formData.ffmTitle} onChange={(e) => updateFormData('ffmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFM名前" value={formData.ffmCatName} onChange={(e) => updateFormData('ffmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFM色柄" value={formData.ffmCatColor} onChange={(e) => updateFormData('ffmCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFMナンバー" value={formData.ffmjcu} onChange={(e) => updateFormData('ffmjcu', e.target.value)} /></Grid.Col>
 
-                    {/* FMF */}
-                    <Grid.Col span={12}><Divider label="父母父（FMF）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.fmfTitle} onChange={(e) => updateFormData('fmfTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.fmfCatName} onChange={(e) => updateFormData('fmfCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.fmfCatColor} onChange={(e) => updateFormData('fmfCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.fmfjcu} onChange={(e) => updateFormData('fmfjcu', e.target.value)} /></Grid.Col>
+                  {/* FMF */}
+                  <Grid.Col span={12}><Divider label="父母父（FMF）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMFタイトル" value={formData.fmfTitle} onChange={(e) => updateFormData('fmfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMF名前" value={formData.fmfCatName} onChange={(e) => updateFormData('fmfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMF色柄" value={formData.fmfCatColor} onChange={(e) => updateFormData('fmfCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMFナンバー" value={formData.fmfjcu} onChange={(e) => updateFormData('fmfjcu', e.target.value)} /></Grid.Col>
 
-                    {/* FMM */}
-                    <Grid.Col span={12}><Divider label="父母母（FMM）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.fmmTitle} onChange={(e) => updateFormData('fmmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.fmmCatName} onChange={(e) => updateFormData('fmmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.fmmCatColor} onChange={(e) => updateFormData('fmmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.fmmjcu} onChange={(e) => updateFormData('fmmjcu', e.target.value)} /></Grid.Col>
+                  {/* FMM */}
+                  <Grid.Col span={12}><Divider label="父母母（FMM）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMMタイトル" value={formData.fmmTitle} onChange={(e) => updateFormData('fmmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMM名前" value={formData.fmmCatName} onChange={(e) => updateFormData('fmmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMM色柄" value={formData.fmmCatColor} onChange={(e) => updateFormData('fmmCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMMナンバー" value={formData.fmmjcu} onChange={(e) => updateFormData('fmmjcu', e.target.value)} /></Grid.Col>
 
-                    {/* MFF */}
-                    <Grid.Col span={12}><Divider label="母父父（MFF）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.mffTitle} onChange={(e) => updateFormData('mffTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.mffCatName} onChange={(e) => updateFormData('mffCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.mffCatColor} onChange={(e) => updateFormData('mffCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.mffjcu} onChange={(e) => updateFormData('mffjcu', e.target.value)} /></Grid.Col>
+                  {/* MFF */}
+                  <Grid.Col span={12}><Divider label="母父父（MFF）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFFタイトル" value={formData.mffTitle} onChange={(e) => updateFormData('mffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFF名前" value={formData.mffCatName} onChange={(e) => updateFormData('mffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFF色柄" value={formData.mffCatColor} onChange={(e) => updateFormData('mffCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFFナンバー" value={formData.mffjcu} onChange={(e) => updateFormData('mffjcu', e.target.value)} /></Grid.Col>
 
-                    {/* MFM */}
-                    <Grid.Col span={12}><Divider label="母父母（MFM）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.mfmTitle} onChange={(e) => updateFormData('mfmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.mfmCatName} onChange={(e) => updateFormData('mfmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.mfmCatColor} onChange={(e) => updateFormData('mfmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.mfmjcu} onChange={(e) => updateFormData('mfmjcu', e.target.value)} /></Grid.Col>
+                  {/* MFM */}
+                  <Grid.Col span={12}><Divider label="母父母（MFM）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFMタイトル" value={formData.mfmTitle} onChange={(e) => updateFormData('mfmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFM名前" value={formData.mfmCatName} onChange={(e) => updateFormData('mfmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFM色柄" value={formData.mfmCatColor} onChange={(e) => updateFormData('mfmCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFMナンバー" value={formData.mfmjcu} onChange={(e) => updateFormData('mfmjcu', e.target.value)} /></Grid.Col>
 
-                    {/* MMF */}
-                    <Grid.Col span={12}><Divider label="母母父（MMF）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.mmfTitle} onChange={(e) => updateFormData('mmfTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.mmfCatName} onChange={(e) => updateFormData('mmfCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.mmfCatColor} onChange={(e) => updateFormData('mmfCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.mmfjcu} onChange={(e) => updateFormData('mmfjcu', e.target.value)} /></Grid.Col>
+                  {/* MMF */}
+                  <Grid.Col span={12}><Divider label="母母父（MMF）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMFタイトル" value={formData.mmfTitle} onChange={(e) => updateFormData('mmfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMF名前" value={formData.mmfCatName} onChange={(e) => updateFormData('mmfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMF色柄" value={formData.mmfCatColor} onChange={(e) => updateFormData('mmfCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMFナンバー" value={formData.mmfjcu} onChange={(e) => updateFormData('mmfjcu', e.target.value)} /></Grid.Col>
 
-                    {/* MMM */}
-                    <Grid.Col span={12}><Divider label="母母母（MMM）" /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="タイトル" value={formData.mmmTitle} onChange={(e) => updateFormData('mmmTitle', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="名前" value={formData.mmmCatName} onChange={(e) => updateFormData('mmmCatName', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="毛色" value={formData.mmmCatColor} onChange={(e) => updateFormData('mmmCatColor', e.target.value)} /></Grid.Col>
-                    <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="JCU" value={formData.mmmjcu} onChange={(e) => updateFormData('mmmjcu', e.target.value)} /></Grid.Col>
-                  </Grid>
-                </Accordion.Panel>
-              </Accordion.Item>
-            </Accordion>
+                  {/* MMM */}
+                  <Grid.Col span={12}><Divider label="母母母（MMM）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMMタイトル" value={formData.mmmTitle} onChange={(e) => updateFormData('mmmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMM名前" value={formData.mmmCatName} onChange={(e) => updateFormData('mmmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMM色柄" value={formData.mmmCatColor} onChange={(e) => updateFormData('mmmCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMMナンバー" value={formData.mmmjcu} onChange={(e) => updateFormData('mmmjcu', e.target.value)} /></Grid.Col>
+                </Grid>
+              </Box>
+            </Stack>
           </Paper>
 
           {/* 送信ボタン */}

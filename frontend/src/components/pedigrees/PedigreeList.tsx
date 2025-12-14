@@ -18,7 +18,7 @@ import {
   Tooltip,
   LoadingOverlay,
 } from '@mantine/core';
-import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter, IconCopy } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useGetPedigrees } from '../../lib/api/hooks/use-pedigrees';
 
@@ -247,6 +247,15 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                         onClick={() => onSelectFamilyTree ? onSelectFamilyTree(pedigree.id) : router.push(`/pedigrees?tab=tree&id=${pedigree.id}`)}
                       >
                         <IconFileText size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="新規登録にコピー">
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        onClick={() => router.push(`/pedigrees?tab=register&copyFromId=${encodeURIComponent(pedigree.id)}`)}
+                      >
+                        <IconCopy size={16} />
                       </ActionIcon>
                     </Tooltip>
                     <Tooltip label="血統書PDFを印刷">
