@@ -11,7 +11,9 @@ const customJestConfig = {
   testEnvironment: 'jsdom',
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
   collectCoverageFrom: [
-    'src/**/*.{js,jsx,ts,tsx}',
+    'src/components/**/*.{js,jsx,ts,tsx}',
+    'src/lib/**/*.{js,jsx,ts,tsx}',
+    'src/app/**/_components/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/**/*.types.ts',

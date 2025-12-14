@@ -20,7 +20,7 @@ import {
 } from '@mantine/core';
 import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter, IconCopy } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
-import { useGetPedigrees } from '../../lib/api/hooks/use-pedigrees';
+import { useGetPedigrees } from '@/lib/api/hooks/use-pedigrees';
 
 interface PedigreeData {
   id: string;
@@ -244,6 +244,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                       <ActionIcon
                         variant="light"
                         color="green"
+                        aria-label="家系図を見る"
                         onClick={() => onSelectFamilyTree ? onSelectFamilyTree(pedigree.id) : router.push(`/pedigrees?tab=tree&id=${pedigree.id}`)}
                       >
                         <IconFileText size={16} />
@@ -253,6 +254,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                       <ActionIcon
                         variant="light"
                         color="blue"
+                        aria-label="新規登録にコピー"
                         onClick={() => router.push(`/pedigrees?tab=register&copyFromId=${encodeURIComponent(pedigree.id)}`)}
                       >
                         <IconCopy size={16} />
@@ -262,6 +264,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                       <ActionIcon
                         variant="light"
                         color="orange"
+                        aria-label="血統書PDFを印刷"
                         onClick={() => {
                           openPedigreePdf(pedigree.pedigreeId);
                         }}
