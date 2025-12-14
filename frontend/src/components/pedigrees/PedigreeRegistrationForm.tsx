@@ -16,7 +16,6 @@ import {
   Menu,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { apiClient, type ApiResponse } from '../../lib/api/client';
 import {
   useCreatePedigree,
   useUpdatePedigree,
@@ -24,7 +23,7 @@ import {
   useGetPedigreeByNumber,
   type PedigreeRecord,
   type UpdatePedigreeRequest,
-} from '../../lib/api/hooks/use-pedigrees';
+} from '@/lib/api/hooks/use-pedigrees';
 import { 
   IconDeviceFloppy, 
   IconArrowLeft,
@@ -35,6 +34,7 @@ import {
   IconPrinter,
 } from '@tabler/icons-react';
 import { InputWithFloatingLabel } from '../ui/InputWithFloatingLabel';
+import { apiClient, type ApiResponse } from '@/lib/api/client';
 
 // API レスポンスの型定義
 type BreedsResponse = Breed[];
