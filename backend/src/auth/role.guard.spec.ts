@@ -9,8 +9,12 @@ describe('RoleGuard', () => {
   let guard: RoleGuard;
   let reflector: Reflector;
   let loggerWarnSpy: jest.SpyInstance;
+  let originalAuthDisabled: string | undefined;
 
   beforeEach(async () => {
+    originalAuthDisabled = process.env.AUTH_DISABLED;
+    delete process.env.AUTH_DISABLED;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RoleGuard,
@@ -31,19 +35,31 @@ describe('RoleGuard', () => {
   });
 
   afterEach(() => {
+    if (typeof originalAuthDisabled === 'string') {
+      process.env.AUTH_DISABLED = originalAuthDisabled;
+    } else {
+      delete process.env.AUTH_DISABLED;
+    }
+
     jest.restoreAllMocks();
   });
 
   const createMockExecutionContext = (
     user?: { userId: string; email?: string; role?: UserRole },
-  ): ExecutionContext =>
-    ({
+  ): ExecutionContext => {
+    const context: Partial<ExecutionContext> = {
       switchToHttp: () => ({
-        getRequest: () => ({ user }),
+        getRequest: <T = { user?: { userId: string; email?: string; role?: UserRole } }>() =>
+          ({ user }) as T,
+        getResponse: <T = Record<string, never>>() => ({}) as T,
+        getNext: <T = Record<string, never>>() => ({}) as T,
       }),
       getHandler: () => jest.fn(),
       getClass: () => jest.fn(),
-    }) as unknown as ExecutionContext;
+    };
+
+    return context as ExecutionContext;
+  };
 
   it('定義されていること', () => {
     expect(guard).toBeDefined();
@@ -51,7 +67,10 @@ describe('RoleGuard', () => {
 
   describe('canActivate', () => {
     it('ロールが要求されていない場合は true を返す', () => {
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(undefined);
 
       const context = createMockExecutionContext();
       const result = guard.canActivate(context);
@@ -62,7 +81,8 @@ describe('RoleGuard', () => {
     it('ユーザーが存在しない場合は false を返す', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.ADMIN]);
 
       const context = createMockExecutionContext(undefined);
       const result = guard.canActivate(context);
@@ -73,7 +93,8 @@ describe('RoleGuard', () => {
     it('ユーザーが ADMIN ロールを持っていて ADMIN が要求されている場合は true を返す', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
 
       const context = createMockExecutionContext({
         userId: 'user-1',
@@ -88,7 +109,8 @@ describe('RoleGuard', () => {
     it('ユーザーが SUPER_ADMIN ロールを持っていて ADMIN または SUPER_ADMIN が要求されている場合は true を返す', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
 
       const context = createMockExecutionContext({
         userId: 'user-2',
@@ -103,7 +125,8 @@ describe('RoleGuard', () => {
     it('ユーザーが USER ロールを持っていて ADMIN が要求されている場合は false を返す', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
 
       const context = createMockExecutionContext({
         userId: 'user-3',
@@ -118,7 +141,8 @@ describe('RoleGuard', () => {
     it('ユーザーにロールが設定されていない場合は false を返す', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.ADMIN]);
 
       const context = createMockExecutionContext({
         userId: 'user-4',
@@ -133,7 +157,8 @@ describe('RoleGuard', () => {
     it('TENANT_ADMIN ロールが要求され、ユーザーが TENANT_ADMIN を持っている場合は true を返す', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.TENANT_ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.TENANT_ADMIN]);
 
       const context = createMockExecutionContext({
         userId: 'user-5',
@@ -150,7 +175,8 @@ describe('RoleGuard', () => {
     it('ユーザーが存在しない場合にログを出力する', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.ADMIN]);
 
       const context = createMockExecutionContext(undefined);
       guard.canActivate(context);
@@ -166,7 +192,8 @@ describe('RoleGuard', () => {
     it('ロールが不足している場合にログを出力する', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.ADMIN]);
 
       const context = createMockExecutionContext({
         userId: 'user-6',
@@ -188,7 +215,8 @@ describe('RoleGuard', () => {
     it('アクセスが許可された場合はログを出力しない', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue([UserRole.ADMIN]);
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce([UserRole.ADMIN]);
 
       const context = createMockExecutionContext({
         userId: 'user-7',

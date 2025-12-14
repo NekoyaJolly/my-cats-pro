@@ -18,7 +18,7 @@ import {
   Tooltip,
   LoadingOverlay,
 } from '@mantine/core';
-import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter, IconCopy } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useGetPedigrees } from '../../lib/api/hooks/use-pedigrees';
 
@@ -49,6 +49,8 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [genderFilter, setGenderFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
 
   const genderOptions = [
     { value: '', label: '全て' },
@@ -107,6 +109,16 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
       case 3: return 'cyan';
       case 4: return 'violet';
       default: return 'gray';
+    }
+  };
+
+  const openPedigreePdf = (pedigreeId: string) => {
+    const pdfUrl = `${apiUrl}/api/v1/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
+
+    const newTab = window.open(pdfUrl, '_blank');
+    if (!newTab) {
+      // ポップアップがブロックされた場合は同一タブで開く
+      window.location.assign(pdfUrl);
     }
   };
 
@@ -237,13 +249,21 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                         <IconFileText size={16} />
                       </ActionIcon>
                     </Tooltip>
+                    <Tooltip label="新規登録にコピー">
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        onClick={() => router.push(`/pedigrees?tab=register&copyFromId=${encodeURIComponent(pedigree.id)}`)}
+                      >
+                        <IconCopy size={16} />
+                      </ActionIcon>
+                    </Tooltip>
                     <Tooltip label="血統書PDFを印刷">
                       <ActionIcon
                         variant="light"
                         color="orange"
                         onClick={() => {
-                          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
-                          window.open(`${apiUrl}/api/v1/pedigrees/pedigree-id/${pedigree.pedigreeId}/pdf`, '_blank');
+                          openPedigreePdf(pedigree.pedigreeId);
                         }}
                       >
                         <IconPrinter size={16} />

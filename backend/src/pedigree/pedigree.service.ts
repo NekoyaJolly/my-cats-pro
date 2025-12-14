@@ -1,5 +1,7 @@
 import {
   Injectable,
+  BadRequestException,
+  ConflictException,
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -126,12 +128,27 @@ export class PedigreeService {
       ...(createPedigreeDto.oldCode && { oldCode: createPedigreeDto.oldCode }),
     };
 
-    const result = await this.prisma.pedigree.create({
-      data: createData,
-      include: pedigreeWithRelationsInclude,
-    });
+    try {
+      const result = await this.prisma.pedigree.create({
+        data: createData,
+        include: pedigreeWithRelationsInclude,
+      });
 
-    return { success: true, data: result };
+      return { success: true, data: result };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('血統書番号は既に登録されています');
+        }
+
+        if (error.code === 'P2003') {
+          throw new BadRequestException('関連マスタに存在しないコードが指定されています（品種/性別/毛色）');
+        }
+      }
+
+      throw error;
+    }
+
   }
 
   async findAll(query: PedigreeQueryDto): Promise<PedigreeListResponse> {

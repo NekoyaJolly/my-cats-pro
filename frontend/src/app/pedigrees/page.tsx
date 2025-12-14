@@ -8,12 +8,14 @@ import { PrintSettingsEditor } from '@/components/pedigrees/PrintSettingsEditor'
 import { IconPlus, IconList, IconBinaryTree, IconSettings } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export default function PedigreesPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'register';
-  const [activeTab, setActiveTab] = useState<string | null>(initialTab);
+  const tabParam = searchParams.get('tab') || 'register';
+  const treeIdParam = searchParams.get('id');
   const [selectedFamilyTreeId, setSelectedFamilyTreeId] = useState<string | null>(null);
   const { setPageTitle } = usePageHeader();
 
@@ -23,13 +25,38 @@ export default function PedigreesPage() {
   }, [setPageTitle]);
 
   const handleFamilyTreeSelect = (id: string) => {
-    setSelectedFamilyTreeId(id);
-    setActiveTab('tree');
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', 'tree');
+    nextParams.set('id', id);
+    nextParams.delete('copyFromId');
+    router.push(`${pathname}?${nextParams.toString()}`);
   };
+
+  const handleTabChange = (nextTab: string | null) => {
+    if (!nextTab) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', nextTab);
+
+    if (nextTab !== 'tree') {
+      nextParams.delete('id');
+    }
+
+    if (nextTab !== 'register') {
+      nextParams.delete('copyFromId');
+    }
+
+    router.push(`${pathname}?${nextParams.toString()}`);
+  };
+
+  useEffect(() => {
+    if (tabParam === 'tree' && treeIdParam) {
+      setSelectedFamilyTreeId(treeIdParam);
+    }
+  }, [tabParam, treeIdParam]);
 
   return (
     <Container size="xl" py="md">
-      <Tabs value={activeTab} onChange={setActiveTab} mt="md">
+      <Tabs value={tabParam} onChange={handleTabChange} mt="md">
         <Tabs.List>
           <Tabs.Tab value="register" leftSection={<IconPlus size={14} />}>
             新規登録
@@ -46,7 +73,7 @@ export default function PedigreesPage() {
         </Tabs.List>
 
         <Tabs.Panel value="register" pt="md">
-          <PedigreeRegistrationForm onSuccess={() => setActiveTab('list')} />
+          <PedigreeRegistrationForm onSuccess={() => handleTabChange('list')} />
         </Tabs.Panel>
 
         <Tabs.Panel value="list" pt="md">
