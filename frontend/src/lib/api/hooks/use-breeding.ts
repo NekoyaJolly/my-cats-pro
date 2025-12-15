@@ -414,11 +414,19 @@ export function useGetPregnancyChecks(
     queryKey: pregnancyCheckKeys.list(params),
     queryFn: () => {
       // クエリパラメータを構築
-      const queryString = new URLSearchParams(
-        Object.entries(params)
-          .filter(([, value]) => value !== undefined && value !== null)
-          .map(([key, value]) => [key, String(value)])
-      ).toString();
+      const searchParams = new URLSearchParams();
+      Object.entries(params)
+        .filter(([, value]) => value !== undefined && value !== null)
+        .forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach((v) => {
+              searchParams.append(key, String(v));
+            });
+          } else {
+            searchParams.append(key, String(value));
+          }
+        });
+      const queryString = searchParams.toString();
       const url = queryString ? `/breeding/pregnancy-checks?${queryString}` : '/breeding/pregnancy-checks';
       
       return apiRequest<PregnancyCheck[]>(url, { 
@@ -518,11 +526,19 @@ export function useGetBirthPlans(
     queryKey: birthPlanKeys.list(params),
     queryFn: () => {
       // クエリパラメータを構築
-      const queryString = new URLSearchParams(
-        Object.entries(params)
-          .filter(([, value]) => value !== undefined && value !== null)
-          .map(([key, value]) => [key, String(value)])
-      ).toString();
+      const searchParams = new URLSearchParams();
+      Object.entries(params)
+        .filter(([, value]) => value !== undefined && value !== null)
+        .forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach((v) => {
+              searchParams.append(key, String(v));
+            });
+          } else {
+            searchParams.append(key, String(value));
+          }
+        });
+      const queryString = searchParams.toString();
       const url = queryString ? `/breeding/birth-plans?${queryString}` : '/breeding/birth-plans';
       
       return apiRequest<BirthPlan[]>(url, { 

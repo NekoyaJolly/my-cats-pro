@@ -43,6 +43,8 @@ import { CreateKittenDispositionDto, UpdateKittenDispositionDto } from "./dto/ki
 export class BreedingController {
   constructor(private readonly breedingService: BreedingService) {}
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({ summary: "交配記録一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -69,6 +71,8 @@ export class BreedingController {
   // "birth-plans") are registered first. This prevents Express from
   // matching those static paths as an ":id" and returning 404.
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get("ng-rules")
   @ApiOperation({ summary: "NGペアルール一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -201,6 +205,8 @@ export class BreedingController {
 
   // ========== Kitten Disposition Endpoints ==========
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get("kitten-dispositions/:birthRecordId")
   @ApiOperation({ summary: "出産記録の子猫処遇一覧取得" })
   @ApiResponse({ status: HttpStatus.OK })
