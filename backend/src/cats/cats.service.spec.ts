@@ -22,6 +22,9 @@ describe('CatsService', () => {
       count: jest.fn(),
       groupBy: jest.fn(),
     },
+    kittenDisposition: {
+      deleteMany: jest.fn(),
+    },
     breed: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
@@ -225,6 +228,9 @@ describe('CatsService', () => {
 
       await service.remove('1');
 
+      expect(mockPrismaService.kittenDisposition.deleteMany).toHaveBeenCalledWith({
+        where: { kittenId: '1' },
+      });
       expect(mockPrismaService.cat.delete).toHaveBeenCalledWith({
         where: { id: '1' },
         include: {

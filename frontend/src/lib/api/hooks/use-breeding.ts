@@ -194,7 +194,9 @@ export type CreateBirthPlanRequest = {
 
 export type UpdateBirthPlanRequest = Partial<CreateBirthPlanRequest>;
 
-const birthPlanKeys = createDomainQueryKeys<string, Record<string, unknown>>('birth-plans');
+export type GetBirthPlanParams = ApiQueryParams<'/breeding/birth-plans', 'get'>;
+
+const birthPlanKeys = createDomainQueryKeys<string, GetBirthPlanParams>('birth-plans');
 
 export { breedingKeys };
 export { breedingNgRuleKeys };
@@ -519,32 +521,15 @@ export function useDeletePregnancyCheck() {
 
 // Birth Plan hooks
 export function useGetBirthPlans(
-  params: Record<string, unknown> = {},
+  params: GetBirthPlanParams = {},
   options?: Omit<UseQueryOptions<BirthPlanListResponse>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
     queryKey: birthPlanKeys.list(params),
-    queryFn: () => {
-      // クエリパラメータを構築
-      const searchParams = new URLSearchParams();
-      Object.entries(params)
-        .filter(([, value]) => value !== undefined && value !== null)
-        .forEach(([key, value]) => {
-          if (Array.isArray(value)) {
-            value.forEach((v) => {
-              searchParams.append(key, String(v));
-            });
-          } else {
-            searchParams.append(key, String(value));
-          }
-        });
-      const queryString = searchParams.toString();
-      const url = queryString ? `/breeding/birth-plans?${queryString}` : '/breeding/birth-plans';
-      
-      return apiRequest<BirthPlan[]>(url, { 
-        method: 'GET'
-      }) as Promise<BirthPlanListResponse>;
-    },
+    queryFn: () =>
+      apiClient.get('/breeding/birth-plans', {
+        query: params,
+      }) as Promise<BirthPlanListResponse>,
     ...options,
   });
 }
