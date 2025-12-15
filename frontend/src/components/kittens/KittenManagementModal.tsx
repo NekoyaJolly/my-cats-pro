@@ -269,9 +269,20 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
       }
 
       // 既存子猫を更新
-      // const existingKittens = kittens.filter(k => k.id);
-      // TODO: updateCatMutation を使用して更新
-      // 現状は名前、性別、色柄の変更のみ対応
+      const existingKittens = kittens.filter(k => k.id);
+      await Promise.all(
+        existingKittens.map((kitten) =>
+          updateCatMutation.mutateAsync({
+            id: kitten.id,
+            name: kitten.name,
+            gender: kitten.gender,
+            birthDate: kitten.birthDate,
+            coatColorId: kitten.coatColorId || null,
+            motherId: selectedMotherId,
+            isInHouse: true,
+          })
+        )
+      );
 
       // 処遇情報を登録
       const kittensWithDisposition = kittens.filter(k => k.disposition);
@@ -300,7 +311,7 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
               trainingStartDate: disposition.trainingStartDate,
               saleInfo: disposition.saleInfo,
               deathDate: disposition.deathDate,
-              deathReason: disposition.type === 'DECEASED' ? '不明' : undefined,
+              deathReason: disposition.type === 'DECEASED' ? disposition.deathReason : undefined,
             });
           }
         }

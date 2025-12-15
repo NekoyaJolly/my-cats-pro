@@ -92,6 +92,15 @@ export interface CreateCatRequest {
 }
 
 export type UpdateCatRequest = Partial<CreateCatRequest>;
+export type UpdateCatVariables = UpdateCatRequest & { id?: string };
+
+const resolveTargetCatId = (variables: UpdateCatVariables | undefined, fallbackId: string): string => {
+  const targetId = variables?.id ?? fallbackId;
+  if (!targetId) {
+    throw new Error('猫IDが指定されていません');
+  }
+  return targetId;
+};
 
 /**
  * クエリキー定義
@@ -189,14 +198,20 @@ export function useUpdateCat(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdateCatRequest) =>
-      apiClient.patch('/cats/{id}', {
-        pathParams: { id } as ApiPathParams<'/cats/{id}', 'patch'>,
-        body: data as unknown as ApiRequestBody<'/cats/{id}', 'patch'>,
-      }) as Promise<ApiResponse<Cat>>,
-  onSuccess: (_response) => {
+    mutationFn: (data: UpdateCatVariables) => {
+      const targetId = resolveTargetCatId(data, id);
+
+      const { id: _unusedId, ...payload } = data;
+
+      return apiClient.patch('/cats/{id}', {
+        pathParams: { id: targetId } as ApiPathParams<'/cats/{id}', 'patch'>,
+        body: payload as unknown as ApiRequestBody<'/cats/{id}', 'patch'>,
+      }) as Promise<ApiResponse<Cat>>;
+    },
+  onSuccess: (_response, variables) => {
+      const targetId = resolveTargetCatId(variables, id);
       // 特定の猫の詳細キャッシュを更新
-      void queryClient.invalidateQueries({ queryKey: catKeys.detail(id) });
+      void queryClient.invalidateQueries({ queryKey: catKeys.detail(targetId) });
       // 一覧のキャッシュも無効化
       void queryClient.invalidateQueries({ queryKey: catKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: catKeys.statistics() });

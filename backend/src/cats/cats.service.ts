@@ -380,6 +380,10 @@ export class CatsService {
       throw new NotFoundException(`Cat with ID ${id} not found`);
     }
 
+    await this.prisma.kittenDisposition.deleteMany({
+      where: { kittenId: id },
+    });
+
     return this.prisma.cat.delete({
       where: { id },
       include: catWithRelationsInclude,

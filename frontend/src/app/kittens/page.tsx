@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Tabs,
   Button,
@@ -134,6 +134,15 @@ export default function KittensPage() {
     const monthsDiff = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
     return monthsDiff < 6;
   };
+
+  const getScheduleCatIds = useCallback((schedule: CareSchedule): string[] => {
+    const ids = [
+      ...(schedule.cats?.map((cat) => cat.id).filter((id): id is string => id != null) || []),
+      schedule.cat?.id,
+    ].filter((id): id is string => id != null);
+
+    return Array.from(new Set(ids));
+  }, []);
 
   // データ読み込み
   useEffect(() => {
@@ -453,10 +462,14 @@ export default function KittensPage() {
                   ) || [];
 
                   const kittenSchedules = todaySchedules.filter((schedule: CareSchedule) => {
-                    const catId = schedule.cat?.id;
-                    if (!catId) return false;
-                    return motherCats.some(mother => 
-                      mother.kittens.some(kitten => kitten.id === catId)
+                    const catIds = getScheduleCatIds(schedule);
+
+                    if (catIds.length === 0) return false;
+
+                    return catIds.some((catId) =>
+                      motherCats.some((mother) =>
+                        mother.kittens.some((kitten) => kitten.id === catId)
+                      )
                     );
                   });
 
@@ -482,7 +495,17 @@ export default function KittensPage() {
                           <Badge size="xs" color="blue">{schedules.length}</Badge>
                         </Group>
                         <Text size="xs" c="dimmed">
-                          {schedules.map(s => s.cat?.name).filter(Boolean).join('、')}
+                          {Array.from(
+                            new Set(
+                              schedules.flatMap((schedule) => {
+                                const names = schedule.cats?.map((cat) => cat.name).filter(Boolean) || [];
+                                if (schedule.cat?.name) {
+                                  names.push(schedule.cat.name);
+                                }
+                                return names;
+                              })
+                            )
+                          ).join('、')}
                         </Text>
                       </Card>
                     </Grid.Col>
@@ -491,11 +514,14 @@ export default function KittensPage() {
                 {careSchedulesQuery.data?.data?.filter(
                   (schedule: CareSchedule) => {
                     const today = new Date().toISOString().split('T')[0];
-                    const catId = schedule.cat?.id;
-                    return Boolean(
-                      schedule.scheduleDate.startsWith(today) &&
-                      catId &&
-                      motherCats.some(mother => mother.kittens.some(kitten => kitten.id === catId))
+                    if (!schedule.scheduleDate.startsWith(today)) return false;
+
+                    const catIds = getScheduleCatIds(schedule);
+
+                    if (catIds.length === 0) return false;
+
+                    return catIds.some((catId) =>
+                      motherCats.some((mother) => mother.kittens.some((kitten) => kitten.id === catId))
                     );
                   }
                 ).length === 0 && (
