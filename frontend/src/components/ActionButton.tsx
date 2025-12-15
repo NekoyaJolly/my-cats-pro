@@ -3,7 +3,7 @@
  * プロジェクト全体でボタンデザインを統一するための共通コンポーネント
  */
 
-import { Button, ButtonProps } from '@mantine/core';
+import { Button, ButtonProps, ButtonStylesNames, getThemeColor, MantineColor } from '@mantine/core';
 import {
   IconPlus,
   IconEdit,
@@ -32,7 +32,10 @@ const ACTION_STYLES: Record<
   ActionType,
   {
     variant: ButtonProps['variant'];
-    color: string;
+    color: MantineColor;
+    textColor?: MantineColor;
+    borderColor?: MantineColor;
+    borderWidth?: number;
     icon: React.ComponentType<{ size?: number | string }>;
   }
 > = {
@@ -57,7 +60,7 @@ const ACTION_STYLES: Record<
     icon: IconEye,
   },
   save: {
-    variant: 'filled',
+    variant: 'outline',
     color: 'blue',
     icon: IconDeviceFloppy,
   },
@@ -67,7 +70,7 @@ const ACTION_STYLES: Record<
     icon: IconX,
   },
   confirm: {
-    variant: 'filled',
+    variant: 'outline',
     color: 'blue',
     icon: IconCheck,
   },
@@ -76,6 +79,63 @@ const ACTION_STYLES: Record<
     color: 'gray',
     icon: IconArrowLeft,
   },
+};
+
+type ButtonStylesRecord = Partial<Record<ButtonStylesNames, React.CSSProperties>>;
+
+const mergeButtonStyles = (
+  baseStyles: ButtonProps['styles'] | undefined,
+  overrideStyles: ButtonProps['styles'] | undefined
+): ButtonProps['styles'] | undefined => {
+  if (!baseStyles) return overrideStyles;
+  if (!overrideStyles) return baseStyles;
+
+  return (theme, props, ctx) => {
+    const baseRecord: ButtonStylesRecord =
+      typeof baseStyles === 'function' ? baseStyles(theme, props, ctx) : baseStyles;
+    const overrideRecord: ButtonStylesRecord =
+      typeof overrideStyles === 'function' ? overrideStyles(theme, props, ctx) : overrideStyles;
+
+    const styleNames: ButtonStylesNames[] = ['root', 'inner', 'loader', 'section', 'label'];
+    const merged: ButtonStylesRecord = {};
+
+    for (const styleName of styleNames) {
+      const baseStyle = baseRecord[styleName];
+      const overrideStyle = overrideRecord[styleName];
+      merged[styleName] = { ...(baseStyle ?? {}), ...(overrideStyle ?? {}) };
+    }
+
+    return merged;
+  };
+};
+
+const createActionButtonOverrideStyles = (params: {
+  borderColor?: MantineColor;
+  borderWidth?: number;
+  textColor?: MantineColor;
+}): ButtonProps['styles'] | undefined => {
+  const { borderColor, borderWidth, textColor } = params;
+
+  if (!borderColor && borderWidth === undefined && !textColor) return undefined;
+
+  return (theme) => {
+    const resolvedBorderColor = borderColor ? getThemeColor(borderColor, theme) : undefined;
+    const resolvedTextColor = textColor ? getThemeColor(textColor, theme) : undefined;
+
+    const root: React.CSSProperties = {
+      ...(resolvedBorderColor ? { borderColor: resolvedBorderColor, borderStyle: 'solid' } : {}),
+      ...(borderWidth !== undefined ? { borderWidth, borderStyle: 'solid' } : {}),
+    };
+
+    const label: React.CSSProperties = {
+      ...(resolvedTextColor ? { color: resolvedTextColor } : {}),
+    };
+
+    return {
+      root,
+      label,
+    };
+  };
 };
 
 export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'color' | 'leftSection'> {
@@ -87,6 +147,12 @@ export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'color'
   hideIcon?: boolean;
   /** カスタムアイコンを使用する場合 */
   customIcon?: React.ComponentType<{ size?: number | string }>;
+  /** ボタンテキストの色（Mantineテーマカラー or CSSカラー） */
+  textColor?: MantineColor;
+  /** 枠線の色（Mantineテーマカラー or CSSカラー） */
+  borderColor?: MantineColor;
+  /** 枠線の太さ（px） */
+  borderWidth?: number;
   /** ボタンクリック時のハンドラ */
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   /** ローディング状態 */
@@ -115,16 +181,49 @@ export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'color'
  * ```
  */
 export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
-  ({ action, iconSize = 16, hideIcon = false, customIcon, children, ...props }, ref) => {
+  (
+    {
+      action,
+      iconSize = 16,
+      hideIcon = false,
+      customIcon,
+      children,
+      textColor,
+      borderColor,
+      borderWidth,
+      loading,
+      styles: buttonStyles,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const style = ACTION_STYLES[action];
     const Icon = customIcon || style.icon;
+
+    const effectiveTextColor = textColor ?? style.textColor;
+    const effectiveBorderColor = borderColor ?? style.borderColor;
+    const effectiveBorderWidth = borderWidth ?? style.borderWidth;
+    const overrideStyles = createActionButtonOverrideStyles({
+      borderColor: effectiveBorderColor,
+      borderWidth: effectiveBorderWidth,
+      textColor: effectiveTextColor,
+    });
+    const mergedStyles = mergeButtonStyles(buttonStyles, overrideStyles);
+
+    const effectiveDisabled = disabled === true || loading === true;
+    const leftSection = hideIcon ? undefined : <Icon size={iconSize} />;
 
     return (
       <Button
         ref={ref}
         variant={style.variant}
         color={style.color}
-        leftSection={!hideIcon && <Icon size={iconSize} />}
+        leftSection={leftSection}
+        styles={mergedStyles}
+        loading={loading}
+        disabled={effectiveDisabled}
+        aria-busy={loading ? true : undefined}
         {...props}
       >
         {children}
@@ -143,12 +242,39 @@ export interface ActionIconButtonProps extends Omit<ButtonProps, 'variant' | 'co
   action: ActionType;
   iconSize?: number;
   customIcon?: React.ComponentType<{ size?: number | string }>;
+  /** 枠線の色（Mantineテーマカラー or CSSカラー） */
+  borderColor?: MantineColor;
+  /** 枠線の太さ（px） */
+  borderWidth?: number;
 }
 
 export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonProps>(
-  ({ action, iconSize = 16, customIcon, ...props }, ref) => {
+  (
+    {
+      action,
+      iconSize = 16,
+      customIcon,
+      borderColor,
+      borderWidth,
+      loading,
+      styles: buttonStyles,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const style = ACTION_STYLES[action];
     const Icon = customIcon || style.icon;
+
+    const effectiveBorderColor = borderColor ?? style.borderColor;
+    const effectiveBorderWidth = borderWidth ?? style.borderWidth;
+    const overrideStyles = createActionButtonOverrideStyles({
+      borderColor: effectiveBorderColor,
+      borderWidth: effectiveBorderWidth,
+    });
+    const mergedStyles = mergeButtonStyles(buttonStyles, overrideStyles);
+
+    const effectiveDisabled = disabled === true || loading === true;
 
     return (
       <Button
@@ -157,6 +283,10 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
         color={style.color}
         size="xs"
         p={4}
+        styles={mergedStyles}
+        loading={loading}
+        disabled={effectiveDisabled}
+        aria-busy={loading ? true : undefined}
         {...props}
       >
         <Icon size={iconSize} />
