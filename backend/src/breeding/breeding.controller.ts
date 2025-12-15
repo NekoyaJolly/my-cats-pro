@@ -113,6 +113,8 @@ export class BreedingController {
     return { message: "test" };
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get("pregnancy-checks")
   @ApiOperation({ summary: "妊娠チェック一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -156,6 +158,8 @@ export class BreedingController {
   }
 
   // Birth Plan endpoints
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get("birth-plans")
   @ApiOperation({ summary: "出産計画一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -205,6 +209,8 @@ export class BreedingController {
     return this.breedingService.findAllKittenDispositions(birthRecordId);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post("kitten-dispositions")
   @ApiOperation({ summary: "子猫処遇の登録" })
   @ApiResponse({ status: HttpStatus.CREATED })
@@ -215,6 +221,8 @@ export class BreedingController {
     return this.breedingService.createKittenDisposition(dto, user?.userId);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Patch("kitten-dispositions/:id")
   @ApiOperation({ summary: "子猫処遇の更新" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -223,6 +231,8 @@ export class BreedingController {
     return this.breedingService.updateKittenDisposition(id, dto);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Delete("kitten-dispositions/:id")
   @ApiOperation({ summary: "子猫処遇の削除" })
   @ApiResponse({ status: HttpStatus.OK })

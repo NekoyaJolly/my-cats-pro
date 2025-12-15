@@ -412,9 +412,19 @@ export function useGetPregnancyChecks(
 ) {
   return useQuery({
     queryKey: pregnancyCheckKeys.list(params),
-    queryFn: () => apiRequest<PregnancyCheck[]>('/breeding/pregnancy-checks', { 
-      method: 'GET'
-    }) as Promise<PregnancyCheckListResponse>,
+    queryFn: () => {
+      // クエリパラメータを構築
+      const queryString = new URLSearchParams(
+        Object.entries(params)
+          .filter(([, value]) => value !== undefined && value !== null)
+          .map(([key, value]) => [key, String(value)])
+      ).toString();
+      const url = queryString ? `/breeding/pregnancy-checks?${queryString}` : '/breeding/pregnancy-checks';
+      
+      return apiRequest<PregnancyCheck[]>(url, { 
+        method: 'GET'
+      }) as Promise<PregnancyCheckListResponse>;
+    },
     ...options,
   });
 }
@@ -506,9 +516,19 @@ export function useGetBirthPlans(
 ) {
   return useQuery({
     queryKey: birthPlanKeys.list(params),
-    queryFn: () => apiRequest<BirthPlan[]>('/breeding/birth-plans', { 
-      method: 'GET'
-    }) as Promise<BirthPlanListResponse>,
+    queryFn: () => {
+      // クエリパラメータを構築
+      const queryString = new URLSearchParams(
+        Object.entries(params)
+          .filter(([, value]) => value !== undefined && value !== null)
+          .map(([key, value]) => [key, String(value)])
+      ).toString();
+      const url = queryString ? `/breeding/birth-plans?${queryString}` : '/breeding/birth-plans';
+      
+      return apiRequest<BirthPlan[]>(url, { 
+        method: 'GET'
+      }) as Promise<BirthPlanListResponse>;
+    },
     ...options,
   });
 }
