@@ -36,7 +36,6 @@ const ACTION_STYLES: Record<
     textColor?: MantineColor;
     borderColor?: MantineColor;
     borderWidth?: number;
-    outline?: string;
     icon: React.ComponentType<{ size?: number | string }>;
   }
 > = {
