@@ -64,8 +64,6 @@ export class BreedingController {
     return this.breedingService.create(dto, user?.userId);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   // NOTE: parameterized routes for the main breeding resource are defined
   // later in the file so that static subpaths (e.g. "pregnancy-checks",
   // "birth-plans") are registered first. This prevents Express from
