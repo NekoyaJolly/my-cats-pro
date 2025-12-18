@@ -6,7 +6,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-const API_BASE_URL = getPublicApiBaseUrl();
+const apiBaseUrl = getPublicApiBaseUrl();
 
 export function useBootstrapAuth() {
   const bootstrap = useAuthStore((state) => state.bootstrap);
@@ -16,7 +16,7 @@ export function useBootstrapAuth() {
 
     async function run() {
       try {
-        const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        const res = await fetch(`${apiBaseUrl}/auth/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({}),

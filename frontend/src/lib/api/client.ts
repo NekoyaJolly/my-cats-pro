@@ -411,7 +411,7 @@ async function refreshAccessToken(): Promise<string | null> {
   const token = getRefreshToken();
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${apiBaseUrl}/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -461,7 +461,7 @@ export async function apiRequest<T = unknown>(
   options: RequestInit = {},
   retryOnUnauthorized = true,
 ): Promise<ApiResponse<T>> {
-  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  const fullUrl = url.startsWith('http') ? url : `${apiBaseUrl}${url}`;
   const headers = new Headers(options.headers);
 
   if (!headers.has('Accept')) {
