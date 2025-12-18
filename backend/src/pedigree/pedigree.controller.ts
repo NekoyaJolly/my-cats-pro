@@ -10,6 +10,7 @@ import {
   HttpStatus,
   UseGuards,
   Res,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -126,7 +127,12 @@ export class PedigreeController {
   @Public()
   @ApiOperation({ summary: "印刷設定を更新" })
   @ApiResponse({ status: HttpStatus.OK, description: "更新後の印刷設定" })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "無効な設定データです" })
   async updatePrintSettings(@Body() settings: PositionsConfig) {
+    // 入力データの構造を検証（サービスの検証メソッドを再利用）
+    if (!this.printSettingsService.isPositionsConfig(settings)) {
+      throw new BadRequestException("無効な設定データです");
+    }
     return this.printSettingsService.updateSettings(settings);
   }
 

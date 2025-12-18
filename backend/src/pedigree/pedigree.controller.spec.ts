@@ -28,6 +28,7 @@ describe('PedigreeController', () => {
     getSettings: jest.fn(),
     updateSettings: jest.fn(),
     resetToDefault: jest.fn(),
+    isPositionsConfig: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -129,6 +130,156 @@ describe('PedigreeController', () => {
       await controller.remove('1');
 
       expect(service.remove).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('getPrintSettings', () => {
+    it('should return print settings', async () => {
+      const mockSettings = {
+        offsetX: 0,
+        offsetY: 0,
+        breed: { x: 50, y: 50 },
+        sex: { x: 50, y: 60 },
+        dateOfBirth: { x: 77, y: 60 },
+        catName: { x: 170, y: 55 },
+        fontSizes: { catName: 13 },
+      };
+
+      mockPrintSettingsService.getSettings.mockResolvedValue(mockSettings);
+
+      const result = await controller.getPrintSettings();
+
+      expect(result).toEqual(mockSettings);
+      expect(mockPrintSettingsService.getSettings).toHaveBeenCalled();
+    });
+
+    it('should handle service errors', async () => {
+      mockPrintSettingsService.getSettings.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await expect(controller.getPrintSettings()).rejects.toThrow();
+    });
+  });
+
+  describe('updatePrintSettings', () => {
+    const validSettings = {
+      offsetX: 10,
+      offsetY: 20,
+      breed: { x: 55, y: 55 },
+      sex: { x: 55, y: 65 },
+      dateOfBirth: { x: 80, y: 65 },
+      eyeColor: { x: 55, y: 74 },
+      color: { x: 80, y: 74 },
+      catName: { x: 175, y: 60, align: 'center' as const },
+      wcaNo: { x: 175, y: 74, align: 'center' as const },
+      owner: { x: 325, y: 55, align: 'right' as const },
+      breeder: { x: 325, y: 65, align: 'right' as const },
+      dateOfRegistration: { x: 245, y: 74 },
+      littersM: { x: 280, y: 74 },
+      littersF: { x: 290, y: 74 },
+      sire: {
+        name: { x: 55, y: 115 },
+        color: { x: 55, y: 132 },
+        eyeColor: { x: 55, y: 137 },
+        jcu: { x: 55, y: 142 },
+      },
+      dam: {
+        name: { x: 55, y: 165 },
+        color: { x: 55, y: 182 },
+        eyeColor: { x: 55, y: 187 },
+        jcu: { x: 55, y: 193 },
+      },
+      grandParents: {
+        ff: { name: { x: 145, y: 106 }, color: { x: 145, y: 111 }, jcu: { x: 145, y: 116 } },
+        fm: { name: { x: 145, y: 132 }, color: { x: 145, y: 137 }, jcu: { x: 145, y: 142 } },
+        mf: { name: { x: 145, y: 157 }, color: { x: 145, y: 162 }, jcu: { x: 145, y: 167 } },
+        mm: { name: { x: 145, y: 183 }, color: { x: 145, y: 188 }, jcu: { x: 145, y: 193 } },
+      },
+      greatGrandParents: {
+        fff: { name: { x: 237, y: 99 }, jcu: { x: 237, y: 103 } },
+        ffm: { name: { x: 237, y: 112 }, jcu: { x: 237, y: 116 } },
+        fmf: { name: { x: 237, y: 125 }, jcu: { x: 237, y: 129 } },
+        fmm: { name: { x: 237, y: 138 }, jcu: { x: 237, y: 142 } },
+        mff: { name: { x: 237, y: 151 }, jcu: { x: 237, y: 155 } },
+        mfm: { name: { x: 237, y: 163 }, jcu: { x: 237, y: 167 } },
+        mmf: { name: { x: 237, y: 176 }, jcu: { x: 237, y: 180 } },
+        mmm: { name: { x: 237, y: 189 }, jcu: { x: 237, y: 193 } },
+      },
+      otherOrganizationsNo: { x: 90, y: 215 },
+      fontSizes: {
+        catName: 14,
+        wcaNo: 13,
+        headerInfo: 12,
+        parentName: 13,
+        parentDetail: 12,
+        grandParentName: 12,
+        grandParentDetail: 12,
+        greatGrandParent: 11,
+        footer: 8,
+      },
+    };
+
+    it('should update print settings with valid data', async () => {
+      mockPrintSettingsService.isPositionsConfig.mockReturnValue(true);
+      mockPrintSettingsService.updateSettings.mockResolvedValue(validSettings);
+
+      const result = await controller.updatePrintSettings(validSettings);
+
+      expect(result).toEqual(validSettings);
+      expect(mockPrintSettingsService.isPositionsConfig).toHaveBeenCalledWith(validSettings);
+      expect(mockPrintSettingsService.updateSettings).toHaveBeenCalledWith(validSettings);
+    });
+
+    it('should reject invalid settings (missing required fields)', async () => {
+      const invalidSettings = {
+        offsetX: 10,
+        offsetY: 20,
+        breed: { x: 55, y: 55 },
+        // Missing required fields
+      };
+
+      mockPrintSettingsService.isPositionsConfig.mockReturnValue(false);
+
+      await expect(controller.updatePrintSettings(invalidSettings as any)).rejects.toThrow(
+        '無効な設定データです',
+      );
+      expect(mockPrintSettingsService.isPositionsConfig).toHaveBeenCalledWith(invalidSettings);
+      expect(mockPrintSettingsService.updateSettings).not.toHaveBeenCalled();
+    });
+
+    it('should handle service errors', async () => {
+      mockPrintSettingsService.updateSettings.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await expect(controller.updatePrintSettings(validSettings)).rejects.toThrow();
+    });
+  });
+
+  describe('resetPrintSettings', () => {
+    it('should reset print settings to default', async () => {
+      const defaultSettings = {
+        offsetX: 0,
+        offsetY: 0,
+        breed: { x: 50, y: 50 },
+        fontSizes: { catName: 13 },
+      };
+
+      mockPrintSettingsService.resetToDefault.mockResolvedValue(defaultSettings);
+
+      const result = await controller.resetPrintSettings();
+
+      expect(result).toEqual(defaultSettings);
+      expect(mockPrintSettingsService.resetToDefault).toHaveBeenCalled();
+    });
+
+    it('should handle service errors', async () => {
+      mockPrintSettingsService.resetToDefault.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await expect(controller.resetPrintSettings()).rejects.toThrow();
     });
   });
 });

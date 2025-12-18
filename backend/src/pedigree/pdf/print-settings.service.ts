@@ -150,7 +150,10 @@ export class PrintSettingsService {
       }
       return this.deserializeSettings(record.settings);
     } catch (error) {
-      this.logger.error("印刷設定の取得に失敗しました", error as Error);
+      this.logger.error(
+        "印刷設定の取得に失敗しました",
+        error instanceof Error ? error.stack : JSON.stringify(error),
+      );
       throw new InternalServerErrorException("印刷設定の取得に失敗しました");
     }
   }
@@ -173,13 +176,57 @@ export class PrintSettingsService {
       });
       return settings;
     } catch (error) {
-      this.logger.error("印刷設定の保存に失敗しました", error as Error);
+      this.logger.error(
+        "印刷設定の保存に失敗しました",
+        error instanceof Error ? error.stack : JSON.stringify(error),
+      );
       throw new InternalServerErrorException("印刷設定の保存に失敗しました");
     }
   }
 
   async resetToDefault(tenantId?: string): Promise<PositionsConfig> {
     return this.updateSettings(this.defaultSettings, tenantId);
+  }
+
+  /**
+   * 印刷設定の構造を検証する
+   * @param value 検証対象の値
+   * @returns 有効な PositionsConfig であれば true
+   */
+  public isPositionsConfig(value: unknown): value is PositionsConfig {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return false;
+    }
+    const record = value as Record<string, unknown>;
+
+    // 基本的な数値・オブジェクトフィールドのチェック
+    if (typeof record.offsetX !== "number" || typeof record.offsetY !== "number") {
+      return false;
+    }
+    if (typeof record.breed !== "object" || record.breed === null) {
+      return false;
+    }
+
+    // PDF 生成時に必須となる主要なネスト構造の存在チェック
+    const requiredObjectKeys = [
+      "sex",
+      "dateOfBirth",
+      "catName",
+      "sire",
+      "dam",
+      "grandParents",
+      "greatGrandParents",
+      "fontSizes",
+    ] as const;
+
+    for (const key of requiredObjectKeys) {
+      const v = record[key as string];
+      if (typeof v !== "object" || v === null) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private buildWhereClause(tenantId?: string): Prisma.PedigreePrintSettingWhereUniqueInput {
@@ -193,19 +240,14 @@ export class PrintSettingsService {
     if (!value || !this.isPositionsConfig(value)) {
       return this.defaultSettings;
     }
-    return JSON.parse(JSON.stringify(value)) as PositionsConfig;
+    // Prisma の JsonValue はプレーンオブジェクト互換のため、直接キャスト可能
+    // TypeScript の型チェックを通過するため、unknown を経由してキャスト
+    return value as unknown as PositionsConfig;
   }
 
   private serializeSettings(settings: PositionsConfig): Prisma.InputJsonValue {
-    // JSONシリアライズしてPrismaのJsonValue互換オブジェクトに整形する
-    return JSON.parse(JSON.stringify(settings)) as Prisma.InputJsonValue;
-  }
-
-  private isPositionsConfig(value: Prisma.JsonValue): boolean {
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      return false;
-    }
-    const record = value as Record<string, unknown>;
-    return typeof record.offsetX === "number" && typeof record.offsetY === "number" && typeof record.breed === "object";
+    // Prisma の JsonValue/InputJsonValue はプレーンオブジェクト互換のため、そのまま保存する
+    // TypeScript の型チェックを通過するため、unknown を経由してキャスト
+    return settings as unknown as Prisma.InputJsonValue;
   }
 }
