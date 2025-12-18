@@ -9,7 +9,7 @@ import {
 } from '@/lib/utils/image-resizer';
 import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
-const API_BASE_URL = getPublicApiBaseUrl();
+const apiBaseUrl = getPublicApiBaseUrl();
 
 /**
  * アップロード進捗状態
