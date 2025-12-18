@@ -29,7 +29,7 @@ async function parseJson(response: Response): Promise<unknown> {
 /**
  * API基底URL
  */
-const API_BASE_URL = getPublicApiBaseUrl();
+const apiBaseUrl = getPublicApiBaseUrl();
 
 /**
  * APIレスポンスの共通型
