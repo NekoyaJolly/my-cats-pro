@@ -8,7 +8,7 @@ import { createDomainQueryKeys } from './query-key-factory';
 import { notifications } from '@mantine/notifications';
 import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
-const API_BASE_URL = getPublicApiBaseUrl();
+const apiBaseUrl = getPublicApiBaseUrl();
 
 // ============================================================================
 // 型定義
