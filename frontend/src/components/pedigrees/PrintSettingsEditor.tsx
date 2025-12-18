@@ -20,6 +20,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconDeviceFloppy, IconRefresh, IconAlertCircle, IconCheck, IconAdjustments } from '@tabler/icons-react';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
 // 座標設定の型定義
 interface Position {
@@ -187,14 +188,16 @@ export function PrintSettingsEditor() {
   const [error, setError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
+  const apiBaseUrl = getPublicApiBaseUrl();
 
   // 設定を取得
   const fetchSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/pedigrees/print-settings`);
+      const response = await fetch(`${apiBaseUrl}/pedigrees/print-settings`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('設定の取得に失敗しました');
       const json = await response.json();
       // APIレスポンスは { success: true, data: {...} } 形式
@@ -206,7 +209,7 @@ export function PrintSettingsEditor() {
     } finally {
       setLoading(false);
     }
-  }, [apiUrl]);
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     fetchSettings();
@@ -247,9 +250,10 @@ export function PrintSettingsEditor() {
     if (!settings) return;
     setSaving(true);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/pedigrees/print-settings`, {
+      const response = await fetch(`${apiBaseUrl}/pedigrees/print-settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(settings),
       });
       if (!response.ok) throw new Error('保存に失敗しました');
@@ -277,8 +281,9 @@ export function PrintSettingsEditor() {
     if (!confirm('設定をデフォルトにリセットしますか？')) return;
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/pedigrees/print-settings/reset`, {
+      const response = await fetch(`${apiBaseUrl}/pedigrees/print-settings/reset`, {
         method: 'POST',
+        credentials: 'include',
       });
       if (!response.ok) throw new Error('リセットに失敗しました');
       const json = await response.json();

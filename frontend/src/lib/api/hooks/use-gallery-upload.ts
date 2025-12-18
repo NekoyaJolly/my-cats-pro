@@ -7,9 +7,9 @@ import {
   isImageFile,
   formatFileSize,
 } from '@/lib/utils/image-resizer';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';
+const API_BASE_URL = getPublicApiBaseUrl();
 
 /**
  * アップロード進捗状態

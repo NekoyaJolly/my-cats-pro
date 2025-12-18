@@ -40,6 +40,7 @@ import {
   IconUpload,
   IconX,
 } from '@tabler/icons-react';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
 function escapeHtml(text: string): string {
   return text
@@ -372,12 +373,12 @@ export function PrintTemplateManager() {
   const [showSampleData, setShowSampleData] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
+  const apiBaseUrl = getPublicApiBaseUrl();
 
   // カテゴリ一覧を取得
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/api/v1/print-templates/categories`, {
+      const response = await fetch(`${apiBaseUrl}/print-templates/categories`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('カテゴリの取得に失敗しました');
@@ -386,12 +387,12 @@ export function PrintTemplateManager() {
     } catch (err) {
       console.error('カテゴリ取得エラー:', err);
     }
-  }, [apiUrl]);
+  }, [apiBaseUrl]);
 
   // テナント一覧を取得
   const fetchTenants = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/api/v1/tenants`, {
+      const response = await fetch(`${apiBaseUrl}/tenants`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('テナントの取得に失敗しました');
@@ -407,7 +408,7 @@ export function PrintTemplateManager() {
       // テナント取得に失敗してもグローバルオプションは表示
       setTenants([{ value: '', label: '全テナント共通（グローバル）' }]);
     }
-  }, [apiUrl]);
+  }, [apiBaseUrl]);
 
   // テンプレート一覧を取得
   const fetchTemplates = useCallback(async () => {
@@ -418,7 +419,7 @@ export function PrintTemplateManager() {
       if (selectedTenantFilter) params.append('tenantId', selectedTenantFilter);
       params.append('includeGlobal', 'true');
 
-      const response = await fetch(`${apiUrl}/api/v1/print-templates?${params}`, {
+      const response = await fetch(`${apiBaseUrl}/print-templates?${params}`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('テンプレートの取得に失敗しました');
@@ -434,7 +435,7 @@ export function PrintTemplateManager() {
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, selectedCategory, selectedTenantFilter]);
+  }, [apiBaseUrl, selectedCategory, selectedTenantFilter]);
 
   useEffect(() => {
     fetchCategories();
@@ -487,7 +488,7 @@ export function PrintTemplateManager() {
 
     setSaving(true);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/print-templates`, {
+      const response = await fetch(`${apiBaseUrl}/print-templates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -538,7 +539,7 @@ export function PrintTemplateManager() {
 
     setSaving(true);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/print-templates/${selectedTemplate.id}`, {
+      const response = await fetch(`${apiBaseUrl}/print-templates/${selectedTemplate.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -583,7 +584,7 @@ export function PrintTemplateManager() {
 
     setSaving(true);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/print-templates/${template.id}/duplicate`, {
+      const response = await fetch(`${apiBaseUrl}/print-templates/${template.id}/duplicate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -618,7 +619,7 @@ export function PrintTemplateManager() {
 
     setSaving(true);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/print-templates/${template.id}`, {
+      const response = await fetch(`${apiBaseUrl}/print-templates/${template.id}`, {
         method: 'DELETE',
         credentials: 'include',
       });

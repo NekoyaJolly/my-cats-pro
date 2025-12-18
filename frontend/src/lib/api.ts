@@ -5,7 +5,9 @@
  * このモジュールはレガシー互換用途のみに残されており、段階的に削除予定です。
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
+
+const API_BASE_URL = getPublicApiBaseUrl();
 
 /**
  * Constructs a full API URL from a relative path
