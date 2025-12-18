@@ -8,79 +8,7 @@ import PdfPrinter = require('pdfmake');
 import type { TDocumentDefinitions, TFontDictionary, Content } from 'pdfmake/interfaces';
 
 import { PrismaService } from '../../prisma/prisma.service';
-
-// 座標設定の型定義
-interface Position {
-  x: number;
-  y: number;
-}
-
-interface ParentPositions {
-  name: Position;
-  color: Position;
-  eyeColor?: Position;
-  jcu: Position;
-}
-
-interface GrandParentPositions {
-  name: Position;
-  color: Position;
-  jcu: Position;
-}
-
-interface GreatGrandParentPositions {
-  name: Position;
-  jcu: Position;
-}
-
-interface FontSizes {
-  catName: number;
-  wcaNo: number;
-  headerInfo: number;
-  parentName: number;
-  parentDetail: number;
-  grandParentName: number;
-  grandParentDetail: number;
-  greatGrandParent: number;
-  footer: number;
-}
-
-interface PositionsConfig {
-  offsetX: number;
-  offsetY: number;
-  breed: Position;
-  sex: Position;
-  dateOfBirth: Position;
-  eyeColor: Position;
-  color: Position;
-  catName: Position;
-  wcaNo: Position;
-  owner: Position;
-  breeder: Position;
-  dateOfRegistration: Position;
-  littersM: Position;
-  littersF: Position;
-  sire: ParentPositions;
-  dam: ParentPositions;
-  grandParents: {
-    ff: GrandParentPositions;
-    fm: GrandParentPositions;
-    mf: GrandParentPositions;
-    mm: GrandParentPositions;
-  };
-  greatGrandParents: {
-    fff: GreatGrandParentPositions;
-    ffm: GreatGrandParentPositions;
-    fmf: GreatGrandParentPositions;
-    fmm: GreatGrandParentPositions;
-    mff: GreatGrandParentPositions;
-    mfm: GreatGrandParentPositions;
-    mmf: GreatGrandParentPositions;
-    mmm: GreatGrandParentPositions;
-  };
-  otherOrganizationsNo: Position;
-  fontSizes: FontSizes;
-}
+import { Position, PositionsConfig, PrintSettingsService } from './print-settings.service';
 
 /**
  * 血統書PDF生成サービス（フォーム印字モード）
@@ -89,7 +17,7 @@ interface PositionsConfig {
  * - 用紙サイズ: 339mm × 228mm（横長）
  * - 背景・罫線・ラベルは印刷しない
  * - 値を絶対座標で配置
- * - 座標はpositions.jsonから毎回読み込み（再起動不要で調整可能）
+ * - 座標はDBに保存された印刷設定を毎回読み込み（再起動不要で調整可能）
  */
 @Injectable()
 export class PedigreePdfService {
@@ -102,7 +30,10 @@ export class PedigreePdfService {
   private readonly PAGE_WIDTH = 339; // mm
   private readonly PAGE_HEIGHT = 228; // mm
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly printSettingsService: PrintSettingsService,
+  ) {
     const fonts: TFontDictionary = {
       Helvetica: {
         normal: 'Helvetica',
@@ -134,10 +65,8 @@ export class PedigreePdfService {
   /**
    * JSONファイルから座標設定を読み込む（毎回読み込み、キャッシュなし）
    */
-  private loadPositions(): PositionsConfig {
-    const jsonPath = this.resolvePdfAssetPath('positions.json');
-    const jsonContent = fsModule.readFileSync(jsonPath, 'utf-8');
-    return JSON.parse(jsonContent) as PositionsConfig;
+  private async loadPositions(): Promise<PositionsConfig> {
+    return this.printSettingsService.getSettings();
   }
 
   /**
@@ -154,7 +83,7 @@ export class PedigreePdfService {
     }
 
     const masterData = await this.fetchMasterData(pedigree);
-    const docDefinition = this.buildFormOverlayDocument(pedigree, masterData, debugMode);
+    const docDefinition = await this.buildFormOverlayDocument(pedigree, masterData, debugMode);
 
     return this.createPdfBuffer(docDefinition);
   }
@@ -205,13 +134,12 @@ export class PedigreePdfService {
    * フォーム印字用ドキュメントを構築（値のみ配置）
    * @param debugMode trueの場合、背景画像を表示
    */
-  private buildFormOverlayDocument(
+  private async buildFormOverlayDocument(
     pedigree: Pedigree,
     masterData: { breedName: string; genderName: string; coatColorName: string },
     debugMode = false,
-  ): TDocumentDefinitions {
-    // 毎回JSONから座標を読み込む（再起動不要で調整可能）
-    const config = this.loadPositions();
+  ): Promise<TDocumentDefinitions> {
+    const config = await this.loadPositions();
     const content: Content[] = [];
     const fs = config.fontSizes;
 

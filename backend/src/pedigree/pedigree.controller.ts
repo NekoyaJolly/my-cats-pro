@@ -118,7 +118,7 @@ export class PedigreeController {
   @Public()
   @ApiOperation({ summary: "印刷設定を取得" })
   @ApiResponse({ status: HttpStatus.OK, description: "現在の印刷設定" })
-  getPrintSettings() {
+  async getPrintSettings() {
     return this.printSettingsService.getSettings();
   }
 
@@ -126,7 +126,7 @@ export class PedigreeController {
   @Public()
   @ApiOperation({ summary: "印刷設定を更新" })
   @ApiResponse({ status: HttpStatus.OK, description: "更新後の印刷設定" })
-  updatePrintSettings(@Body() settings: PositionsConfig) {
+  async updatePrintSettings(@Body() settings: PositionsConfig) {
     return this.printSettingsService.updateSettings(settings);
   }
 
@@ -134,7 +134,7 @@ export class PedigreeController {
   @Public()
   @ApiOperation({ summary: "印刷設定をデフォルトにリセット" })
   @ApiResponse({ status: HttpStatus.OK, description: "リセット後の印刷設定" })
-  resetPrintSettings() {
+  async resetPrintSettings() {
     return this.printSettingsService.resetToDefault();
   }
 
