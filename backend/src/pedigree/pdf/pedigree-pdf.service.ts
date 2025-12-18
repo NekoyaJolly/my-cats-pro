@@ -8,6 +8,7 @@ import PdfPrinter = require('pdfmake');
 import type { TDocumentDefinitions, TFontDictionary, Content } from 'pdfmake/interfaces';
 
 import { PrismaService } from '../../prisma/prisma.service';
+
 import { Position, PositionsConfig, PrintSettingsService } from './print-settings.service';
 
 /**
@@ -63,7 +64,7 @@ export class PedigreePdfService {
   }
 
   /**
-   * JSONファイルから座標設定を読み込む（毎回読み込み、キャッシュなし）
+   * DBから座標設定を読み込む（PrintSettingsService経由、毎回読み込み・キャッシュなし）
    */
   private async loadPositions(): Promise<PositionsConfig> {
     return this.printSettingsService.getSettings();
