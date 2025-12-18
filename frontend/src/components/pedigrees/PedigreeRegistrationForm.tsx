@@ -35,6 +35,7 @@ import {
 } from '@tabler/icons-react';
 import { InputWithFloatingLabel } from '../ui/InputWithFloatingLabel';
 import { apiClient, type ApiResponse } from '@/lib/api/client';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
 // API レスポンスの型定義
 type BreedsResponse = Breed[];
@@ -280,7 +281,7 @@ function mapPedigreeRecordToFormData(record: PedigreeRecord, fallbackPedigreeId:
 export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegistrationFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
+  const apiBaseUrl = getPublicApiBaseUrl();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [breeds, setBreeds] = useState<Breed[]>([]);
@@ -749,7 +750,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   };
 
   const openPedigreePdf = (pedigreeId: string) => {
-    const pdfUrl = `${apiUrl}/api/v1/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
+    const pdfUrl = `${apiBaseUrl}/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
     const newTab = window.open(pdfUrl, '_blank');
     if (!newTab) {
       window.location.assign(pdfUrl);

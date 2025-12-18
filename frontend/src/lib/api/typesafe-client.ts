@@ -9,11 +9,12 @@ import {
   UpdateShiftRequest,
   CalendarShiftEvent,
 } from '@/types/api.types';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
 /**
  * APIベースURL（環境変数から取得、既に/api/v1を含んでいる想定）
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';
+const apiBaseUrl = getPublicApiBaseUrl();
 
 /**
  * APIエラークラス
@@ -246,4 +247,4 @@ class TypeSafeApiClient {
 /**
  * 型安全なAPIクライアントインスタンス
  */
-export const apiClient = new TypeSafeApiClient(API_BASE_URL);
+export const apiClient = new TypeSafeApiClient(apiBaseUrl);
