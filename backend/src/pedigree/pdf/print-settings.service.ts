@@ -188,29 +188,12 @@ export class PrintSettingsService {
     return this.updateSettings(this.defaultSettings, tenantId);
   }
 
-  private buildWhereClause(tenantId?: string): Prisma.PedigreePrintSettingWhereUniqueInput {
-    if (tenantId) {
-      return { tenantId };
-    }
-    return { globalKey: this.GLOBAL_KEY };
-  }
-
-  private deserializeSettings(value: Prisma.JsonValue | null): PositionsConfig {
-    if (!value || !this.isPositionsConfig(value)) {
-      return this.defaultSettings;
-    }
-    // Prisma の JsonValue はプレーンオブジェクト互換のため、直接キャスト可能
-    // TypeScript の型チェックを通過するため、unknown を経由してキャスト
-    return value as unknown as PositionsConfig;
-  }
-
-  private serializeSettings(settings: PositionsConfig): Prisma.InputJsonValue {
-    // Prisma の JsonValue/InputJsonValue はプレーンオブジェクト互換のため、そのまま保存する
-    // TypeScript の型チェックを通過するため、unknown を経由してキャスト
-    return settings as unknown as Prisma.InputJsonValue;
-  }
-
-  private isPositionsConfig(value: Prisma.JsonValue): boolean {
+  /**
+   * 印刷設定の構造を検証する
+   * @param value 検証対象の値
+   * @returns 有効な PositionsConfig であれば true
+   */
+  public isPositionsConfig(value: unknown): value is PositionsConfig {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
       return false;
     }
@@ -244,5 +227,27 @@ export class PrintSettingsService {
     }
 
     return true;
+  }
+
+  private buildWhereClause(tenantId?: string): Prisma.PedigreePrintSettingWhereUniqueInput {
+    if (tenantId) {
+      return { tenantId };
+    }
+    return { globalKey: this.GLOBAL_KEY };
+  }
+
+  private deserializeSettings(value: Prisma.JsonValue | null): PositionsConfig {
+    if (!value || !this.isPositionsConfig(value)) {
+      return this.defaultSettings;
+    }
+    // Prisma の JsonValue はプレーンオブジェクト互換のため、直接キャスト可能
+    // TypeScript の型チェックを通過するため、unknown を経由してキャスト
+    return value as unknown as PositionsConfig;
+  }
+
+  private serializeSettings(settings: PositionsConfig): Prisma.InputJsonValue {
+    // Prisma の JsonValue/InputJsonValue はプレーンオブジェクト互換のため、そのまま保存する
+    // TypeScript の型チェックを通過するため、unknown を経由してキャスト
+    return settings as unknown as Prisma.InputJsonValue;
   }
 }

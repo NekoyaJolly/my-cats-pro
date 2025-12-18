@@ -129,8 +129,8 @@ export class PedigreeController {
   @ApiResponse({ status: HttpStatus.OK, description: "更新後の印刷設定" })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "無効な設定データです" })
   async updatePrintSettings(@Body() settings: PositionsConfig) {
-    // 入力データの構造を検証
-    if (!this.isValidPositionsConfig(settings)) {
+    // 入力データの構造を検証（サービスの検証メソッドを再利用）
+    if (!this.printSettingsService.isPositionsConfig(settings)) {
       throw new BadRequestException("無効な設定データです");
     }
     return this.printSettingsService.updateSettings(settings);
@@ -304,44 +304,5 @@ export class PedigreeController {
   @ApiParam({ name: "id", description: "血統書データのID" })
   remove(@Param("id") id: string) {
     return this.pedigreeService.remove(id);
-  }
-
-  /**
-   * 印刷設定の構造を検証するヘルパーメソッド
-   */
-  private isValidPositionsConfig(value: unknown): value is PositionsConfig {
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      return false;
-    }
-    const record = value as Record<string, unknown>;
-
-    // 基本的な数値・オブジェクトフィールドのチェック
-    if (typeof record.offsetX !== "number" || typeof record.offsetY !== "number") {
-      return false;
-    }
-    if (typeof record.breed !== "object" || record.breed === null) {
-      return false;
-    }
-
-    // PDF 生成時に必須となる主要なネスト構造の存在チェック
-    const requiredObjectKeys = [
-      "sex",
-      "dateOfBirth",
-      "catName",
-      "sire",
-      "dam",
-      "grandParents",
-      "greatGrandParents",
-      "fontSizes",
-    ] as const;
-
-    for (const key of requiredObjectKeys) {
-      const v = record[key as string];
-      if (typeof v !== "object" || v === null) {
-        return false;
-      }
-    }
-
-    return true;
   }
 }

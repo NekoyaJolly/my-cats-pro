@@ -28,6 +28,7 @@ describe('PedigreeController', () => {
     getSettings: jest.fn(),
     updateSettings: jest.fn(),
     resetToDefault: jest.fn(),
+    isPositionsConfig: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -220,11 +221,13 @@ describe('PedigreeController', () => {
     };
 
     it('should update print settings with valid data', async () => {
+      mockPrintSettingsService.isPositionsConfig.mockReturnValue(true);
       mockPrintSettingsService.updateSettings.mockResolvedValue(validSettings);
 
       const result = await controller.updatePrintSettings(validSettings);
 
       expect(result).toEqual(validSettings);
+      expect(mockPrintSettingsService.isPositionsConfig).toHaveBeenCalledWith(validSettings);
       expect(mockPrintSettingsService.updateSettings).toHaveBeenCalledWith(validSettings);
     });
 
@@ -236,9 +239,12 @@ describe('PedigreeController', () => {
         // Missing required fields
       };
 
+      mockPrintSettingsService.isPositionsConfig.mockReturnValue(false);
+
       await expect(controller.updatePrintSettings(invalidSettings as any)).rejects.toThrow(
         '無効な設定データです',
       );
+      expect(mockPrintSettingsService.isPositionsConfig).toHaveBeenCalledWith(invalidSettings);
       expect(mockPrintSettingsService.updateSettings).not.toHaveBeenCalled();
     });
 
