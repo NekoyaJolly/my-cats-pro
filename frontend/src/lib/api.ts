@@ -7,7 +7,7 @@
 
 import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
-const API_BASE_URL = getPublicApiBaseUrl();
+const apiBaseUrl = getPublicApiBaseUrl();
 
 /**
  * Constructs a full API URL from a relative path
@@ -17,7 +17,7 @@ const API_BASE_URL = getPublicApiBaseUrl();
 export function getApiUrl(path: string): string {
   // Ensure path starts with '/'
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${API_BASE_URL}${normalizedPath}`;
+  return `${apiBaseUrl}${normalizedPath}`;
 }
 
 /**
