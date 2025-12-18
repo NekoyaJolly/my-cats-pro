@@ -9,7 +9,7 @@ import {
 } from '@/lib/utils/image-resizer';
 import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
-const API_BASE_URL = getPublicApiBaseUrl();
+const apiBaseUrl = getPublicApiBaseUrl();
 
 /**
  * アップロード進捗状態
@@ -150,7 +150,7 @@ export function useGalleryUpload() {
 
         // 2. Signed URLを取得
         const signedUrlRes = await fetch(
-          `${API_BASE_URL}/gallery/upload/signed-url`,
+          `${apiBaseUrl}/gallery/upload/signed-url`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -190,7 +190,7 @@ export function useGalleryUpload() {
 
         // 4. アップロード完了を確認
         const confirmRes = await fetch(
-          `${API_BASE_URL}/gallery/upload/confirm`,
+          `${apiBaseUrl}/gallery/upload/confirm`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
