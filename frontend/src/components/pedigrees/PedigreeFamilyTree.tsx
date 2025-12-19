@@ -17,7 +17,18 @@ import {
 } from '@mantine/core';
 import { IconDna, IconBinaryTree } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
-import { apiGet } from '../../lib/api';
+import { apiClient, type ApiRequestOptions } from '@/lib/api/client';
+
+const MAX_VALIDATION_DEPTH = 6;
+type FamilyTreeRequestOptions = {
+  pathParams: { id: string };
+  query: { generations: number };
+};
+
+const toApiRequestOptions = (
+  options: FamilyTreeRequestOptions,
+): ApiRequestOptions<'/pedigrees/{id}/family-tree', 'get'> =>
+  options as unknown as ApiRequestOptions<'/pedigrees/{id}/family-tree', 'get'>; // TODO: スキーマ更新後に除去する
 
 interface FamilyTreeData {
   id: string;
@@ -36,6 +47,46 @@ interface FamilyTreeData {
 interface PedigreeFamilyTreeProps {
   pedigreeId?: string | null;
 }
+
+const isFamilyTreeData = (value: unknown, depth = 0): value is FamilyTreeData => {
+  if (depth > MAX_VALIDATION_DEPTH) {
+    console.warn('家系図データの検証深度が上限を超えました');
+    return false;
+  }
+
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const isNullableNumber = (target: unknown): target is number | null => typeof target === 'number' || target === null;
+  const isNullableString = (target: unknown): target is string | null =>
+    typeof target === 'string' || target === null;
+  const isNamedObject = (target: unknown): target is { name: string } =>
+    typeof target === 'object' && target !== null && typeof (target as Record<string, unknown>).name === 'string';
+  const isParentNode = (target: unknown): target is FamilyTreeData =>
+    target === undefined || target === null || isFamilyTreeData(target, depth + 1);
+
+  if (typeof record.id !== 'string' || typeof record.pedigreeId !== 'string' || typeof record.catName !== 'string') {
+    return false;
+  }
+
+  if (
+    !isNullableNumber(record.breedCode)
+    || !isNullableNumber(record.gender)
+    || !isNullableString(record.birthDate)
+    || !isNullableNumber(record.coatColorCode)
+  ) {
+    return false;
+  }
+
+  if ((record.breed !== undefined && record.breed !== null && !isNamedObject(record.breed))
+    || (record.color !== undefined && record.color !== null && !isNamedObject(record.color))) {
+    return false;
+  }
+
+  return isParentNode(record.father) && isParentNode(record.mother);
+};
 
 export function PedigreeFamilyTree({ pedigreeId }: PedigreeFamilyTreeProps) {
   const router = useRouter();
@@ -62,16 +113,29 @@ export function PedigreeFamilyTree({ pedigreeId }: PedigreeFamilyTreeProps) {
       try {
         setLoading(true);
         setError(null);
-        const response = await apiGet(`/pedigrees/${pedigreeId}/family-tree`, {
-          generations: generations.toString()
-        });
-        
-        if (!response.ok) {
-          throw new Error('家系図データの取得に失敗しました');
+        const requestOptions: FamilyTreeRequestOptions = {
+          pathParams: { id: pedigreeId },
+          query: { generations: Number(generations) },
+        };
+
+        const response = await apiClient.get(
+          '/pedigrees/{id}/family-tree',
+          toApiRequestOptions(requestOptions),
+        );
+
+        if (!response.success) {
+          throw new Error(response.error ?? '家系図データの取得に失敗しました');
         }
 
-        const data = await response.json();
-        setFamilyTree(data);
+        if (!response.data) {
+          throw new Error('家系図データが見つかりませんでした');
+        }
+
+        if (!isFamilyTreeData(response.data)) {
+          throw new Error('家系図データの形式が不正です');
+        }
+
+        setFamilyTree(response.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
       } finally {
