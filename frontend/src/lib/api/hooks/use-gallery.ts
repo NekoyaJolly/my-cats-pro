@@ -6,9 +6,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDomainQueryKeys } from './query-key-factory';
 import { notifications } from '@mantine/notifications';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';
+const apiBaseUrl = getPublicApiBaseUrl();
 
 // ============================================================================
 // 型定義
@@ -172,7 +172,7 @@ export function useGalleryEntries(
       params.append('page', String(page));
       params.append('limit', String(limit));
 
-      const res = await fetch(`${API_BASE_URL}/gallery?${params.toString()}`);
+      const res = await fetch(`${apiBaseUrl}/gallery?${params.toString()}`);
       if (!res.ok) {
         const message = await extractErrorMessage(
           res,
@@ -197,7 +197,7 @@ export function useGalleryEntry(id: string | null) {
     queryKey: galleryKeys.detail(id ?? ''),
     queryFn: async () => {
       if (!id) throw new Error('IDが必要です');
-      const res = await fetch(`${API_BASE_URL}/gallery/${id}`);
+      const res = await fetch(`${apiBaseUrl}/gallery/${id}`);
       if (!res.ok) {
         const message = await extractErrorMessage(
           res,
@@ -219,7 +219,7 @@ export function useCreateGalleryEntry() {
 
   return useMutation({
     mutationFn: async (dto: CreateGalleryEntryDto) => {
-      const res = await fetch(`${API_BASE_URL}/gallery`, {
+      const res = await fetch(`${apiBaseUrl}/gallery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dto),
@@ -256,7 +256,7 @@ export function useBulkCreateGalleryEntries() {
 
   return useMutation({
     mutationFn: async (entries: CreateGalleryEntryDto[]) => {
-      const res = await fetch(`${API_BASE_URL}/gallery/bulk`, {
+      const res = await fetch(`${apiBaseUrl}/gallery/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entries),
@@ -307,7 +307,7 @@ export function useUpdateGalleryEntry() {
       id: string;
       dto: UpdateGalleryEntryDto;
     }) => {
-      const res = await fetch(`${API_BASE_URL}/gallery/${id}`, {
+      const res = await fetch(`${apiBaseUrl}/gallery/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dto),
@@ -344,7 +344,7 @@ export function useDeleteGalleryEntry() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`${API_BASE_URL}/gallery/${id}`, {
+      const res = await fetch(`${apiBaseUrl}/gallery/${id}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -385,7 +385,7 @@ export function useAddGalleryMedia() {
       entryId: string;
       media: AddMediaDto;
     }) => {
-      const res = await fetch(`${API_BASE_URL}/gallery/${entryId}/media`, {
+      const res = await fetch(`${apiBaseUrl}/gallery/${entryId}/media`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(media),
@@ -426,7 +426,7 @@ export function useDeleteGalleryMedia() {
 
   return useMutation({
     mutationFn: async (mediaId: string) => {
-      const res = await fetch(`${API_BASE_URL}/gallery/media/${mediaId}`, {
+      const res = await fetch(`${apiBaseUrl}/gallery/media/${mediaId}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -472,7 +472,7 @@ export function useReorderGalleryMedia() {
       mediaIds: string[];
     }) => {
       const res = await fetch(
-        `${API_BASE_URL}/gallery/${entryId}/media/reorder`,
+        `${apiBaseUrl}/gallery/${entryId}/media/reorder`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

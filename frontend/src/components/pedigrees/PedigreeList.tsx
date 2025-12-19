@@ -21,6 +21,7 @@ import {
 import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter, IconCopy } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useGetPedigrees } from '@/lib/api/hooks/use-pedigrees';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
 interface PedigreeData {
   id: string;
@@ -50,7 +51,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
   const [genderFilter, setGenderFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
+  const apiBaseUrl = getPublicApiBaseUrl();
 
   const genderOptions = [
     { value: '', label: '全て' },
@@ -113,7 +114,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
   };
 
   const openPedigreePdf = (pedigreeId: string) => {
-    const pdfUrl = `${apiUrl}/api/v1/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
+    const pdfUrl = `${apiBaseUrl}/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
 
     const newTab = window.open(pdfUrl, '_blank');
     if (!newTab) {

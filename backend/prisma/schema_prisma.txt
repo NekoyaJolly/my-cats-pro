@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-12-14T17:32:14.075Z
+// Prisma Schema - Last Updated: 2025-12-18T19:26:45.378Z
 // Auto-generated from schema.prisma
 
 generator client {
@@ -20,6 +20,7 @@ model Tenant {
   invitations InvitationToken[]
   settings    TenantSettings?
   users       User[]
+  pedigreePrintSetting PedigreePrintSetting?
 
   @@index([slug])
   @@index([isActive])
@@ -994,6 +995,24 @@ model GalleryMedia {
   @@index([galleryEntryId])
   @@index([order])
   @@map("gallery_media")
+}
+
+// ==========================================
+// Pedigree Print Settings
+// ==========================================
+
+model PedigreePrintSetting {
+  id        String   @id @default(uuid())
+  tenantId  String?  @map("tenant_id")
+  globalKey String?  @unique @map("global_key")
+  settings  Json
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId])
+  @@map("pedigree_print_settings")
 }
 
 // ==========================================

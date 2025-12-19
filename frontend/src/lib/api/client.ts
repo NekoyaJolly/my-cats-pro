@@ -4,6 +4,7 @@
  */
 
 import type { paths } from './generated/schema';
+import { getPublicApiBaseUrl } from './public-api-base-url';
 
 // NOTE: generated/schema.ts は最初の型生成後にインポート可能になります
 async function parseJson(response: Response): Promise<unknown> {
@@ -28,7 +29,7 @@ async function parseJson(response: Response): Promise<unknown> {
 /**
  * API基底URL
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';
+const apiBaseUrl = getPublicApiBaseUrl();
 
 /**
  * APIレスポンスの共通型
@@ -410,7 +411,7 @@ async function refreshAccessToken(): Promise<string | null> {
   const token = getRefreshToken();
 
   try {
-    const response = await fetch(`${API_BASE_URL.replace('/api/v1', '')}/api/v1/auth/refresh`, {
+    const response = await fetch(`${apiBaseUrl}/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -460,7 +461,7 @@ export async function apiRequest<T = unknown>(
   options: RequestInit = {},
   retryOnUnauthorized = true,
 ): Promise<ApiResponse<T>> {
-  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  const fullUrl = url.startsWith('http') ? url : `${apiBaseUrl}${url}`;
   const headers = new Headers(options.headers);
 
   if (!headers.has('Accept')) {

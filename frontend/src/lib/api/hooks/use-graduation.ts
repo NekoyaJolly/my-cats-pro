@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Cat } from './use-cats';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
 // Graduation型定義
 export interface Graduation {
@@ -55,7 +56,8 @@ export function useTransferCat() {
 
   return useMutation<TransferCatResponse, Error, { catId: string; data: TransferCatDto }>({
     mutationFn: async ({ catId, data }) => {
-      const response = await fetch(`http://localhost:3004/api/v1/graduations/cats/${catId}/transfer`, {
+      const apiBaseUrl = getPublicApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/graduations/cats/${catId}/transfer`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,8 +87,9 @@ export function useGetGraduations(page = 1, limit = 50) {
   return useQuery<GraduationsResponse, Error>({
     queryKey: ['graduations', page, limit],
     queryFn: async () => {
+      const apiBaseUrl = getPublicApiBaseUrl();
       const response = await fetch(
-        `http://localhost:3004/api/v1/graduations?page=${page}&limit=${limit}`
+        `${apiBaseUrl}/graduations?page=${page}&limit=${limit}`
       );
 
       if (!response.ok) {
@@ -107,7 +110,9 @@ export function useGetGraduationDetail(id: string | null) {
     queryFn: async () => {
       if (!id) throw new Error('Graduation ID is required');
 
-      const response = await fetch(`http://localhost:3004/api/v1/graduations/${id}`);
+      const apiBaseUrl = getPublicApiBaseUrl();
+
+      const response = await fetch(`${apiBaseUrl}/graduations/${id}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch graduation detail');
@@ -127,7 +132,8 @@ export function useCancelGraduation() {
 
   return useMutation<{ success: boolean; message: string }, Error, string>({
     mutationFn: async (graduationId: string) => {
-      const response = await fetch(`http://localhost:3004/api/v1/graduations/${graduationId}`, {
+      const apiBaseUrl = getPublicApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/graduations/${graduationId}`, {
         method: 'DELETE',
       });
 
