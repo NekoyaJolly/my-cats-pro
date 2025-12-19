@@ -23,15 +23,15 @@ import {
   IconPaw,
 } from '@tabler/icons-react';
 import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care';
-import { useGetCats, useDeleteCat, type Cat } from '@/lib/api/hooks/use-cats';
+import { useGetKittens, useDeleteCat, type Cat, type KittenGroup } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
-import { useGetBirthPlans, type KittenDisposition, type BirthPlan } from '@/lib/api/hooks/use-breeding';
+import { type KittenDisposition } from '@/lib/api/hooks/use-breeding';
 import TagSelector, { TagDisplay } from '@/components/TagSelector';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
 import { CatEditModal } from '@/components/cats/cat-edit-modal';
 import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { GenderBadge } from '@/components/GenderBadge';
 
 // データ型定義
@@ -57,9 +57,53 @@ interface MotherCat {
   monthsOld: number;
 }
 
+/**
+ * KittenGroup から MotherCat 形式に変換
+ */
+function convertKittenGroupToMotherCat(group: KittenGroup): MotherCat {
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const deliveryDate = group.deliveryDate ? formatDate(group.deliveryDate) : '';
+  const monthsOld = group.deliveryDate
+    ? Math.floor((new Date().getTime() - new Date(group.deliveryDate).getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+
+  return {
+    id: group.mother.id,
+    name: group.mother.name,
+    fatherName: group.father?.name ?? '不明',
+    kittens: group.kittens.map((kitten) => ({
+      id: kitten.id,
+      name: kitten.name,
+      color: kitten.coatColor?.name ?? '未確認',
+      gender: kitten.gender === 'MALE' ? 'オス' : 'メス',
+      weight: 350, // TODO: 体重記録機能実装後に実データに置き換え
+      birthDate: formatDate(kitten.birthDate),
+      notes: kitten.description ?? '',
+      tags: kitten.tags?.map((catTag) => catTag.tag.id) ?? [],
+      rawCat: kitten,
+      disposition: undefined, // TODO: 処遇データの取得方法を別途検討
+    })),
+    deliveryDate,
+    monthsOld,
+  };
+}
+
 export default function KittensPage() {
   const { setPageHeader } = usePageHeader();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  // URLパラメータからタブ状態を取得（デフォルトは 'list'）
+  const tabParam = searchParams.get('tab') || 'list';
   
   const [motherCats, setMotherCats] = useState<MotherCat[]>([]);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
@@ -73,12 +117,11 @@ export default function KittensPage() {
   const [editModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
   const [selectedKittenForEdit, setSelectedKittenForEdit] = useState<Cat | null>(null);
 
-  // API hooks
-  const catsQuery = useGetCats({ limit: 1000 });
+  // API hooks - 新しい子猫専用APIを使用
+  const kittensQuery = useGetKittens({ limit: 200 });
   const deleteCatMutation = useDeleteCat();
   const tagCategoriesQuery = useGetTagCategories();
   const careSchedulesQuery = useGetCareSchedules({});
-  const birthPlansQuery = useGetBirthPlans({ status: 'BORN', limit: 1000 });
 
   // コンテキストメニュー
   const {
@@ -110,29 +153,19 @@ export default function KittensPage() {
     if (currentOperation === 'delete' && currentEntity) {
       deleteCatMutation.mutate(currentEntity.id, {
         onSuccess: () => {
-          catsQuery.refetch();
+          kittensQuery.refetch();
           closeOperation();
         },
       });
     }
   };
 
-  // 日付フォーマット
-  const formatDate = (dateString: string): string => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  // 子猫判定（生後6ヶ月未満）
-  const isKitten = (birthDate: string): boolean => {
-    const birth = new Date(birthDate);
-    const now = new Date();
-    const monthsDiff = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
-    return monthsDiff < 6;
+  // タブ切り替え時にURLパラメータを更新
+  const handleTabChange = (nextTab: string | null) => {
+    if (!nextTab) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', nextTab);
+    router.push(`${pathname}?${nextParams.toString()}`);
   };
 
   const getScheduleCatIds = useCallback((schedule: CareSchedule): string[] => {
@@ -144,76 +177,15 @@ export default function KittensPage() {
     return Array.from(new Set(ids));
   }, []);
 
-  // データ読み込み
+  // データ読み込み - 新しい子猫専用APIを使用
   useEffect(() => {
-    if (!catsQuery.data?.data || !birthPlansQuery.data?.data) return;
+    if (!kittensQuery.data?.data) return;
 
-    const allCats = catsQuery.data.data;
-    const birthPlans = birthPlansQuery.data.data;
-
-    // 子猫のみフィルタリング
-    const kittens = allCats.filter((cat: Cat) => isKitten(cat.birthDate));
-
-    // 母猫ごとにグループ化
-    const motherMap = new Map<string, { mother: Cat; kittens: Cat[]; fatherName: string; birthPlan?: BirthPlan }>();
-
-    kittens.forEach((kitten: Cat) => {
-      if (kitten.motherId) {
-        const motherId = kitten.motherId;
-        if (!motherMap.has(motherId)) {
-          // birthPlansから母猫を検索
-          const motherBirthPlans = birthPlans.filter((plan: BirthPlan) => plan.mother?.id === motherId);
-          const birthPlan = motherBirthPlans.sort((a, b) => {
-            const aHasDispositions = (a.kittenDispositions?.length || 0) > 0;
-            const bHasDispositions = (b.kittenDispositions?.length || 0) > 0;
-            if (aHasDispositions && !bHasDispositions) return -1;
-            if (!aHasDispositions && bHasDispositions) return 1;
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-          })[0];
-          
-          const mother = birthPlan?.mother || kitten.mother || allCats.find((cat: Cat) => cat.id === motherId);
-          if (mother) {
-            const fatherId = birthPlan?.fatherId;
-            const father = fatherId ? allCats.find((cat: Cat) => cat.id === fatherId) : null;
-            motherMap.set(motherId, { mother: mother as Cat, kittens: [], fatherName: father?.name || '不明', birthPlan });
-          }
-        }
-        const motherEntry = motherMap.get(motherId);
-        if (motherEntry) {
-          motherEntry.kittens.push(kitten);
-        }
-      }
-    });
-
-    // MotherCat形式に変換
-    const motherCatsData: MotherCat[] = Array.from(motherMap.values()).map(({ mother, kittens, fatherName, birthPlan }) => ({
-      id: mother.id,
-      name: mother.name,
-      fatherName: fatherName,
-      kittens: kittens.map((kitten: Cat) => {
-        const disposition = birthPlan?.kittenDispositions?.find(
-          (kd: KittenDisposition) => kd.kittenId === kitten.id || kd.name === kitten.name
-        );
-        
-        return {
-          id: kitten.id,
-          name: kitten.name,
-          color: kitten.coatColor?.name || '未確認',
-          gender: kitten.gender === 'MALE' ? 'オス' : 'メス',
-          weight: 350,
-          birthDate: formatDate(kitten.birthDate),
-          notes: kitten.description || '',
-          tags: kitten.tags?.map((catTag) => catTag.tag.id) || [],
-          rawCat: kitten,
-          disposition,
-        };
-      }),
-      deliveryDate: formatDate(kittens[0]?.birthDate || mother.birthDate),
-      monthsOld: Math.floor((new Date().getTime() - new Date(kittens[0]?.birthDate || mother.birthDate).getTime()) / (1000 * 60 * 60 * 24)),
-    }));
+    // サーバーサイドでグループ化済みのデータを MotherCat 形式に変換
+    const motherCatsData: MotherCat[] = kittensQuery.data.data.map(convertKittenGroupToMotherCat);
 
     setMotherCats(motherCatsData);
-  }, [catsQuery.data, birthPlansQuery.data]);
+  }, [kittensQuery.data]);
 
   // ページヘッダー設定
   useEffect(() => {
@@ -276,8 +248,8 @@ export default function KittensPage() {
         />
       </Card>
 
-      {/* タブ */}
-      <Tabs defaultValue="list" variant="outline" mb="md">
+      {/* タブ - URLパラメータで状態を管理 */}
+      <Tabs value={tabParam} onChange={handleTabChange} variant="outline" mb="md">
         <Tabs.List grow>
           <Tabs.Tab value="list" leftSection={<IconEdit size={14} />}>
             子猫一覧
@@ -307,7 +279,7 @@ export default function KittensPage() {
 
           {/* テーブル表示 */}
           <Card padding="md" radius="md" withBorder>
-            {catsQuery.isLoading ? (
+            {kittensQuery.isLoading ? (
               <Text ta="center" c="dimmed" py="xl">
                 読み込み中...
               </Text>
@@ -580,8 +552,7 @@ export default function KittensPage() {
         onClose={closeManagementModal}
         motherId={selectedMotherIdForModal}
         onSuccess={() => {
-          catsQuery.refetch();
-          birthPlansQuery.refetch();
+          kittensQuery.refetch();
         }}
       />
 
@@ -601,7 +572,7 @@ export default function KittensPage() {
           onClose={closeEditModal}
           catId={selectedKittenForEdit.id}
           onSuccess={() => {
-            catsQuery.refetch();
+            kittensQuery.refetch();
           }}
         />
       )}

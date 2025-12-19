@@ -26,7 +26,7 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 import { CatsService } from "./cats.service";
 import { GENDER_MASTER } from "./constants/gender";
-import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
+import { CreateCatDto, UpdateCatDto, CatQueryDto, KittenQueryDto } from "./dto";
 
 @ApiTags("Cats")
 @ApiBearerAuth()
@@ -101,6 +101,44 @@ export class CatsController {
   @ApiResponse({ status: HttpStatus.OK, description: "統計情報" })
   getStatistics() {
     return this.catsService.getStatistics();
+  }
+
+  @Get("kittens")
+  @Header('Cache-Control', 'no-cache')
+  @ApiOperation({ summary: "子猫一覧を取得（生後6ヶ月未満、母猫ごとにグループ化）" })
+  @ApiResponse({ status: HttpStatus.OK, description: "子猫データの一覧（母猫ごとにグループ化）" })
+  @ApiQuery({
+    name: "motherId",
+    required: false,
+    description: "母猫ID（指定時はその母猫の子猫のみ取得）",
+  })
+  @ApiQuery({
+    name: "page",
+    required: false,
+    description: "ページ番号",
+    example: 1,
+  })
+  @ApiQuery({
+    name: "limit",
+    required: false,
+    description: "1ページあたりの件数",
+    example: 50,
+  })
+  @ApiQuery({ name: "search", required: false, description: "検索キーワード（子猫名）" })
+  @ApiQuery({
+    name: "sortBy",
+    required: false,
+    description: "ソート項目",
+    example: "birthDate",
+  })
+  @ApiQuery({
+    name: "sortOrder",
+    required: false,
+    description: "ソート順",
+    example: "desc",
+  })
+  findKittens(@Query() query: KittenQueryDto) {
+    return this.catsService.findKittens(query);
   }
 
   @Get(":id")

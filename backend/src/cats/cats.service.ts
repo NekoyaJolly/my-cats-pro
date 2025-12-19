@@ -10,7 +10,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";
 
-import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
+import { CreateCatDto, UpdateCatDto, CatQueryDto, KittenQueryDto } from "./dto";
 import { catWithRelationsInclude, CatWithRelations } from "./types/cat.types";
 
 @Injectable()
@@ -488,6 +488,151 @@ export class CatsService {
       total: totalCats,
       genderDistribution,
       breedDistribution: breedStatsWithNames,
+    };
+  }
+
+  /**
+   * 子猫一覧を取得（生後6ヶ月未満、母猫ごとにグループ化）
+   */
+  async findKittens(query: KittenQueryDto) {
+    const {
+      motherId,
+      page = 1,
+      limit = 50,
+      search,
+      sortBy = "birthDate",
+      sortOrder = "desc",
+    } = query;
+
+    // 生後6ヶ月の基準日を計算
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const skip = (page - 1) * limit;
+    const where: Prisma.CatWhereInput = {
+      // 生後6ヶ月未満
+      birthDate: { gte: sixMonthsAgo },
+      // 母猫が設定されている（子猫として登録されている）
+      motherId: motherId ? motherId : { not: null },
+    };
+
+    // 検索キーワード
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    type Sortable = "birthDate" | "name" | "createdAt";
+    const orderBy: Prisma.CatOrderByWithRelationInput = {
+      [sortBy as Sortable]: sortOrder,
+    } as Prisma.CatOrderByWithRelationInput;
+
+    // 子猫一覧を取得
+    const [kittens, total] = await Promise.all([
+      this.prisma.cat.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          ...catWithRelationsInclude,
+          mother: {
+            select: {
+              id: true,
+              name: true,
+              gender: true,
+              birthDate: true,
+              breed: {
+                select: { id: true, name: true },
+              },
+              coatColor: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+        },
+        orderBy,
+      }),
+      this.prisma.cat.count({ where }),
+    ]);
+
+    // 母猫ごとにグループ化
+    const motherGroups = new Map<string, {
+      mother: {
+        id: string;
+        name: string;
+        gender: string;
+        birthDate: Date;
+        breed: { id: string; name: string } | null;
+        coatColor: { id: string; name: string } | null;
+      };
+      kittens: typeof kittens;
+      fatherId: string | null;
+    }>();
+
+    for (const kitten of kittens) {
+      if (!kitten.mother) continue;
+
+      const motherId = kitten.mother.id;
+      if (!motherGroups.has(motherId)) {
+        motherGroups.set(motherId, {
+          mother: kitten.mother,
+          kittens: [],
+          fatherId: kitten.fatherId,
+        });
+      }
+      const group = motherGroups.get(motherId);
+      if (group) {
+        group.kittens.push(kitten);
+      }
+    }
+
+    // 父猫情報を取得
+    const fatherIds = Array.from(motherGroups.values())
+      .map((g) => g.fatherId)
+      .filter((id): id is string => id !== null);
+    
+    const fathers = fatherIds.length > 0
+      ? await this.prisma.cat.findMany({
+          where: { id: { in: fatherIds } },
+          select: {
+            id: true,
+            name: true,
+            gender: true,
+            breed: { select: { id: true, name: true } },
+            coatColor: { select: { id: true, name: true } },
+          },
+        })
+      : [];
+
+    const fatherMap = new Map(fathers.map((f) => [f.id, f]));
+
+    // レスポンス形式に変換
+    const groupedData = Array.from(motherGroups.entries()).map(([, group]) => ({
+      mother: group.mother,
+      father: group.fatherId ? fatherMap.get(group.fatherId) ?? null : null,
+      kittens: group.kittens,
+      kittenCount: group.kittens.length,
+      deliveryDate: group.kittens[0]?.birthDate ?? null,
+    }));
+
+    // 出産日で降順ソート（最新の出産が先頭）
+    groupedData.sort((a, b) => {
+      const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : 0;
+      const dateB = b.deliveryDate ? new Date(b.deliveryDate).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    return {
+      data: groupedData,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        totalGroups: motherGroups.size,
+      },
     };
   }
 }

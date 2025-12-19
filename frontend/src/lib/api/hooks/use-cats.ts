@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import { apiClient, type ApiPathParams, type ApiQueryParams, type ApiRequestBody, type ApiResponse } from '../client';
+import { apiClient, apiRequest, type ApiPathParams, type ApiQueryParams, type ApiRequestBody, type ApiResponse } from '../client';
 import { createDomainQueryKeys } from './query-key-factory';
 import { notifications } from '@mantine/notifications';
 
@@ -103,6 +103,56 @@ const resolveTargetCatId = (variables: UpdateCatVariables | undefined, fallbackI
 };
 
 /**
+ * 子猫一覧取得パラメータ
+ */
+export interface GetKittensParams {
+  motherId?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: 'birthDate' | 'name' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * 子猫グループ（母猫ごと）
+ */
+export interface KittenGroup {
+  mother: {
+    id: string;
+    name: string;
+    gender: string;
+    birthDate: string;
+    breed: { id: string; name: string } | null;
+    coatColor: { id: string; name: string } | null;
+  };
+  father: {
+    id: string;
+    name: string;
+    gender: string;
+    breed: { id: string; name: string } | null;
+    coatColor: { id: string; name: string } | null;
+  } | null;
+  kittens: Cat[];
+  kittenCount: number;
+  deliveryDate: string | null;
+}
+
+/**
+ * 子猫一覧レスポンス
+ */
+export interface GetKittensResponse {
+  data: KittenGroup[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalGroups: number;
+  };
+}
+
+/**
  * クエリキー定義
  */
 const baseCatKeys = createDomainQueryKeys<string, GetCatsParams>('cats');
@@ -112,6 +162,7 @@ export const catKeys = {
   statistics: () => [...baseCatKeys.all, 'statistics'] as const,
   breedingHistory: (id: string) => [...baseCatKeys.all, 'breeding-history', id] as const,
   careHistory: (id: string) => [...baseCatKeys.all, 'care-history', id] as const,
+  kittens: (params?: GetKittensParams) => [...baseCatKeys.all, 'kittens', params ?? {}] as const,
 };
 
 /**
@@ -276,6 +327,50 @@ export function useGetCatBreedingHistory(
     queryKey: catKeys.breedingHistory(id),
     queryFn: () => apiClient.get('/cats/{id}/breeding-history', { pathParams: { id } }),
     enabled: !!id,
+    ...options,
+  });
+}
+
+/**
+ * 子猫一覧を取得するフック（母猫ごとにグループ化）
+ * 
+ * NOTE: OpenAPI スキーマに /cats/kittens が追加されるまでは
+ * apiRequest を直接使用してパスを指定しています。
+ * スキーマ更新後は apiClient.get に移行してください。
+ */
+export function useGetKittens(
+  params: GetKittensParams = {},
+  options?: Omit<UseQueryOptions<GetKittensResponse>, 'queryKey' | 'queryFn'>,
+) {
+  // クエリパラメータを構築
+  const queryString = new URLSearchParams();
+  if (params.motherId) queryString.set('motherId', params.motherId);
+  if (params.page) queryString.set('page', String(params.page));
+  if (params.limit) queryString.set('limit', String(params.limit));
+  if (params.search) queryString.set('search', params.search);
+  if (params.sortBy) queryString.set('sortBy', params.sortBy);
+  if (params.sortOrder) queryString.set('sortOrder', params.sortOrder);
+
+  const urlPath = `/cats/kittens${queryString.toString() ? `?${queryString.toString()}` : ''}`;
+
+  return useQuery({
+    queryKey: catKeys.kittens(params),
+    queryFn: async () => {
+      // OpenAPI 型が生成されるまでは apiRequest を直接使用
+      // apiRequest は { success, data, meta } 形式の ApiResponse<T> を返す
+      const response = await apiRequest<KittenGroup[]>(urlPath);
+
+      return {
+        data: response.data ?? [],
+        meta: (response.meta as GetKittensResponse['meta'] | undefined) ?? {
+          total: 0,
+          page: 1,
+          limit: 50,
+          totalPages: 0,
+          totalGroups: 0,
+        },
+      };
+    },
     ...options,
   });
 }
