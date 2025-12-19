@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Tabs,
   Button,
@@ -8,7 +8,6 @@ import {
   Card,
   Text,
   Badge,
-  Grid,
   Stack,
   Container,
   Table,
@@ -19,10 +18,9 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconEdit,
-  IconCalendar,
   IconPaw,
+  IconScale,
 } from '@tabler/icons-react';
-import { useGetCareSchedules, type CareSchedule } from '@/lib/api/hooks/use-care';
 import { useGetKittens, useDeleteCat, type Cat, type KittenGroup } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 import { type KittenDisposition } from '@/lib/api/hooks/use-breeding';
@@ -31,6 +29,9 @@ import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
 import { CatEditModal } from '@/components/cats/cat-edit-modal';
 import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
+import { WeightRecordModal } from '@/components/kittens/WeightRecordModal';
+import BulkWeightRecordModal from '@/components/kittens/BulkWeightRecordModal';
+import WeightRecordTable from '@/components/kittens/WeightRecordTable';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { GenderBadge } from '@/components/GenderBadge';
 
@@ -117,11 +118,17 @@ export default function KittensPage() {
   const [editModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
   const [selectedKittenForEdit, setSelectedKittenForEdit] = useState<Cat | null>(null);
 
+  // 体重記録モーダル
+  const [weightModalOpened, { open: openWeightModal, close: closeWeightModal }] = useDisclosure(false);
+  const [selectedKittenForWeight, setSelectedKittenForWeight] = useState<{ id: string; name: string } | null>(null);
+
+  // 一括体重記録モーダル
+  const [bulkWeightModalOpened, { open: openBulkWeightModal, close: closeBulkWeightModal }] = useDisclosure(false);
+
   // API hooks - 新しい子猫専用APIを使用
   const kittensQuery = useGetKittens({ limit: 200 });
   const deleteCatMutation = useDeleteCat();
   const tagCategoriesQuery = useGetTagCategories();
-  const careSchedulesQuery = useGetCareSchedules({});
 
   // コンテキストメニュー
   const {
@@ -168,15 +175,6 @@ export default function KittensPage() {
     router.push(`${pathname}?${nextParams.toString()}`);
   };
 
-  const getScheduleCatIds = useCallback((schedule: CareSchedule): string[] => {
-    const ids = [
-      ...(schedule.cats?.map((cat) => cat.id).filter((id): id is string => id != null) || []),
-      schedule.cat?.id,
-    ].filter((id): id is string => id != null);
-
-    return Array.from(new Set(ids));
-  }, []);
-
   // データ読み込み - 新しい子猫専用APIを使用
   useEffect(() => {
     if (!kittensQuery.data?.data) return;
@@ -187,25 +185,38 @@ export default function KittensPage() {
     setMotherCats(motherCatsData);
   }, [kittensQuery.data]);
 
-  // ページヘッダー設定
+  // ページヘッダー設定（タブに応じてボタンを変更）
   useEffect(() => {
-    setPageHeader(
-      '子猫管理',
-      <Button 
-        leftSection={<IconPlus size={16} />} 
-        onClick={() => {
-          setSelectedMotherIdForModal(undefined);
-          openManagementModal();
-        }}
-        size="sm"
-      >
-        新規登録
-      </Button>
+    const headerActions = (
+      <Group gap="xs">
+        {tabParam === 'weight' && motherCats.length > 0 && (
+          <Button 
+            leftSection={<IconScale size={16} />} 
+            onClick={openBulkWeightModal}
+            size="sm"
+            variant="light"
+          >
+            一括記録
+          </Button>
+        )}
+        <Button 
+          leftSection={<IconPlus size={16} />} 
+          onClick={() => {
+            setSelectedMotherIdForModal(undefined);
+            openManagementModal();
+          }}
+          size="sm"
+        >
+          新規登録
+        </Button>
+      </Group>
     );
+
+    setPageHeader('子猫管理', headerActions);
 
     return () => setPageHeader(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tabParam, motherCats.length]);
 
   const toggleExpanded = (catId: string) => {
     const newExpanded = new Set(expandedCats);
@@ -254,8 +265,8 @@ export default function KittensPage() {
           <Tabs.Tab value="list" leftSection={<IconEdit size={14} />}>
             子猫一覧
           </Tabs.Tab>
-          <Tabs.Tab value="care" leftSection={<IconCalendar size={14} />}>
-            ケアスケジュール
+          <Tabs.Tab value="weight" leftSection={<IconScale size={14} />}>
+            体重管理
           </Tabs.Tab>
         </Tabs.List>
 
@@ -417,132 +428,16 @@ export default function KittensPage() {
           </Card>
         </Tabs.Panel>
 
-        {/* ケアスケジュールタブ */}
-        <Tabs.Panel value="care" pt="md">
-          <Stack gap="md">
-            {/* 本日のケア一覧 */}
-            <Card shadow="sm" padding="md" radius="md" withBorder>
-              <Group justify="space-between" mb="md">
-                <Text size="lg" fw={500}>本日のケア一覧</Text>
-                <Text size="sm" c="dimmed">{new Date().toLocaleDateString('ja-JP')}</Text>
-              </Group>
-              <Grid>
-                {(() => {
-                  const today = new Date().toISOString().split('T')[0];
-                  const todaySchedules = careSchedulesQuery.data?.data?.filter(
-                    (schedule: CareSchedule) => schedule.scheduleDate.startsWith(today)
-                  ) || [];
-
-                  const kittenSchedules = todaySchedules.filter((schedule: CareSchedule) => {
-                    const catIds = getScheduleCatIds(schedule);
-
-                    if (catIds.length === 0) return false;
-
-                    return catIds.some((catId) =>
-                      motherCats.some((mother) =>
-                        mother.kittens.some((kitten) => kitten.id === catId)
-                      )
-                    );
-                  });
-
-                  const careGroups = kittenSchedules.reduce((acc, schedule) => {
-                    const type = schedule.careType || 'OTHER';
-                    if (!acc[type]) acc[type] = [];
-                    acc[type].push(schedule);
-                    return acc;
-                  }, {} as Record<string, CareSchedule[]>);
-
-                  return Object.entries(careGroups).map(([careType, schedules]) => (
-                    <Grid.Col key={careType} span={{ base: 12, sm: 6, md: 4 }}>
-                      <Card padding="sm" radius="sm" withBorder bg="blue.0">
-                        <Group justify="space-between">
-                          <Text size="sm" fw={500}>
-                            {careType === 'VACCINATION' ? 'ワクチン' :
-                             careType === 'HEALTH_CHECK' ? '健康診断' :
-                             careType === 'GROOMING' ? 'グルーミング' :
-                             careType === 'DENTAL_CARE' ? 'デンタルケア' :
-                             careType === 'MEDICATION' ? '投薬' :
-                             careType === 'SURGERY' ? '手術・処置' : 'その他'}
-                          </Text>
-                          <Badge size="xs" color="blue">{schedules.length}</Badge>
-                        </Group>
-                        <Text size="xs" c="dimmed">
-                          {Array.from(
-                            new Set(
-                              schedules.flatMap((schedule) => {
-                                const names = schedule.cats?.map((cat) => cat.name).filter(Boolean) || [];
-                                if (schedule.cat?.name) {
-                                  names.push(schedule.cat.name);
-                                }
-                                return names;
-                              })
-                            )
-                          ).join('、')}
-                        </Text>
-                      </Card>
-                    </Grid.Col>
-                  ));
-                })()}
-                {careSchedulesQuery.data?.data?.filter(
-                  (schedule: CareSchedule) => {
-                    const today = new Date().toISOString().split('T')[0];
-                    if (!schedule.scheduleDate.startsWith(today)) return false;
-
-                    const catIds = getScheduleCatIds(schedule);
-
-                    if (catIds.length === 0) return false;
-
-                    return catIds.some((catId) =>
-                      motherCats.some((mother) => mother.kittens.some((kitten) => kitten.id === catId))
-                    );
-                  }
-                ).length === 0 && (
-                  <Grid.Col span={12}>
-                    <Card padding="sm" radius="sm" withBorder bg="gray.0">
-                      <Text size="sm" ta="center" c="dimmed">本日のケア予定はありません</Text>
-                    </Card>
-                  </Grid.Col>
-                )}
-              </Grid>
-            </Card>
-
-            {/* 体重記録 */}
-            <Card shadow="sm" padding="md" radius="md" withBorder>
-              <Text size="lg" fw={500} mb="md">最新体重記録</Text>
-              <Grid>
-                {motherCats.flatMap(mother => 
-                  mother.kittens.map(kitten => (
-                    <Grid.Col key={kitten.id} span={{ base: 12, sm: 6, md: 4 }}>
-                      <ContextMenuProvider
-                        entity={kitten.rawCat}
-                        entityType="子猫"
-                        actions={['view', 'edit', 'delete']}
-                        onAction={handleKittenContextAction}
-                      >
-                        <Card 
-                          padding="sm" 
-                          radius="sm" 
-                          withBorder
-                          style={{ cursor: 'pointer' }}
-                          title="右クリックまたはダブルクリックで操作"
-                        >
-                          <Stack gap="xs">
-                            <Group justify="space-between">
-                              <Text size="sm" fw={500}>{kitten.name}</Text>
-                              <GenderBadge gender={kitten.gender} size="xs" />
-                            </Group>
-                            <Text size="xs" c="dimmed">現在: {kitten.weight}g</Text>
-                            <Text size="xs" c="dimmed">前回: 420g (+30g)</Text>
-                            <Text size="xs" c="dimmed">測定日: 2024/08/01</Text>
-                          </Stack>
-                        </Card>
-                      </ContextMenuProvider>
-                    </Grid.Col>
-                  ))
-                )}
-              </Grid>
-            </Card>
-          </Stack>
+        {/* 体重管理タブ */}
+        <Tabs.Panel value="weight" pt="md">
+          <WeightRecordTable
+            motherCats={motherCats}
+            onRecordWeight={(kitten) => {
+              setSelectedKittenForWeight({ id: kitten.id, name: kitten.name });
+              openWeightModal();
+            }}
+            onBulkRecord={openBulkWeightModal}
+          />
         </Tabs.Panel>
       </Tabs>
 
@@ -576,6 +471,40 @@ export default function KittensPage() {
           }}
         />
       )}
+
+      {/* 体重記録モーダル */}
+      {selectedKittenForWeight && (
+        <WeightRecordModal
+          opened={weightModalOpened}
+          onClose={closeWeightModal}
+          catId={selectedKittenForWeight.id}
+          catName={selectedKittenForWeight.name}
+          onSuccess={() => {
+            // 体重記録更新後の処理（必要に応じてキャッシュ無効化）
+          }}
+        />
+      )}
+
+      {/* 一括体重記録モーダル */}
+      <BulkWeightRecordModal
+        opened={bulkWeightModalOpened}
+        onClose={closeBulkWeightModal}
+        motherGroups={motherCats.map((mother) => ({
+          motherId: mother.id,
+          motherName: mother.name,
+          fatherName: mother.fatherName,
+          deliveryDate: mother.deliveryDate,
+          kittens: mother.kittens.map((k) => ({
+            id: k.id,
+            name: k.name,
+            gender: k.gender,
+            color: k.color,
+          })),
+        }))}
+        onSuccess={() => {
+          kittensQuery.refetch();
+        }}
+      />
     </Container>
   );
 }
