@@ -17,20 +17,12 @@ import {
 } from '@mantine/core';
 import { IconDna, IconBinaryTree } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
-import { apiClient, type ApiRequestOptions } from '@/lib/api/client';
+import { apiClient, type ApiPathParams } from '@/lib/api/client';
 
-const MAX_VALIDATION_DEPTH = 6;
-type FamilyTreeRequestOptions = {
-  pathParams: { id: string };
-  query: { generations: number };
-};
+// 本猫 + 父母 + 祖父母 + 曾祖父母 = 4世代 (最大15頭) を想定した検証上限
+export const MAX_VALIDATION_DEPTH = 3;
 
-const toApiRequestOptions = (
-  options: FamilyTreeRequestOptions,
-): ApiRequestOptions<'/pedigrees/{id}/family-tree', 'get'> =>
-  options as unknown as ApiRequestOptions<'/pedigrees/{id}/family-tree', 'get'>; // TODO: スキーマ更新後に除去する
-
-interface FamilyTreeData {
+export interface FamilyTreeData {
   id: string;
   pedigreeId: string;
   catName: string;
@@ -48,10 +40,10 @@ interface PedigreeFamilyTreeProps {
   pedigreeId?: string | null;
 }
 
-const isFamilyTreeData = (value: unknown, depth = 0): value is FamilyTreeData => {
+export const isFamilyTreeData = (value: unknown, depth = 0): value is FamilyTreeData => {
   if (depth > MAX_VALIDATION_DEPTH) {
     console.warn('家系図データの検証深度が上限を超えました');
-    return false;
+    return true;
   }
 
   if (!value || typeof value !== 'object') {
@@ -64,8 +56,8 @@ const isFamilyTreeData = (value: unknown, depth = 0): value is FamilyTreeData =>
     typeof target === 'string' || target === null;
   const isNamedObject = (target: unknown): target is { name: string } =>
     typeof target === 'object' && target !== null && typeof (target as Record<string, unknown>).name === 'string';
-  const isParentNode = (target: unknown): target is FamilyTreeData =>
-    target === undefined || target === null || isFamilyTreeData(target, depth + 1);
+  const isParentNode = (target: unknown): target is FamilyTreeData | null =>
+    target === null ? true : isFamilyTreeData(target, depth + 1);
 
   if (typeof record.id !== 'string' || typeof record.pedigreeId !== 'string' || typeof record.catName !== 'string') {
     return false;
@@ -85,7 +77,10 @@ const isFamilyTreeData = (value: unknown, depth = 0): value is FamilyTreeData =>
     return false;
   }
 
-  return isParentNode(record.father) && isParentNode(record.mother);
+  const fatherNode = 'father' in record ? record.father ?? null : null;
+  const motherNode = 'mother' in record ? record.mother ?? null : null;
+
+  return isParentNode(fatherNode) && isParentNode(motherNode);
 };
 
 export function PedigreeFamilyTree({ pedigreeId }: PedigreeFamilyTreeProps) {
@@ -113,15 +108,10 @@ export function PedigreeFamilyTree({ pedigreeId }: PedigreeFamilyTreeProps) {
       try {
         setLoading(true);
         setError(null);
-        const requestOptions: FamilyTreeRequestOptions = {
-          pathParams: { id: pedigreeId },
-          query: { generations: Number(generations) },
-        };
-
-        const response = await apiClient.get(
-          '/pedigrees/{id}/family-tree',
-          toApiRequestOptions(requestOptions),
-        );
+        const pathParams: ApiPathParams<'/pedigrees/{id}/family', 'get'> = { id: pedigreeId };
+        const response = await apiClient.get('/pedigrees/{id}/family', {
+          pathParams,
+        });
 
         if (!response.success) {
           throw new Error(response.error ?? '家系図データの取得に失敗しました');
@@ -144,7 +134,7 @@ export function PedigreeFamilyTree({ pedigreeId }: PedigreeFamilyTreeProps) {
     };
 
     fetchFamilyTree();
-  }, [pedigreeId, generations]);
+  }, [pedigreeId]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '不明';
