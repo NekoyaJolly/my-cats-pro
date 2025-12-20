@@ -37,6 +37,9 @@ describe('CatsService', () => {
     tag: {
       findMany: jest.fn(),
     },
+    catTag: {
+      count: jest.fn(),
+    },
   };
 
   const mockEventEmitter = {
@@ -312,7 +315,10 @@ describe('CatsService', () => {
 
   describe('getStatistics', () => {
     it('should return cat statistics', async () => {
+      // 全猫数
       mockPrismaService.cat.count.mockResolvedValue(18);
+      
+      // 性別分布とブリード分布のgroupBy（2回呼ばれる）
       mockPrismaService.cat.groupBy
         .mockResolvedValueOnce([
           { gender: 'MALE', _count: 8 },
@@ -323,6 +329,25 @@ describe('CatsService', () => {
           { breedId: 'breed-2', _count: 8 },
         ]);
 
+      // 在舎猫のデータ（タブカウント計算用）
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      
+      mockPrismaService.cat.findMany.mockResolvedValue([
+        { id: 'cat-1', gender: 'MALE', birthDate: new Date('2023-01-01'), motherId: null },
+        { id: 'cat-2', gender: 'FEMALE', birthDate: new Date('2023-02-01'), motherId: null },
+        { id: 'cat-3', gender: 'MALE', birthDate: new Date(Date.now() - 2 * 30 * 24 * 60 * 60 * 1000), motherId: 'cat-2' },
+      ]);
+
+      // 養成中タグ数
+      mockPrismaService.catTag.count
+        .mockResolvedValueOnce(2)
+        // 卒業予定タグ数
+        .mockResolvedValueOnce(1);
+
+      // ブリード情報
       mockPrismaService.breed.findMany.mockResolvedValue([
         { id: 'breed-1', name: 'Persian', code: 1 },
         { id: 'breed-2', name: 'Siamese', code: 2 },
