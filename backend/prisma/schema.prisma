@@ -73,6 +73,7 @@ model User {
   tenantId             String?            @map("tenant_id")
   birthPlans           BirthPlan[]
   breedingRecords      BreedingRecord[]
+  breedingSchedules    BreedingSchedule[]
   careRecords          CareRecord[]
   displayPreference    DisplayPreference?
   loginAttempts        LoginAttempt[]
@@ -198,6 +199,8 @@ model Cat {
   birthPlans            BirthPlan[]            @relation("BirthPlanMother")
   femaleBreedingRecords BreedingRecord[]       @relation("FemaleBreeding")
   maleBreedingRecords   BreedingRecord[]       @relation("MaleBreeding")
+  maleBreedingSchedules BreedingSchedule[]     @relation("BreedingScheduleMale")
+  femaleBreedingSchedules BreedingSchedule[]   @relation("BreedingScheduleFemale")
   careRecords           CareRecord[]
   tags                  CatTag[]
   breed                 Breed?                 @relation(fields: [breedId], references: [id])
@@ -279,6 +282,55 @@ model BreedingNgRule {
   updatedAt        DateTime           @updatedAt @map("updated_at")
 
   @@map("breeding_ng_rules")
+}
+
+// 交配スケジュール - 交配期間の管理
+model BreedingSchedule {
+  id         String                  @id @default(uuid())
+  maleId     String                  @map("male_id")
+  femaleId   String                  @map("female_id")
+  startDate  DateTime                @map("start_date")
+  duration   Int                     // 日数
+  status     BreedingScheduleStatus  @default(SCHEDULED)
+  notes      String?
+  recordedBy String                  @map("recorded_by")
+  createdAt  DateTime                @default(now()) @map("created_at")
+  updatedAt  DateTime                @updatedAt @map("updated_at")
+
+  male       Cat                     @relation("BreedingScheduleMale", fields: [maleId], references: [id])
+  female     Cat                     @relation("BreedingScheduleFemale", fields: [femaleId], references: [id])
+  recorder   User                    @relation(fields: [recordedBy], references: [id])
+  checks     MatingCheck[]
+
+  @@index([maleId])
+  @@index([femaleId])
+  @@index([startDate])
+  @@index([status])
+  @@index([maleId, startDate])
+  @@index([femaleId, startDate])
+  @@map("breeding_schedules")
+}
+
+// 交配チェック - 交配確認回数の記録
+model MatingCheck {
+  id         String           @id @default(uuid())
+  scheduleId String           @map("schedule_id")
+  checkDate  DateTime         @map("check_date")
+  count      Int              @default(1)
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  schedule   BreedingSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@index([scheduleId])
+  @@index([checkDate])
+  @@map("mating_checks")
+}
+
+enum BreedingScheduleStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
 
 model PregnancyCheck {

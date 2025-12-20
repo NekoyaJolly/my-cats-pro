@@ -153,6 +153,123 @@ export interface GetKittensResponse {
 }
 
 /**
+ * 祖先（祖父母・曾祖父母）の情報
+ */
+export interface AncestorInfo {
+  pedigreeId: string | null;
+  catName: string | null;
+  coatColor: string | null;
+  title: string | null;
+  jcu: string | null;
+}
+
+/**
+ * 親情報（父または母）
+ */
+export interface ParentInfo {
+  id: string | null;
+  pedigreeId: string | null;
+  name: string;
+  gender: string | null;
+  birthDate: string | null;
+  breed: { id: string; name: string } | null;
+  coatColor: { id: string; name: string } | string | null;
+  father: AncestorInfo | null;
+  mother: AncestorInfo | null;
+}
+
+/**
+ * 兄弟姉妹情報
+ */
+export interface SiblingInfo {
+  id: string;
+  name: string;
+  gender: string;
+  birthDate: string;
+  breed: { id: string; name: string } | null;
+  coatColor: { id: string; name: string } | null;
+  pedigreeId: string | null;
+}
+
+/**
+ * 子猫情報
+ */
+export interface OffspringInfo {
+  id: string;
+  name: string;
+  gender: string;
+  birthDate: string;
+  breed: { id: string; name: string } | null;
+  coatColor: { id: string; name: string } | null;
+  pedigreeId: string | null;
+  otherParent: {
+    id: string;
+    name: string;
+    gender: string;
+    pedigreeId: string | null;
+  } | null;
+}
+
+/**
+ * 猫の家族情報レスポンス
+ */
+export interface CatFamilyResponse {
+  cat: {
+    id: string;
+    name: string;
+    gender: string;
+    birthDate: string;
+    pedigreeId: string | null;
+    breed: { id: string; name: string } | null;
+    coatColor: { id: string; name: string } | null;
+  };
+  father: ParentInfo | null;
+  mother: ParentInfo | null;
+  siblings: SiblingInfo[];
+  offspring: OffspringInfo[];
+}
+
+/**
+ * タブ別カウント情報（猫一覧ページ用）
+ */
+export interface TabCounts {
+  /** 全成猫数（子猫除外） */
+  total: number;
+  /** オス成猫数 */
+  male: number;
+  /** メス成猫数 */
+  female: number;
+  /** 子猫数（生後3ヶ月以内 + 母猫あり） */
+  kitten: number;
+  /** 養成中タグ付き猫数 */
+  raising: number;
+  /** 卒業予定タグ付き猫数 */
+  grad: number;
+}
+
+/**
+ * 猫統計レスポンス
+ */
+export interface CatStatisticsResponse {
+  /** 全猫数 */
+  total: number;
+  /** 性別分布 */
+  genderDistribution: {
+    MALE: number;
+    FEMALE: number;
+    NEUTER: number;
+    SPAY: number;
+  };
+  /** 品種分布（上位10件） */
+  breedDistribution: Array<{
+    breed: { id: string; name: string } | null;
+    count: number;
+  }>;
+  /** タブ別カウント（猫一覧ページ用） */
+  tabCounts: TabCounts;
+}
+
+/**
  * クエリキー定義
  */
 const baseCatKeys = createDomainQueryKeys<string, GetCatsParams>('cats');
@@ -163,6 +280,7 @@ export const catKeys = {
   breedingHistory: (id: string) => [...baseCatKeys.all, 'breeding-history', id] as const,
   careHistory: (id: string) => [...baseCatKeys.all, 'care-history', id] as const,
   kittens: (params?: GetKittensParams) => [...baseCatKeys.all, 'kittens', params ?? {}] as const,
+  family: (id: string) => [...baseCatKeys.all, 'family', id] as const,
 };
 
 /**
@@ -201,11 +319,31 @@ export function useGetCat(
  * 猫統計を取得するフック
  */
 export function useGetCatStatistics(
-  options?: Omit<UseQueryOptions<ApiResponse<unknown>>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<CatStatisticsResponse>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
     queryKey: catKeys.statistics(),
-    queryFn: () => apiClient.get('/cats/statistics'),
+    queryFn: async () => {
+      const response = await apiClient.get('/cats/statistics');
+      // 型ガードでレスポンス形式を判定
+      const responseObj = response as unknown as Record<string, unknown>;
+      
+      // APIレスポンスが { data: ... } 形式か直接オブジェクト形式かを判定
+      if (responseObj.data && typeof responseObj.data === 'object' && responseObj.data !== null && 'tabCounts' in responseObj.data) {
+        return responseObj.data as unknown as CatStatisticsResponse;
+      }
+      // 直接オブジェクト形式の場合（後方互換性）
+      if ('tabCounts' in responseObj) {
+        return responseObj as unknown as CatStatisticsResponse;
+      }
+      // フォールバック: 古い形式のレスポンスの場合、デフォルト値を追加
+      return {
+        total: (responseObj.total as number) ?? 0,
+        genderDistribution: (responseObj.genderDistribution as CatStatisticsResponse['genderDistribution']) ?? { MALE: 0, FEMALE: 0, NEUTER: 0, SPAY: 0 },
+        breedDistribution: (responseObj.breedDistribution as CatStatisticsResponse['breedDistribution']) ?? [],
+        tabCounts: { total: 0, male: 0, female: 0, kitten: 0, raising: 0, grad: 0 },
+      };
+    },
     ...options,
   });
 }
@@ -371,6 +509,27 @@ export function useGetKittens(
         },
       };
     },
+    ...options,
+  });
+}
+
+/**
+ * 猫の家族情報を取得するフック（血統タブ用）
+ */
+export function useGetCatFamily(
+  id: string,
+  options?: Omit<UseQueryOptions<CatFamilyResponse>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: catKeys.family(id),
+    queryFn: async () => {
+      const response = await apiRequest<CatFamilyResponse>(`/cats/${id}/family`);
+      if (!response.data) {
+        throw new Error('家族情報が見つかりませんでした');
+      }
+      return response.data;
+    },
+    enabled: !!id,
     ...options,
   });
 }

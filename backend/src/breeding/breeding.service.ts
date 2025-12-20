@@ -17,6 +17,11 @@ import {
   BirthPlanQueryDto,
   CreateKittenDispositionDto,
   UpdateKittenDispositionDto,
+  CreateBreedingScheduleDto,
+  UpdateBreedingScheduleDto,
+  BreedingScheduleQueryDto,
+  CreateMatingCheckDto,
+  UpdateMatingCheckDto,
 } from "./dto";
 import {
   BreedingWhereInput,
@@ -30,6 +35,9 @@ import {
   PregnancyCheckResponse,
   BirthPlanListResponse,
   BirthPlanResponse,
+  BreedingScheduleListResponse,
+  BreedingScheduleResponse,
+  MatingCheckResponse,
 } from "./types/breeding.types";
 
 @Injectable()
@@ -578,6 +586,223 @@ export class BreedingService {
         completedAt: new Date(),
       },
     });
+    return { success: true };
+  }
+
+  // ========== Breeding Schedule Methods ==========
+
+  async findAllBreedingSchedules(query: BreedingScheduleQueryDto): Promise<BreedingScheduleListResponse> {
+    const {
+      page = 1,
+      limit = 50,
+      maleId,
+      femaleId,
+      status,
+      dateFrom,
+      dateTo,
+    } = query;
+
+    const where: Prisma.BreedingScheduleWhereInput = {};
+    if (maleId) where.maleId = maleId;
+    if (femaleId) where.femaleId = femaleId;
+    if (status) where.status = status;
+    if (dateFrom || dateTo) {
+      where.startDate = {};
+      if (dateFrom) where.startDate.gte = new Date(dateFrom);
+      if (dateTo) where.startDate.lte = new Date(dateTo);
+    }
+
+    const [total, data] = await this.prisma.$transaction([
+      this.prisma.breedingSchedule.count({ where }),
+      this.prisma.breedingSchedule.findMany({
+        where,
+        include: {
+          male: { select: { id: true, name: true } },
+          female: { select: { id: true, name: true } },
+          checks: {
+            orderBy: { checkDate: 'asc' },
+          },
+        },
+        orderBy: { startDate: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      success: true,
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async createBreedingSchedule(dto: CreateBreedingScheduleDto, userId?: string): Promise<BreedingScheduleResponse> {
+    // オス猫の存在確認
+    const male = await this.prisma.cat.findUnique({
+      where: { id: dto.maleId },
+      select: { id: true, gender: true, name: true }
+    });
+    if (!male) throw new NotFoundException("オス猫が見つかりません");
+    if (male.gender !== "MALE") {
+      throw new BadRequestException("maleId はオス猫を指定してください");
+    }
+
+    // メス猫の存在確認
+    const female = await this.prisma.cat.findUnique({
+      where: { id: dto.femaleId },
+      select: { id: true, gender: true, name: true }
+    });
+    if (!female) throw new NotFoundException("メス猫が見つかりません");
+    if (female.gender !== "FEMALE") {
+      throw new BadRequestException("femaleId はメス猫を指定してください");
+    }
+
+    // 記録者の確認
+    const firstUser = userId ? null : await this.prisma.user.findFirst();
+    const recordedById = userId ?? firstUser?.id;
+    if (!recordedById) {
+      throw new BadRequestException('記録者情報が取得できませんでした');
+    }
+
+    const result = await this.prisma.breedingSchedule.create({
+      data: {
+        maleId: dto.maleId,
+        femaleId: dto.femaleId,
+        startDate: new Date(dto.startDate),
+        duration: dto.duration,
+        status: dto.status ?? 'SCHEDULED',
+        notes: dto.notes,
+        recordedBy: recordedById,
+      },
+      include: {
+        male: { select: { id: true, name: true } },
+        female: { select: { id: true, name: true } },
+        checks: true,
+      },
+    });
+
+    return { success: true, data: result };
+  }
+
+  async updateBreedingSchedule(id: string, dto: UpdateBreedingScheduleDto): Promise<BreedingSuccessResponse> {
+    // スケジュールの存在確認
+    const existing = await this.prisma.breedingSchedule.findUnique({
+      where: { id },
+    });
+    if (!existing) throw new NotFoundException("スケジュールが見つかりません");
+
+    // オス猫の確認（変更時のみ）
+    if (dto.maleId && dto.maleId !== existing.maleId) {
+      const male = await this.prisma.cat.findUnique({
+        where: { id: dto.maleId },
+        select: { id: true, gender: true }
+      });
+      if (!male) throw new NotFoundException("オス猫が見つかりません");
+      if (male.gender !== "MALE") {
+        throw new BadRequestException("maleId はオス猫を指定してください");
+      }
+    }
+
+    // メス猫の確認（変更時のみ）
+    if (dto.femaleId && dto.femaleId !== existing.femaleId) {
+      const female = await this.prisma.cat.findUnique({
+        where: { id: dto.femaleId },
+        select: { id: true, gender: true }
+      });
+      if (!female) throw new NotFoundException("メス猫が見つかりません");
+      if (female.gender !== "FEMALE") {
+        throw new BadRequestException("femaleId はメス猫を指定してください");
+      }
+    }
+
+    await this.prisma.breedingSchedule.update({
+      where: { id },
+      data: {
+        maleId: dto.maleId,
+        femaleId: dto.femaleId,
+        startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+        duration: dto.duration,
+        status: dto.status,
+        notes: dto.notes,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async removeBreedingSchedule(id: string): Promise<BreedingSuccessResponse> {
+    const existing = await this.prisma.breedingSchedule.findUnique({
+      where: { id },
+    });
+    if (!existing) throw new NotFoundException("スケジュールが見つかりません");
+
+    // MatingCheck は onDelete: Cascade で自動削除される
+    await this.prisma.breedingSchedule.delete({ where: { id } });
+    return { success: true };
+  }
+
+  // ========== Mating Check Methods ==========
+
+  async findMatingChecksBySchedule(scheduleId: string) {
+    const schedule = await this.prisma.breedingSchedule.findUnique({
+      where: { id: scheduleId },
+    });
+    if (!schedule) throw new NotFoundException("スケジュールが見つかりません");
+
+    const checks = await this.prisma.matingCheck.findMany({
+      where: { scheduleId },
+      orderBy: { checkDate: 'asc' },
+    });
+
+    return { success: true, data: checks };
+  }
+
+  async createMatingCheck(scheduleId: string, dto: CreateMatingCheckDto): Promise<MatingCheckResponse> {
+    const schedule = await this.prisma.breedingSchedule.findUnique({
+      where: { id: scheduleId },
+    });
+    if (!schedule) throw new NotFoundException("スケジュールが見つかりません");
+
+    const result = await this.prisma.matingCheck.create({
+      data: {
+        scheduleId,
+        checkDate: new Date(dto.checkDate),
+        count: dto.count ?? 1,
+      },
+    });
+
+    return { success: true, data: result };
+  }
+
+  async updateMatingCheck(id: string, dto: UpdateMatingCheckDto): Promise<BreedingSuccessResponse> {
+    const existing = await this.prisma.matingCheck.findUnique({
+      where: { id },
+    });
+    if (!existing) throw new NotFoundException("交配チェックが見つかりません");
+
+    await this.prisma.matingCheck.update({
+      where: { id },
+      data: {
+        checkDate: dto.checkDate ? new Date(dto.checkDate) : undefined,
+        count: dto.count,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async removeMatingCheck(id: string): Promise<BreedingSuccessResponse> {
+    const existing = await this.prisma.matingCheck.findUnique({
+      where: { id },
+    });
+    if (!existing) throw new NotFoundException("交配チェックが見つかりません");
+
+    await this.prisma.matingCheck.delete({ where: { id } });
     return { success: true };
   }
 }

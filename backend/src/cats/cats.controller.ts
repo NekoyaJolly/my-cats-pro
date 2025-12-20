@@ -188,6 +188,19 @@ export class CatsController {
     return this.catsService.getCareHistory(id);
   }
 
+  @Get(":id/family")
+  @Header('Cache-Control', 'no-cache')
+  @ApiOperation({ summary: "猫の家族情報を取得（血統タブ用）" })
+  @ApiResponse({ status: HttpStatus.OK, description: "家族情報（親・兄弟姉妹・子猫）" })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "猫データが見つかりません",
+  })
+  @ApiParam({ name: "id", description: "猫データのID" })
+  getCatFamily(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
+    return this.catsService.getCatFamily(id);
+  }
+
   @Patch(":id")
   @ApiOperation({ summary: "猫データを更新" })
   @ApiResponse({

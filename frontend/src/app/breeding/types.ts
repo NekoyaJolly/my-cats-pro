@@ -18,6 +18,8 @@ export interface BreedingScheduleEntry {
   dayIndex: number;
   isHistory: boolean;
   result?: string;
+  /** サーバー側のスケジュール ID（API 同期用） */
+  serverId?: string;
 }
 
 /**
@@ -80,5 +82,12 @@ export interface MotherWithKittens {
   mother: Cat;
   kittens: Cat[];
 }
+
+
+
+
+
+
+
 
 

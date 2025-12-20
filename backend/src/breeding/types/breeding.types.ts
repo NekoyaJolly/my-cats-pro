@@ -140,3 +140,51 @@ export interface BirthPlanResponse {
   success: true;
   data: BirthPlanWithRelations;
 }
+
+// Breeding Schedule types
+export type BreedingScheduleStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+export type BreedingScheduleWithRelations = {
+  id: string;
+  maleId: string;
+  femaleId: string;
+  startDate: Date;
+  duration: number;
+  status: BreedingScheduleStatus;
+  notes: string | null;
+  recordedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  male: { id: string; name: string | null } | null;
+  female: { id: string; name: string | null } | null;
+  checks?: MatingCheckType[];
+};
+
+export type MatingCheckType = {
+  id: string;
+  scheduleId: string;
+  checkDate: Date;
+  count: number;
+  createdAt: Date;
+};
+
+export interface BreedingScheduleListResponse {
+  success: true;
+  data: BreedingScheduleWithRelations[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface BreedingScheduleResponse {
+  success: true;
+  data: BreedingScheduleWithRelations;
+}
+
+export interface MatingCheckResponse {
+  success: true;
+  data: MatingCheckType;
+}

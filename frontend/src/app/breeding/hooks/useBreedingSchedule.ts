@@ -1,9 +1,25 @@
 /**
  * 交配スケジュール状態管理フック
+ * 
+ * localStorage によるローカルキャッシュと API 同期の両方をサポート。
+ * - オンライン時: API からデータを取得し、localStorage にキャッシュ
+ * - オフライン時: localStorage からデータを読み込み
+ * - 新規作成/更新/削除: API 経由で実行し、成功時に localStorage を更新
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Cat } from '@/lib/api/hooks/use-cats';
+import {
+  useGetBreedingSchedules,
+  useCreateBreedingSchedule,
+  useUpdateBreedingSchedule,
+  useDeleteBreedingSchedule,
+  useCreateMatingCheck,
+  type BreedingSchedule,
+  type CreateBreedingScheduleRequest,
+  type UpdateBreedingScheduleRequest,
+  type CreateMatingCheckRequest,
+} from '@/lib/api/hooks/use-breeding';
 import type { BreedingScheduleEntry } from '../types';
 import { STORAGE_KEYS } from '../types';
 
@@ -15,6 +31,10 @@ export interface UseBreedingScheduleReturn {
   selectedYear: number;
   selectedMonth: number;
   defaultDuration: number;
+  
+  // API 状態
+  isLoading: boolean;
+  isSyncing: boolean;
   
   // アクション
   setBreedingSchedule: React.Dispatch<React.SetStateAction<Record<string, BreedingScheduleEntry>>>;
@@ -30,6 +50,66 @@ export interface UseBreedingScheduleReturn {
   getMatingCheckCount: (maleId: string, femaleId: string, date: string) => number;
   addMatingCheck: (maleId: string, femaleId: string, date: string) => void;
   clearScheduleData: () => void;
+  
+  // API 同期関数
+  createScheduleOnServer: (entry: BreedingScheduleEntry) => Promise<void>;
+  updateScheduleOnServer: (scheduleId: string, updates: UpdateBreedingScheduleRequest) => Promise<void>;
+  deleteScheduleOnServer: (scheduleId: string) => Promise<void>;
+  syncFromServer: () => Promise<void>;
+}
+
+/**
+ * サーバーのスケジュールデータをローカル形式に変換
+ */
+function convertServerScheduleToLocal(
+  schedule: BreedingSchedule
+): Record<string, BreedingScheduleEntry> {
+  const result: Record<string, BreedingScheduleEntry> = {};
+  const startDate = new Date(schedule.startDate);
+  
+  for (let i = 0; i < schedule.duration; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + i);
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const scheduleKey = `${schedule.maleId}-${dateStr}`;
+    
+    result[scheduleKey] = {
+      maleId: schedule.maleId,
+      maleName: schedule.male?.name ?? '',
+      femaleId: schedule.femaleId,
+      femaleName: schedule.female?.name ?? '',
+      date: dateStr,
+      duration: schedule.duration,
+      dayIndex: i,
+      isHistory: schedule.status === 'COMPLETED' || schedule.status === 'CANCELLED',
+      result: schedule.status === 'COMPLETED' ? '成功' : schedule.status === 'CANCELLED' ? '失敗' : undefined,
+      // サーバー側の ID を保持（更新/削除時に使用）
+      serverId: schedule.id,
+    };
+  }
+  
+  return result;
+}
+
+/**
+ * サーバーの交配チェックデータをローカル形式に変換
+ */
+function convertServerChecksToLocal(
+  schedules: BreedingSchedule[]
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  
+  for (const schedule of schedules) {
+    if (!schedule.checks) continue;
+    
+    for (const check of schedule.checks) {
+      const checkDate = new Date(check.checkDate).toISOString().split('T')[0];
+      const key = `${schedule.maleId}-${schedule.femaleId}-${checkDate}`;
+      result[key] = (result[key] || 0) + check.count;
+    }
+  }
+  
+  return result;
 }
 
 export function useBreedingSchedule(): UseBreedingScheduleReturn {
@@ -43,6 +123,14 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
   const [activeMales, setActiveMales] = useState<Cat[]>([]);
   const [defaultDuration, setDefaultDuration] = useState<number>(1);
   const [matingChecks, setMatingChecks] = useState<Record<string, number>>({});
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // API フック
+  const schedulesQuery = useGetBreedingSchedules({}, { enabled: true });
+  const createScheduleMutation = useCreateBreedingSchedule();
+  const updateScheduleMutation = useUpdateBreedingSchedule();
+  const deleteScheduleMutation = useDeleteBreedingSchedule();
+  const createMatingCheckMutation = useCreateMatingCheck();
 
   // localStorageからデータを読み込む
   useEffect(() => {
@@ -72,6 +160,8 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
           setSelectedMonth(parsed);
         }
 
+        // スケジュールと交配チェックは API から取得するが、
+        // オフライン時のフォールバックとして localStorage からも読み込む
         const storedBreedingSchedule = localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE);
         if (storedBreedingSchedule) {
           const parsed = JSON.parse(storedBreedingSchedule) as Record<string, BreedingScheduleEntry>;
@@ -95,6 +185,36 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
       hydratedRef.current = true;
     }, 0);
   }, []);
+
+  // API からデータを取得してローカル状態を更新
+  useEffect(() => {
+    if (!schedulesQuery.data?.data) return;
+    
+    const serverSchedules = schedulesQuery.data.data;
+    
+    // サーバーデータをローカル形式に変換
+    let mergedSchedule: Record<string, BreedingScheduleEntry> = {};
+    for (const schedule of serverSchedules) {
+      const localEntries = convertServerScheduleToLocal(schedule);
+      mergedSchedule = { ...mergedSchedule, ...localEntries };
+    }
+    
+    // ローカルの serverId がないエントリ（まだサーバーに保存されていない）を保持
+    setBreedingSchedule(prev => {
+      const localOnlyEntries: Record<string, BreedingScheduleEntry> = {};
+      for (const [key, entry] of Object.entries(prev)) {
+        if (!entry.serverId) {
+          localOnlyEntries[key] = entry;
+        }
+      }
+      return { ...mergedSchedule, ...localOnlyEntries };
+    });
+    
+    // 交配チェックも同期
+    const serverChecks = convertServerChecksToLocal(serverSchedules);
+    setMatingChecks(prev => ({ ...prev, ...serverChecks }));
+    
+  }, [schedulesQuery.data]);
 
   // コンポーネントのマウント/アンマウントを追跡
   useEffect(() => {
@@ -142,14 +262,33 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
     return matingChecks[key] || 0;
   }, [matingChecks]);
 
-  // 交配チェックを追加
+  // 交配チェックを追加（ローカル + API）
   const addMatingCheck = useCallback((maleId: string, femaleId: string, date: string) => {
     const key = `${maleId}-${femaleId}-${date}`;
+    
+    // ローカル状態を即座に更新
     setMatingChecks((prev) => ({
       ...prev,
       [key]: (prev[key] || 0) + 1
     }));
-  }, []);
+    
+    // 対応するスケジュールの serverId を探す
+    const scheduleKey = `${maleId}-${date}`;
+    const scheduleEntry = breedingSchedule[scheduleKey];
+    
+    if (scheduleEntry?.serverId) {
+      // サーバーに交配チェックを追加
+      const payload: CreateMatingCheckRequest = {
+        checkDate: date,
+        count: 1,
+      };
+      
+      createMatingCheckMutation.mutate({
+        scheduleId: scheduleEntry.serverId,
+        payload,
+      });
+    }
+  }, [breedingSchedule, createMatingCheckMutation]);
 
   // スケジュールデータをクリア
   const clearScheduleData = useCallback(() => {
@@ -159,6 +298,68 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
     setMatingChecks({});
   }, []);
 
+  // サーバーにスケジュールを作成
+  const createScheduleOnServer = useCallback(async (entry: BreedingScheduleEntry) => {
+    const payload: CreateBreedingScheduleRequest = {
+      maleId: entry.maleId,
+      femaleId: entry.femaleId,
+      startDate: entry.date,
+      duration: entry.duration,
+      status: 'SCHEDULED',
+    };
+    
+    try {
+      setIsSyncing(true);
+      await createScheduleMutation.mutateAsync(payload);
+      // 成功時は schedulesQuery が自動的に再取得される
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [createScheduleMutation]);
+
+  // サーバーのスケジュールを更新
+  const updateScheduleOnServer = useCallback(async (scheduleId: string, updates: UpdateBreedingScheduleRequest) => {
+    try {
+      setIsSyncing(true);
+      await updateScheduleMutation.mutateAsync({ id: scheduleId, payload: updates });
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [updateScheduleMutation]);
+
+  // サーバーのスケジュールを削除
+  const deleteScheduleOnServer = useCallback(async (scheduleId: string) => {
+    try {
+      setIsSyncing(true);
+      await deleteScheduleMutation.mutateAsync(scheduleId);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [deleteScheduleMutation]);
+
+  // サーバーからデータを再取得
+  const syncFromServer = useCallback(async () => {
+    try {
+      setIsSyncing(true);
+      await schedulesQuery.refetch();
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [schedulesQuery]);
+
+  // ローディング状態
+  const isLoading = useMemo(() => {
+    return schedulesQuery.isLoading || 
+           createScheduleMutation.isPending || 
+           updateScheduleMutation.isPending || 
+           deleteScheduleMutation.isPending;
+  }, [
+    schedulesQuery.isLoading,
+    createScheduleMutation.isPending,
+    updateScheduleMutation.isPending,
+    deleteScheduleMutation.isPending,
+  ]);
+
   return {
     breedingSchedule,
     matingChecks,
@@ -166,6 +367,8 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
     selectedYear,
     selectedMonth,
     defaultDuration,
+    isLoading,
+    isSyncing,
     setBreedingSchedule,
     setMatingChecks,
     setActiveMales,
@@ -177,6 +380,9 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
     getMatingCheckCount,
     addMatingCheck,
     clearScheduleData,
+    createScheduleOnServer,
+    updateScheduleOnServer,
+    deleteScheduleOnServer,
+    syncFromServer,
   };
 }
-

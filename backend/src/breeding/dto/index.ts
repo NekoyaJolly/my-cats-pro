@@ -6,3 +6,4 @@ export * from "./update-breeding-ng-rule.dto";
 export * from "./pregnancy-check.dto";
 export * from "./birth-plan.dto";
 export * from "./kitten-disposition.dto";
+export * from "./breeding-schedule.dto";

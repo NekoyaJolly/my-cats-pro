@@ -35,6 +35,11 @@ import {
   CreateBirthPlanDto,
   UpdateBirthPlanDto,
   BirthPlanQueryDto,
+  CreateBreedingScheduleDto,
+  UpdateBreedingScheduleDto,
+  BreedingScheduleQueryDto,
+  CreateMatingCheckDto,
+  UpdateMatingCheckDto,
 } from "./dto";
 import { CreateKittenDispositionDto, UpdateKittenDispositionDto } from "./dto/kitten-disposition.dto";
 
@@ -251,6 +256,94 @@ export class BreedingController {
   @ApiParam({ name: "id" })
   completeBirthRecord(@Param("id") id: string) {
     return this.breedingService.completeBirthRecord(id);
+  }
+
+  // ========== Breeding Schedule Endpoints ==========
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get("schedules")
+  @ApiOperation({ summary: "交配スケジュール一覧の取得" })
+  @ApiResponse({ status: HttpStatus.OK })
+  findAllBreedingSchedules(@Query() query: BreedingScheduleQueryDto) {
+    return this.breedingService.findAllBreedingSchedules(query);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post("schedules")
+  @ApiOperation({ summary: "交配スケジュールの作成" })
+  @ApiResponse({ status: HttpStatus.CREATED })
+  createBreedingSchedule(
+    @Body() dto: CreateBreedingScheduleDto,
+    @GetUser() user?: RequestUser,
+  ) {
+    return this.breedingService.createBreedingSchedule(dto, user?.userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("schedules/:id")
+  @ApiOperation({ summary: "交配スケジュールの更新" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  updateBreedingSchedule(@Param("id") id: string, @Body() dto: UpdateBreedingScheduleDto) {
+    return this.breedingService.updateBreedingSchedule(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete("schedules/:id")
+  @ApiOperation({ summary: "交配スケジュールの削除" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  removeBreedingSchedule(@Param("id") id: string) {
+    return this.breedingService.removeBreedingSchedule(id);
+  }
+
+  // ========== Mating Check Endpoints ==========
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get("schedules/:scheduleId/checks")
+  @ApiOperation({ summary: "交配チェック一覧の取得" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "scheduleId" })
+  findMatingChecks(@Param("scheduleId") scheduleId: string) {
+    return this.breedingService.findMatingChecksBySchedule(scheduleId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post("schedules/:scheduleId/checks")
+  @ApiOperation({ summary: "交配チェックの追加" })
+  @ApiResponse({ status: HttpStatus.CREATED })
+  @ApiParam({ name: "scheduleId" })
+  createMatingCheck(
+    @Param("scheduleId") scheduleId: string,
+    @Body() dto: CreateMatingCheckDto,
+  ) {
+    return this.breedingService.createMatingCheck(scheduleId, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("mating-checks/:id")
+  @ApiOperation({ summary: "交配チェックの更新" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  updateMatingCheck(@Param("id") id: string, @Body() dto: UpdateMatingCheckDto) {
+    return this.breedingService.updateMatingCheck(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete("mating-checks/:id")
+  @ApiOperation({ summary: "交配チェックの削除" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  removeMatingCheck(@Param("id") id: string) {
+    return this.breedingService.removeMatingCheck(id);
   }
 
   // Parameterized routes for the main breeding resource.

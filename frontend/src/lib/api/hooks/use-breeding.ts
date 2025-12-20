@@ -777,3 +777,272 @@ export function useCompleteBirthRecord() {
     },
   });
 }
+
+// ========== Breeding Schedule ==========
+
+export type BreedingScheduleStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+export interface MatingCheck {
+  id: string;
+  scheduleId: string;
+  checkDate: string;
+  count: number;
+  createdAt: string;
+}
+
+export interface BreedingSchedule {
+  id: string;
+  maleId: string;
+  femaleId: string;
+  startDate: string;
+  duration: number;
+  status: BreedingScheduleStatus;
+  notes?: string | null;
+  recordedBy: string;
+  createdAt: string;
+  updatedAt: string;
+  male?: { id: string; name: string | null } | null;
+  female?: { id: string; name: string | null } | null;
+  checks?: MatingCheck[];
+}
+
+export interface BreedingScheduleListResponse {
+  success: boolean;
+  data?: BreedingSchedule[];
+  meta?: BreedingListMeta;
+  message?: string;
+  error?: string;
+}
+
+export type CreateBreedingScheduleRequest = {
+  maleId: string;
+  femaleId: string;
+  startDate: string;
+  duration: number;
+  status?: BreedingScheduleStatus;
+  notes?: string;
+};
+
+export type UpdateBreedingScheduleRequest = Partial<CreateBreedingScheduleRequest>;
+
+export interface BreedingScheduleQueryParams {
+  page?: number;
+  limit?: number;
+  maleId?: string;
+  femaleId?: string;
+  status?: BreedingScheduleStatus;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+const breedingScheduleKeys = createDomainQueryKeys<string, BreedingScheduleQueryParams>('breeding-schedules');
+
+export { breedingScheduleKeys };
+
+export function useGetBreedingSchedules(
+  params: BreedingScheduleQueryParams = {},
+  options?: Omit<UseQueryOptions<BreedingScheduleListResponse>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: breedingScheduleKeys.list(params),
+    queryFn: () => {
+      const searchParams = new URLSearchParams();
+      Object.entries(params)
+        .filter(([, value]) => value !== undefined && value !== null)
+        .forEach(([key, value]) => {
+          searchParams.append(key, String(value));
+        });
+      const queryString = searchParams.toString();
+      const url = queryString ? `/breeding/schedules?${queryString}` : '/breeding/schedules';
+      
+      return apiRequest<BreedingSchedule[]>(url, { 
+        method: 'GET'
+      }) as Promise<BreedingScheduleListResponse>;
+    },
+    ...options,
+  });
+}
+
+export function useCreateBreedingSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateBreedingScheduleRequest) =>
+      apiRequest<BreedingSchedule>('/breeding/schedules', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: breedingScheduleKeys.lists() });
+      notifications.show({
+        title: '交配スケジュールを登録しました',
+        message: 'スケジュールが正常に登録されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '交配スケジュールの登録に失敗しました',
+        message: error.message ?? '入力内容をご確認の上、再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useUpdateBreedingSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateBreedingScheduleRequest }) =>
+      apiRequest<BreedingSchedule>(`/breeding/schedules/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: breedingScheduleKeys.lists() });
+      notifications.show({
+        title: '交配スケジュールを更新しました',
+        message: '最新の情報に更新されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '交配スケジュールの更新に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useDeleteBreedingSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<unknown>(`/breeding/schedules/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: breedingScheduleKeys.lists() });
+      notifications.show({
+        title: '交配スケジュールを削除しました',
+        message: 'リストから該当レコードを削除しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '交配スケジュールの削除に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+// ========== Mating Check ==========
+
+export type CreateMatingCheckRequest = {
+  checkDate: string;
+  count?: number;
+};
+
+export type UpdateMatingCheckRequest = Partial<CreateMatingCheckRequest>;
+
+const matingCheckKeys = createDomainQueryKeys<string>('mating-checks');
+
+export { matingCheckKeys };
+
+export function useGetMatingChecks(scheduleId: string) {
+  return useQuery<ApiResponse<MatingCheck[]>>({
+    queryKey: matingCheckKeys.detail(scheduleId),
+    queryFn: () => apiRequest<MatingCheck[]>(`/breeding/schedules/${scheduleId}/checks`),
+    enabled: !!scheduleId,
+  });
+}
+
+export function useCreateMatingCheck() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ scheduleId, payload }: { scheduleId: string; payload: CreateMatingCheckRequest }) =>
+      apiRequest<MatingCheck>(`/breeding/schedules/${scheduleId}/checks`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: matingCheckKeys.all });
+      void queryClient.invalidateQueries({ queryKey: breedingScheduleKeys.lists() });
+      notifications.show({
+        title: '交配チェックを登録しました',
+        message: 'チェックが正常に登録されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '交配チェックの登録に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useUpdateMatingCheck() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateMatingCheckRequest }) =>
+      apiRequest<MatingCheck>(`/breeding/mating-checks/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: matingCheckKeys.all });
+      void queryClient.invalidateQueries({ queryKey: breedingScheduleKeys.lists() });
+      notifications.show({
+        title: '交配チェックを更新しました',
+        message: '最新の情報に更新されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '交配チェックの更新に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useDeleteMatingCheck() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<unknown>(`/breeding/mating-checks/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: matingCheckKeys.all });
+      void queryClient.invalidateQueries({ queryKey: breedingScheduleKeys.lists() });
+      notifications.show({
+        title: '交配チェックを削除しました',
+        message: 'リストから該当レコードを削除しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '交配チェックの削除に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
