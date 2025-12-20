@@ -325,22 +325,39 @@ export function useGetCatStatistics(
     queryKey: catKeys.statistics(),
     queryFn: async () => {
       const response = await apiClient.get('/cats/statistics');
-      // 型ガードでレスポンス形式を判定
-      const responseObj = response as unknown as Record<string, unknown>;
       
-      // APIレスポンスが { data: ... } 形式か直接オブジェクト形式かを判定
-      if (responseObj.data && typeof responseObj.data === 'object' && responseObj.data !== null && 'tabCounts' in responseObj.data) {
-        return responseObj.data as unknown as CatStatisticsResponse;
+      // ApiResponse<T> 形式の戻り値を型安全に処理
+      if (!response.success || !response.data) {
+        throw new Error('統計情報の取得に失敗しました');
       }
-      // 直接オブジェクト形式の場合（後方互換性）
-      if ('tabCounts' in responseObj) {
-        return responseObj as unknown as CatStatisticsResponse;
+      
+      const data = response.data;
+      
+      // データ形式を検証し、必要なプロパティを持つことを確認
+      if (typeof data === 'object' && data !== null && 'tabCounts' in data) {
+        return data as CatStatisticsResponse;
       }
-      // フォールバック: 古い形式のレスポンスの場合、デフォルト値を追加
+      
+      // 古い形式の場合はデフォルト値を追加
+      if (typeof data === 'object' && data !== null) {
+        const legacyData = data as Record<string, unknown>;
+        return {
+          total: typeof legacyData.total === 'number' ? legacyData.total : 0,
+          genderDistribution: typeof legacyData.genderDistribution === 'object' && legacyData.genderDistribution !== null
+            ? legacyData.genderDistribution as CatStatisticsResponse['genderDistribution']
+            : { MALE: 0, FEMALE: 0, NEUTER: 0, SPAY: 0 },
+          breedDistribution: Array.isArray(legacyData.breedDistribution)
+            ? legacyData.breedDistribution as CatStatisticsResponse['breedDistribution']
+            : [],
+          tabCounts: { total: 0, male: 0, female: 0, kitten: 0, raising: 0, grad: 0 },
+        };
+      }
+      
+      // フォールバック: 空のデフォルト値
       return {
-        total: (responseObj.total as number) ?? 0,
-        genderDistribution: (responseObj.genderDistribution as CatStatisticsResponse['genderDistribution']) ?? { MALE: 0, FEMALE: 0, NEUTER: 0, SPAY: 0 },
-        breedDistribution: (responseObj.breedDistribution as CatStatisticsResponse['breedDistribution']) ?? [],
+        total: 0,
+        genderDistribution: { MALE: 0, FEMALE: 0, NEUTER: 0, SPAY: 0 },
+        breedDistribution: [],
         tabCounts: { total: 0, male: 0, female: 0, kitten: 0, raising: 0, grad: 0 },
       };
     },

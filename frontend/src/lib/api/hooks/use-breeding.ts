@@ -845,7 +845,7 @@ export function useGetBreedingSchedules(
 ) {
   return useQuery({
     queryKey: breedingScheduleKeys.list(params),
-    queryFn: () => {
+    queryFn: async () => {
       const searchParams = new URLSearchParams();
       Object.entries(params)
         .filter(([, value]) => value !== undefined && value !== null)
@@ -855,9 +855,14 @@ export function useGetBreedingSchedules(
       const queryString = searchParams.toString();
       const url = queryString ? `/breeding/schedules?${queryString}` : '/breeding/schedules';
       
-      return apiRequest<BreedingSchedule[]>(url, { 
+      // apiRequest は ApiResponse<T> を返すため、型パラメータには配列型を指定
+      const response = await apiRequest<BreedingSchedule[]>(url, { 
         method: 'GET'
-      }) as Promise<BreedingScheduleListResponse>;
+      });
+      
+      // ApiResponse 形式をそのまま BreedingScheduleListResponse として返す
+      // apiRequest は既に ApiResponse<BreedingSchedule[]> を返すため、これが正しい形式
+      return response as BreedingScheduleListResponse;
     },
     ...options,
   });
