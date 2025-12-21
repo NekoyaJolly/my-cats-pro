@@ -17,8 +17,9 @@ import {
   Skeleton,
   Alert,
   Table,
+  ActionIcon,
 } from '@mantine/core';
-import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight, IconEdit, IconTrash, IconEye } from '@tabler/icons-react';
 import { useGetCats, useGetCatStatistics, useDeleteCat, type Cat, type GetCatsParams, type TabCounts } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
@@ -746,18 +747,47 @@ export default function CatsPage() {
                             )}
                           </Table.Td>
                           
-                          {/* 詳細ボタン */}
+                          {/* 操作アイコン */}
                           <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                            <Button
-                              variant="light"
-                              size="xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewDetails(cat.id);
-                              }}
-                            >
-                              詳細
-                            </Button>
+                            <Group gap="xs" wrap="nowrap">
+                              <ActionIcon
+                                variant="light"
+                                color="yellow"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCatForEdit(cat);
+                                  openEditModal();
+                                }}
+                                title="編集"
+                              >
+                                <IconEdit size={16} />
+                              </ActionIcon>
+                              <ActionIcon
+                                variant="light"
+                                color="red"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleContextAction('delete', cat);
+                                }}
+                                title="削除"
+                              >
+                                <IconTrash size={16} />
+                              </ActionIcon>
+                              <ActionIcon
+                                variant="light"
+                                color="gray"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewDetails(cat.id);
+                                }}
+                                title="詳細"
+                              >
+                                <IconEye size={16} />
+                              </ActionIcon>
+                            </Group>
                           </Table.Td>
                         </Table.Tr>
                       </ContextMenuProvider>
@@ -828,18 +858,47 @@ export default function CatsPage() {
                               )}
                             </Table.Td>
                             
-                            {/* 詳細ボタン */}
+                            {/* 操作アイコン */}
                             <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                              <Button
-                                variant="light"
-                                size="xs"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewDetails(kitten.id);
-                                }}
-                              >
-                                詳細
-                              </Button>
+                              <Group gap="xs" wrap="nowrap">
+                                <ActionIcon
+                                  variant="light"
+                                  color="yellow"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCatForEdit(kitten);
+                                    openEditModal();
+                                  }}
+                                  title="編集"
+                                >
+                                  <IconEdit size={16} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  variant="light"
+                                  color="red"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleContextAction('delete', kitten);
+                                  }}
+                                  title="削除"
+                                >
+                                  <IconTrash size={16} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  variant="light"
+                                  color="gray"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewDetails(kitten.id);
+                                  }}
+                                  title="詳細"
+                                >
+                                  <IconEye size={16} />
+                                </ActionIcon>
+                              </Group>
                             </Table.Td>
                           </Table.Tr>
                         </ContextMenuProvider>
