@@ -1,0 +1,24 @@
+$ORIGIN nekoya.co.jp.
+$TTL 86400
+nekoya.co.jp. 86400 IN SOA 01.dnsv.jp. hostmaster.dnsv.jp. 86400 3600 900 604800 300
+nekoya.co.jp. 86400 IN NS 01.dnsv.jp.
+nekoya.co.jp. 86400 IN NS 02.dnsv.jp.
+nekoya.co.jp. 86400 IN NS 03.dnsv.jp.
+nekoya.co.jp. 86400 IN NS 04.dnsv.jp.
+
+; Load Balancer用Aレコード
+nekoya.co.jp. 3600 IN A 136.110.184.65
+www.nekoya.co.jp. 3600 IN A 136.110.184.65
+api.nekoya.co.jp. 3600 IN A 136.110.184.65
+
+; Resend DKIM (メール認証)
+resend._domainkey.nekoya.co.jp. 3600 IN TXT "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCdLS13UfjU1wui4awVt9sIwR9BxZ3Pff60IGYJHGMernFYRe9L18+wgIUiacKYNNdAwwgGhbTeWSky+XMeHqx6VvmyODPH0D6gG1+HLyHatwTkZevv4uUZDKXp1IGyoGR+wgT9PmsgmZOHEWTmNrV8a5fDYJxNNQHTca4nV/GTBQIDAQAB"
+
+; Resend SPF (送信元認証)
+send.nekoya.co.jp. 3600 IN TXT "v=spf1 include:amazonses.com ~all"
+
+; Resend MX (バウンスメール処理)
+send.nekoya.co.jp. 3600 IN MX 10 feedback-smtp.ap-northeast-1.amazonses.com.
+
+; DMARC (メール認証ポリシー)
+_dmarc.nekoya.co.jp. 3600 IN TXT "v=DMARC1; p=none;"

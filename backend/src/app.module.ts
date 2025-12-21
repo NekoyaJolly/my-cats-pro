@@ -19,6 +19,7 @@ import { CorsMiddleware } from "./common/middleware/cors.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { DisplayPreferencesModule } from "./display-preferences/display-preferences.module";
+import { EmailModule } from "./email/email.module";
 import { GalleryModule } from "./gallery/gallery.module";
 import { GalleryUploadModule } from "./gallery-upload/gallery-upload.module";
 import { GraduationModule } from "./graduation/graduation.module";
@@ -120,6 +121,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     GraduationModule,
     GalleryUploadModule,
     GalleryModule,
+    EmailModule,
   ],
   controllers: [MasterDataController],
   providers: [
