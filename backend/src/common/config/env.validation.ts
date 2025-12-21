@@ -72,6 +72,14 @@ export const envSchema = z.object({
   SENTRY_DSN: z.string().url().optional(),
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
   SENTRY_PROFILES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+
+  // Resend Email Service（オプション）
+  RESEND_API_KEY: z.string().min(1).optional(),
+  EMAIL_FROM: z.string().email().optional(),
+  EMAIL_FROM_NAME: z.string().min(1).optional(),
+
+  // フロントエンドURL（メールテンプレート等で使用）
+  FRONTEND_URL: z.string().url().default('https://nekoya.co.jp'),
 });
 
 export type Environment = z.infer<typeof envSchema>;
