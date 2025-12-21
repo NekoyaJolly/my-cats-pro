@@ -76,6 +76,7 @@ playwright-report/
 # Temporary files
 *.tmp
 *.temp
+tmp/
 
 # Database files
 *.db

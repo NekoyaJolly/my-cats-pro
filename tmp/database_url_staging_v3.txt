@@ -1,1 +1,0 @@
-postgresql://mycats_stg_user:Q7jv%21rA2pN%23y6TzD@localhost:5432/mycats_staging?host=/cloudsql/my-cats-pro:asia-northeast1:my-cats-stg-db&schema=public
