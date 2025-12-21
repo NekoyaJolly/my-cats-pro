@@ -224,4 +224,94 @@ ${resetUrl}
 
     return result.success;
   }
+
+  /**
+   * ユーザー招待メールを送信
+   * 
+   * @param email 招待先メールアドレス
+   * @param invitationToken 招待トークン
+   * @param tenantName テナント名
+   * @param role 招待されるロール
+   * @returns 送信成功/失敗
+   */
+  async sendInvitationEmail(
+    email: string,
+    invitationToken: string,
+    tenantName: string,
+    role: string,
+  ): Promise<boolean> {
+    // 本番環境のURLを使用
+    const baseUrl = this.configService.get<string>('FRONTEND_URL', 'https://nekoya.co.jp');
+    const invitationUrl = `${baseUrl}/accept-invitation?token=${invitationToken}`;
+
+    const roleLabel = this.getRoleLabel(role);
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="ja">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MyCats Pro への招待</title>
+      </head>
+      <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2>MyCats Pro への招待</h2>
+          <p>あなたは <strong>${tenantName}</strong> の${roleLabel}として招待されました。</p>
+          <p>以下のリンクをクリックして、アカウントを作成してください:</p>
+          <p>
+            <a href="${invitationUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              招待を受け入れる
+            </a>
+          </p>
+          <p>または、以下のURLをブラウザにコピー&ペーストしてください:</p>
+          <p style="word-break: break-all; color: #007bff;">${invitationUrl}</p>
+          <p><strong>この招待リンクは7日間有効です。</strong></p>
+          <p>このメールに心当たりがない場合は、無視してください。</p>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="font-size: 12px; color: #999;">
+            このメールは MyCats Pro から自動送信されています。<br>
+            返信はできませんのでご了承ください。
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const text = `
+MyCats Pro への招待
+
+あなたは ${tenantName} の${roleLabel}として招待されました。
+
+以下のURLにアクセスして、アカウントを作成してください:
+
+${invitationUrl}
+
+この招待リンクは7日間有効です。
+
+このメールに心当たりがない場合は、無視してください。
+    `;
+
+    const result = await this.sendEmail({
+      to: email,
+      subject: `【招待】${tenantName} への参加のご案内`,
+      html,
+      text,
+    });
+
+    return result.success;
+  }
+
+  /**
+   * ロールを日本語ラベルに変換
+   */
+  private getRoleLabel(role: string): string {
+    const roleLabels: Record<string, string> = {
+      SUPER_ADMIN: 'スーパー管理者',
+      TENANT_ADMIN: 'テナント管理者',
+      ADMIN: '管理者',
+      USER: 'ユーザー',
+    };
+    return roleLabels[role] ?? role;
+  }
 }
