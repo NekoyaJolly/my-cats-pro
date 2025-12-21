@@ -50,24 +50,16 @@ export class EmailService {
     }
 
     try {
-      const emailOptions: Record<string, unknown> = {
+      const emailOptions = {
         from: `${this.fromName} <${this.from}>`,
         to: dto.to,
         subject: dto.subject,
-      };
+        ...(dto.html && { html: dto.html }),
+        ...(dto.text && { text: dto.text }),
+        ...(dto.replyTo && { replyTo: dto.replyTo }),
+      } as Parameters<Resend['emails']['send']>[0];
 
-      if (dto.html) {
-        emailOptions.html = dto.html;
-      }
-      if (dto.text) {
-        emailOptions.text = dto.text;
-      }
-      if (dto.replyTo) {
-        emailOptions.replyTo = dto.replyTo;
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Resend SDKの型定義が厳密すぎるため
-      const response = await this.resend.emails.send(emailOptions as any);
+      const response = await this.resend.emails.send(emailOptions);
 
       if (response.error) {
         this.logger.error(`Failed to send email: ${response.error.message}`);
