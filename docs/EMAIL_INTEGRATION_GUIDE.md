@@ -328,26 +328,17 @@ export class AppModule {}
 
 ### 3-1. Resend APIキーをSecret Managerに保存
 
+**重要**: `EMAIL_FROM` と `EMAIL_FROM_NAME` は機密情報ではないため、Secret Managerではなく環境変数として直接設定します。
+
 ```bash
-# シークレットを作成
-gcloud secrets create RESEND_API_KEY_production \
+# Resend APIキーのシークレットを作成
+gcloud secrets create RESEND_API_KEY \
   --replication-policy="automatic" \
   --project=my-cats-pro
 
 # 値を設定
 echo -n "re_your_actual_api_key_here" | \
-  gcloud secrets versions add RESEND_API_KEY_production \
-    --data-file=- \
-    --project=my-cats-pro
-
-# 他の環境変数も登録
-echo -n "noreply@nekoya.co.jp" | \
-  gcloud secrets versions add EMAIL_FROM_production \
-    --data-file=- \
-    --project=my-cats-pro
-
-echo -n "MyCats Pro" | \
-  gcloud secrets versions add EMAIL_FROM_NAME_production \
+  gcloud secrets versions add RESEND_API_KEY \
     --data-file=- \
     --project=my-cats-pro
 ```
@@ -355,17 +346,7 @@ echo -n "MyCats Pro" | \
 ### 3-2. Cloud Runサービスアカウントに権限付与
 
 ```bash
-gcloud secrets add-iam-policy-binding RESEND_API_KEY_production \
-  --member="serviceAccount:cloud-run-backend@my-cats-pro.iam.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor" \
-  --project=my-cats-pro
-
-gcloud secrets add-iam-policy-binding EMAIL_FROM_production \
-  --member="serviceAccount:cloud-run-backend@my-cats-pro.iam.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor" \
-  --project=my-cats-pro
-
-gcloud secrets add-iam-policy-binding EMAIL_FROM_NAME_production \
+gcloud secrets add-iam-policy-binding RESEND_API_KEY \
   --member="serviceAccount:cloud-run-backend@my-cats-pro.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor" \
   --project=my-cats-pro

@@ -20,21 +20,24 @@ export interface SendEmailDto {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly resend: Resend | null = null;
+  private readonly resend: Resend | null;
   private readonly from: string;
   private readonly fromName: string;
+  private readonly frontendUrl: string;
   private readonly isEnabled: boolean;
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.from = this.configService.get<string>('EMAIL_FROM', 'noreply@nekoya.co.jp');
     this.fromName = this.configService.get<string>('EMAIL_FROM_NAME', 'MyCats Pro');
+    this.frontendUrl = this.configService.get<string>('FRONTEND_URL', 'https://nekoya.co.jp');
 
     if (apiKey) {
       this.resend = new Resend(apiKey);
       this.isEnabled = true;
       this.logger.log(`EmailService initialized with from: ${this.fromName} <${this.from}>`);
     } else {
+      this.resend = null;
       this.isEnabled = false;
       this.logger.warn('RESEND_API_KEY not set. Email sending is disabled.');
     }
@@ -79,7 +82,7 @@ export class EmailService {
    * パスワードリセットメールを送信
    */
   async sendPasswordResetEmail(email: string, resetToken: string): Promise<boolean> {
-    const resetUrl = `https://nekoya.co.jp/reset-password?token=${resetToken}`;
+    const resetUrl = `${this.frontendUrl}/reset-password?token=${resetToken}`;
 
     const html = `
       <!DOCTYPE html>
@@ -154,7 +157,7 @@ ${resetUrl}
           <p>MyCats Pro へのご登録ありがとうございます。</p>
           <p>さっそく、あなたの猫ちゃんたちを登録してみましょう。</p>
           <p>
-            <a href="https://nekoya.co.jp/cats/new" style="display: inline-block; background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            <a href="${this.frontendUrl}/cats/new" style="display: inline-block; background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
               猫を登録する
             </a>
           </p>
@@ -162,7 +165,7 @@ ${resetUrl}
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
           <p style="font-size: 12px; color: #999;">
             MyCats Pro - 猫生体管理システム<br>
-            https://nekoya.co.jp
+            ${this.frontendUrl}
           </p>
         </div>
       </body>
@@ -199,14 +202,14 @@ ${resetUrl}
             <p style="margin: 5px 0;"><strong>登録番号:</strong> ${registrationNumber}</p>
           </div>
           <p>
-            <a href="https://nekoya.co.jp/cats/${registrationNumber}" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            <a href="${this.frontendUrl}/cats/${registrationNumber}" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
               詳細を見る
             </a>
           </p>
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
           <p style="font-size: 12px; color: #999;">
             MyCats Pro - 猫生体管理システム<br>
-            https://nekoya.co.jp
+            ${this.frontendUrl}
           </p>
         </div>
       </body>

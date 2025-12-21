@@ -228,7 +228,7 @@ gcloud run services logs read mycats-pro-backend \
 GitHub ActionsまたはCloud Buildでデプロイする際は、以下の置換変数を使用してください:
 
 ```yaml
-_RESEND_API_KEY_SECRET_NAME: RESEND_API_KEY_production
+_RESEND_API_KEY_SECRET_NAME: RESEND_API_KEY
 _RESEND_API_KEY_SECRET_VERSION: latest
 _EMAIL_FROM: noreply@nekoya.co.jp
 _EMAIL_FROM_NAME: MyCats Pro
