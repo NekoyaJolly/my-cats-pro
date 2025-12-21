@@ -10,7 +10,25 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";
 
-import { CreateCatDto, UpdateCatDto, CatQueryDto, KittenQueryDto } from "./dto";
+import {
+  CreateCatDto,
+  UpdateCatDto,
+  CatQueryDto,
+  KittenQueryDto,
+  CreateWeightRecordDto,
+  UpdateWeightRecordDto,
+  WeightRecordQueryDto,
+  WeightRecordResponse,
+  WeightRecordsListResponse,
+  CreateBulkWeightRecordsDto,
+  BulkWeightRecordsResponse,
+  CatFamilyResponse,
+  ParentInfo,
+  AncestorInfo,
+  SiblingInfo,
+  OffspringInfo,
+  CatStatisticsResponse,
+} from "./dto";
 import { catWithRelationsInclude, CatWithRelations } from "./types/cat.types";
 
 @Injectable()
@@ -442,13 +460,33 @@ export class CatsService {
     };
   }
 
-  async getStatistics() {
-    const [totalCats, genderGroups, breedStats] = await Promise.all([
+  async getStatistics(): Promise<CatStatisticsResponse> {
+    // 生後6ヶ月の基準日を計算（成猫判定用）
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    // 生後3ヶ月の基準日を計算（子猫判定用）
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    // 基本統計とタブ別カウントを並列取得
+    const [
+      totalCats,
+      genderGroups,
+      breedStats,
+      // タブ別カウント用クエリ
+      inHouseCats,
+      raisingTagCats,
+      gradTagCats,
+    ] = await Promise.all([
+      // 全猫数
       this.prisma.cat.count(),
+      // 性別分布
       this.prisma.cat.groupBy({
         by: ["gender"],
         _count: true,
       }),
+      // 品種分布（上位10件）
       this.prisma.cat.groupBy({
         by: ["breedId"],
         _count: true,
@@ -459,8 +497,33 @@ export class CatsService {
         },
         take: 10,
       }),
+      // 在舎猫の基本情報（タブカウント計算用）
+      this.prisma.cat.findMany({
+        where: { isInHouse: true },
+        select: {
+          id: true,
+          gender: true,
+          birthDate: true,
+          motherId: true,
+        },
+      }),
+      // 養成中タグが付いた猫数
+      this.prisma.catTag.count({
+        where: {
+          cat: { isInHouse: true },
+          tag: { name: "養成中" },
+        },
+      }),
+      // 卒業予定タグが付いた猫数
+      this.prisma.catTag.count({
+        where: {
+          cat: { isInHouse: true },
+          tag: { name: "卒業予定" },
+        },
+      }),
     ]);
 
+    // 性別分布を構築
     const genderDistribution: Record<string, number> = {
       MALE: 0,
       FEMALE: 0,
@@ -474,20 +537,52 @@ export class CatsService {
       }
     }
 
+    // 品種情報を取得
     const breedIds = breedStats.map((stat) => stat.breedId).filter((id): id is string => id !== null);
     const breeds = await this.prisma.breed.findMany({
       where: { id: { in: breedIds } },
     });
 
     const breedStatsWithNames = breedStats.map((stat) => ({
-      breed: breeds.find((breed) => breed.id === stat.breedId),
+      breed: breeds.find((breed) => breed.id === stat.breedId) ?? null,
       count: stat._count,
     }));
 
+    // タブ別カウントを計算
+    // 成猫: 生後6ヶ月以上の在舎猫
+    const adultCats = inHouseCats.filter(
+      (cat) => new Date(cat.birthDate) < sixMonthsAgo
+    );
+
+    // 子猫: 生後3ヶ月以内 + 母猫あり
+    const kittenCount = inHouseCats.filter((cat) => {
+      if (!cat.motherId) return false;
+      return new Date(cat.birthDate) >= threeMonthsAgo;
+    }).length;
+
+    // オス成猫数
+    const maleCount = adultCats.filter((cat) => cat.gender === "MALE").length;
+
+    // メス成猫数
+    const femaleCount = adultCats.filter((cat) => cat.gender === "FEMALE").length;
+
     return {
       total: totalCats,
-      genderDistribution,
+      genderDistribution: {
+        MALE: genderDistribution.MALE,
+        FEMALE: genderDistribution.FEMALE,
+        NEUTER: genderDistribution.NEUTER,
+        SPAY: genderDistribution.SPAY,
+      },
       breedDistribution: breedStatsWithNames,
+      tabCounts: {
+        total: adultCats.length,
+        male: maleCount,
+        female: femaleCount,
+        kitten: kittenCount,
+        raising: raisingTagCats,
+        grad: gradTagCats,
+      },
     };
   }
 
@@ -633,6 +728,641 @@ export class CatsService {
         totalPages: Math.ceil(total / limit),
         totalGroups: motherGroups.size,
       },
+    };
+  }
+
+  // ==========================================
+  // 体重記録 CRUD メソッド
+  // ==========================================
+
+  /**
+   * 猫の体重記録一覧を取得
+   */
+  async getWeightRecords(
+    catId: string,
+    query: WeightRecordQueryDto,
+    _userId: string,
+  ): Promise<WeightRecordsListResponse> {
+    // 猫の存在確認
+    await this.findOne(catId);
+
+    const {
+      page = 1,
+      limit = 50,
+      startDate,
+      endDate,
+      sortOrder = "desc",
+    } = query;
+
+    const skip = (page - 1) * limit;
+    const where: Prisma.WeightRecordWhereInput = { catId };
+
+    // 日付フィルタ
+    if (startDate || endDate) {
+      where.recordedAt = {};
+      if (startDate) {
+        where.recordedAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.recordedAt.lte = new Date(endDate);
+      }
+    }
+
+    const [records, total] = await Promise.all([
+      this.prisma.weightRecord.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { recordedAt: sortOrder },
+        include: {
+          recorder: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      this.prisma.weightRecord.count({ where }),
+    ]);
+
+    // サマリー情報を計算
+    const latestRecords = await this.prisma.weightRecord.findMany({
+      where: { catId },
+      orderBy: { recordedAt: "desc" },
+      take: 2,
+      select: { weight: true, recordedAt: true },
+    });
+
+    const latestWeight = latestRecords[0]?.weight ?? null;
+    const previousWeight = latestRecords[1]?.weight ?? null;
+    const weightChange =
+      latestWeight !== null && previousWeight !== null
+        ? latestWeight - previousWeight
+        : null;
+    const latestRecordedAt = latestRecords[0]?.recordedAt?.toISOString() ?? null;
+
+    const data: WeightRecordResponse[] = records.map((record) => ({
+      id: record.id,
+      catId: record.catId,
+      weight: record.weight,
+      recordedAt: record.recordedAt.toISOString(),
+      notes: record.notes,
+      recordedBy: record.recordedBy,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString(),
+      recorder: record.recorder,
+    }));
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+      summary: {
+        latestWeight,
+        previousWeight,
+        weightChange,
+        latestRecordedAt,
+        recordCount: total,
+      },
+    };
+  }
+
+  /**
+   * 体重記録を作成
+   */
+  async createWeightRecord(
+    catId: string,
+    dto: CreateWeightRecordDto,
+    userId: string,
+  ): Promise<WeightRecordResponse> {
+    // 猫の存在確認
+    await this.findOne(catId);
+
+    const record = await this.prisma.weightRecord.create({
+      data: {
+        catId,
+        weight: dto.weight,
+        recordedAt: dto.recordedAt ? new Date(dto.recordedAt) : new Date(),
+        notes: dto.notes,
+        recordedBy: userId,
+      },
+      include: {
+        recorder: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: record.id,
+      catId: record.catId,
+      weight: record.weight,
+      recordedAt: record.recordedAt.toISOString(),
+      notes: record.notes,
+      recordedBy: record.recordedBy,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString(),
+      recorder: record.recorder,
+    };
+  }
+
+  /**
+   * 体重記録を更新
+   */
+  async updateWeightRecord(
+    recordId: string,
+    dto: UpdateWeightRecordDto,
+    _userId: string,
+  ): Promise<WeightRecordResponse> {
+    const existingRecord = await this.prisma.weightRecord.findUnique({
+      where: { id: recordId },
+    });
+
+    if (!existingRecord) {
+      throw new NotFoundException(`体重記録が見つかりません（ID: ${recordId}）`);
+    }
+
+    const record = await this.prisma.weightRecord.update({
+      where: { id: recordId },
+      data: {
+        ...(dto.weight !== undefined ? { weight: dto.weight } : {}),
+        ...(dto.recordedAt ? { recordedAt: new Date(dto.recordedAt) } : {}),
+        ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+      },
+      include: {
+        recorder: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: record.id,
+      catId: record.catId,
+      weight: record.weight,
+      recordedAt: record.recordedAt.toISOString(),
+      notes: record.notes,
+      recordedBy: record.recordedBy,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString(),
+      recorder: record.recorder,
+    };
+  }
+
+  /**
+   * 体重記録を削除
+   */
+  async deleteWeightRecord(recordId: string, _userId: string): Promise<void> {
+    const existingRecord = await this.prisma.weightRecord.findUnique({
+      where: { id: recordId },
+    });
+
+    if (!existingRecord) {
+      throw new NotFoundException(`体重記録が見つかりません（ID: ${recordId}）`);
+    }
+
+    await this.prisma.weightRecord.delete({
+      where: { id: recordId },
+    });
+  }
+
+  /**
+   * 単一の体重記録を取得
+   */
+  async getWeightRecord(recordId: string): Promise<WeightRecordResponse> {
+    const record = await this.prisma.weightRecord.findUnique({
+      where: { id: recordId },
+      include: {
+        recorder: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!record) {
+      throw new NotFoundException(`体重記録が見つかりません（ID: ${recordId}）`);
+    }
+
+    return {
+      id: record.id,
+      catId: record.catId,
+      weight: record.weight,
+      recordedAt: record.recordedAt.toISOString(),
+      notes: record.notes,
+      recordedBy: record.recordedBy,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString(),
+      recorder: record.recorder,
+    };
+  }
+
+  /**
+   * 複数の猫の体重を一括登録
+   */
+  async createBulkWeightRecords(
+    dto: CreateBulkWeightRecordsDto,
+    userId: string,
+  ): Promise<BulkWeightRecordsResponse> {
+    const { recordedAt, records } = dto;
+    const recordedAtDate = new Date(recordedAt);
+
+    // 全ての猫IDの存在確認
+    const catIds = records.map((r) => r.catId);
+    const existingCats = await this.prisma.cat.findMany({
+      where: { id: { in: catIds } },
+      select: { id: true },
+    });
+
+    const existingCatIds = new Set(existingCats.map((c) => c.id));
+    const missingCatIds = catIds.filter((id) => !existingCatIds.has(id));
+
+    if (missingCatIds.length > 0) {
+      throw new BadRequestException(
+        `以下の猫IDが見つかりません: ${missingCatIds.join(", ")}`,
+      );
+    }
+
+    // トランザクションで一括登録
+    const createdRecords = await this.prisma.$transaction(
+      records.map((record) =>
+        this.prisma.weightRecord.create({
+          data: {
+            catId: record.catId,
+            weight: record.weight,
+            recordedAt: recordedAtDate,
+            notes: record.notes,
+            recordedBy: userId,
+          },
+          include: {
+            recorder: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        }),
+      ),
+    );
+
+    const responseRecords: WeightRecordResponse[] = createdRecords.map((r) => ({
+      id: r.id,
+      catId: r.catId,
+      weight: r.weight,
+      recordedAt: r.recordedAt.toISOString(),
+      notes: r.notes,
+      recordedBy: r.recordedBy,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+      recorder: r.recorder,
+    }));
+
+    return {
+      success: true,
+      created: createdRecords.length,
+      records: responseRecords,
+    };
+  }
+
+  /**
+   * 複数の猫の体重記録履歴を一括取得（テーブル表示用）
+   */
+  async getWeightRecordsForKittens(
+    catIds: string[],
+    limit: number = 8,
+  ): Promise<
+    Map<
+      string,
+      Array<{
+        id: string;
+        weight: number;
+        recordedAt: string;
+        notes: string | null;
+      }>
+    >
+  > {
+    // 各猫の最新N件の体重記録を取得
+    const records = await this.prisma.weightRecord.findMany({
+      where: { catId: { in: catIds } },
+      orderBy: { recordedAt: "desc" },
+      select: {
+        id: true,
+        catId: true,
+        weight: true,
+        recordedAt: true,
+        notes: true,
+      },
+    });
+
+    // 猫ごとにグループ化し、最新N件に制限
+    const result = new Map<
+      string,
+      Array<{
+        id: string;
+        weight: number;
+        recordedAt: string;
+        notes: string | null;
+      }>
+    >();
+
+    for (const catId of catIds) {
+      const catRecords = records
+        .filter((r) => r.catId === catId)
+        .slice(0, limit)
+        .map((r) => ({
+          id: r.id,
+          weight: r.weight,
+          recordedAt: r.recordedAt.toISOString(),
+          notes: r.notes,
+        }));
+      result.set(catId, catRecords);
+    }
+
+    return result;
+  }
+
+  /**
+   * 猫の家族情報を取得（血統タブ用）
+   * - 父母情報（Pedigreeがある場合は祖父母・曾祖父母も含む）
+   * - 兄弟姉妹（両親が一致する猫のみ）
+   * - 子猫一覧
+   */
+  async getCatFamily(id: string): Promise<CatFamilyResponse> {
+    // 猫の詳細情報を取得
+    const cat = await this.prisma.cat.findUnique({
+      where: { id },
+      include: {
+        breed: { select: { id: true, name: true } },
+        coatColor: { select: { id: true, name: true } },
+        father: {
+          include: {
+            breed: { select: { id: true, name: true } },
+            coatColor: { select: { id: true, name: true } },
+            pedigree: true,
+          },
+        },
+        mother: {
+          include: {
+            breed: { select: { id: true, name: true } },
+            coatColor: { select: { id: true, name: true } },
+            pedigree: true,
+          },
+        },
+        pedigree: true,
+      },
+    });
+
+    if (!cat) {
+      throw new NotFoundException(`猫が見つかりません（ID: ${id}）`);
+    }
+
+    // 父親情報の構築
+    const father = this.buildParentInfo(cat.father, "father");
+
+    // 母親情報の構築
+    const mother = this.buildParentInfo(cat.mother, "mother");
+
+    // 兄弟姉妹を取得（両親が一致する猫のみ）
+    let siblings: SiblingInfo[] = [];
+    if (cat.fatherId && cat.motherId) {
+      const siblingCats = await this.prisma.cat.findMany({
+        where: {
+          fatherId: cat.fatherId,
+          motherId: cat.motherId,
+          id: { not: cat.id }, // 自分自身を除外
+        },
+        include: {
+          breed: { select: { id: true, name: true } },
+          coatColor: { select: { id: true, name: true } },
+          pedigree: { select: { pedigreeId: true } },
+        },
+        orderBy: { birthDate: "asc" },
+      });
+
+      siblings = siblingCats.map((sibling) => ({
+        id: sibling.id,
+        name: sibling.name,
+        gender: sibling.gender,
+        birthDate: sibling.birthDate.toISOString(),
+        breed: sibling.breed,
+        coatColor: sibling.coatColor,
+        pedigreeId: sibling.pedigree?.pedigreeId ?? null,
+      }));
+    }
+
+    // 子猫を取得（この猫が親の場合）
+    const offspringCats = await this.prisma.cat.findMany({
+      where: {
+        OR: [
+          { fatherId: cat.id },
+          { motherId: cat.id },
+        ],
+      },
+      include: {
+        breed: { select: { id: true, name: true } },
+        coatColor: { select: { id: true, name: true } },
+        pedigree: { select: { pedigreeId: true } },
+        father: {
+          select: {
+            id: true,
+            name: true,
+            gender: true,
+            pedigree: { select: { pedigreeId: true } },
+          },
+        },
+        mother: {
+          select: {
+            id: true,
+            name: true,
+            gender: true,
+            pedigree: { select: { pedigreeId: true } },
+          },
+        },
+      },
+      orderBy: { birthDate: "desc" },
+    });
+
+    const offspring: OffspringInfo[] = offspringCats.map((child) => {
+      // この猫がオスなら母親を、メスなら父親を相手の親として返す
+      const isFather = child.fatherId === cat.id;
+      const otherParentData = isFather ? child.mother : child.father;
+
+      return {
+        id: child.id,
+        name: child.name,
+        gender: child.gender,
+        birthDate: child.birthDate.toISOString(),
+        breed: child.breed,
+        coatColor: child.coatColor,
+        pedigreeId: child.pedigree?.pedigreeId ?? null,
+        otherParent: otherParentData
+          ? {
+              id: otherParentData.id,
+              name: otherParentData.name,
+              gender: otherParentData.gender,
+              pedigreeId: otherParentData.pedigree?.pedigreeId ?? null,
+            }
+          : null,
+      };
+    });
+
+    return {
+      cat: {
+        id: cat.id,
+        name: cat.name,
+        gender: cat.gender,
+        birthDate: cat.birthDate.toISOString(),
+        pedigreeId: cat.pedigree?.pedigreeId ?? null,
+        breed: cat.breed,
+        coatColor: cat.coatColor,
+      },
+      father,
+      mother,
+      siblings,
+      offspring,
+    };
+  }
+
+  /**
+   * 親情報を構築（Pedigreeから祖父母・曾祖父母情報を含む）
+   */
+  private buildParentInfo(
+    parent: {
+      id: string;
+      name: string;
+      gender: string;
+      birthDate: Date;
+      breed: { id: string; name: string } | null;
+      coatColor: { id: string; name: string } | null;
+      pedigree: {
+        pedigreeId: string;
+        // 父方の祖父母
+        ffTitle: string | null;
+        ffCatName: string | null;
+        ffCatColor: string | null;
+        ffjcu: string | null;
+        fmTitle: string | null;
+        fmCatName: string | null;
+        fmCatColor: string | null;
+        fmjcu: string | null;
+        // 母方の祖父母
+        mfTitle: string | null;
+        mfCatName: string | null;
+        mfCatColor: string | null;
+        mfjcu: string | null;
+        mmTitle: string | null;
+        mmCatName: string | null;
+        mmCatColor: string | null;
+        mmjcu: string | null;
+        // 父方の曾祖父母
+        fffTitle: string | null;
+        fffCatName: string | null;
+        fffCatColor: string | null;
+        fffjcu: string | null;
+        ffmTitle: string | null;
+        ffmCatName: string | null;
+        ffmCatColor: string | null;
+        ffmjcu: string | null;
+        fmfTitle: string | null;
+        fmfCatName: string | null;
+        fmfCatColor: string | null;
+        fmfjcu: string | null;
+        fmmTitle: string | null;
+        fmmCatName: string | null;
+        fmmCatColor: string | null;
+        fmmjcu: string | null;
+        // 母方の曾祖父母
+        mffTitle: string | null;
+        mffCatName: string | null;
+        mffCatColor: string | null;
+        mffjcu: string | null;
+        mfmTitle: string | null;
+        mfmCatName: string | null;
+        mfmCatColor: string | null;
+        mfmjcu: string | null;
+        mmfTitle: string | null;
+        mmfCatName: string | null;
+        mmfCatColor: string | null;
+        mmfjcu: string | null;
+        mmmTitle: string | null;
+        mmmCatName: string | null;
+        mmmCatColor: string | null;
+        mmmjcu: string | null;
+        // 親の親情報
+        fatherJCU: string | null;
+        fatherCatName: string | null;
+        fatherCoatColor: string | null;
+        fatherTitle: string | null;
+        motherJCU: string | null;
+        motherCatName: string | null;
+        motherCoatColor: string | null;
+        motherTitle: string | null;
+      } | null;
+    } | null,
+    _position: "father" | "mother",
+  ): ParentInfo | null {
+    if (!parent) {
+      return null;
+    }
+
+    const pedigree = parent.pedigree;
+
+    // 父方の祖父母情報を構築
+    const fatherAncestor: AncestorInfo | null = pedigree
+      ? {
+          pedigreeId: pedigree.fatherJCU,
+          catName: pedigree.fatherCatName,
+          coatColor: pedigree.fatherCoatColor,
+          title: pedigree.fatherTitle,
+          jcu: pedigree.fatherJCU,
+        }
+      : null;
+
+    // 母方の祖父母情報を構築
+    const motherAncestor: AncestorInfo | null = pedigree
+      ? {
+          pedigreeId: pedigree.motherJCU,
+          catName: pedigree.motherCatName,
+          coatColor: pedigree.motherCoatColor,
+          title: pedigree.motherTitle,
+          jcu: pedigree.motherJCU,
+        }
+      : null;
+
+    return {
+      id: parent.id,
+      pedigreeId: pedigree?.pedigreeId ?? null,
+      name: parent.name,
+      gender: parent.gender,
+      birthDate: parent.birthDate.toISOString(),
+      breed: parent.breed,
+      coatColor: parent.coatColor,
+      father: fatherAncestor,
+      mother: motherAncestor,
     };
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   Box,
   Button,
@@ -22,7 +22,8 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconArrowLeft, IconEdit, IconUser, IconAlertCircle, IconChevronDown } from '@tabler/icons-react';
+import { IconArrowLeft, IconEdit, IconUser, IconAlertCircle, IconChevronDown, IconDna } from '@tabler/icons-react';
+import { PedigreeTab } from '@/components/cats/PedigreeTab';
 import { useGetCat, useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetBirthPlans, type BirthPlan, type KittenDisposition } from '@/lib/api/hooks/use-breeding';
 import { useGetCareSchedules, useGetMedicalRecords, type CareSchedule, type MedicalRecord } from '@/lib/api/hooks/use-care';
@@ -49,6 +50,20 @@ const GENDER_LABELS: Record<string, string> = {
 
 export default function CatDetailClient({ catId }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  // URLパラメータからタブ状態を取得（デフォルトは 'basic'）
+  const tabParam = searchParams.get('tab') || 'basic';
+  
+  // タブ切り替え時にURLを更新
+  const handleTabChange = (nextTab: string | null) => {
+    if (!nextTab) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', nextTab);
+    router.push(`${pathname}?${nextParams.toString()}`);
+  };
+  
   const { data: cat, isLoading, error } = useGetCat(catId);
   const { data: catsResponse } = useGetCats();
   const { data: birthPlansResponse } = useGetBirthPlans();
@@ -184,11 +199,11 @@ export default function CatDetailClient({ catId }: Props) {
       </Box>
 
       <Container size="lg" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-        {/* タブで詳細情報 */}
-        <Tabs defaultValue="basic" variant="outline">
+        {/* タブで詳細情報 - URLパラメータで状態を永続化 */}
+        <Tabs value={tabParam} onChange={handleTabChange} variant="outline">
           <Tabs.List>
             <Tabs.Tab value="basic">基本情報</Tabs.Tab>
-            <Tabs.Tab value="family">家族</Tabs.Tab>
+            <Tabs.Tab value="pedigree" leftSection={<IconDna size={16} />}>血統</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="basic" pt="md">
@@ -584,12 +599,8 @@ export default function CatDetailClient({ catId }: Props) {
             </Card>
           </Tabs.Panel>
 
-          <Tabs.Panel value="family" pt="md">
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Text c="dimmed" size="sm">
-                家族情報は基本情報タブの出産記録をご覧ください
-              </Text>
-            </Card>
+          <Tabs.Panel value="pedigree" pt="md">
+            <PedigreeTab catId={catData.id} />
           </Tabs.Panel>
         </Tabs>
 

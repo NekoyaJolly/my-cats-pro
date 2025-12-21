@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
@@ -75,8 +76,30 @@ import {
   ExecuteRuleModal,
 } from './components';
 
+// 有効なタブ値の型定義
+type TabValue = 'categories' | 'tags' | 'automation';
+const VALID_TABS: TabValue[] = ['categories', 'tags', 'automation'];
+
 export default function TagsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  // URLパラメータからタブ状態を取得（無効な値の場合はデフォルトの 'categories' を使用）
+  const tabParam = searchParams.get('tab');
+  const activeTab: TabValue = VALID_TABS.includes(tabParam as TabValue) 
+    ? (tabParam as TabValue) 
+    : 'categories';
+
   const { setPageHeader } = usePageHeader();
+
+  // タブ切り替え時にURLを更新
+  const handleTabChange = (nextTab: string | null) => {
+    if (!nextTab) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', nextTab);
+    router.push(`${pathname}?${nextParams.toString()}`);
+  };
 
   // データ取得
   const {
@@ -903,7 +926,7 @@ export default function TagsPage() {
           </Group>
         </Card>
 
-        <Tabs defaultValue="categories" keepMounted={false} radius="md">
+        <Tabs value={activeTab} onChange={handleTabChange} keepMounted={false} radius="md">
           <Tabs.List>
             <Tabs.Tab value="categories">カテゴリ</Tabs.Tab>
             <Tabs.Tab value="tags">タグ一覧</Tabs.Tab>

@@ -22,11 +22,22 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 
+import type { RequestUser } from "../auth/auth.types";
+import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 import { CatsService } from "./cats.service";
 import { GENDER_MASTER } from "./constants/gender";
-import { CreateCatDto, UpdateCatDto, CatQueryDto, KittenQueryDto } from "./dto";
+import {
+  CreateCatDto,
+  UpdateCatDto,
+  CatQueryDto,
+  KittenQueryDto,
+  CreateWeightRecordDto,
+  UpdateWeightRecordDto,
+  WeightRecordQueryDto,
+  CreateBulkWeightRecordsDto,
+} from "./dto";
 
 @ApiTags("Cats")
 @ApiBearerAuth()
@@ -177,6 +188,19 @@ export class CatsController {
     return this.catsService.getCareHistory(id);
   }
 
+  @Get(":id/family")
+  @Header('Cache-Control', 'no-cache')
+  @ApiOperation({ summary: "猫の家族情報を取得（血統タブ用）" })
+  @ApiResponse({ status: HttpStatus.OK, description: "家族情報（親・兄弟姉妹・子猫）" })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "猫データが見つかりません",
+  })
+  @ApiParam({ name: "id", description: "猫データのID" })
+  getCatFamily(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
+    return this.catsService.getCatFamily(id);
+  }
+
   @Patch(":id")
   @ApiOperation({ summary: "猫データを更新" })
   @ApiResponse({
@@ -241,5 +265,172 @@ export class CatsController {
         canonical: record.canonical,
       })),
     };
+  }
+
+  // ==========================================
+  // 体重記録 API エンドポイント
+  // ==========================================
+
+  @Get(":id/weight-records")
+  @Header("Cache-Control", "no-cache")
+  @ApiOperation({ summary: "猫の体重記録一覧を取得" })
+  @ApiResponse({ status: HttpStatus.OK, description: "体重記録一覧" })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "猫データが見つかりません",
+  })
+  @ApiParam({ name: "id", description: "猫データのID" })
+  @ApiQuery({
+    name: "page",
+    required: false,
+    description: "ページ番号",
+    example: 1,
+  })
+  @ApiQuery({
+    name: "limit",
+    required: false,
+    description: "1ページあたりの件数",
+    example: 50,
+  })
+  @ApiQuery({
+    name: "startDate",
+    required: false,
+    description: "開始日",
+  })
+  @ApiQuery({
+    name: "endDate",
+    required: false,
+    description: "終了日",
+  })
+  @ApiQuery({
+    name: "sortOrder",
+    required: false,
+    description: "ソート順",
+    example: "desc",
+  })
+  getWeightRecords(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Query() query: WeightRecordQueryDto,
+    @GetUser() user: RequestUser,
+  ) {
+    return this.catsService.getWeightRecords(id, query, user.userId);
+  }
+
+  @Post(":id/weight-records")
+  @ApiOperation({ summary: "猫の体重記録を追加" })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: "体重記録が正常に作成されました",
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "猫データが見つかりません",
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: "無効なデータです",
+  })
+  @ApiParam({ name: "id", description: "猫データのID" })
+  createWeightRecord(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Body() dto: CreateWeightRecordDto,
+    @GetUser() user: RequestUser,
+  ) {
+    this.logger.log({
+      message: "Creating weight record",
+      catId: id,
+      weight: dto.weight,
+      timestamp: new Date().toISOString(),
+    });
+    return this.catsService.createWeightRecord(id, dto, user.userId);
+  }
+
+  @Get("weight-records/:recordId")
+  @ApiOperation({ summary: "体重記録を取得" })
+  @ApiResponse({ status: HttpStatus.OK, description: "体重記録" })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "体重記録が見つかりません",
+  })
+  @ApiParam({ name: "recordId", description: "体重記録のID" })
+  getWeightRecord(
+    @Param("recordId", new ParseUUIDPipe({ version: "4" })) recordId: string,
+  ) {
+    return this.catsService.getWeightRecord(recordId);
+  }
+
+  @Patch("weight-records/:recordId")
+  @ApiOperation({ summary: "体重記録を更新" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "体重記録が正常に更新されました",
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "体重記録が見つかりません",
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: "無効なデータです",
+  })
+  @ApiParam({ name: "recordId", description: "体重記録のID" })
+  updateWeightRecord(
+    @Param("recordId", new ParseUUIDPipe({ version: "4" })) recordId: string,
+    @Body() dto: UpdateWeightRecordDto,
+    @GetUser() user: RequestUser,
+  ) {
+    this.logger.log({
+      message: "Updating weight record",
+      recordId,
+      fields: Object.keys(dto),
+      timestamp: new Date().toISOString(),
+    });
+    return this.catsService.updateWeightRecord(recordId, dto, user.userId);
+  }
+
+  @Delete("weight-records/:recordId")
+  @ApiOperation({ summary: "体重記録を削除" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "体重記録が正常に削除されました",
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "体重記録が見つかりません",
+  })
+  @ApiParam({ name: "recordId", description: "体重記録のID" })
+  deleteWeightRecord(
+    @Param("recordId", new ParseUUIDPipe({ version: "4" })) recordId: string,
+    @GetUser() user: RequestUser,
+  ) {
+    this.logger.warn({
+      message: "Deleting weight record",
+      recordId,
+      timestamp: new Date().toISOString(),
+    });
+    return this.catsService.deleteWeightRecord(recordId, user.userId);
+  }
+
+  @Post("weight-records/bulk")
+  @ApiOperation({ summary: "複数の猫の体重を一括登録" })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: "体重記録が正常に一括作成されました",
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: "無効なデータです",
+  })
+  createBulkWeightRecords(
+    @Body() dto: CreateBulkWeightRecordsDto,
+    @GetUser() user: RequestUser,
+  ) {
+    this.logger.log({
+      message: "Creating bulk weight records",
+      count: dto.records.length,
+      recordedAt: dto.recordedAt,
+      timestamp: new Date().toISOString(),
+    });
+    return this.catsService.createBulkWeightRecords(dto, user.userId);
   }
 }

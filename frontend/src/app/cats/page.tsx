@@ -19,7 +19,7 @@ import {
   Table,
 } from '@mantine/core';
 import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
-import { useGetCats, useGetCatStatistics, useDeleteCat, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
+import { useGetCats, useGetCatStatistics, useDeleteCat, type Cat, type GetCatsParams, type TabCounts } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { CatEditModal } from '@/components/cats/cat-edit-modal';
@@ -165,7 +165,22 @@ export default function CatsPage() {
     staleTime: 5 * 60 * 1000, // 5分間はキャッシュを使用
   });
 
-  useGetCatStatistics();
+  // 統計情報を取得（タブカウント用）
+  const { data: statisticsData, isLoading: isStatisticsLoading } = useGetCatStatistics({
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5分間はキャッシュを使用
+  });
+
+  // サーバーサイドのタブカウントを使用（フォールバック付き）
+  const tabCounts: TabCounts = statisticsData?.tabCounts ?? {
+    total: 0,
+    male: 0,
+    female: 0,
+    kitten: 0,
+    raising: 0,
+    grad: 0,
+  };
 
   // URLパラメータからタブを取得して反映
   useEffect(() => {
@@ -208,7 +223,7 @@ export default function CatsPage() {
 
   const apiCats = data?.data || [];
 
-  // 在舎猫のみを対象とする
+  // 在舎猫のみを対象とする（フィルタリング用）
   const inHouseCats = apiCats.filter((cat: Cat) => cat.isInHouse);
 
   // 子猫判定関数（6ヶ月未満）を先に定義
@@ -219,36 +234,17 @@ export default function CatsPage() {
     return ageInMonths < 6;
   };
 
-  // 成猫のみ（子猫を除外）
+  // 成猫のみ（子猫を除外）- フィルタリング用
   const adultCats = inHouseCats.filter((cat: Cat) => !isKittenFunc(cat.birthDate));
 
-  // Cats: 在舎登録されている成猫のみカウント（子猫除外）
-  const totalCount = adultCats.length;
-
-  // Male: 在舎猫登録されていて、性別がMaleの成猫のみ（子猫除外）
-  const maleCount = adultCats.filter((cat: Cat) => cat.gender === 'MALE').length;
-
-  // Female: 在舎猫登録されていて、性別がFemaleの成猫のみ（子猫除外）
-  const femaleCount = adultCats.filter((cat: Cat) => cat.gender === 'FEMALE').length;
-
-  // Kitten: 母猫名が入力されてる生後3ヶ月以内の猫
-  const kittenCount = inHouseCats.filter((cat: Cat) => {
-    if (!cat.birthDate || !cat.motherId) return false;
-    const birthDate = new Date(cat.birthDate);
-    const today = new Date();
-    const ageInDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
-    return ageInDays <= 90; // 3ヶ月(90日)以内
-  }).length;
-
-  // Raising: 養成中タグがついてる猫
-  const raisingCount = inHouseCats.filter((cat: Cat) => {
-    return cat.tags?.some((catTag) => catTag.tag.name === '養成中');
-  }).length;
-
-  // Grad: 卒業予定タグがついてる猫
-  const gradCount = inHouseCats.filter((cat: Cat) => {
-    return cat.tags?.some((catTag) => catTag.tag.name === '卒業予定');
-  }).length;
+  // タブカウントはサーバーサイドの統計データを使用
+  // ローディング中はフォールバック値（0）を表示
+  const totalCount = tabCounts.total;
+  const maleCount = tabCounts.male;
+  const femaleCount = tabCounts.female;
+  const kittenCount = tabCounts.kitten;
+  const raisingCount = tabCounts.raising;
+  const gradCount = tabCounts.grad;
 
   // 年齢計算関数
   const calculateAge = (birthDate: string) => {
@@ -462,12 +458,12 @@ export default function CatsPage() {
               style={{ flex: 1, minWidth: 'fit-content' }}
             >
               <Tabs.List>
-                <Tabs.Tab value="cats">Cats ({totalCount})</Tabs.Tab>
-                <Tabs.Tab value="male">Male ({maleCount})</Tabs.Tab>
-                <Tabs.Tab value="female">Female ({femaleCount})</Tabs.Tab>
-                <Tabs.Tab value="kitten">Kitten ({kittenCount})</Tabs.Tab>
-                <Tabs.Tab value="raising">Raising ({raisingCount})</Tabs.Tab>
-                <Tabs.Tab value="grad">Grad ({gradCount})</Tabs.Tab>
+                <Tabs.Tab value="cats">Cats ({isStatisticsLoading ? '...' : totalCount})</Tabs.Tab>
+                <Tabs.Tab value="male">Male ({isStatisticsLoading ? '...' : maleCount})</Tabs.Tab>
+                <Tabs.Tab value="female">Female ({isStatisticsLoading ? '...' : femaleCount})</Tabs.Tab>
+                <Tabs.Tab value="kitten">Kitten ({isStatisticsLoading ? '...' : kittenCount})</Tabs.Tab>
+                <Tabs.Tab value="raising">Raising ({isStatisticsLoading ? '...' : raisingCount})</Tabs.Tab>
+                <Tabs.Tab value="grad">Grad ({isStatisticsLoading ? '...' : gradCount})</Tabs.Tab>
               </Tabs.List>
             </Tabs>
 

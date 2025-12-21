@@ -309,7 +309,7 @@ Next.js 15（App Router）+ React 19 + NestJS 10 + Prisma 6 + PostgreSQL 15 の�
 
 【要件】
 1. 家族タブに以下を表示:
-   - 親（父猫・母猫）へのリンク
+   - 血統書管理へのリンク（PedigreeID）
    - 兄弟姉妹一覧（同じ母猫を持つ猫）
    - 子猫一覧（この猫が親の場合）
    - 簡易家系図（3世代程度）
@@ -318,8 +318,6 @@ Next.js 15（App Router）+ React 19 + NestJS 10 + Prisma 6 + PostgreSQL 15 の�
    - `GET /cats/:id/family` - 親・兄弟・子の情報を一括取得
 
 3. フロントエンド: 家族タブUI
-   - 親情報カード
-   - 兄弟姉妹リスト
    - 子猫リスト（メスの場合）
    - 簡易家系図コンポーネント
 
@@ -737,5 +735,12 @@ pnpm --filter frontend run test
 - 大規模な変更前には必ずブランチを作成
 - API 変更時は OpenAPI 仕様も更新（`pnpm --filter backend run swagger:gen`）
 - フロントエンドの型定義は `pnpm --filter frontend generate:api-types` で同期
+
+
+
+
+
+
+
 
 
