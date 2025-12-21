@@ -2,21 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from './email.service';
 
-// Resend SDKのモック
-jest.mock('resend', () => {
-  return {
-    Resend: jest.fn().mockImplementation(() => ({
-      emails: {
-        send: jest.fn(),
-      },
-    })),
-  };
-});
-
 describe('EmailService', () => {
   let service: EmailService;
-  let configService: ConfigService;
   let mockResendSend: jest.Mock;
+
+  // Resendインスタンスのモック
+  const mockResendInstance = {
+    emails: {
+      send: jest.fn(),
+    },
+  };
 
   const mockConfigServiceEnabled = {
     get: jest.fn((key: string, defaultValue?: string) => {
@@ -43,6 +38,10 @@ describe('EmailService', () => {
 
   describe('when email is enabled', () => {
     beforeEach(async () => {
+      // Resendのモックをリセット
+      mockResendInstance.emails.send = jest.fn();
+      mockResendSend = mockResendInstance.emails.send;
+
       const module: TestingModule = await Test.createTestingModule({
         providers: [
           EmailService,
@@ -54,12 +53,9 @@ describe('EmailService', () => {
       }).compile();
 
       service = module.get<EmailService>(EmailService);
-      configService = module.get<ConfigService>(ConfigService);
 
-      // Resendのsendメソッドのモックを取得
-      const Resend = require('resend').Resend;
-      const resendInstance = new Resend();
-      mockResendSend = resendInstance.emails.send as jest.Mock;
+      // サービス内部のresendインスタンスを置き換え
+      (service as unknown as { resend: typeof mockResendInstance }).resend = mockResendInstance;
     });
 
     afterEach(() => {
