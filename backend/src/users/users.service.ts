@@ -11,6 +11,7 @@ import {
 import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { InviteUserDto } from './dto/invite-user.dto';
@@ -51,7 +52,10 @@ export interface UserProfileData {
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   /**
    * 指定されたロールが高権限ロール（SUPER_ADMIN, TENANT_ADMIN）かどうかをチェック
@@ -328,11 +332,23 @@ export class UsersService {
       timestamp: new Date().toISOString(),
     });
 
+    // 招待メールを送信
+    const emailSent = await this.emailService.sendInvitationEmail(
+      email,
+      invitation.token,
+      tenant.name,
+      role,
+    );
+
+    if (!emailSent) {
+      this.logger.warn(`Failed to send invitation email to ${email}, but invitation was created successfully`);
+    }
+
     return {
       success: true,
       invitationToken: invitation.token,
       tenantId,
-      message: '招待を作成しました',
+      message: emailSent ? '招待メールを送信しました' : '招待を作成しましたが、メール送信に失敗しました',
     };
   }
 

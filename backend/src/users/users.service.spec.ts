@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { InviteUserDto } from './dto/invite-user.dto';
@@ -42,6 +43,10 @@ describe('UsersService', () => {
     }),
   };
 
+  const mockEmailService = {
+    sendInvitationEmail: jest.fn().mockResolvedValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -49,6 +54,10 @@ describe('UsersService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
@@ -63,6 +72,7 @@ describe('UsersService', () => {
     mockPrismaService.user.findUnique.mockClear();
     mockPrismaService.user.findFirst.mockClear();
     mockPrismaService.invitationToken.create.mockClear();
+    mockEmailService.sendInvitationEmail.mockClear();
   });
 
   describe('listUsers', () => {
@@ -349,11 +359,17 @@ describe('UsersService', () => {
 
         expect(result.success).toBe(true);
         expect(result.tenantId).toBe('tenant-1');
-        expect(result.message).toBe('招待を作成しました');
+        expect(result.message).toBe('招待メールを送信しました');
         expect(mockPrismaService.tenant.findUnique).toHaveBeenCalledWith({
           where: { id: 'tenant-1' },
         });
         expect(mockPrismaService.invitationToken.create).toHaveBeenCalled();
+        expect(mockEmailService.sendInvitationEmail).toHaveBeenCalledWith(
+          'newuser@example.com',
+          'mock-token-123',
+          'Test Tenant',
+          UserRole.USER,
+        );
       });
 
       it('TENANT_ADMIN を招待できる', async () => {

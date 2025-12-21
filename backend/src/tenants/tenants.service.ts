@@ -13,6 +13,7 @@ import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -36,6 +37,7 @@ export class TenantsService {
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly jwt: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -238,7 +240,18 @@ export class TenantsService {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: メール送信実装
+    // 招待メールを送信
+    const emailSent = await this.emailService.sendInvitationEmail(
+      email,
+      result.invitation.token,
+      result.tenant.name,
+      UserRole.TENANT_ADMIN,
+    );
+
+    if (!emailSent) {
+      this.logger.warn(`Failed to send invitation email to ${email}, but invitation was created successfully`);
+    }
+
     // 開発環境では安全な形式でトークン情報を出力
     if (process.env.NODE_ENV !== 'production') {
       const tokenPreview = `${result.invitation.token.substring(0, 8)}...`;
@@ -250,7 +263,7 @@ export class TenantsService {
       success: true,
       tenantId: result.tenant.id,
       invitationToken: result.invitation.token,
-      message: '招待メールを送信しました',
+      message: emailSent ? '招待メールを送信しました' : '招待を作成しましたが、メール送信に失敗しました',
     };
   }
 
@@ -317,7 +330,19 @@ export class TenantsService {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: メール送信実装
+    // 招待メールを送信
+    const emailSent = await this.emailService.sendInvitationEmail(
+      email,
+      invitation.token,
+      tenant.name,
+      dto.role,
+    );
+
+    if (!emailSent) {
+      this.logger.warn(`Failed to send invitation email to ${email}, but invitation was created successfully`);
+    }
+
+    // 開発環境では安全な形式でトークン情報を出力
     if (process.env.NODE_ENV !== 'production') {
       const tokenPreview = `${invitation.token.substring(0, 8)}...`;
       this.logger.log(`Invitation token created for ${email} (preview: ${tokenPreview})`);
@@ -327,7 +352,7 @@ export class TenantsService {
     return {
       success: true,
       invitationToken: invitation.token,
-      message: '招待メールを送信しました',
+      message: emailSent ? '招待メールを送信しました' : '招待を作成しましたが、メール送信に失敗しました',
     };
   }
 

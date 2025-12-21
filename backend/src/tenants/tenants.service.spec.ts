@@ -5,6 +5,7 @@ import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -44,6 +45,10 @@ describe('TenantsService', () => {
     signAsync: jest.fn(),
   };
 
+  const mockEmailService = {
+    sendInvitationEmail: jest.fn().mockResolvedValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,6 +64,10 @@ describe('TenantsService', () => {
         {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
