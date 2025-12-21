@@ -24,4 +24,4 @@ send.nekoya.co.jp. 3600 IN MX 10 feedback-smtp.ap-northeast-1.amazonses.com.
 nekoya.co.jp. 3600 IN MX 10 inbound-smtp.ap-northeast-1.amazonaws.com.
 
 ; DMARC (メール認証ポリシー)
-_dmarc.nekoya.co.jp. 3600 IN TXT "v=DMARC1; p=none;"
+_dmarc.nekoya.co.jp. 3600 IN TXT "v=DMARC1; p=none; rua=mailto:dmarc-reports@nekoya.co.jp;"

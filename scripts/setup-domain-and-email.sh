@@ -63,26 +63,26 @@ echo ""
 echo "シークレットを作成中..."
 
 # Resend APIキー
-if gcloud secrets describe RESEND_API_KEY_production --project=$PROJECT_ID &>/dev/null; then
-    echo "RESEND_API_KEY_production は既に存在します。バージョンを追加します。"
-    echo -n "$RESEND_API_KEY" | gcloud secrets versions add RESEND_API_KEY_production \
+if gcloud secrets describe RESEND_API_KEY --project=$PROJECT_ID &>/dev/null; then
+    echo "RESEND_API_KEY は既に存在します。バージョンを追加します。"
+    echo -n "$RESEND_API_KEY" | gcloud secrets versions add RESEND_API_KEY \
         --data-file=- \
         --project=$PROJECT_ID
 else
-    gcloud secrets create RESEND_API_KEY_production \
+    gcloud secrets create RESEND_API_KEY \
         --replication-policy="automatic" \
         --project=$PROJECT_ID
     
-    echo -n "$RESEND_API_KEY" | gcloud secrets versions add RESEND_API_KEY_production \
+    echo -n "$RESEND_API_KEY" | gcloud secrets versions add RESEND_API_KEY \
         --data-file=- \
         --project=$PROJECT_ID
 fi
 
-echo -e "${GREEN}✓${NC} RESEND_API_KEY_production を登録しました"
+echo -e "${GREEN}✓${NC} RESEND_API_KEY を登録しました"
 
 # 権限付与
 echo "Cloud Runサービスアカウントに権限を付与中..."
-gcloud secrets add-iam-policy-binding RESEND_API_KEY_production \
+gcloud secrets add-iam-policy-binding RESEND_API_KEY \
     --member="serviceAccount:cloud-run-backend@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor" \
     --project=$PROJECT_ID
