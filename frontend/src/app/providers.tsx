@@ -33,6 +33,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       fontWeight: '600',
     },
     defaultRadius: 'md',
+    // セクション間隔を統一（7-11pxの範囲）
+    spacing: {
+      xs: '6px',
+      sm: '8px',
+      md: '10px',
+      lg: '12px',
+      xl: '16px',
+    },
     components: {
       Button: {
         styles: {
