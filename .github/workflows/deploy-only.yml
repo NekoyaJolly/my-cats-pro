@@ -281,9 +281,9 @@ jobs:
           # Build Cloud SQL connection name
           CLOUD_SQL_CONN="${PROJECT_ID}:${{ env.REGION }}:${SQL_INSTANCE}"
           
-          # Build service URLs (will be updated after first deployment)
-          BACKEND_URL="https://mycats-pro-backend-518939509282.${{ env.REGION }}.run.app"
-          FRONTEND_URL="https://mycats-pro-frontend-518939509282.${{ env.REGION }}.run.app"
+          # Production URLs - 独自ドメインを使用
+          BACKEND_URL="https://api.nekoya.co.jp"
+          FRONTEND_URL="https://nekoya.co.jp"
           
           gcloud builds submit \
             --config=cloudbuild.yaml \
