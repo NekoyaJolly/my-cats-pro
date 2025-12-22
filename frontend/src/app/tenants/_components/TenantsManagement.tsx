@@ -9,6 +9,7 @@ import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { TenantsList } from './TenantsList';
 import { UsersList } from './UsersList';
 import { UserProfileForm } from './UserProfileForm';
+import { BottomNavSettings } from './BottomNavSettings';
 import { InviteUserModal } from './InviteUserModal';
 import { ActionMenu } from './ActionMenu';
 
@@ -94,16 +95,26 @@ export function TenantsManagement() {
           {hasUserManagementAccess && <Tabs.Tab value="users">ユーザー一覧</Tabs.Tab>}
         </Tabs.List>
 
+        {/* 
+         * タブパネルは条件付きでレンダリングし、アクティブなタブのみコンポーネントをマウントする。
+         * これにより、権限がないユーザーがページに入った時に、
+         * 不要なAPIコールが発生して403エラーになることを防ぐ。
+         */}
         <Tabs.Panel value="profile" pt="md">
-          <UserProfileForm />
+          {activeTab === 'profile' && (
+            <Stack gap="lg">
+              <UserProfileForm />
+              <BottomNavSettings />
+            </Stack>
+          )}
         </Tabs.Panel>
 
         <Tabs.Panel value="tenants" pt="md">
-          <TenantsList />
+          {activeTab === 'tenants' && isSuperAdmin && <TenantsList />}
         </Tabs.Panel>
 
         <Tabs.Panel value="users" pt="md">
-          <UsersList />
+          {activeTab === 'users' && hasUserManagementAccess && <UsersList />}
         </Tabs.Panel>
       </Tabs>
 

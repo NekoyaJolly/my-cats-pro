@@ -3,6 +3,7 @@ import {
   Get, 
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query, 
@@ -178,5 +179,32 @@ export class UsersController {
     @Body() dto: UpdateUserRoleDto,
   ) {
     return this.usersService.updateUserRole(user, id, dto);
+  }
+
+  /**
+   * ユーザー削除
+   * 
+   * - SUPER_ADMIN: 任意のユーザーを削除可能（自分自身と他の SUPER_ADMIN は削除不可）
+   * - TENANT_ADMIN: 自テナントの ADMIN / USER のみ削除可能
+   */
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'ユーザー削除',
+    description: 'SUPER_ADMINは任意のユーザー（自分と他のSUPER_ADMINを除く）、TENANT_ADMINは自テナントのADMIN/USERを削除します。' 
+  })
+  @ApiParam({ name: 'id', description: '対象ユーザー ID' })
+  @ApiResponse({ status: 200, description: 'ユーザーが削除されました' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  @ApiResponse({ status: 404, description: 'ユーザーが見つかりません' })
+  async deleteUser(
+    @GetUser() user: RequestUser,
+    @Param('id') id: string,
+  ) {
+    return this.usersService.deleteUser(user, id);
   }
 }

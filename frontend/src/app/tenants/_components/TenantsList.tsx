@@ -15,7 +15,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconPlus, IconUserPlus } from '@tabler/icons-react';
+import { IconAlertCircle, IconPlus, IconUserPlus, IconTrash } from '@tabler/icons-react';
 import { apiClient, apiRequest } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
 import { ActionButton } from '@/components/ActionButton';
@@ -68,6 +68,11 @@ export function TenantsList() {
 
   // 招待モーダルの状態
   const [inviteAdminOpened, { open: openInviteAdmin, close: closeInviteAdmin }] = useDisclosure(false);
+
+  // 削除確認モーダルの状態
+  const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
+  const [deletingTenant, setDeletingTenant] = useState<Tenant | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
@@ -189,6 +194,63 @@ export function TenantsList() {
     fetchTenants();
   };
 
+  // 削除ボタンがクリックされたときのハンドラ
+  const handleDeleteClick = (tenant: Tenant) => {
+    setDeletingTenant(tenant);
+    openDeleteModal();
+  };
+
+  // 削除確認ダイアログを閉じる
+  const handleDeleteModalClose = () => {
+    if (!deleteLoading) {
+      setDeletingTenant(null);
+      closeDeleteModal();
+    }
+  };
+
+  // テナント削除処理
+  const handleDeleteTenant = async () => {
+    if (!deletingTenant) return;
+
+    try {
+      setDeleteLoading(true);
+
+      const response = await apiRequest(`/tenants/${deletingTenant.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.success) {
+        notifications.show({
+          title: '成功',
+          message: 'テナントを削除しました',
+          color: 'green',
+        });
+        handleDeleteModalClose();
+        // 一覧を再取得
+        fetchTenants();
+      } else {
+        const errorMessage =
+          response.error ||
+          response.message ||
+          'テナントの削除に失敗しました';
+        notifications.show({
+          title: 'エラー',
+          message: errorMessage,
+          color: 'red',
+        });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'エラーが発生しました';
+      notifications.show({
+        title: 'エラー',
+        message,
+        color: 'red',
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   // アクションメニュー項目を生成
   const getActionItems = () => {
     if (!isSuperAdmin) return [];
@@ -275,9 +337,19 @@ export function TenantsList() {
                   </Table.Td>
                   {isSuperAdmin && (
                     <Table.Td>
-                      <ActionButton action="edit" size="xs" onClick={() => handleEditClick(tenant)}>
-                        編集
-                      </ActionButton>
+                      <Group gap="xs" wrap="nowrap">
+                        <ActionButton action="edit" size="xs" onClick={() => handleEditClick(tenant)}>
+                          編集
+                        </ActionButton>
+                        <ActionButton
+                          action="delete"
+                          size="xs"
+                          onClick={() => handleDeleteClick(tenant)}
+                          leftSection={<IconTrash size={14} />}
+                        >
+                          削除
+                        </ActionButton>
+                      </Group>
                     </Table.Td>
                   )}
                 </Table.Tr>
@@ -337,6 +409,34 @@ export function TenantsList() {
         opened={inviteAdminOpened}
         onClose={closeInviteAdmin}
       />
+
+      {/* テナント削除確認モーダル */}
+      <Modal
+        opened={deleteModalOpened}
+        onClose={handleDeleteModalClose}
+        title="テナント削除の確認"
+        size="md"
+      >
+        <Stack gap="md">
+          <Text>
+            以下のテナントを削除しますか？この操作は取り消せません。
+          </Text>
+          <Text fw={600} size="lg">
+            {deletingTenant?.name}
+          </Text>
+          <Text size="sm" c="dimmed">
+            ※所属ユーザーがいる場合は削除できません。
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <ActionButton action="cancel" onClick={handleDeleteModalClose} disabled={deleteLoading}>
+              キャンセル
+            </ActionButton>
+            <ActionButton action="delete" onClick={handleDeleteTenant} loading={deleteLoading}>
+              削除
+            </ActionButton>
+          </Group>
+        </Stack>
+      </Modal>
     </Stack>
   );
 }
