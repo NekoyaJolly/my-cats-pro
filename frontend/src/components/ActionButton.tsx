@@ -62,6 +62,7 @@ const ACTION_STYLES: Record<
   save: {
     variant: 'outline',
     color: 'blue',
+    textColor: 'dark',
     icon: IconDeviceFloppy,
   },
   cancel: {
@@ -72,6 +73,7 @@ const ACTION_STYLES: Record<
   confirm: {
     variant: 'outline',
     color: 'blue',
+    textColor: 'dark',
     icon: IconCheck,
   },
   back: {

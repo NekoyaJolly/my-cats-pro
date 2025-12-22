@@ -139,8 +139,8 @@ _ENVIRONMENT=production
 - **Backend Service Account**: `cloud-run-backend@my-cats-pro.iam.gserviceaccount.com`
 - **Frontend Service Account**: `cloud-run-frontend@my-cats-pro.iam.gserviceaccount.com`
 - **NODE_ENV**: `production`
-- **Backend URL**: `https://mycats-pro-backend-518939509282.asia-northeast1.run.app`
-- **Frontend URL**: `https://mycats-pro-frontend-518939509282.asia-northeast1.run.app`
+- **Backend URL**: `https://api.nekoya.co.jp` (独自ドメイン)
+- **Frontend URL**: `https://nekoya.co.jp` (独自ドメイン)
 - **CORS_ORIGIN**: production frontend URL (デフォルト値を使用)
 - **NEXT_PUBLIC_API_URL**: production backend API URL (デフォルト値を使用)
 

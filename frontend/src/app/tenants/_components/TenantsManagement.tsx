@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Stack, Title, Tabs, Alert, Loader, Center, Group } from '@mantine/core';
+import { useState, useEffect } from 'react';
+import { Stack, Tabs, Alert, Loader, Center, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconUserPlus } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
+import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { TenantsList } from './TenantsList';
 import { UsersList } from './UsersList';
 import { UserProfileForm } from './UserProfileForm';
@@ -21,10 +22,17 @@ import { ActionMenu } from './ActionMenu';
  */
 export function TenantsManagement() {
   const { user, isAuthenticated, initialized } = useAuth();
+  const { setPageHeader } = usePageHeader();
   const [activeTab, setActiveTab] = useState<string | null>('profile');
 
   // 招待モーダルの状態
   const [inviteUserOpened, { open: openInviteUser, close: closeInviteUser }] = useDisclosure(false);
+
+  // ページヘッダーを設定
+  useEffect(() => {
+    setPageHeader('ユーザー管理');
+    return () => setPageHeader(null);
+  }, [setPageHeader]);
 
   // 権限チェック
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
@@ -73,12 +81,11 @@ export function TenantsManagement() {
 
   return (
     <Stack gap="lg" p="md">
-      <Group justify="space-between" align="center">
-        <Title order={2}>ユーザー設定</Title>
-        {actionItems.length > 0 && (
+      {actionItems.length > 0 && (
+        <Group justify="flex-end">
           <ActionMenu items={actionItems} buttonLabel="アクション" />
-        )}
-      </Group>
+        </Group>
+      )}
 
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>

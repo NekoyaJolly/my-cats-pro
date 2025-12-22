@@ -1,4 +1,5 @@
 :root {
+  /* カラー */
   --background-base: #f5f7fb;
   --background-soft: #eef2f9;
   --surface: #ffffff;
@@ -9,6 +10,13 @@
   --text-muted: #64748b;
   --accent: #2563eb;
   --accent-subtle: #e0ecff;
+  
+  /* セクション間隔（統一用） */
+  --section-gap: 8px;
+  --section-gap-sm: 6px;
+  --section-gap-md: 10px;
+  --section-gap-lg: 12px;
+  
   color-scheme: light;
 }
 
