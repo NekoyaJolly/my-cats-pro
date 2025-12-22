@@ -15,7 +15,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconPlus, IconUserPlus, IconTrash } from '@tabler/icons-react';
+import { IconAlertCircle, IconPlus, IconUserPlus } from '@tabler/icons-react';
 import { apiClient, apiRequest } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
 import { ActionButton } from '@/components/ActionButton';
@@ -345,7 +345,6 @@ export function TenantsList() {
                           action="delete"
                           size="xs"
                           onClick={() => handleDeleteClick(tenant)}
-                          leftSection={<IconTrash size={14} />}
                         >
                           削除
                         </ActionButton>
