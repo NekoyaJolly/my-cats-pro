@@ -82,7 +82,7 @@ fi
 if grep -q "_CORS_ORIGIN=https://nekoya.co.jp" .github/workflows/deploy-only.yml; then
     success "Production includes CORS origin (独自ドメイン)"
 else
-    failure "Production missing CORS origin (should be https://nekoya.co.jp)"
+    failure "Production missing CORS origin (should be https://nekoya.co.jp in .github/workflows/deploy-only.yml)"
 fi
 
 if grep -q "_DATABASE_URL_SECRET_NAME=DATABASE_URL,_DATABASE_URL_SECRET_VERSION=1" .github/workflows/deploy-only.yml; then
