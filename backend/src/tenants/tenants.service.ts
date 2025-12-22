@@ -554,4 +554,68 @@ export class TenantsService {
       data: updatedTenant,
     };
   }
+
+  /**
+   * テナントを削除
+   * SUPER_ADMIN のみが実行可能
+   * 所属ユーザーがいる場合は削除不可
+   * 
+   * @param tenantId テナント ID
+   * @param currentUser 現在のユーザー情報
+   * @returns 削除結果
+   * @throws NotFoundException テナントが見つからない場合
+   * @throws ForbiddenException 権限がない場合
+   * @throws ConflictException 所属ユーザーが存在する場合
+   */
+  async deleteTenant(tenantId: string, currentUser: RequestUser) {
+    // SUPER_ADMIN のみ削除可能
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('テナントを削除する権限がありません');
+    }
+
+    // テナントの存在確認と所属ユーザー数を取得
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: {
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('テナントが見つかりません');
+    }
+
+    // 所属ユーザーがいる場合は削除不可
+    if (tenant._count.users > 0) {
+      throw new ConflictException(
+        `このテナントには${tenant._count.users}人のユーザーが所属しているため削除できません。先にユーザーを削除してください。`
+      );
+    }
+
+    // 関連する招待トークンを削除
+    await this.prisma.invitationToken.deleteMany({
+      where: { tenantId },
+    });
+
+    // テナント削除
+    await this.prisma.tenant.delete({
+      where: { id: tenantId },
+    });
+
+    this.logger.log({
+      message: 'Tenant deleted',
+      tenantId,
+      deletedBy: currentUser.userId,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      message: 'テナントを削除しました',
+    };
+  }
 }

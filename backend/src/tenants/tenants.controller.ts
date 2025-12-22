@@ -3,6 +3,7 @@ import {
   Get,
   Post, 
   Patch,
+  Delete,
   Body, 
   Param, 
   UseGuards,
@@ -186,5 +187,31 @@ export class TenantsController {
   @ApiResponse({ status: 409, description: 'メールアドレスが既に使用されています' })
   async completeInvitation(@Body() dto: CompleteInvitationDto) {
     return this.tenantsService.completeInvitation(dto);
+  }
+
+  /**
+   * テナント削除
+   * SUPER_ADMIN のみがアクセス可能
+   * 所属ユーザーがいる場合は削除不可
+   */
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'テナント削除',
+    description: 'SuperAdminのみが実行可能。指定IDのテナントを削除します。所属ユーザーがいる場合は削除できません。' 
+  })
+  @ApiResponse({ status: 200, description: 'テナントが削除されました' })
+  @ApiResponse({ status: 401, description: '認証が必要です' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  @ApiResponse({ status: 404, description: 'テナントが見つかりません' })
+  @ApiResponse({ status: 409, description: '所属ユーザーが存在するため削除できません' })
+  async deleteTenant(
+    @Param('id') id: string,
+    @GetUser() user: RequestUser,
+  ) {
+    return this.tenantsService.deleteTenant(id, user);
   }
 }
