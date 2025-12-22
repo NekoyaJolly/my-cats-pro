@@ -65,6 +65,8 @@ coverage/
 # Prisma
 prisma/dev.db
 prisma/dev.db-journal
+# Auto-generated Prisma schema documentation
+backend/prisma/schema_prisma.txt
 
 # TypeScript
 *.tsbuildinfo
