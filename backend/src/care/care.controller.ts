@@ -29,11 +29,13 @@ import {
   CareScheduleListResponseDto,
   CareScheduleResponseDto,
   CompleteCareDto,
+  CompleteMedicalRecordDto,
   CreateCareScheduleDto,
   CreateMedicalRecordDto,
   MedicalRecordListResponseDto,
   MedicalRecordQueryDto,
   MedicalRecordResponseDto,
+  UpdateMedicalRecordDto,
 } from "./dto";
 
 @ApiTags("Care")
@@ -116,5 +118,46 @@ export class CareController {
     @GetUser() user?: RequestUser,
   ) {
     return this.careService.addMedicalRecord(dto, user?.userId);
+  }
+
+  @Get("medical-records/:id")
+  @ApiOperation({ summary: "医療記録の詳細取得" })
+  @ApiResponse({ status: HttpStatus.OK, type: MedicalRecordResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "医療記録が見つかりません" })
+  @ApiParam({ name: "id", description: "医療記録ID" })
+  findMedicalRecordById(@Param("id") id: string) {
+    return this.careService.findMedicalRecordById(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("medical-records/:id")
+  @ApiOperation({ summary: "医療記録の更新" })
+  @ApiResponse({ status: HttpStatus.OK, type: MedicalRecordResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "医療記録が見つかりません" })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "無効なデータです" })
+  @ApiParam({ name: "id", description: "医療記録ID" })
+  updateMedicalRecord(
+    @Param("id") id: string,
+    @Body() dto: UpdateMedicalRecordDto,
+    @GetUser() user?: RequestUser,
+  ) {
+    return this.careService.updateMedicalRecord(id, dto, user?.userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("medical-records/:id/complete")
+  @ApiOperation({ summary: "医療記録の完了" })
+  @ApiResponse({ status: HttpStatus.OK, type: MedicalRecordResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "医療記録が見つかりません" })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "既に完了済みです" })
+  @ApiParam({ name: "id", description: "医療記録ID" })
+  completeMedicalRecord(
+    @Param("id") id: string,
+    @Body() dto: CompleteMedicalRecordDto,
+    @GetUser() user?: RequestUser,
+  ) {
+    return this.careService.completeMedicalRecord(id, dto, user?.userId);
   }
 }
