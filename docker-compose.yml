@@ -27,14 +27,15 @@ services:
       dockerfile: Dockerfile.backend
     container_name: mycats_backend
     restart: unless-stopped
+    env_file:
+      - .env.docker
     environment:
-      NODE_ENV: development
-      PORT: 8080
-      DATABASE_URL: postgresql://mycats:mycats_dev_password@postgres:5432/mycats_development
-      CORS_ORIGIN: http://localhost:3000
-      JWT_SECRET: your-development-jwt-secret-key-change-in-production
-      JWT_REFRESH_SECRET: your-development-jwt-refresh-secret-key-change-in-production
-      AUTH_DISABLED: "false"
+      # env_file から読み込んだ値を上書きする場合はここに記述
+      # 以下は .env.docker のデフォルト値を使用
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-8080}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://mycats:mycats_dev_password@postgres:5432/mycats_development}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     ports:
       - "3004:8080"
     depends_on:
@@ -54,7 +55,9 @@ services:
     container_name: mycats_frontend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
+      # ブラウザからホストマシン上の backend (ポート 3004) へアクセスするための URL
+      # コンテナ間通信では http://backend:8080 を使用する点に注意
       NEXT_PUBLIC_API_URL: http://localhost:3004
     ports:
       - "3000:3000"
