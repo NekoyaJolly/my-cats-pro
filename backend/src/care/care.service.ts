@@ -15,11 +15,9 @@ import { PrismaService } from "../prisma/prisma.service";
 import {
   CareQueryDto,
   CompleteCareDto,
-  CompleteMedicalRecordDto,
   CreateCareScheduleDto,
   CreateMedicalRecordDto,
   MedicalRecordQueryDto,
-  UpdateMedicalRecordDto,
 } from "./dto";
 import type {
   CareScheduleListResponse,
@@ -447,128 +445,6 @@ export class CareService {
   ): Promise<MedicalRecordResponse> {
     const recorderId = await this.resolveUserId(userId);
     const record = await this.createMedicalRecordEntity(this.prisma, dto, recorderId);
-
-    return {
-      success: true,
-      data: this.mapMedicalRecordToResponse(record),
-    };
-  }
-
-  /**
-   * 医療記録を詳細取得
-   */
-  async findMedicalRecordById(id: string): Promise<MedicalRecordResponse> {
-    const record = await this.prisma.medicalRecord.findUnique({
-      where: { id },
-      include: medicalRecordInclude,
-    });
-
-    if (!record) {
-      throw new NotFoundException("医療記録が見つかりません");
-    }
-
-    return {
-      success: true,
-      data: this.mapMedicalRecordToResponse(record),
-    };
-  }
-
-  /**
-   * 医療記録を更新
-   */
-  async updateMedicalRecord(
-    id: string,
-    dto: UpdateMedicalRecordDto,
-    _userId?: string,
-  ): Promise<MedicalRecordResponse> {
-    const existing = await this.prisma.medicalRecord.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      throw new NotFoundException("医療記録が見つかりません");
-    }
-
-    // 型安全なユーティリティを使用してDTOを変換
-    const symptomDetails = dto.symptomDetails
-      ? mapDtoToSymptomDetails(dto.symptomDetails)
-      : undefined;
-    const medications = dto.medications
-      ? mapDtoToMedications(dto.medications)
-      : undefined;
-
-    const updateData: Prisma.MedicalRecordUpdateInput = {
-      ...(dto.visitDate && { visitDate: new Date(dto.visitDate) }),
-      ...(dto.visitTypeId !== undefined && { visitType: dto.visitTypeId ? { connect: { id: dto.visitTypeId } } : { disconnect: true } }),
-      ...(dto.hospitalName !== undefined && { hospitalName: this.normalizeOptionalText(dto.hospitalName) ?? null }),
-      ...(dto.symptom !== undefined && { symptom: dto.symptom }),
-      ...(symptomDetails && { symptomDetails: serializeSymptomDetails(symptomDetails) }),
-      ...(dto.diseaseName !== undefined && { diseaseName: dto.diseaseName }),
-      ...(dto.diagnosis !== undefined && { diagnosis: dto.diagnosis }),
-      ...(dto.treatmentPlan !== undefined && { treatmentPlan: dto.treatmentPlan }),
-      ...(medications && { medications: serializeMedications(medications) }),
-      ...(dto.followUpDate !== undefined && { followUpDate: dto.followUpDate ? new Date(dto.followUpDate) : null }),
-      ...(dto.status && { status: dto.status }),
-      ...(dto.notes !== undefined && { notes: dto.notes }),
-    };
-
-    // タグの更新（指定された場合のみ）
-    if (dto.tagIds !== undefined) {
-      await this.prisma.medicalRecordTag.deleteMany({
-        where: { medicalRecordId: id },
-      });
-      if (dto.tagIds.length > 0) {
-        await this.prisma.medicalRecordTag.createMany({
-          data: dto.tagIds.map((tagId) => ({
-            medicalRecordId: id,
-            tagId,
-          })),
-        });
-      }
-    }
-
-    const record = await this.prisma.medicalRecord.update({
-      where: { id },
-      data: updateData,
-      include: medicalRecordInclude,
-    });
-
-    return {
-      success: true,
-      data: this.mapMedicalRecordToResponse(record),
-    };
-  }
-
-  /**
-   * 医療記録を完了に更新
-   */
-  async completeMedicalRecord(
-    id: string,
-    dto: CompleteMedicalRecordDto,
-    _userId?: string,
-  ): Promise<MedicalRecordResponse> {
-    const existing = await this.prisma.medicalRecord.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      throw new NotFoundException("医療記録が見つかりません");
-    }
-
-    if (existing.status === MedicalRecordStatus.COMPLETED) {
-      throw new NotFoundException("この医療記録は既に完了済みです");
-    }
-
-    const updateData: Prisma.MedicalRecordUpdateInput = {
-      status: MedicalRecordStatus.COMPLETED,
-      ...(dto.completionNotes && { notes: dto.completionNotes }),
-    };
-
-    const record = await this.prisma.medicalRecord.update({
-      where: { id },
-      data: updateData,
-      include: medicalRecordInclude,
-    });
 
     return {
       success: true,

@@ -16,9 +16,10 @@ export class CreateTagAutomationRuleDto {
   @IsString()
   key?: string;
 
-  @ApiProperty({ description: "ルール名" })
+  @ApiPropertyOptional({ description: "ルール名（未入力時は自動生成）" })
+  @IsOptional()
   @IsString()
-  name!: string;
+  name?: string;
 
   @ApiPropertyOptional({ description: "ルールの説明" })
   @IsOptional()
@@ -33,13 +34,14 @@ export class CreateTagAutomationRuleDto {
   @IsEnum(TagAutomationTriggerType)
   triggerType!: TagAutomationTriggerType;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     enum: TagAutomationEventType,
     description: "イベントタイプ",
-    example: "BREEDING_PLANNED",
+    example: "PAGE_ACTION",
   })
+  @IsOptional()
   @IsEnum(TagAutomationEventType)
-  eventType!: TagAutomationEventType;
+  eventType?: TagAutomationEventType;
 
   @ApiPropertyOptional({ description: "適用範囲（スコープ）", example: "breeding" })
   @IsOptional()
@@ -65,7 +67,7 @@ export class CreateTagAutomationRuleDto {
 
   @ApiPropertyOptional({
     description: "ルール設定（JSON）",
-    example: { tagIds: ["tag-id-1", "tag-id-2"] },
+    example: { tagIds: ["tag-id-1", "tag-id-2"], actionType: "ASSIGN" },
   })
   @IsOptional()
   config?: Record<string, unknown> | null;

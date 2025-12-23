@@ -41,36 +41,44 @@ export type GroupFormValues = {
   isActive: boolean;
 };
 
-// 自動化ルールフォームの値
+// ルールタイプ（シンプル化されたUI用）
+export type RuleType = 'PAGE_ACTION' | 'AGE_THRESHOLD' | 'TAG_ASSIGNED';
+
+// アクションタイプ
+export type ActionType = 'ASSIGN' | 'REMOVE';
+
+// 自動化ルールフォームの値（シンプル化版）
 export type AutomationRuleFormValues = {
-  key: string;
-  name: string;
-  description: string;
-  triggerType: TagAutomationTriggerType;
-  eventType: TagAutomationEventType | '';
-  scope: string;
-  priority: number;
-  isActive: boolean;
+  // UI用のルールタイプ
+  ruleType: RuleType;
+  // アクション（付与/削除）
+  actionType: ActionType;
+  // 対象タグ
   tagIds: string[];
-  // 年齢閾値設定
-  ageThreshold?: {
-    type: 'kitten' | 'adult';
-    kitten?: {
-      minDays?: number;
-      maxDays?: number;
-    };
-    adult?: {
-      minMonths?: number;
-      maxMonths?: number;
-    };
-  };
+  // ルール名（任意、未入力なら自動生成）
+  name: string;
+  // メモ
+  description: string;
+  // アクティブ状態
+  isActive: boolean;
   // PAGE_ACTION設定
-  pageAction?: {
+  pageAction: {
     page: string;
     action: string;
-    targetSelection: string;
-    specificCatIds?: string[];
   };
+  // 年齢閾値設定
+  ageThreshold: {
+    ageType: 'days' | 'months';
+    threshold: number;
+  };
+  // TAG_ASSIGNED設定（特定タグ付与時の削除トリガー）
+  triggerTagId: string;
+  // 内部用（バックエンドとの互換性維持）
+  key?: string;
+  triggerType?: TagAutomationTriggerType;
+  eventType?: TagAutomationEventType | '';
+  scope?: string;
+  priority?: number;
 };
 
 // 自動化メタデータ
@@ -86,7 +94,3 @@ export type TagFiltersState = {
   scopes: string[];
   includeInactive: boolean;
 };
-
-
-
-

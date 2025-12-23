@@ -26,7 +26,7 @@ import {
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconPlus, IconEye, IconChevronDown, IconCalendarPlus, IconX, IconEdit, IconCheck } from '@tabler/icons-react';
+import { IconAlertCircle, IconPlus, IconEye, IconChevronDown, IconCalendarPlus, IconX } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 
 import {
@@ -34,8 +34,6 @@ import {
   type GetMedicalRecordsParams,
   useCreateMedicalRecord,
   useGetMedicalRecords,
-  useUpdateMedicalRecord,
-  useCompleteMedicalRecord,
 } from '@/lib/api/hooks/use-care';
 import { useGetCats } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
@@ -85,9 +83,7 @@ export default function MedicalRecordsPage() {
 
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const [detailModalOpened, { open: openDetailModal, close: closeDetailModal }] = useDisclosure(false);
-  const [editModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
   const [detailRecord, setDetailRecord] = useState<MedicalRecord | null>(null);
-  const [editRecord, setEditRecord] = useState<MedicalRecord | null>(null);
 
   const [createForm, setCreateForm] = useState<CreateMedicalRecordFormState>({
     catId: '',
@@ -115,8 +111,6 @@ export default function MedicalRecordsPage() {
 
   const medicalRecordsQuery = useGetMedicalRecords(medicalRecordsParams);
   const createMedicalRecordMutation = useCreateMedicalRecord();
-  const updateMedicalRecordMutation = useUpdateMedicalRecord();
-  const completeMedicalRecordMutation = useCompleteMedicalRecord();
 
   const catsQuery = useGetCats({ limit: 100 });
   const tagsQuery = useGetTagCategories();
@@ -536,42 +530,7 @@ export default function MedicalRecordsPage() {
               </Text>
             </Group>
 
-            <Group justify="space-between" mt="md">
-              <Group gap="xs">
-                <Button
-                  variant="light"
-                  color="yellow"
-                  leftSection={<IconEdit size={16} />}
-                  onClick={() => {
-                    setEditRecord(detailRecord);
-                    closeDetailModal();
-                    openEditModal();
-                  }}
-                >
-                  編集
-                </Button>
-                {detailRecord.status === 'TREATING' && (
-                  <Button
-                    variant="outline"
-                    color="blue"
-                    leftSection={<IconCheck size={16} />}
-                    loading={completeMedicalRecordMutation.isPending}
-                    onClick={() => {
-                      completeMedicalRecordMutation.mutate(
-                        { id: detailRecord.id, payload: {} },
-                        {
-                          onSuccess: () => {
-                            closeDetailModal();
-                            void medicalRecordsQuery.refetch();
-                          },
-                        }
-                      );
-                    }}
-                  >
-                    完了
-                  </Button>
-                )}
-              </Group>
+            <Group justify="flex-end" mt="md">
               <Button variant="subtle" color="gray" onClick={closeDetailModal}>
                 閉じる
               </Button>
@@ -754,245 +713,6 @@ export default function MedicalRecordsPage() {
           </Group>
         </Stack>
       </Modal>
-
-      {/* 編集モーダル */}
-      <Modal
-        opened={editModalOpened}
-        onClose={() => {
-          closeEditModal();
-          setEditRecord(null);
-        }}
-        title="医療記録を編集"
-        size="lg"
-      >
-        {editRecord && (
-          <EditMedicalRecordForm
-            record={editRecord}
-            cats={catsQuery.data?.data ?? []}
-            medicalTags={medicalTags}
-            tagsLoading={tagsQuery.isLoading}
-            isSubmitting={updateMedicalRecordMutation.isPending}
-            onSubmit={(payload) => {
-              updateMedicalRecordMutation.mutate(
-                { id: editRecord.id, payload },
-                {
-                  onSuccess: () => {
-                    closeEditModal();
-                    setEditRecord(null);
-                    void medicalRecordsQuery.refetch();
-                  },
-                }
-              );
-            }}
-            onCancel={() => {
-              closeEditModal();
-              setEditRecord(null);
-            }}
-          />
-        )}
-      </Modal>
     </Container>
-  );
-}
-
-// 編集フォームコンポーネント
-interface EditMedicalRecordFormProps {
-  record: MedicalRecord;
-  cats: { id: string; name: string }[];
-  medicalTags: { id: string; name: string; color?: string | null }[];
-  tagsLoading: boolean;
-  isSubmitting: boolean;
-  onSubmit: (payload: {
-    visitDate?: string;
-    hospitalName?: string;
-    diagnosis?: string;
-    treatmentPlan?: string;
-    status?: 'TREATING' | 'COMPLETED';
-    followUpDate?: string;
-    notes?: string;
-    tagIds?: string[];
-  }) => void;
-  onCancel: () => void;
-}
-
-function EditMedicalRecordForm({
-  record,
-  medicalTags,
-  tagsLoading,
-  isSubmitting,
-  onSubmit,
-  onCancel,
-}: EditMedicalRecordFormProps) {
-  const [visitDate, setVisitDate] = useState<Date | null>(
-    record.visitDate ? new Date(record.visitDate) : null
-  );
-  const [hospitalName, setHospitalName] = useState(record.hospitalName || '');
-  const [symptomTags, setSymptomTags] = useState<string[]>(
-    record.tags?.map((t) => t.id) || []
-  );
-  const [diagnosis, setDiagnosis] = useState(record.diagnosis || '');
-  const [treatmentPlan, setTreatmentPlan] = useState(record.treatmentPlan || '');
-  const [status, setStatus] = useState<string>(record.status);
-  const [followUpDate, setFollowUpDate] = useState<Date | null>(
-    record.followUpDate ? new Date(record.followUpDate) : null
-  );
-  const [notes, setNotes] = useState(record.notes || '');
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = () => {
-    if (!visitDate) {
-      setError('受診日は必須です。');
-      return;
-    }
-
-    setError(null);
-    onSubmit({
-      visitDate: dayjs(visitDate).toISOString(),
-      hospitalName: hospitalName.trim() || undefined,
-      diagnosis: diagnosis.trim() || undefined,
-      treatmentPlan: treatmentPlan.trim() || undefined,
-      status: status as 'TREATING' | 'COMPLETED',
-      followUpDate: followUpDate ? dayjs(followUpDate).toISOString() : undefined,
-      notes: notes.trim() || undefined,
-      tagIds: symptomTags.length > 0 ? symptomTags : undefined,
-    });
-  };
-
-  return (
-    <Stack gap="md">
-      {/* 対象猫（表示のみ） */}
-      <Box>
-        <Text size="sm" fw={500} mb="xs">
-          対象猫
-        </Text>
-        <Text fw={500}>{record.cat.name}</Text>
-      </Box>
-
-      {/* 受診日 */}
-      <DatePickerInput
-        label="受診日"
-        placeholder="受診日を選択"
-        value={visitDate}
-        onChange={(value) => setVisitDate(value ? new Date(value) : null)}
-        required
-      />
-
-      {/* 病院名 */}
-      <TextInput
-        label="病院名"
-        placeholder="例: ねこクリニック東京"
-        value={hospitalName}
-        onChange={(event) => setHospitalName(event.target.value)}
-      />
-
-      {/* 症状タグ */}
-      <Box>
-        <Text size="sm" fw={500} mb="xs">
-          症状タグ
-        </Text>
-        {tagsLoading ? (
-          <Skeleton height={40} />
-        ) : medicalTags.length > 0 ? (
-          <Group gap="xs" mb="sm">
-            {medicalTags.map((tag) => {
-              const isSelected = symptomTags.includes(tag.id);
-              return (
-                <Button
-                  key={tag.id}
-                  variant={isSelected ? 'filled' : 'outline'}
-                  color={isSelected ? tag.color || 'blue' : 'gray'}
-                  size="xs"
-                  rightSection={isSelected ? <IconX size={12} /> : undefined}
-                  onClick={() => {
-                    setSymptomTags((prev) =>
-                      isSelected
-                        ? prev.filter((id) => id !== tag.id)
-                        : [...prev, tag.id]
-                    );
-                  }}
-                >
-                  {tag.name}
-                </Button>
-              );
-            })}
-          </Group>
-        ) : (
-          <Alert color="yellow" icon={<IconAlertCircle size={16} />}>
-            タグ管理ページで「健康」カテゴリのタグを作成してください
-          </Alert>
-        )}
-      </Box>
-
-      {/* 診断結果 */}
-      <Textarea
-        label="診断結果"
-        placeholder="診断結果"
-        value={diagnosis}
-        onChange={(event) => setDiagnosis(event.target.value)}
-        minRows={2}
-        autosize
-      />
-
-      {/* 治療計画 */}
-      <Textarea
-        label="治療計画"
-        placeholder="治療内容や計画"
-        value={treatmentPlan}
-        onChange={(event) => setTreatmentPlan(event.target.value)}
-        minRows={2}
-        autosize
-      />
-
-      {/* 治療ステータス */}
-      <Box>
-        <Text size="sm" fw={500} mb="xs">
-          治療ステータス
-        </Text>
-        <SegmentedControl
-          value={status}
-          onChange={setStatus}
-          data={[
-            { label: '治療中', value: 'TREATING' },
-            { label: '完了', value: 'COMPLETED' },
-          ]}
-          fullWidth
-        />
-      </Box>
-
-      {/* 次回予定日 */}
-      <DatePickerInput
-        label="次回予定日"
-        placeholder="次回の受診予定日"
-        value={followUpDate}
-        onChange={(value) => setFollowUpDate(value ? new Date(value) : null)}
-      />
-
-      {/* 備考 */}
-      <Textarea
-        label="備考"
-        placeholder="その他のメモ"
-        value={notes}
-        onChange={(event) => setNotes(event.target.value)}
-        minRows={3}
-        autosize
-      />
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />}>
-          {error}
-        </Alert>
-      )}
-
-      <Divider />
-
-      <Group justify="flex-end">
-        <Button variant="subtle" onClick={onCancel}>
-          キャンセル
-        </Button>
-        <Button onClick={handleSubmit} loading={isSubmitting}>
-          更新する
-        </Button>
-      </Group>
-    </Stack>
   );
 }
