@@ -182,25 +182,30 @@ echo ""
 echo "=== Checking GCP Secret Manager (requires gcloud auth) ==="
 echo ""
 
-# Check if gcloud is available
-if command -v gcloud &> /dev/null; then
-    PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
-    if [ -n "$PROJECT_ID" ]; then
-        echo "Project: $PROJECT_ID"
-        
-        # Check for required secrets
-        for secret in DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET CSRF_TOKEN_SECRET RESEND_API_KEY; do
-            if gcloud secrets describe "$secret" --project="$PROJECT_ID" &> /dev/null; then
-                success "GCP Secret exists: $secret"
-            else
-                failure "GCP Secret missing: $secret"
-            fi
-        done
-    else
-        warning "No GCP project configured, skipping secret validation"
-    fi
+# CI環境では GCP Secret Manager の検証をスキップ
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    warning "CI環境のため GCP Secret Manager の検証をスキップします"
 else
-    warning "gcloud CLI not available, skipping GCP secret validation"
+    # Check if gcloud is available
+    if command -v gcloud &> /dev/null; then
+        PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
+        if [ -n "$PROJECT_ID" ]; then
+            echo "Project: $PROJECT_ID"
+            
+            # Check for required secrets
+            for secret in DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET CSRF_TOKEN_SECRET RESEND_API_KEY; do
+                if gcloud secrets describe "$secret" --project="$PROJECT_ID" &> /dev/null; then
+                    success "GCP Secret exists: $secret"
+                else
+                    failure "GCP Secret missing: $secret"
+                fi
+            done
+        else
+            warning "No GCP project configured, skipping secret validation"
+        fi
+    else
+        warning "gcloud CLI not available, skipping GCP secret validation"
+    fi
 fi
 
 echo ""

@@ -15,6 +15,7 @@ import {
   IconChevronRight,
   IconHomePlus,
   IconHeartHandshake,
+  IconCloud,
 } from '@tabler/icons-react';
 import { ActionButton, ActionIconButton } from '@/components/ActionButton';
 import { TagDisplay } from '@/components/TagSelector';
@@ -128,7 +129,9 @@ export function RaisingTab({
       case 'DECEASED':
         return (
           <Tooltip label="死亡">
-            <Box component="span" style={{ fontSize: '14px' }}>🌈</Box>
+            <Box component="span">
+              <IconCloud size={16} color="var(--mantine-color-gray-5)" />
+            </Box>
           </Tooltip>
         );
       default:
