@@ -267,6 +267,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
               color="blue"
               onClick={() => handleSetDisposition('TRAINING')}
               loading={createDispositionMutation.isPending}
+              aria-label="養成に設定"
             >
               <IconHomePlus size={18} />
             </ActionIcon>
@@ -278,6 +279,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
               color="green"
               onClick={() => handleSetDisposition('SALE')}
               loading={createDispositionMutation.isPending}
+              aria-label="出荷に設定"
             >
               <IconHeartHandshake size={18} />
             </ActionIcon>
@@ -289,6 +291,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
               color="gray"
               onClick={() => handleSetDisposition('DECEASED')}
               loading={createDispositionMutation.isPending}
+              aria-label="死亡に設定"
             >
               🌈
             </ActionIcon>
