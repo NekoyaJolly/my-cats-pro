@@ -129,7 +129,7 @@ export function ShippingTab({
   return (
     <Card padding="md" radius="md" withBorder>
       <Text size="sm" c="dimmed" mb="md">
-        体重{SHIPPING_WEIGHT_THRESHOLD}g超えの子猫が表示されます。行先アイコンをクリックして行先を確定してください。
+        生後3ヶ月以内で行先未確定の子猫を表示します。体重{SHIPPING_WEIGHT_THRESHOLD}g超えの子猫のみ行先を設定できます。
       </Text>
 
       <Table striped withTableBorder>
