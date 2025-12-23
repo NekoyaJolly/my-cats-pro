@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
   Text,
-  Button,
   TextInput,
   Card,
   Group,
@@ -17,12 +16,12 @@ import {
   Skeleton,
   Alert,
   Table,
-  ActionIcon,
 } from '@mantine/core';
-import { IconSearch, IconPlus, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight, IconEdit, IconTrash, IconEye } from '@tabler/icons-react';
+import { IconSearch, IconAlertCircle, IconCat, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { useGetCats, useGetCatStatistics, useDeleteCat, type Cat, type GetCatsParams, type TabCounts } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { ActionButton, ActionIconButton } from '@/components/ActionButton';
 import { CatEditModal } from '@/components/cats/cat-edit-modal';
 import { ContextMenuProvider, OperationModalManager, useContextMenu } from '@/components/context-menu';
 import { GenderBadge } from '@/components/GenderBadge';
@@ -207,14 +206,12 @@ export default function CatsPage() {
   useEffect(() => {
     setPageHeader(
       '在舎猫一覧',
-      <Button
-        variant="outline"
-        color="blue"
-        leftSection={<IconPlus size={16} />}
+      <ActionButton
+        action="create"
         onClick={() => router.push('/cats/new')}
       >
         新規登録
-      </Button>
+      </ActionButton>
     );
 
     // クリーンアップ
@@ -448,7 +445,7 @@ export default function CatsPage() {
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
       {/* メインコンテンツ */}
-      <Container size="lg" style={{ paddingTop: '1.5rem' }}>
+      <Container size="lg">
         {/* タブと検索バー・並び替えを同じ行に */}
         <Box mb="lg">
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
@@ -750,43 +747,31 @@ export default function CatsPage() {
                           {/* 操作アイコン */}
                           <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
                             <Group gap="xs" wrap="nowrap">
-                              <ActionIcon
-                                variant="light"
-                                color="yellow"
-                                size="sm"
+                              <ActionIconButton
+                                action="edit"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedCatForEdit(cat);
                                   openEditModal();
                                 }}
                                 title="編集"
-                              >
-                                <IconEdit size={16} />
-                              </ActionIcon>
-                              <ActionIcon
-                                variant="light"
-                                color="red"
-                                size="sm"
+                              />
+                              <ActionIconButton
+                                action="delete"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleContextAction('delete', cat);
                                 }}
                                 title="削除"
-                              >
-                                <IconTrash size={16} />
-                              </ActionIcon>
-                              <ActionIcon
-                                variant="light"
-                                color="gray"
-                                size="sm"
+                              />
+                              <ActionIconButton
+                                action="view"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleViewDetails(cat.id);
                                 }}
                                 title="詳細"
-                              >
-                                <IconEye size={16} />
-                              </ActionIcon>
+                              />
                             </Group>
                           </Table.Td>
                         </Table.Tr>
@@ -861,43 +846,31 @@ export default function CatsPage() {
                             {/* 操作アイコン */}
                             <Table.Td style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
                               <Group gap="xs" wrap="nowrap">
-                                <ActionIcon
-                                  variant="light"
-                                  color="yellow"
-                                  size="sm"
+                                <ActionIconButton
+                                  action="edit"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedCatForEdit(kitten);
                                     openEditModal();
                                   }}
                                   title="編集"
-                                >
-                                  <IconEdit size={16} />
-                                </ActionIcon>
-                                <ActionIcon
-                                  variant="light"
-                                  color="red"
-                                  size="sm"
+                                />
+                                <ActionIconButton
+                                  action="delete"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleContextAction('delete', kitten);
                                   }}
                                   title="削除"
-                                >
-                                  <IconTrash size={16} />
-                                </ActionIcon>
-                                <ActionIcon
-                                  variant="light"
-                                  color="gray"
-                                  size="sm"
+                                />
+                                <ActionIconButton
+                                  action="view"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleViewDetails(kitten.id);
                                   }}
                                   title="詳細"
-                                >
-                                  <IconEye size={16} />
-                                </ActionIcon>
+                                />
                               </Group>
                             </Table.Td>
                           </Table.Tr>

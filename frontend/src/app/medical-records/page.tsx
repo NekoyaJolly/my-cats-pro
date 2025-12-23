@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -22,11 +21,10 @@ import {
   Text,
   TextInput,
   Textarea,
-  Menu,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconPlus, IconEye, IconChevronDown, IconCalendarPlus, IconX } from '@tabler/icons-react';
+import { IconAlertCircle, IconCalendarPlus, IconX } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 
 import {
@@ -38,6 +36,9 @@ import {
 import { useGetCats } from '@/lib/api/hooks/use-cats';
 import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
+
+import { ActionButton } from '@/components/ActionButton';
+import { IconActionButton } from '@/components/buttons';
 
 const STATUS_LABELS = {
   TREATING: '治療中',
@@ -129,27 +130,13 @@ export default function MedicalRecordsPage() {
   useEffect(() => {
     setPageHeader(
       '医療データ',
-      <>
-        <Menu shadow="md" width={200}>
-          <Menu.Target>
-            <Button
-              variant="outline"
-              color="blue"
-              leftSection={<IconPlus size={16} />}
-              rightSection={<IconChevronDown size={16} />}
-              size="sm"
-            >
-              医療記録の登録
-            </Button>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Item leftSection={<IconCalendarPlus size={16} />} onClick={openCreateModal}>
-              新規医療記録
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      </>
+      <ActionButton
+        action="create"
+        customIcon={IconCalendarPlus}
+        onClick={openCreateModal}
+      >
+        新規医療記録
+      </ActionButton>
     );
 
     return () => setPageHeader(null);
@@ -223,7 +210,7 @@ export default function MedicalRecordsPage() {
   const isEmpty = !isInitialLoading && records.length === 0;
 
   return (
-    <Container size="lg" pb="xl">
+    <Container size="lg">
       <Card withBorder shadow="xs" radius="md">
         <LoadingOverlay visible={medicalRecordsQuery.isFetching && !medicalRecordsQuery.isLoading} zIndex={10} />
         <Stack gap="md">
@@ -266,14 +253,12 @@ export default function MedicalRecordsPage() {
                 <Text size="sm" c="dimmed" ta="center">
                   医療記録を追加して、猫の健康状態を管理しましょう。
                 </Text>
-                <Button
-                  variant="outline"
-                  color="blue"
-                  leftSection={<IconPlus size={16} />}
+                <ActionButton
+                  action="create"
                   onClick={openCreateModal}
                 >
                   医療記録を登録する
-                </Button>
+                </ActionButton>
               </Stack>
             </Card>
           ) : (
@@ -345,17 +330,13 @@ export default function MedicalRecordsPage() {
                       </Table.Td>
                       <Table.Td>
                         <Group gap="xs" justify="center">
-                          <ActionIcon
-                            variant="light"
-                            color="gray"
-                            size="sm"
+                          <IconActionButton
+                            variant="view"
                             onClick={() => {
                               setDetailRecord(record);
                               openDetailModal();
                             }}
-                          >
-                            <IconEye size={16} />
-                          </ActionIcon>
+                          />
                         </Group>
                       </Table.Td>
                     </Table.Tr>
@@ -531,9 +512,9 @@ export default function MedicalRecordsPage() {
             </Group>
 
             <Group justify="flex-end" mt="md">
-              <Button variant="subtle" color="gray" onClick={closeDetailModal}>
+              <ActionButton action="cancel" onClick={closeDetailModal}>
                 閉じる
-              </Button>
+              </ActionButton>
             </Group>
           </Stack>
         )}
@@ -701,15 +682,15 @@ export default function MedicalRecordsPage() {
           <Divider />
 
           <Group justify="flex-end">
-            <Button variant="subtle" onClick={() => {
+            <ActionButton action="cancel" onClick={() => {
               closeCreateModal();
               resetCreateForm();
             }}>
               キャンセル
-            </Button>
-            <Button onClick={handleCreateSubmit} loading={createMedicalRecordMutation.isPending}>
+            </ActionButton>
+            <ActionButton action="save" onClick={handleCreateSubmit} loading={createMedicalRecordMutation.isPending}>
               登録する
-            </Button>
+            </ActionButton>
           </Group>
         </Stack>
       </Modal>

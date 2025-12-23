@@ -26,11 +26,10 @@ import {
   Textarea,
   Checkbox,
   Accordion,
-  Menu,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconCheck, IconPlus, IconX, IconEye, IconEdit, IconTrash, IconChevronDown, IconCalendarPlus, IconLayoutGrid, IconRefresh } from '@tabler/icons-react';
+import { IconAlertCircle, IconCheck, IconPlus, IconX, IconCalendarPlus, IconLayoutGrid, IconRefresh } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 
 import {
@@ -51,6 +50,10 @@ import {
 } from '@/lib/api/hooks/use-tags';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
+
+import { ActionMenu } from '@/app/tenants/_components/ActionMenu';
+import { ActionButton } from '@/components/ActionButton';
+import { IconActionButton } from '@/components/buttons';
 
 const STATUS_LABELS = {
   PENDING: '未着手',
@@ -262,30 +265,25 @@ export default function CarePage() {
   useEffect(() => {
     setPageHeader(
       'ケアスケジュール',
-      <>
-        <Menu shadow="md" width={200}>
-          <Menu.Target>
-            <Button 
-              variant="outline" 
-              color="blue" 
-              leftSection={<IconPlus size={16} />} 
-              rightSection={<IconChevronDown size={16} />} 
-              size="sm"
-            >
-              ケアの登録
-            </Button>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Item leftSection={<IconCalendarPlus size={16} />} onClick={openCreateModal}>
-              ケア予定を追加
-            </Menu.Item>
-            <Menu.Item leftSection={<IconLayoutGrid size={16} />} onClick={openAddCardModal}>
-              カードを追加
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      </>
+      <ActionMenu
+        buttonLabel="ケアの登録"
+        buttonIcon={IconPlus}
+        action="create"
+        items={[
+          {
+            id: 'schedule',
+            label: 'ケア予定を追加',
+            icon: <IconCalendarPlus size={16} />,
+            onClick: openCreateModal,
+          },
+          {
+            id: 'card',
+            label: 'カードを追加',
+            icon: <IconLayoutGrid size={16} />,
+            onClick: openAddCardModal,
+          }
+        ]}
+      />
     );
 
     return () => setPageHeader(null);
@@ -571,7 +569,7 @@ export default function CarePage() {
   const isEmpty = !isInitialLoading && schedules.length === 0;
 
   return (
-    <Container size="lg" pb="xl">
+    <Container size="lg">
       {/* 選択されたケア名のカード表示 */}
       {selectedCareStats.length > 0 && (
         <Group grow mb="lg">
@@ -627,14 +625,12 @@ export default function CarePage() {
                 <Text size="sm" c="dimmed" ta="center">
                   ケア予定を追加して、ケアの履歴を管理しましょう。
                 </Text>
-                <Button 
-                  variant="outline" 
-                  color="blue" 
-                  leftSection={<IconPlus size={16} />} 
+                <ActionButton
+                  action="create"
                   onClick={openCreateModal}
                 >
                   ケア予定を登録する
-                </Button>
+                </ActionButton>
               </Stack>
             </Card>
           ) : (
@@ -698,46 +694,27 @@ export default function CarePage() {
                       </Table.Td>
                       <Table.Td>
                         <Group gap="xs" justify="center">
-                          <ActionIcon
-                            variant="light"
-                            color="teal"
-                            size="sm"
-                            title="完了にする"
+                          <IconActionButton
+                            variant="confirm"
+                            label="完了にする"
                             onClick={() => openCompleteScheduleModal(schedule)}
                             disabled={schedule.status === 'COMPLETED'}
-                          >
-                            <IconCheck size={16} />
-                          </ActionIcon>
-                          <ActionIcon
-                            variant="light"
-                            color="gray"
-                            size="sm"
-                            title="詳細を表示"
+                          />
+                          <IconActionButton
+                            variant="view"
                             onClick={() => {
                               setDetailSchedule(schedule);
                               openDetailModal();
                             }}
-                          >
-                            <IconEye size={16} />
-                          </ActionIcon>
-                          <ActionIcon
-                            variant="light"
-                            color="yellow"
-                            size="sm"
-                            title="編集"
+                          />
+                          <IconActionButton
+                            variant="edit"
                             onClick={() => handleEditSchedule(schedule)}
-                          >
-                            <IconEdit size={16} />
-                          </ActionIcon>
-                          <ActionIcon
-                            variant="light"
-                            color="red"
-                            size="sm"
-                            title="削除"
+                          />
+                          <IconActionButton
+                            variant="delete"
                             onClick={() => handleDeleteSchedule(schedule)}
-                          >
-                            <IconTrash size={16} />
-                          </ActionIcon>
+                          />
                         </Group>
                       </Table.Td>
                     </Table.Tr>
@@ -861,9 +838,9 @@ export default function CarePage() {
             </Group>
 
             <Group justify="flex-end" mt="md">
-              <Button variant="subtle" color="gray" onClick={closeDetailModal}>
+              <ActionButton action="cancel" onClick={closeDetailModal}>
                 閉じる
-              </Button>
+              </ActionButton>
             </Group>
           </Stack>
         )}
@@ -1141,15 +1118,15 @@ export default function CarePage() {
           <Divider />
 
           <Group justify="flex-end">
-            <Button variant="subtle" onClick={() => {
+            <ActionButton action="cancel" onClick={() => {
               closeCreateModal();
               resetCreateForm();
             }}>
               キャンセル
-            </Button>
-            <Button onClick={handleCreateSubmit} loading={addScheduleMutation.isPending}>
+            </ActionButton>
+            <ActionButton action="save" onClick={handleCreateSubmit} loading={addScheduleMutation.isPending}>
               登録する
-            </Button>
+            </ActionButton>
           </Group>
         </Stack>
       </Modal>
@@ -1178,9 +1155,9 @@ export default function CarePage() {
             searchable
           />
           <Group justify="flex-end" mt="md">
-            <Button variant="subtle" color="gray" onClick={closeAddCardModal}>
+            <ActionButton action="cancel" onClick={closeAddCardModal}>
               キャンセル
-            </Button>
+            </ActionButton>
           </Group>
         </Stack>
       </Modal>
@@ -1243,24 +1220,22 @@ export default function CarePage() {
             <Divider />
 
             <Group justify="flex-end">
-              <Button 
-                variant="subtle" 
-                color="gray" 
+              <ActionButton
+                action="cancel"
                 onClick={() => {
                   closeCompleteModal();
                   setTargetSchedule(null);
                 }}
               >
                 キャンセル
-              </Button>
-              <Button
-                variant="filled"
+              </ActionButton>
+              <ActionButton
+                action="confirm"
                 onClick={handleCompleteSubmit}
                 loading={completeScheduleMutation.isPending}
-                color="teal"
               >
                 完了として記録
-              </Button>
+              </ActionButton>
             </Group>
           </Stack>
         ) : (
@@ -1549,8 +1524,8 @@ export default function CarePage() {
           <Divider />
 
           <Group justify="flex-end">
-            <Button
-              variant="default"
+            <ActionButton
+              action="cancel"
               onClick={() => {
                 closeEditModal();
                 setEditingSchedule(null);
@@ -1558,10 +1533,10 @@ export default function CarePage() {
               }}
             >
               キャンセル
-            </Button>
-            <Button onClick={handleUpdateSubmit} loading={updateScheduleMutation.isPending}>
+            </ActionButton>
+            <ActionButton action="save" onClick={handleUpdateSubmit} loading={updateScheduleMutation.isPending}>
               更新
-            </Button>
+            </ActionButton>
           </Group>
         </Stack>
       </Modal>
@@ -1597,24 +1572,22 @@ export default function CarePage() {
             </Box>
 
             <Group justify="flex-end">
-              <Button
-                variant="subtle"
-                color="gray"
+              <ActionButton
+                action="cancel"
                 onClick={() => {
                   closeDeleteModal();
                   setDeletingSchedule(null);
                 }}
               >
                 キャンセル
-              </Button>
-              <Button
-                variant="filled"
-                color="red"
+              </ActionButton>
+              <ActionButton
+                action="delete"
                 onClick={handleConfirmDelete}
                 loading={deleteScheduleMutation.isPending}
               >
                 削除
-              </Button>
+              </ActionButton>
             </Group>
           </Stack>
         )}

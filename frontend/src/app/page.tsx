@@ -566,11 +566,11 @@ export default function Home() {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-ethereal-hover)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '';
+                e.currentTarget.style.boxShadow = 'var(--shadow-ethereal)';
               }}
               onClick={() => router.push(card.href)}
             >

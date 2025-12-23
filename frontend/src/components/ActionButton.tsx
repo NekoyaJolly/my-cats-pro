@@ -37,49 +37,56 @@ const ACTION_STYLES: Record<
     borderColor?: MantineColor;
     borderWidth?: number;
     icon: React.ComponentType<{ size?: number | string }>;
+    defaultSize: ButtonProps['size'];
   }
 > = {
   create: {
-    variant: 'outline',
-    color: 'blue',
+    variant: 'filled',
+    color: 'var(--accent)',
     icon: IconPlus,
+    defaultSize: 'md',
   },
   edit: {
-    variant: 'outline',
-    color: 'yellow',
+    variant: 'light',
+    color: 'orange',
     icon: IconEdit,
+    defaultSize: 'sm',
   },
   delete: {
-    variant: 'outline',
+    variant: 'light',
     color: 'red',
     icon: IconTrash,
+    defaultSize: 'sm',
   },
   view: {
-    variant: 'outline',
+    variant: 'subtle',
     color: 'gray',
     icon: IconEye,
+    defaultSize: 'sm',
   },
   save: {
-    variant: 'outline',
-    color: 'blue',
-    textColor: 'dark',
+    variant: 'filled',
+    color: 'var(--accent)',
     icon: IconDeviceFloppy,
+    defaultSize: 'md',
   },
   cancel: {
     variant: 'subtle',
     color: 'gray',
     icon: IconX,
+    defaultSize: 'sm',
   },
   confirm: {
-    variant: 'outline',
-    color: 'blue',
-    textColor: 'dark',
+    variant: 'filled',
+    color: 'var(--accent)',
     icon: IconCheck,
+    defaultSize: 'md',
   },
   back: {
-    variant: 'light',
+    variant: 'subtle',
     color: 'gray',
     icon: IconArrowLeft,
+    defaultSize: 'sm',
   },
 };
 
@@ -143,7 +150,7 @@ const createActionButtonOverrideStyles = (params: {
 export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'color' | 'leftSection'> {
   /** アクションタイプ（自動的にスタイルとアイコンが適用される） */
   action: ActionType;
-  /** アイコンのサイズ（デフォルト: 16） */
+  /** アイコンのサイズ（デフォルト: 18） */
   iconSize?: number;
   /** アイコンを表示しない場合はtrue */
   hideIcon?: boolean;
@@ -159,6 +166,10 @@ export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'color'
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   /** ローディング状態 */
   loading?: boolean;
+  /** セクション内の主要アクションとしてサイズを強制統一するか (md) */
+  isSectionAction?: boolean;
+  /** ツールチップ用のタイトル */
+  title?: string;
 }
 
 /**
@@ -186,7 +197,7 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
   (
     {
       action,
-      iconSize = 16,
+      iconSize = 18, // Slightly larger icons for better visibility
       hideIcon = false,
       customIcon,
       children,
@@ -196,6 +207,7 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
       loading,
       styles: buttonStyles,
       disabled,
+      isSectionAction,
       ...props
     },
     ref
@@ -221,6 +233,7 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
         ref={ref}
         variant={style.variant}
         color={style.color}
+        size={isSectionAction ? 'md' : (props.size || style.defaultSize)}
         leftSection={leftSection}
         styles={mergedStyles}
         loading={loading}
@@ -248,6 +261,10 @@ export interface ActionIconButtonProps extends Omit<ButtonProps, 'variant' | 'co
   borderColor?: MantineColor;
   /** 枠線の太さ（px） */
   borderWidth?: number;
+  /** ボタンクリック時のハンドラ */
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  /** ツールチップ用のタイトル */
+  title?: string;
 }
 
 export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonProps>(

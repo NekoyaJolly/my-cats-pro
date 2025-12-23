@@ -14,7 +14,6 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
-  IconPlus,
   IconChevronDown,
   IconChevronRight,
   IconEdit,
@@ -34,6 +33,8 @@ import BulkWeightRecordModal from '@/components/kittens/BulkWeightRecordModal';
 import WeightRecordTable from '@/components/kittens/WeightRecordTable';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { GenderBadge } from '@/components/GenderBadge';
+
+import { ActionButton } from '@/components/ActionButton';
 
 // データ型定義
 interface Kitten {
@@ -190,25 +191,23 @@ export default function KittensPage() {
     const headerActions = (
       <Group gap="xs">
         {tabParam === 'weight' && motherCats.length > 0 && (
-          <Button 
-            leftSection={<IconScale size={16} />} 
+          <ActionButton 
+            action="view"
+            customIcon={IconScale}
             onClick={openBulkWeightModal}
-            size="sm"
-            variant="light"
           >
             一括記録
-          </Button>
+          </ActionButton>
         )}
-        <Button 
-          leftSection={<IconPlus size={16} />} 
+        <ActionButton 
+          action="create"
           onClick={() => {
             setSelectedMotherIdForModal(undefined);
             openManagementModal();
           }}
-          size="sm"
         >
           新規登録
-        </Button>
+        </ActionButton>
       </Group>
     );
 
@@ -247,7 +246,7 @@ export default function KittensPage() {
   };
 
   return (
-    <Container size="lg" pb="xl">
+    <Container size="lg">
       {/* タグフィルタ */}
       <Card padding="md" bg="gray.0" mb="md">
         <TagSelector 

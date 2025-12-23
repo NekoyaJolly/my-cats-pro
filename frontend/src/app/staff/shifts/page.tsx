@@ -43,6 +43,7 @@ import {
   IconCalendarEvent,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { ActionMenu } from '@/app/tenants/_components/ActionMenu';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { Draggable, EventReceiveArg } from '@fullcalendar/interaction';
@@ -253,40 +254,31 @@ export default function StaffShiftsPage() {
   useEffect(() => {
     setPageHeader(
       'スタッフシフト管理',
-      <Menu shadow="md" width={200} position="bottom-end">
-        <Menu.Target>
-          <Button
-            leftSection={<IconPlus size={16} />}
-            rightSection={<IconChevronDown size={16} />}
-            variant="filled"
-            color="blue"
-          >
-            操作
-          </Button>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Item
-            leftSection={<IconPlus size={16} />}
-            onClick={openCreate}
-          >
-            スタッフ追加
-          </Menu.Item>
-          <Menu.Divider />
-          <Menu.Label>テンプレート入力</Menu.Label>
-          <Menu.Item
-            leftSection={<IconCalendarPlus size={16} />}
-            onClick={handleBulkTemplateInput}
-          >
-            全員一括入力
-          </Menu.Item>
-          <Menu.Item
-            leftSection={<IconUsers size={16} />}
-            onClick={openSelectStaff}
-          >
-            選択入力...
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+      <ActionMenu
+        buttonLabel="操作"
+        buttonIcon={IconPlus}
+        action="create"
+        items={[
+          {
+            id: 'add-staff',
+            label: 'スタッフ追加',
+            icon: <IconPlus size={16} />,
+            onClick: openCreate,
+          },
+          {
+            id: 'bulk-input',
+            label: '全員一括入力',
+            icon: <IconCalendarPlus size={16} />,
+            onClick: handleBulkTemplateInput,
+          },
+          {
+            id: 'select-input',
+            label: '選択入力...',
+            icon: <IconUsers size={16} />,
+            onClick: openSelectStaff,
+          }
+        ]}
+      />
     );
 
     return () => setPageHeader(null);
@@ -834,7 +826,7 @@ export default function StaffShiftsPage() {
 
   if (error && !loading) {
     return (
-      <Container size="xl" py="md">
+      <Container size="xl">
         <Alert
           icon={<IconAlertCircle size="1rem" />}
           title="エラー"
@@ -848,7 +840,7 @@ export default function StaffShiftsPage() {
   }
 
   return (
-    <Container size="xl" py="md">
+    <Container size="xl">
       <LoadingOverlay visible={loading} />
 
       {/* スタッフ作成モーダル */}

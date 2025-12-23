@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Table, Badge, Text, Card, Loader, Center, Alert, Select, Group, ActionIcon, Modal, Stack } from '@mantine/core';
+import { Table, Badge, Text, Card, Loader, Center, Alert, Select, Group, Modal, Stack } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconTrash } from '@tabler/icons-react';
-import { ActionButton } from '@/components/ActionButton';
+import { IconAlertCircle } from '@tabler/icons-react';
+import { ActionButton, ActionIconButton } from '@/components/ActionButton';
 import { apiClient, apiRequest } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/lib/auth/store';
@@ -333,15 +333,11 @@ export function UsersList() {
                         </Text>
                       )}
                       {canDeleteUser(u) && (
-                        <ActionIcon
-                          variant="light"
-                          color="red"
-                          size="sm"
+                        <ActionIconButton
+                          action="delete"
                           onClick={() => handleDeleteClick(u)}
                           title="削除"
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
+                        />
                       )}
                     </Group>
                   </Table.Td>

@@ -9,15 +9,14 @@ import React, { Suspense, useState } from 'react';
 import {
   Container,
   Stack,
-  Button,
   Group,
   Skeleton,
   Text,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
-import { IconPlus } from '@tabler/icons-react';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
+import { ActionButton } from '@/components/ActionButton';
 import {
   useGalleryEntries,
   useCreateGalleryEntry,
@@ -40,14 +39,23 @@ function GalleryContent() {
   const { currentTab } = useGalleryTab();
   const { currentPage, setPage } = useGalleryPagination();
 
-  // ページヘッダー設定
-  React.useEffect(() => {
-    setPageHeader('ギャラリー');
-  }, [setPageHeader]);
-
-  // モーダル状態
+  // モーダル状態（useEffectより前に宣言する必要がある）
   const [addModalOpened, { open: openAddModal, close: closeAddModal }] =
     useDisclosure(false);
+
+  // ページヘッダー設定
+  React.useEffect(() => {
+    setPageHeader(
+      'ギャラリー',
+      <ActionButton
+        action="create"
+        onClick={openAddModal}
+      >
+        追加
+      </ActionButton>
+    );
+    return () => setPageHeader(null);
+  }, [setPageHeader, openAddModal]);
   const [lightboxOpened, { open: openLightbox, close: closeLightbox }] =
     useDisclosure(false);
   const [selectedEntry, setSelectedEntry] = useState<GalleryEntry | null>(null);
@@ -124,18 +132,18 @@ function GalleryContent() {
   };
 
   return (
-    <Container size="xl" py="md">
+    <Container size="xl">
       <Stack gap="lg">
         {/* ヘッダー: タブとアクション */}
         <Group justify="space-between" align="flex-start" wrap="wrap">
           <GalleryTabs counts={counts} loading={isLoading} />
-          <Button
-            leftSection={<IconPlus size={16} />}
+          <ActionButton
+            action="create"
             onClick={openAddModal}
             disabled={isLoading}
           >
             追加
-          </Button>
+          </ActionButton>
         </Group>
 
         {/* グリッド */}

@@ -1,9 +1,10 @@
 'use client';
 
-import { Card, Stack, Title, Text, Switch, Group, Button, Divider } from '@mantine/core';
+import { Card, Stack, Title, Text, Switch, Group, Divider } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useBottomNavSettings } from '@/lib/hooks/use-bottom-nav-settings';
 import { bottomNavigationItems } from '@/components/AppLayout';
+import { ActionButton } from '@/components/ActionButton';
 
 /**
  * ボトムナビゲーション設定コンポーネント
@@ -74,27 +75,28 @@ export function BottomNavSettings() {
         <Divider />
 
         <Group gap="sm">
-          <Button variant="light" size="xs" onClick={showAll}>
+          <ActionButton action="view" onClick={showAll} isSectionAction>
             全て表示
-          </Button>
-          <Button variant="light" size="xs" onClick={hideAll}>
+          </ActionButton>
+          <ActionButton action="cancel" onClick={hideAll} isSectionAction>
             全て非表示
-          </Button>
-          <Button variant="light" size="xs" onClick={resetToDefault} color="red">
+          </ActionButton>
+          <ActionButton action="delete" onClick={resetToDefault} isSectionAction>
             デフォルトに戻す
-          </Button>
+          </ActionButton>
         </Group>
 
         <Divider />
 
         <Group justify="flex-end">
-          <Button 
+          <ActionButton 
+            action="save"
             onClick={handleSave} 
             disabled={!hasChanges}
-            variant={hasChanges ? 'filled' : 'light'}
+            isSectionAction
           >
             {hasChanges ? '設定を保存' : '変更なし'}
-          </Button>
+          </ActionButton>
         </Group>
       </Stack>
     </Card>

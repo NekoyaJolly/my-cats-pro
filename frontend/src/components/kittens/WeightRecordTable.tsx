@@ -7,7 +7,6 @@ import {
   Text,
   Group,
   Badge,
-  ActionIcon,
   Tooltip,
   Stack,
   Box,
@@ -23,6 +22,7 @@ import {
   IconChevronRight,
 } from '@tabler/icons-react';
 import { useGetWeightRecords } from '@/lib/api/hooks/use-weight-records';
+import { ActionIconButton } from '@/components/ActionButton';
 import { GenderBadge } from '@/components/GenderBadge';
 
 interface Kitten {
@@ -241,9 +241,11 @@ function KittenWeightRow({ kitten, recordLimit, onRecordWeight }: KittenWeightRo
       {/* 記録ボタン */}
       <Table.Td style={{ textAlign: 'center' }}>
         <Tooltip label="体重を記録">
-          <ActionIcon size="sm" variant="light" color="blue" onClick={onRecordWeight}>
-            <IconScale size={14} />
-          </ActionIcon>
+          <ActionIconButton 
+            action="edit"
+            customIcon={IconScale}
+            onClick={onRecordWeight}
+          />
         </Tooltip>
       </Table.Td>
 

@@ -18,7 +18,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconPlus, IconUserPlus } from '@tabler/icons-react';
 import { apiClient, apiRequest } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
-import { ActionButton } from '@/components/ActionButton';
+import { ActionButton, ActionIconButton } from '@/components/ActionButton';
 import { useAuth } from '@/lib/auth/store';
 import { EditTenantModal } from './EditTenantModal';
 import { ActionMenu } from './ActionMenu';
@@ -292,7 +292,11 @@ export function TenantsList() {
       {/* SUPER_ADMIN のみアクションメニューを表示 */}
       {isSuperAdmin && (
         <Group justify="flex-end">
-          <ActionMenu items={getActionItems()} buttonLabel="アクション" />
+          <ActionMenu 
+            items={getActionItems()} 
+            buttonLabel="アクション" 
+            isSectionAction
+          />
         </Group>
       )}
 
@@ -338,16 +342,16 @@ export function TenantsList() {
                   {isSuperAdmin && (
                     <Table.Td>
                       <Group gap="xs" wrap="nowrap">
-                        <ActionButton action="edit" size="xs" onClick={() => handleEditClick(tenant)}>
-                          編集
-                        </ActionButton>
-                        <ActionButton
+                        <ActionIconButton
+                          action="edit"
+                          onClick={() => handleEditClick(tenant)}
+                          title="編集"
+                        />
+                        <ActionIconButton
                           action="delete"
-                          size="xs"
                           onClick={() => handleDeleteClick(tenant)}
-                        >
-                          削除
-                        </ActionButton>
+                          title="削除"
+                        />
                       </Group>
                     </Table.Td>
                   )}

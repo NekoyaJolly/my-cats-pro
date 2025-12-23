@@ -7,8 +7,6 @@ import {
   Group,
   Table,
   Badge,
-  ActionIcon,
-  Tooltip,
   Center,
   Loader,
 } from '@mantine/core';
@@ -17,6 +15,7 @@ import {
   IconHeartHandshake,
   IconChevronRight,
 } from '@tabler/icons-react';
+import { ActionIconButton } from '@/components/ActionButton';
 import { useGetWeightRecords } from '@/lib/api/hooks/use-weight-records';
 import {
   useCreateKittenDisposition,
@@ -251,39 +250,27 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
       </Table.Td>
       <Table.Td>
         <Group gap={4} justify="center">
-          <Tooltip label="養成">
-            <ActionIcon
-              size="md"
-              variant="light"
-              color="blue"
-              onClick={() => handleSetDisposition('TRAINING')}
-              loading={createDispositionMutation.isPending}
-            >
-              <IconHomePlus size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="出荷">
-            <ActionIcon
-              size="md"
-              variant="light"
-              color="green"
-              onClick={() => handleSetDisposition('SALE')}
-              loading={createDispositionMutation.isPending}
-            >
-              <IconHeartHandshake size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="死亡">
-            <ActionIcon
-              size="md"
-              variant="light"
-              color="gray"
-              onClick={() => handleSetDisposition('DECEASED')}
-              loading={createDispositionMutation.isPending}
-            >
-              🌈
-            </ActionIcon>
-          </Tooltip>
+          <ActionIconButton
+            action="confirm"
+            customIcon={IconHomePlus}
+            onClick={() => handleSetDisposition('TRAINING')}
+            loading={createDispositionMutation.isPending}
+            title="養成"
+          />
+          <ActionIconButton
+            action="confirm"
+            customIcon={IconHeartHandshake}
+            onClick={() => handleSetDisposition('SALE')}
+            loading={createDispositionMutation.isPending}
+            title="出荷"
+          />
+          <ActionIconButton
+            action="delete"
+            customIcon={() => <span>🌈</span>}
+            onClick={() => handleSetDisposition('DECEASED')}
+            loading={createDispositionMutation.isPending}
+            title="死亡"
+          />
         </Group>
       </Table.Td>
     </Table.Tr>
