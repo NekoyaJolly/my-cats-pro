@@ -5,6 +5,7 @@ import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -26,11 +27,13 @@ describe('TenantsService', () => {
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
     invitationToken: {
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      deleteMany: jest.fn(),
     },
     $transaction: jest.fn(),
   };
@@ -42,6 +45,10 @@ describe('TenantsService', () => {
 
   const mockJwtService = {
     signAsync: jest.fn(),
+  };
+
+  const mockEmailService = {
+    sendInvitationEmail: jest.fn().mockResolvedValue(true),
   };
 
   beforeEach(async () => {
@@ -59,6 +66,10 @@ describe('TenantsService', () => {
         {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
@@ -626,6 +637,153 @@ describe('TenantsService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.isActive).toBe(false);
+    });
+  });
+
+  describe('deleteTenant', () => {
+    const tenantId = 'tenant-1';
+
+    const superAdminUser: RequestUser = {
+      userId: 'super-admin-1',
+      email: 'superadmin@example.com',
+      role: UserRole.SUPER_ADMIN,
+      tenantId: undefined,
+    };
+
+    const tenantAdminUser: RequestUser = {
+      userId: 'tenant-admin-1',
+      email: 'tenantadmin@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    const adminUser: RequestUser = {
+      userId: 'admin-1',
+      email: 'admin@example.com',
+      role: UserRole.ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    it('SUPER_ADMIN がテナントを正常に削除できる', async () => {
+      const emptyTenant = {
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+        isActive: true,
+        _count: {
+          users: 0,
+        },
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(emptyTenant);
+      mockPrismaService.invitationToken.deleteMany.mockResolvedValue({ count: 2 });
+      mockPrismaService.tenant.delete.mockResolvedValue({
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+      });
+
+      const result = await service.deleteTenant(tenantId, superAdminUser);
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('テナントを削除しました');
+      expect(mockPrismaService.invitationToken.deleteMany).toHaveBeenCalledWith({
+        where: { tenantId },
+      });
+      expect(mockPrismaService.tenant.delete).toHaveBeenCalledWith({
+        where: { id: tenantId },
+      });
+    });
+
+    it('所属ユーザーが存在する場合に ConflictException がスローされる', async () => {
+      const tenantWithUsers = {
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+        isActive: true,
+        _count: {
+          users: 3,
+        },
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(tenantWithUsers);
+
+      await expect(
+        service.deleteTenant(tenantId, superAdminUser),
+      ).rejects.toThrow(ConflictException);
+      await expect(
+        service.deleteTenant(tenantId, superAdminUser),
+      ).rejects.toThrow('このテナントには3人のユーザーが所属しているため削除できません');
+
+      expect(mockPrismaService.tenant.delete).not.toHaveBeenCalled();
+      expect(mockPrismaService.invitationToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('存在しないテナント ID を指定した場合に NotFoundException がスローされる', async () => {
+      mockPrismaService.tenant.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.deleteTenant('non-existent-tenant', superAdminUser),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.deleteTenant('non-existent-tenant', superAdminUser),
+      ).rejects.toThrow('テナントが見つかりません');
+
+      expect(mockPrismaService.tenant.delete).not.toHaveBeenCalled();
+      expect(mockPrismaService.invitationToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('SUPER_ADMIN 以外のロールが削除しようとした場合に ForbiddenException がスローされる', async () => {
+      await expect(
+        service.deleteTenant(tenantId, tenantAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.deleteTenant(tenantId, tenantAdminUser),
+      ).rejects.toThrow('テナントを削除する権限がありません');
+
+      expect(mockPrismaService.tenant.findUnique).not.toHaveBeenCalled();
+      expect(mockPrismaService.tenant.delete).not.toHaveBeenCalled();
+      expect(mockPrismaService.invitationToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('ADMIN ロールが削除しようとした場合に ForbiddenException がスローされる', async () => {
+      await expect(
+        service.deleteTenant(tenantId, adminUser),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.deleteTenant(tenantId, adminUser),
+      ).rejects.toThrow('テナントを削除する権限がありません');
+
+      expect(mockPrismaService.tenant.findUnique).not.toHaveBeenCalled();
+      expect(mockPrismaService.tenant.delete).not.toHaveBeenCalled();
+      expect(mockPrismaService.invitationToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('関連する招待トークンが正しく削除される', async () => {
+      const emptyTenant = {
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+        isActive: true,
+        _count: {
+          users: 0,
+        },
+      };
+
+      mockPrismaService.tenant.findUnique.mockResolvedValue(emptyTenant);
+      mockPrismaService.invitationToken.deleteMany.mockResolvedValue({ count: 5 });
+      mockPrismaService.tenant.delete.mockResolvedValue({
+        id: tenantId,
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+      });
+
+      await service.deleteTenant(tenantId, superAdminUser);
+
+      expect(mockPrismaService.invitationToken.deleteMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaService.invitationToken.deleteMany).toHaveBeenCalledWith({
+        where: { tenantId },
+      });
     });
   });
 });

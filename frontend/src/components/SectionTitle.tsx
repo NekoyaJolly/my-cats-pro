@@ -5,7 +5,7 @@ import { ReactNode } from 'react';
  * セクション用タイトル（ページ内階層）
  * - フォントサイズ 16px
  * - 太さ 600
- * - デフォルトで上 1.5rem 下 0.75rem の余白
+ * - 統一されたセクション間隔（CSS変数 --section-gap-lg）
  */
 export interface SectionTitleProps extends Omit<TitleProps, 'order'> {
   children: ReactNode;
@@ -28,8 +28,8 @@ export function SectionTitle({
         fontSize: 16,
         fontWeight: 600,
         lineHeight: 1.35,
-        marginTop: withTopMargin ? '1.5rem' : undefined,
-        marginBottom: withBottomMargin ? '0.75rem' : undefined,
+        marginTop: withTopMargin ? 'var(--section-gap-lg)' : undefined,
+        marginBottom: withBottomMargin ? 'var(--section-gap)' : undefined,
         ...style,
       }}
     >

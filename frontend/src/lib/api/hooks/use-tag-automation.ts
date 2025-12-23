@@ -14,6 +14,7 @@ export type TagAutomationEventType =
   | 'KITTEN_REGISTERED'
   | 'AGE_THRESHOLD'
   | 'PAGE_ACTION'
+  | 'TAG_ASSIGNED'
   | 'CUSTOM';
 export type TagAutomationRunStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
 

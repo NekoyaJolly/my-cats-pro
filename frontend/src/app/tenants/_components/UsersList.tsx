@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Table, Badge, Text, Card, Loader, Center, Alert, Select } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
-import { apiClient } from '@/lib/api/client';
+import { Table, Badge, Text, Card, Loader, Center, Alert, Select, Group, ActionIcon, Modal, Stack } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { IconAlertCircle, IconTrash } from '@tabler/icons-react';
+import { ActionButton } from '@/components/ActionButton';
+import { apiClient, apiRequest } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/lib/auth/store';
 
@@ -34,6 +36,11 @@ export function UsersList() {
 
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
   const isTenantAdmin = currentUser?.role === 'TENANT_ADMIN';
+
+  // 削除確認モーダルの状態
+  const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // ロール表示名変換
   const getRoleLabel = (role: string): string => {
@@ -125,35 +132,114 @@ export function UsersList() {
   };
 
   // ユーザー一覧取得
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 自分のテナント内のユーザーを取得
+      const response = await apiClient.request('/users' as never, 'get');
+
+      if (response.success && Array.isArray(response.data)) {
+        setUsers(response.data as User[]);
+      } else {
+        throw new Error(response.error || 'ユーザー情報の取得に失敗しました');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'エラーが発生しました';
+      setError(message);
+      notifications.show({
+        title: 'エラー',
+        message,
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    fetchUsers();
+  }, [fetchUsers]);
 
-        // 自分のテナント内のユーザーを取得
-        const response = await apiClient.request('/users' as never, 'get');
+  /**
+   * 対象ユーザーを削除可能かどうかを判定
+   */
+  const canDeleteUser = useCallback((targetUser: User): boolean => {
+    // 自分自身は削除不可
+    if (targetUser.id === currentUser?.id) return false;
 
-        if (response.success && Array.isArray(response.data)) {
-          setUsers(response.data as User[]);
-        } else {
-          throw new Error(response.error || 'ユーザー情報の取得に失敗しました');
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'エラーが発生しました';
-        setError(message);
+    if (isSuperAdmin) {
+      // SUPER_ADMIN は他の SUPER_ADMIN は削除不可
+      if (targetUser.role === 'SUPER_ADMIN') return false;
+      return true;
+    }
+
+    if (isTenantAdmin) {
+      // TENANT_ADMIN は SUPER_ADMIN と TENANT_ADMIN は削除不可
+      if (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'TENANT_ADMIN') return false;
+      return true;
+    }
+
+    return false;
+  }, [currentUser?.id, isSuperAdmin, isTenantAdmin]);
+
+  // 削除ボタンがクリックされたときのハンドラ
+  const handleDeleteClick = (user: User) => {
+    setDeletingUser(user);
+    openDeleteModal();
+  };
+
+  // 削除確認ダイアログを閉じる
+  const handleDeleteModalClose = () => {
+    if (!deleteLoading) {
+      setDeletingUser(null);
+      closeDeleteModal();
+    }
+  };
+
+  // ユーザー削除処理
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+
+    try {
+      setDeleteLoading(true);
+
+      const response = await apiRequest(`/users/${deletingUser.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.success) {
+        notifications.show({
+          title: '成功',
+          message: 'ユーザーを削除しました',
+          color: 'green',
+        });
+        handleDeleteModalClose();
+        // 一覧を再取得
+        fetchUsers();
+      } else {
+        const errorMessage =
+          response.error ||
+          response.message ||
+          'ユーザーの削除に失敗しました';
         notifications.show({
           title: 'エラー',
-          message,
+          message: errorMessage,
           color: 'red',
         });
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchUsers();
-  }, []);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'エラーが発生しました';
+      notifications.show({
+        title: 'エラー',
+        message,
+        color: 'red',
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -224,27 +310,40 @@ export function UsersList() {
                 </Table.Td>
                 {showActionsColumn && (
                   <Table.Td>
-                    {roleOptions ? (
-                      <Select
-                        size="xs"
-                        w={160}
-                        placeholder="ロール変更"
-                        data={roleOptions}
-                        value={u.role}
-                        onChange={(value) => {
-                          if (value && value !== u.role) {
-                            void handleRoleChange(u.id, value);
-                          }
-                        }}
-                        disabled={isChangingRole}
-                        rightSection={isChangingRole ? <Loader size="xs" /> : undefined}
-                        aria-label={`${displayName}のロールを変更`}
-                      />
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        -
-                      </Text>
-                    )}
+                    <Group gap="xs" wrap="nowrap">
+                      {roleOptions ? (
+                        <Select
+                          size="xs"
+                          w={140}
+                          placeholder="ロール変更"
+                          data={roleOptions}
+                          value={u.role}
+                          onChange={(value) => {
+                            if (value && value !== u.role) {
+                              void handleRoleChange(u.id, value);
+                            }
+                          }}
+                          disabled={isChangingRole}
+                          rightSection={isChangingRole ? <Loader size="xs" /> : undefined}
+                          aria-label={`${displayName}のロールを変更`}
+                        />
+                      ) : (
+                        <Text size="sm" c="dimmed" w={140}>
+                          -
+                        </Text>
+                      )}
+                      {canDeleteUser(u) && (
+                        <ActionIcon
+                          variant="light"
+                          color="red"
+                          size="sm"
+                          onClick={() => handleDeleteClick(u)}
+                          title="削除"
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      )}
+                    </Group>
                   </Table.Td>
                 )}
               </Table.Tr>
@@ -252,6 +351,36 @@ export function UsersList() {
           })}
         </Table.Tbody>
       </Table>
+
+      {/* ユーザー削除確認モーダル */}
+      <Modal
+        opened={deleteModalOpened}
+        onClose={handleDeleteModalClose}
+        title="ユーザー削除の確認"
+        size="md"
+      >
+        <Stack gap="md">
+          <Text>
+            以下のユーザーを削除しますか？この操作は取り消せません。
+          </Text>
+          <Text fw={600} size="lg">
+            {deletingUser?.firstName || deletingUser?.lastName
+              ? [deletingUser?.lastName, deletingUser?.firstName].filter(Boolean).join(' ')
+              : deletingUser?.email}
+          </Text>
+          <Text size="sm" c="dimmed">
+            メールアドレス: {deletingUser?.email}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <ActionButton action="cancel" onClick={handleDeleteModalClose} disabled={deleteLoading}>
+              キャンセル
+            </ActionButton>
+            <ActionButton action="delete" onClick={handleDeleteUser} loading={deleteLoading}>
+              削除
+            </ActionButton>
+          </Group>
+        </Stack>
+      </Modal>
     </Card>
   );
 }

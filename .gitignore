@@ -65,6 +65,8 @@ coverage/
 # Prisma
 prisma/dev.db
 prisma/dev.db-journal
+# Auto-generated Prisma schema documentation
+backend/prisma/schema_prisma.txt
 
 # TypeScript
 *.tsbuildinfo
@@ -76,6 +78,7 @@ playwright-report/
 # Temporary files
 *.tmp
 *.temp
+tmp/
 
 # Database files
 *.db
@@ -104,6 +107,9 @@ RegsyDatabase.ini
 **/NewPedigree/**/*.xlsx
 **/data/**/*.csv
 **/database/**/*.csv
+
+# Docker環境変数（機密情報を含む）
+.env.docker
 
 # Shell files (personal configs)
 .zsh_history

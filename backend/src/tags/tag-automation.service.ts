@@ -123,19 +123,27 @@ export class TagAutomationService {
   }
 
   async createRule(dto: CreateTagAutomationRuleDto) {
-    const key = this.normalizeKey(dto.key ?? dto.name);
+    // キーの自動生成（未指定の場合）
+    const timestamp = Date.now();
+    const eventTypeStr = dto.eventType || 'unknown';
+    const key = dto.key 
+      ? this.normalizeKey(dto.key) 
+      : this.normalizeKey(`${eventTypeStr}-${timestamp}`);
+
+    // 名前の自動生成（未指定の場合）
+    const name = dto.name || this.generateRuleName(dto);
 
     try {
       const rule = await this.prisma.tagAutomationRule.create({
         data: {
           key,
-          name: dto.name,
+          name,
           description: dto.description ?? undefined,
           triggerType: dto.triggerType,
-          eventType: dto.eventType,
+          eventType: dto.eventType ?? 'PAGE_ACTION', // デフォルトはPAGE_ACTION
           scope: dto.scope ?? undefined,
           isActive: dto.isActive ?? true,
-          priority: dto.priority ?? 0,
+          priority: 0, // 優先度は固定値（複数マッチ時は全て適用）
           ...(dto.config !== undefined
             ? { config: this.toJson(dto.config) ?? Prisma.JsonNull }
             : {}),
@@ -148,6 +156,32 @@ export class TagAutomationService {
         throw new BadRequestException("同じキーを持つ自動化ルールが既に存在します");
       }
       throw error;
+    }
+  }
+
+  /**
+   * ルール名の自動生成
+   */
+  private generateRuleName(dto: CreateTagAutomationRuleDto): string {
+    const config = dto.config as Record<string, unknown> | undefined;
+    const actionType = (config?.actionType as string) === 'REMOVE' ? 'タグ削除' : 'タグ付与';
+    
+    switch (dto.eventType) {
+      case 'PAGE_ACTION': {
+        const page = (config?.page as string) || '不明';
+        const action = (config?.action as string) || '不明';
+        return `${page} - ${action}時 → ${actionType}`;
+      }
+      case 'AGE_THRESHOLD': {
+        const ageType = (config?.ageType as string) === 'months' ? 'ヶ月' : '日';
+        const threshold = (config?.threshold as number) || 0;
+        return `生後${threshold}${ageType}達成時 → ${actionType}`;
+      }
+      case 'TAG_ASSIGNED': {
+        return `タグ付与時 → ${actionType}`;
+      }
+      default:
+        return `自動化ルール - ${actionType}`;
     }
   }
 

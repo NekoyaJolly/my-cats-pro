@@ -20,6 +20,51 @@ services:
       timeout: 5s
       retries: 5
 
+  # Backend API Server
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: mycats_backend
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      # env_file から読み込んだ値を上書きする場合はここに記述
+      # 以下は .env.docker のデフォルト値を使用
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-8080}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://mycats:mycats_dev_password@postgres:5432/mycats_development}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    ports:
+      - "3004:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Next.js Server
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: mycats_frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      # ブラウザからホストマシン上の backend (ポート 3004) へアクセスするための URL
+      # コンテナ間通信では http://backend:8080 を使用する点に注意
+      NEXT_PUBLIC_API_URL: http://localhost:3004
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
   # pgAdmin (Optional - Database Management UI)
   pgadmin:
     image: dpage/pgadmin4:latest

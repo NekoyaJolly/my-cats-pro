@@ -11,6 +11,7 @@ import {
 import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { InviteUserDto } from './dto/invite-user.dto';
@@ -51,7 +52,10 @@ export interface UserProfileData {
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   /**
    * 指定されたロールが高権限ロール（SUPER_ADMIN, TENANT_ADMIN）かどうかをチェック
@@ -328,11 +332,23 @@ export class UsersService {
       timestamp: new Date().toISOString(),
     });
 
+    // 招待メールを送信
+    const emailSent = await this.emailService.sendInvitationEmail(
+      email,
+      invitation.token,
+      tenant.name,
+      role,
+    );
+
+    if (!emailSent) {
+      this.logger.warn(`Failed to send invitation email to ${email}, but invitation was created successfully`);
+    }
+
     return {
       success: true,
       invitationToken: invitation.token,
       tenantId,
-      message: '招待を作成しました',
+      message: emailSent ? '招待メールを送信しました' : '招待を作成しましたが、メール送信に失敗しました',
     };
   }
 
@@ -591,5 +607,117 @@ export class UsersService {
       data: updatedUser,
       message: 'プロフィールを更新しました',
     };
+  }
+
+  /**
+   * ユーザー削除
+   * 
+   * 権限チェックルール:
+   * - SUPER_ADMIN:
+   *   - 任意のユーザーを削除可能
+   *   - ただし、自分自身と他の SUPER_ADMIN は削除不可
+   * - TENANT_ADMIN:
+   *   - 自テナントの ADMIN / USER のみ削除可能
+   *   - SUPER_ADMIN, TENANT_ADMIN は削除不可
+   * 
+   * @param currentUser 現在のユーザー情報
+   * @param userId 対象ユーザー ID
+   * @returns 削除結果
+   */
+  async deleteUser(
+    currentUser: RequestUser,
+    userId: string,
+  ): Promise<{
+    success: true;
+    message: string;
+  }> {
+    // ロールが設定されていない場合はアクセス拒否
+    if (!currentUser.role) {
+      throw new ForbiddenException('ユーザーロールが設定されていません');
+    }
+
+    // 対象ユーザーの取得
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        tenantId: true,
+      },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('指定されたユーザーが見つかりません');
+    }
+
+    // SUPER_ADMIN の場合
+    if (currentUser.role === UserRole.SUPER_ADMIN) {
+      // 自分自身の削除は禁止
+      if (currentUser.userId === userId) {
+        throw new ForbiddenException('自分自身を削除することはできません');
+      }
+
+      // 他の SUPER_ADMIN の削除は禁止
+      if (targetUser.role === UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException('SUPER_ADMIN を削除することはできません');
+      }
+
+      // ユーザー削除
+      await this.prisma.user.delete({
+        where: { id: userId },
+      });
+
+      this.logger.log({
+        message: 'User deleted by SUPER_ADMIN',
+        targetUserId: userId,
+        targetEmail: targetUser.email,
+        deletedBy: currentUser.userId,
+      });
+
+      return {
+        success: true,
+        message: 'ユーザーを削除しました',
+      };
+    }
+
+    // TENANT_ADMIN の場合
+    if (currentUser.role === UserRole.TENANT_ADMIN) {
+      // テナントに所属していない場合はエラー
+      if (!currentUser.tenantId) {
+        throw new ForbiddenException('テナントに所属していません');
+      }
+
+      // 対象ユーザーが他テナントの場合はエラー
+      if (targetUser.tenantId !== currentUser.tenantId) {
+        throw new ForbiddenException('他のテナントのユーザーを削除することはできません');
+      }
+
+      // 対象ユーザーが SUPER_ADMIN または TENANT_ADMIN の場合は削除不可
+      if (this.isPrivilegedRole(targetUser.role)) {
+        throw new ForbiddenException('SUPER_ADMIN または TENANT_ADMIN を削除する権限がありません');
+      }
+
+      // ユーザー削除
+      await this.prisma.user.delete({
+        where: { id: userId },
+      });
+
+      this.logger.log({
+        message: 'User deleted by TENANT_ADMIN',
+        targetUserId: userId,
+        targetEmail: targetUser.email,
+        deletedBy: currentUser.userId,
+        tenantId: currentUser.tenantId,
+      });
+
+      return {
+        success: true,
+        message: 'ユーザーを削除しました',
+      };
+    }
+
+    // それ以外のロールの場合はアクセス拒否
+    throw new ForbiddenException('ユーザー削除の権限がありません');
   }
 }

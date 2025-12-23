@@ -13,6 +13,7 @@ import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -36,6 +37,7 @@ export class TenantsService {
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly jwt: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -238,7 +240,18 @@ export class TenantsService {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: メール送信実装
+    // 招待メールを送信
+    const emailSent = await this.emailService.sendInvitationEmail(
+      email,
+      result.invitation.token,
+      result.tenant.name,
+      UserRole.TENANT_ADMIN,
+    );
+
+    if (!emailSent) {
+      this.logger.warn(`Failed to send invitation email to ${email}, but invitation was created successfully`);
+    }
+
     // 開発環境では安全な形式でトークン情報を出力
     if (process.env.NODE_ENV !== 'production') {
       const tokenPreview = `${result.invitation.token.substring(0, 8)}...`;
@@ -250,7 +263,7 @@ export class TenantsService {
       success: true,
       tenantId: result.tenant.id,
       invitationToken: result.invitation.token,
-      message: '招待メールを送信しました',
+      message: emailSent ? '招待メールを送信しました' : '招待を作成しましたが、メール送信に失敗しました',
     };
   }
 
@@ -317,7 +330,19 @@ export class TenantsService {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: メール送信実装
+    // 招待メールを送信
+    const emailSent = await this.emailService.sendInvitationEmail(
+      email,
+      invitation.token,
+      tenant.name,
+      dto.role,
+    );
+
+    if (!emailSent) {
+      this.logger.warn(`Failed to send invitation email to ${email}, but invitation was created successfully`);
+    }
+
+    // 開発環境では安全な形式でトークン情報を出力
     if (process.env.NODE_ENV !== 'production') {
       const tokenPreview = `${invitation.token.substring(0, 8)}...`;
       this.logger.log(`Invitation token created for ${email} (preview: ${tokenPreview})`);
@@ -327,7 +352,7 @@ export class TenantsService {
     return {
       success: true,
       invitationToken: invitation.token,
-      message: '招待メールを送信しました',
+      message: emailSent ? '招待メールを送信しました' : '招待を作成しましたが、メール送信に失敗しました',
     };
   }
 
@@ -527,6 +552,70 @@ export class TenantsService {
     return {
       success: true,
       data: updatedTenant,
+    };
+  }
+
+  /**
+   * テナントを削除
+   * SUPER_ADMIN のみが実行可能
+   * 所属ユーザーがいる場合は削除不可
+   * 
+   * @param tenantId テナント ID
+   * @param currentUser 現在のユーザー情報
+   * @returns 削除結果
+   * @throws NotFoundException テナントが見つからない場合
+   * @throws ForbiddenException 権限がない場合
+   * @throws ConflictException 所属ユーザーが存在する場合
+   */
+  async deleteTenant(tenantId: string, currentUser: RequestUser) {
+    // SUPER_ADMIN のみ削除可能
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('テナントを削除する権限がありません');
+    }
+
+    // テナントの存在確認と所属ユーザー数を取得
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: {
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('テナントが見つかりません');
+    }
+
+    // 所属ユーザーがいる場合は削除不可
+    if (tenant._count.users > 0) {
+      throw new ConflictException(
+        `このテナントには${tenant._count.users}人のユーザーが所属しているため削除できません。先にユーザーを削除してください。`
+      );
+    }
+
+    // 関連する招待トークンを削除
+    await this.prisma.invitationToken.deleteMany({
+      where: { tenantId },
+    });
+
+    // テナント削除
+    await this.prisma.tenant.delete({
+      where: { id: tenantId },
+    });
+
+    this.logger.log({
+      message: 'Tenant deleted',
+      tenantId,
+      deletedBy: currentUser.userId,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      message: 'テナントを削除しました',
     };
   }
 }

@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { InviteUserDto } from './dto/invite-user.dto';
@@ -30,6 +31,7 @@ describe('UsersService', () => {
       findFirst: jest.fn(),
       count: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
     tenant: {
       findUnique: jest.fn(),
@@ -42,6 +44,10 @@ describe('UsersService', () => {
     }),
   };
 
+  const mockEmailService = {
+    sendInvitationEmail: jest.fn().mockResolvedValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -49,6 +55,10 @@ describe('UsersService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
@@ -63,6 +73,7 @@ describe('UsersService', () => {
     mockPrismaService.user.findUnique.mockClear();
     mockPrismaService.user.findFirst.mockClear();
     mockPrismaService.invitationToken.create.mockClear();
+    mockEmailService.sendInvitationEmail.mockClear();
   });
 
   describe('listUsers', () => {
@@ -349,11 +360,17 @@ describe('UsersService', () => {
 
         expect(result.success).toBe(true);
         expect(result.tenantId).toBe('tenant-1');
-        expect(result.message).toBe('招待を作成しました');
+        expect(result.message).toBe('招待メールを送信しました');
         expect(mockPrismaService.tenant.findUnique).toHaveBeenCalledWith({
           where: { id: 'tenant-1' },
         });
         expect(mockPrismaService.invitationToken.create).toHaveBeenCalled();
+        expect(mockEmailService.sendInvitationEmail).toHaveBeenCalledWith(
+          'newuser@example.com',
+          'mock-token-123',
+          'Test Tenant',
+          UserRole.USER,
+        );
       });
 
       it('TENANT_ADMIN を招待できる', async () => {
@@ -912,6 +929,251 @@ describe('UsersService', () => {
         where: { id: regularUser.userId },
         data: { firstName: '', lastName: '' },
         select: expect.any(Object),
+      });
+    });
+  });
+
+  describe('deleteUser', () => {
+    const superAdminUser: RequestUser = {
+      userId: 'super-admin-1',
+      email: 'superadmin@example.com',
+      role: UserRole.SUPER_ADMIN,
+      tenantId: undefined,
+    };
+
+    const tenantAdminUser: RequestUser = {
+      userId: 'tenant-admin-1',
+      email: 'tenantadmin@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    const mockUser = {
+      id: 'user-1',
+      email: 'user@example.com',
+      role: UserRole.USER,
+      tenantId: 'tenant-1',
+    };
+
+    const mockAdmin = {
+      id: 'admin-1',
+      email: 'admin@example.com',
+      role: UserRole.ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    const mockSuperAdmin = {
+      id: 'super-admin-2',
+      email: 'superadmin2@example.com',
+      role: UserRole.SUPER_ADMIN,
+      tenantId: undefined,
+    };
+
+    const mockTenantAdmin = {
+      id: 'tenant-admin-2',
+      email: 'tenantadmin2@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId: 'tenant-1',
+    };
+
+    describe('SUPER_ADMIN として', () => {
+      it('自分自身を削除しようとした場合は拒否される', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue({
+          id: 'super-admin-1',
+          email: 'superadmin@example.com',
+          role: UserRole.SUPER_ADMIN,
+          tenantId: undefined,
+        });
+
+        await expect(
+          service.deleteUser(superAdminUser, 'super-admin-1'),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.deleteUser(superAdminUser, 'super-admin-1'),
+        ).rejects.toThrow('自分自身を削除することはできません');
+
+        expect(mockPrismaService.user.delete).not.toHaveBeenCalled();
+      });
+
+      it('他の SUPER_ADMIN を削除しようとした場合は拒否される', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockSuperAdmin);
+
+        await expect(
+          service.deleteUser(superAdminUser, 'super-admin-2'),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.deleteUser(superAdminUser, 'super-admin-2'),
+        ).rejects.toThrow('SUPER_ADMIN を削除することはできません');
+
+        expect(mockPrismaService.user.delete).not.toHaveBeenCalled();
+      });
+
+      it('TENANT_ADMIN を削除できる', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockTenantAdmin);
+        mockPrismaService.user.delete.mockResolvedValue(mockTenantAdmin);
+
+        const result = await service.deleteUser(superAdminUser, 'tenant-admin-2');
+
+        expect(result.success).toBe(true);
+        expect(result.message).toBe('ユーザーを削除しました');
+        expect(mockPrismaService.user.delete).toHaveBeenCalledWith({
+          where: { id: 'tenant-admin-2' },
+        });
+      });
+
+      it('ADMIN を削除できる', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockAdmin);
+        mockPrismaService.user.delete.mockResolvedValue(mockAdmin);
+
+        const result = await service.deleteUser(superAdminUser, 'admin-1');
+
+        expect(result.success).toBe(true);
+        expect(result.message).toBe('ユーザーを削除しました');
+        expect(mockPrismaService.user.delete).toHaveBeenCalledWith({
+          where: { id: 'admin-1' },
+        });
+      });
+
+      it('USER を削除できる', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+        mockPrismaService.user.delete.mockResolvedValue(mockUser);
+
+        const result = await service.deleteUser(superAdminUser, 'user-1');
+
+        expect(result.success).toBe(true);
+        expect(result.message).toBe('ユーザーを削除しました');
+        expect(mockPrismaService.user.delete).toHaveBeenCalledWith({
+          where: { id: 'user-1' },
+        });
+      });
+    });
+
+    describe('TENANT_ADMIN として', () => {
+      it('自テナントの ADMIN を削除できる', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockAdmin);
+        mockPrismaService.user.delete.mockResolvedValue(mockAdmin);
+
+        const result = await service.deleteUser(tenantAdminUser, 'admin-1');
+
+        expect(result.success).toBe(true);
+        expect(result.message).toBe('ユーザーを削除しました');
+        expect(mockPrismaService.user.delete).toHaveBeenCalledWith({
+          where: { id: 'admin-1' },
+        });
+      });
+
+      it('自テナントの USER を削除できる', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+        mockPrismaService.user.delete.mockResolvedValue(mockUser);
+
+        const result = await service.deleteUser(tenantAdminUser, 'user-1');
+
+        expect(result.success).toBe(true);
+        expect(result.message).toBe('ユーザーを削除しました');
+        expect(mockPrismaService.user.delete).toHaveBeenCalledWith({
+          where: { id: 'user-1' },
+        });
+      });
+
+      it('SUPER_ADMIN を削除しようとした場合は拒否される', async () => {
+        const superAdminInTenant = {
+          ...mockSuperAdmin,
+          tenantId: 'tenant-1',
+        };
+        mockPrismaService.user.findUnique.mockResolvedValue(superAdminInTenant);
+
+        await expect(
+          service.deleteUser(tenantAdminUser, 'super-admin-2'),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.deleteUser(tenantAdminUser, 'super-admin-2'),
+        ).rejects.toThrow('SUPER_ADMIN または TENANT_ADMIN を削除する権限がありません');
+
+        expect(mockPrismaService.user.delete).not.toHaveBeenCalled();
+      });
+
+      it('TENANT_ADMIN を削除しようとした場合は拒否される', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockTenantAdmin);
+
+        await expect(
+          service.deleteUser(tenantAdminUser, 'tenant-admin-2'),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.deleteUser(tenantAdminUser, 'tenant-admin-2'),
+        ).rejects.toThrow('SUPER_ADMIN または TENANT_ADMIN を削除する権限がありません');
+
+        expect(mockPrismaService.user.delete).not.toHaveBeenCalled();
+      });
+
+      it('他テナントのユーザーを削除しようとした場合は拒否される', async () => {
+        const otherTenantUser = {
+          ...mockUser,
+          tenantId: 'tenant-2',
+        };
+        mockPrismaService.user.findUnique.mockResolvedValue(otherTenantUser);
+
+        await expect(
+          service.deleteUser(tenantAdminUser, 'user-1'),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.deleteUser(tenantAdminUser, 'user-1'),
+        ).rejects.toThrow('他のテナントのユーザーを削除することはできません');
+
+        expect(mockPrismaService.user.delete).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('共通エラーケース', () => {
+      it('存在しないユーザー ID を指定した場合はエラー', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+        await expect(
+          service.deleteUser(superAdminUser, 'non-existent-user'),
+        ).rejects.toThrow(NotFoundException);
+        await expect(
+          service.deleteUser(superAdminUser, 'non-existent-user'),
+        ).rejects.toThrow('指定されたユーザーが見つかりません');
+
+        expect(mockPrismaService.user.delete).not.toHaveBeenCalled();
+      });
+
+      it('ロールが設定されていない場合はアクセス拒否', async () => {
+        const userWithoutRole: RequestUser = {
+          userId: 'user-1',
+          email: 'user@example.com',
+          role: undefined as any,
+          tenantId: 'tenant-1',
+        };
+
+        await expect(
+          service.deleteUser(userWithoutRole, 'user-2'),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.deleteUser(userWithoutRole, 'user-2'),
+        ).rejects.toThrow('ユーザーロールが設定されていません');
+
+        expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
+        expect(mockPrismaService.user.delete).not.toHaveBeenCalled();
+      });
+
+      it('ADMIN または USER ロールの場合はアクセス拒否', async () => {
+        const adminUser: RequestUser = {
+          userId: 'admin-1',
+          email: 'admin@example.com',
+          role: UserRole.ADMIN,
+          tenantId: 'tenant-1',
+        };
+
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+
+        await expect(
+          service.deleteUser(adminUser, 'user-1'),
+        ).rejects.toThrow(ForbiddenException);
+        await expect(
+          service.deleteUser(adminUser, 'user-1'),
+        ).rejects.toThrow('ユーザー削除の権限がありません');
+
+        expect(mockPrismaService.user.delete).not.toHaveBeenCalled();
       });
     });
   });
