@@ -315,6 +315,7 @@ export function RaisingTab({
                               onOpenManagementModal(mother.id);
                             }}
                             title="行先管理"
+                            aria-label="行先管理"
                           >
                             <IconHomePlus size={14} />
                           </ActionIcon>
