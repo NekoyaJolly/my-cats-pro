@@ -91,7 +91,7 @@ describe("TagAutomationService", () => {
 
       expect(prismaMock.tagAutomationRule.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          key: "auto-tag-test-rule",
+          key: expect.stringMatching(/^custom-\d+$/), // タイムスタンプベースのキー生成に対応
           name: "Auto Tag Test Rule",
           priority: 0,
         }),
