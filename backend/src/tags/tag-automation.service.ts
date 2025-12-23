@@ -31,6 +31,26 @@ export interface FindAutomationRunOptions {
   take?: number;
 }
 
+// Config型定義 - 型安全性のため
+interface BaseConfig {
+  actionType?: 'ADD' | 'REMOVE';
+}
+
+interface PageActionConfig extends BaseConfig {
+  page?: string;
+  action?: string;
+}
+
+interface AgeThresholdConfig extends BaseConfig {
+  ageType?: 'months' | 'days';
+  threshold?: number;
+}
+
+// TAG_ASSIGNEDイベント用の設定（BaseConfig のみ使用）
+type TagAssignedConfig = BaseConfig;
+
+type AutomationConfig = PageActionConfig | AgeThresholdConfig | TagAssignedConfig | Record<string, unknown>;
+
 export interface RecordAssignmentOptions {
   catId: string;
   tagId: string;
@@ -163,19 +183,35 @@ export class TagAutomationService {
    * ルール名の自動生成
    */
   private generateRuleName(dto: CreateTagAutomationRuleDto): string {
-    const config = dto.config as Record<string, unknown> | undefined;
-    const actionType = (config?.actionType as string) === 'REMOVE' ? 'タグ削除' : 'タグ付与';
+    const config = (dto.config ?? {}) as AutomationConfig;
+    
+    // 型ガードを使用して安全にプロパティにアクセス
+    const isPageActionConfig = (c: AutomationConfig): c is PageActionConfig => {
+      return 'page' in c || 'action' in c;
+    };
+    
+    const isAgeThresholdConfig = (c: AutomationConfig): c is AgeThresholdConfig => {
+      return 'ageType' in c || 'threshold' in c;
+    };
+    
+    const actionType = config.actionType === 'REMOVE' ? 'タグ削除' : 'タグ付与';
     
     switch (dto.eventType) {
       case 'PAGE_ACTION': {
-        const page = (config?.page as string) || '不明';
-        const action = (config?.action as string) || '不明';
-        return `${page} - ${action}時 → ${actionType}`;
+        if (isPageActionConfig(config)) {
+          const page = config.page ?? '不明';
+          const action = config.action ?? '不明';
+          return `${page} - ${action}時 → ${actionType}`;
+        }
+        return `ページアクション → ${actionType}`;
       }
       case 'AGE_THRESHOLD': {
-        const ageType = (config?.ageType as string) === 'months' ? 'ヶ月' : '日';
-        const threshold = (config?.threshold as number) || 0;
-        return `生後${threshold}${ageType}達成時 → ${actionType}`;
+        if (isAgeThresholdConfig(config)) {
+          const ageType = config.ageType === 'months' ? 'ヶ月' : '日';
+          const threshold = config.threshold ?? 0;
+          return `生後${threshold}${ageType}達成時 → ${actionType}`;
+        }
+        return `年齢閾値 → ${actionType}`;
       }
       case 'TAG_ASSIGNED': {
         return `タグ付与時 → ${actionType}`;

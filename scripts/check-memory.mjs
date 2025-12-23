@@ -9,14 +9,6 @@ import { platform } from 'node:os';
 
 const isWindows = platform() === 'win32';
 
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-
 function getNodeProcesses() {
   try {
     if (isWindows) {
@@ -25,10 +17,18 @@ function getNodeProcesses() {
       const output = execSync(command, { encoding: 'utf-8' });
       return output;
     } else {
-      // macOS/Linux: psコマンドを使用
-      const command = `ps aux | grep -E 'node|next|nest' | grep -v grep | awk '{printf "PID: %-8s Memory: %6s%% CPU: %6s%% Command: %s\\n", $2, $4, $3, $11}'`;
-      const output = execSync(command, { encoding: 'utf-8' });
-      return output;
+      // macOS/Linux: psコマンドを使用（環境に依存しない形式）
+      // ps auxの出力フォーマットは環境により異なるため、より堅牢な方法を使用
+      const command = `ps -eo pid,pmem,pcpu,comm | grep -E 'node|next|nest' | grep -v grep | awk '{printf "PID: %-8s Memory: %6s%% CPU: %6s%% Command: %s\\n", $1, $2, $3, $4}'`;
+      try {
+        const output = execSync(command, { encoding: 'utf-8' });
+        return output;
+      } catch {
+        // ps -eoが使えない場合はps auxを使用（フォールバック）
+        const fallbackCommand = `ps aux | grep -E 'node|next|nest' | grep -v grep | awk '{printf "PID: %-8s Memory: %6s%% CPU: %6s%% Command: %s\\n", $2, $4, $3, $11}'`;
+        const output = execSync(fallbackCommand, { encoding: 'utf-8' });
+        return output;
+      }
     }
   } catch (error) {
     return `エラー: プロセス情報の取得に失敗しました\n${error.message}`;
@@ -66,9 +66,18 @@ function getNodeProcessMemory() {
       const memoryMB = parseFloat(execSync(command, { encoding: 'utf-8' }).trim() || '0');
       return memoryMB;
     } else {
-      const command = `ps aux | grep -E 'node|next|nest' | grep -v grep | awk '{sum+=$6} END {print sum/1024}'`;
-      const memoryMB = parseFloat(execSync(command, { encoding: 'utf-8' }).trim() || '0');
-      return memoryMB;
+      // macOS/Linux: より堅牢なメモリ取得方法
+      // ps -eo rssを使用（RSSはKB単位で統一されている）
+      try {
+        const command = `ps -eo rss,comm | grep -E 'node|next|nest' | grep -v grep | awk '{sum+=$1} END {print sum/1024}'`;
+        const memoryMB = parseFloat(execSync(command, { encoding: 'utf-8' }).trim() || '0');
+        return memoryMB;
+      } catch {
+        // フォールバック: ps auxを使用（環境依存の可能性あり）
+        const fallbackCommand = `ps aux | grep -E 'node|next|nest' | grep -v grep | awk '{sum+=$6} END {print sum/1024}'`;
+        const memoryMB = parseFloat(execSync(fallbackCommand, { encoding: 'utf-8' }).trim() || '0');
+        return memoryMB;
+      }
     }
   } catch (error) {
     return 0;

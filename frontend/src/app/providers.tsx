@@ -10,7 +10,9 @@ import { useTheme } from '@/lib/store/theme-store'
 import '@mantine/notifications/styles.css'
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // 認証を先に初期化（テーマ設定が認証状態に依存する可能性があるため）
   useBootstrapAuth()
+  // その後テーマを取得
   const { theme: currentTheme } = useTheme()
 
   // Define brand palette explicitly to satisfy MantineColorsTuple type (10 shades, light -> dark)
@@ -27,8 +29,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     '#1e3a8a',
   ]
 
+  // テーマを明示的に定義（将来的な拡張に対応）
   const isMonolith = currentTheme === 'monolith'
   const isOrganic = currentTheme === 'organic'
+  const isEthereal = currentTheme === 'ethereal'
 
   const theme: MantineThemeOverride = {
     primaryColor: 'brand',
@@ -36,9 +40,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     fontFamily: 'Inter, "Noto Sans JP", "Segoe UI", sans-serif',
     headings: {
       fontFamily: 'Inter, "Noto Sans JP", "Segoe UI", sans-serif',
-      fontWeight: isMonolith ? '800' : isOrganic ? '600' : '700',
+      fontWeight: isMonolith ? '800' : isOrganic ? '600' : isEthereal ? '700' : '700',
     },
-    defaultRadius: isMonolith ? '0' : isOrganic ? '32px' : 'xl',
+    defaultRadius: isMonolith ? '0' : isOrganic ? '32px' : isEthereal ? 'xl' : 'xl',
     shadows: {
       xs: '0 1px 3px rgba(0,0,0,0.05)',
       sm: '0 4px 12px rgba(31, 38, 135, 0.05)',

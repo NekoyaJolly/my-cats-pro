@@ -87,8 +87,8 @@ export interface IconActionButtonProps extends Omit<ActionIconProps, 'variant' |
   hideTooltip?: boolean;
   /** アイコンサイズ（デフォルト: 18） */
   iconSize?: number;
-  /** カスタムアイコン */
-  customIcon?: React.ReactNode;
+  /** カスタムアイコン（ReactNodeまたは関数コンポーネント） */
+  customIcon?: React.ReactNode | (() => React.ReactNode);
   /** ローディング状態 */
   loading?: boolean;
   /** 無効化 */
@@ -151,7 +151,7 @@ export const IconActionButton = forwardRef<HTMLButtonElement, IconActionButtonPr
         }}
         {...props}
       >
-        {customIcon ?? <Icon size={iconSize} stroke={1.5} />}
+        {typeof customIcon === 'function' ? customIcon() : (customIcon ?? <Icon size={iconSize} stroke={1.5} />)}
       </ActionIcon>
     );
 
