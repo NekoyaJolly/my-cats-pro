@@ -14,7 +14,6 @@ import {
   IconHomePlus,
   IconHeartHandshake,
   IconChevronRight,
-  IconCloud,
 } from '@tabler/icons-react';
 import { ActionIconButton } from '@/components/ActionButton';
 import { useGetWeightRecords } from '@/lib/api/hooks/use-weight-records';
