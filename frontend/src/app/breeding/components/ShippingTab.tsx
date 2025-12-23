@@ -27,6 +27,7 @@ import {
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import { GenderBadge } from '@/components/GenderBadge';
 import { notifications } from '@mantine/notifications';
+import { calculateAgeInDays } from '../utils';
 
 /** 出荷準備対象となる体重閾値（グラム） */
 const SHIPPING_WEIGHT_THRESHOLD = 500;
@@ -72,15 +73,13 @@ export function ShippingTab({
         ? allCats.find((c) => c.id === birthPlan.fatherId)
         : null;
 
-      // この母猫の子猫を取得（生後3ヶ月以内）
+      // この母猫の子猫を取得（生後90日以内）
       const kittens = allCats.filter((kitten) => {
         if (kitten.motherId !== birthPlan.motherId) return false;
         
-        const birthDate = new Date(kitten.birthDate);
-        const now = new Date();
-        const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const ageInDays = calculateAgeInDays(kitten.birthDate);
         
-        return ageInMonths <= 3;
+        return ageInDays <= 90;
       });
 
       kittens.forEach((kitten) => {
@@ -129,7 +128,7 @@ export function ShippingTab({
   return (
     <Card padding="md" radius="md" withBorder>
       <Text size="sm" c="dimmed" mb="md">
-        生後3ヶ月以内で行先未確定の子猫を表示します。体重{SHIPPING_WEIGHT_THRESHOLD}g超えの子猫のみ行先を設定できます。
+        生後90日以内で行先未確定の子猫を表示します。体重{SHIPPING_WEIGHT_THRESHOLD}g超えの子猫のみ行先を設定できます。
       </Text>
 
       <Table striped withTableBorder>

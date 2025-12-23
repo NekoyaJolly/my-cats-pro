@@ -42,6 +42,21 @@ export const calculateAgeInMonths = (birthDate: string): number => {
 };
 
 /**
+ * 生まれた日を0日として、生後日数を計算
+ */
+export const calculateAgeInDays = (birthDate: string): number => {
+  if (!birthDate) return 0;
+  const birth = new Date(birthDate);
+  const now = new Date();
+  
+  // ミリ秒の差を日数に変換（生まれた日を0日とする）
+  const diffInMs = now.getTime() - birth.getTime();
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  
+  return Math.max(0, diffInDays);
+};
+
+/**
  * 日付文字列をフォーマット
  */
 export const formatDateJP = (dateString: string): string => {
