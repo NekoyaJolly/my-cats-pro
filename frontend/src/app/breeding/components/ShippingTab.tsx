@@ -21,7 +21,6 @@ import { useGetWeightRecords } from '@/lib/api/hooks/use-weight-records';
 import {
   useCreateKittenDisposition,
   type BirthPlan,
-  type KittenDisposition,
   type DispositionType,
 } from '@/lib/api/hooks/use-breeding';
 import type { Cat } from '@/lib/api/hooks/use-cats';
@@ -48,7 +47,6 @@ interface KittenWithWeight {
   fatherName: string;
   birthDate: string;
   birthPlanId: string;
-  disposition?: KittenDisposition;
 }
 
 /**
@@ -101,7 +99,6 @@ export function ShippingTab({
           fatherName: father?.name ?? '不明',
           birthDate: kitten.birthDate,
           birthPlanId: birthPlan.id,
-          disposition: existingDisposition,
         });
       });
     });
