@@ -20,7 +20,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { TagAutomationEventType, TagAutomationTriggerType } from "@prisma/client";
+import { TagAutomationEventType, TagAutomationRunStatus, TagAutomationTriggerType } from "@prisma/client";
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
@@ -161,16 +161,18 @@ export class TagAutomationController {
     type: Number,
   })
   async findRuns(
-    @Query("ruleId") _ruleId?: string,
-    @Query("status") _status?: string,
-    @Query("limit") _limit?: string,
+    @Query("ruleId") ruleId?: string,
+    @Query("status") status?: string,
+    @Query("limit") limit?: string,
   ) {
-    // 実行履歴取得のロジックは後で実装
-    // とりあえず基本的な構造を返す
-    return {
-      runs: [],
-      message: "実行履歴取得機能は開発中です",
-    };
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    const statuses = status ? [status as TagAutomationRunStatus] : undefined;
+
+    return this.tagAutomationService.findRuns({
+      ruleId: ruleId || undefined,
+      statuses,
+      take: limitNum,
+    });
   }
 
     @Post("rules/:id/execute")

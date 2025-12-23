@@ -1269,6 +1269,7 @@ enum TagAutomationEventType {
   AGE_THRESHOLD
   CUSTOM
   PAGE_ACTION
+  TAG_ASSIGNED
 }
 
 enum TagAutomationRunStatus {

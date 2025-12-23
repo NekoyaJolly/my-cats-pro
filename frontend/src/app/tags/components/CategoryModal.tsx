@@ -30,11 +30,8 @@ export type CategoryModalProps = {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   isEditing: boolean;
   isSubmitting: boolean;
-  // スコープ関連
+  // スコープ関連（事前定義済み選択肢）
   categoryScopeOptions: { value: string; label: string }[];
-  scopeDraft: string;
-  onScopeDraftChange: (value: string) => void;
-  onScopeDraftSubmit: () => void;
   // デフォルト設定
   setAsCategoryDefaultBgColor: boolean;
   onSetAsCategoryDefaultBgColorChange: (checked: boolean) => void;
@@ -53,9 +50,6 @@ export function CategoryModal({
   isEditing,
   isSubmitting,
   categoryScopeOptions,
-  scopeDraft,
-  onScopeDraftChange,
-  onScopeDraftSubmit,
   setAsCategoryDefaultBgColor,
   onSetAsCategoryDefaultBgColorChange,
   setAsCategoryDefaultTextColor,
@@ -135,37 +129,16 @@ export function CategoryModal({
             <Text size="xs">サンプルプレビュー</Text>
           </Card>
           <MultiSelect
-            label="スコープ"
+            label="利用ページ"
+            description="このカテゴリのタグを表示するページを選択"
             data={categoryScopeOptions}
             value={form.values.scopes}
             onChange={(value) => form.setFieldValue('scopes', value)}
-            placeholder="このカテゴリを使用する画面や機能"
+            placeholder="ページを選択"
             searchable
             clearable
             maxDropdownHeight={220}
           />
-          <Group align="flex-end" gap="sm">
-            <TextInput
-              label="スコープを追加"
-              placeholder="新しいスコープ名"
-              value={scopeDraft}
-              onChange={(event) => onScopeDraftChange(event.currentTarget.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  onScopeDraftSubmit();
-                }
-              }}
-              style={{ flex: 1 }}
-            />
-            <Button
-              variant="light"
-              onClick={onScopeDraftSubmit}
-              disabled={!scopeDraft.trim() || form.values.scopes.includes(scopeDraft.trim())}
-            >
-              追加
-            </Button>
-          </Group>
           <Switch
             label="アクティブ"
             checked={form.values.isActive}
@@ -184,11 +157,3 @@ export function CategoryModal({
     </Modal>
   );
 }
-
-
-
-
-
-
-
-

@@ -31,6 +31,26 @@ export interface FindAutomationRunOptions {
   take?: number;
 }
 
+// Config型定義 - 型安全性のため
+interface BaseConfig {
+  actionType?: 'ADD' | 'REMOVE';
+}
+
+interface PageActionConfig extends BaseConfig {
+  page?: string;
+  action?: string;
+}
+
+interface AgeThresholdConfig extends BaseConfig {
+  ageType?: 'months' | 'days';
+  threshold?: number;
+}
+
+// TAG_ASSIGNEDイベント用の設定は BaseConfig のみ使用
+type TagAssignedConfig = BaseConfig;
+
+type AutomationConfig = PageActionConfig | AgeThresholdConfig | TagAssignedConfig | Record<string, unknown>;
+
 export interface RecordAssignmentOptions {
   catId: string;
   tagId: string;
@@ -123,19 +143,27 @@ export class TagAutomationService {
   }
 
   async createRule(dto: CreateTagAutomationRuleDto) {
-    const key = this.normalizeKey(dto.key ?? dto.name);
+    // キーの自動生成（未指定の場合）
+    const timestamp = Date.now();
+    const eventTypeStr = dto.eventType || 'unknown';
+    const key = dto.key 
+      ? this.normalizeKey(dto.key) 
+      : this.normalizeKey(`${eventTypeStr}-${timestamp}`);
+
+    // 名前の自動生成（未指定の場合）
+    const name = dto.name || this.generateRuleName(dto);
 
     try {
       const rule = await this.prisma.tagAutomationRule.create({
         data: {
           key,
-          name: dto.name,
+          name,
           description: dto.description ?? undefined,
           triggerType: dto.triggerType,
-          eventType: dto.eventType,
+          eventType: dto.eventType ?? 'PAGE_ACTION', // デフォルトはPAGE_ACTION
           scope: dto.scope ?? undefined,
           isActive: dto.isActive ?? true,
-          priority: dto.priority ?? 0,
+          priority: 0, // 優先度は固定値（複数マッチ時は全て適用）
           ...(dto.config !== undefined
             ? { config: this.toJson(dto.config) ?? Prisma.JsonNull }
             : {}),
@@ -148,6 +176,48 @@ export class TagAutomationService {
         throw new BadRequestException("同じキーを持つ自動化ルールが既に存在します");
       }
       throw error;
+    }
+  }
+
+  /**
+   * ルール名の自動生成
+   */
+  private generateRuleName(dto: CreateTagAutomationRuleDto): string {
+    const config = (dto.config ?? {}) as AutomationConfig;
+    
+    // 型ガードを使用して安全にプロパティにアクセス
+    const isPageActionConfig = (c: AutomationConfig): c is PageActionConfig => {
+      return 'page' in c || 'action' in c;
+    };
+    
+    const isAgeThresholdConfig = (c: AutomationConfig): c is AgeThresholdConfig => {
+      return 'ageType' in c || 'threshold' in c;
+    };
+    
+    const actionType = config.actionType === 'REMOVE' ? 'タグ削除' : 'タグ付与';
+    
+    switch (dto.eventType) {
+      case 'PAGE_ACTION': {
+        if (isPageActionConfig(config)) {
+          const page = config.page ?? '不明';
+          const action = config.action ?? '不明';
+          return `${page} - ${action}時 → ${actionType}`;
+        }
+        return `ページアクション → ${actionType}`;
+      }
+      case 'AGE_THRESHOLD': {
+        if (isAgeThresholdConfig(config)) {
+          const ageType = config.ageType === 'months' ? 'ヶ月' : '日';
+          const threshold = config.threshold ?? 0;
+          return `生後${threshold}${ageType}達成時 → ${actionType}`;
+        }
+        return `年齢条件 → ${actionType}`;
+      }
+      case 'TAG_ASSIGNED': {
+        return `タグ付与時 → ${actionType}`;
+      }
+      default:
+        return `自動化ルール - ${actionType}`;
     }
   }
 

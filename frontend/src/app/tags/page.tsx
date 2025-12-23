@@ -5,14 +5,11 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
-  Alert,
   Button,
-  Card,
   Container,
   Group,
   Loader,
   Menu,
-  MultiSelect,
   Stack,
   Switch,
   Tabs,
@@ -22,7 +19,6 @@ import { useForm } from '@mantine/form';
 import {
   IconChevronDown,
   IconFolderPlus,
-  IconInfoCircle,
   IconRobot,
   IconTag,
   IconTags,
@@ -59,7 +55,7 @@ import {
   DEFAULT_GROUP_TEXT_COLOR,
   DEFAULT_TAG_COLOR,
   DEFAULT_TAG_TEXT_COLOR,
-  AUTOMATION_SCOPE_OPTIONS,
+  CATEGORY_SCOPE_OPTIONS,
   PAGE_ACTIONS_MAP,
 } from './constants';
 import { buildCategoryPayload, buildTagPayload, sortGroups } from './utils';
@@ -108,7 +104,6 @@ export default function TagsPage() {
     isLoading,
     isFetching,
     sortedCategories,
-    availableScopes,
     flatTags,
     createCategory,
     updateCategory,
@@ -152,9 +147,6 @@ export default function TagsPage() {
   const [tagModalOpened, { open: openTagModal, close: closeTagModal }] = useDisclosure(false);
   const [automationRuleModalOpened, { open: openAutomationRuleModal, close: closeAutomationRuleModal }] = useDisclosure(false);
   const [executeRuleModalOpened, { open: openExecuteRuleModal, close: closeExecuteRuleModal }] = useDisclosure(false);
-
-  // スコープドラフト
-  const [scopeDraft, setScopeDraft] = useState('');
 
   // デフォルト設定用のチェックボックス状態
   const [setAsCategoryDefaultBgColor, setSetAsCategoryDefaultBgColor] = useState(false);
@@ -220,52 +212,32 @@ export default function TagsPage() {
 
   const automationRuleForm = useForm<AutomationRuleFormValues>({
     initialValues: {
-      key: '',
+      ruleType: 'PAGE_ACTION',
+      actionType: 'ASSIGN',
+      tagIds: [],
       name: '',
       description: '',
-      triggerType: 'EVENT',
-      eventType: '',
-      scope: '',
-      priority: 10,
       isActive: true,
-      tagIds: [],
-      ageThreshold: {
-        type: 'kitten',
-        kitten: {},
-        adult: {},
-      },
       pageAction: {
         page: 'cats',
-        action: 'create',
-        targetSelection: 'event_target',
-        specificCatIds: [],
+        action: '',
       },
+      ageThreshold: {
+        ageType: 'days',
+        threshold: 60,
+      },
+      triggerTagId: '',
     },
     validate: {
-      key: (value) => {
-        if (!value.trim()) return 'キーを入力してください';
-        if (!/^[a-z0-9_-]+$/i.test(value)) {
-          return 'キーは英数字、ハイフン、アンダースコアのみ使用できます';
-        }
-        return null;
-      },
-      name: (value) => (value.trim().length ? null : 'ルール名を入力してください'),
-      triggerType: (value) => (value ? null : 'トリガータイプを選択してください'),
-      eventType: (value, values) => {
-        if (values.triggerType === 'EVENT' && !value) {
-          return 'イベントタイプを選択してください';
-        }
-        return null;
-      },
-      priority: (value) => {
-        if (value < 0 || value > 100) {
-          return '優先度は0-100の範囲で入力してください';
-        }
-        return null;
-      },
       tagIds: (value) => {
         if (!value || value.length === 0) {
           return '少なくとも1つのタグを選択してください';
+        }
+        return null;
+      },
+      triggerTagId: (value, values) => {
+        if (values.ruleType === 'TAG_ASSIGNED' && !value) {
+          return 'トリガータグを選択してください';
         }
         return null;
       },
@@ -273,37 +245,6 @@ export default function TagsPage() {
   });
 
   // オプション生成
-  const categoryScopeOptions = useMemo(() => {
-    const set = new Set<string>([
-      ...availableScopes,
-      ...filters.scopes,
-      ...categoryForm.values.scopes,
-      scopeDraft,
-    ]);
-    return Array.from(set)
-      .filter((scope) => scope.trim().length > 0)
-      .map((scope) => ({ value: scope, label: scope }));
-  }, [availableScopes, categoryForm.values.scopes, filters.scopes, scopeDraft]);
-
-  const filterScopeOptions = useMemo(
-    () => availableScopes.map((scope) => ({ value: scope, label: scope })),
-    [availableScopes],
-  );
-
-  const automationScopeOptions = useMemo(() => {
-    const scopeMap = new Map<string, string>();
-    AUTOMATION_SCOPE_OPTIONS.forEach(option => {
-      scopeMap.set(option.value, option.label);
-    });
-    availableScopes.forEach(scope => {
-      if (!scopeMap.has(scope)) {
-        scopeMap.set(scope, scope);
-      }
-    });
-    return Array.from(scopeMap.entries())
-      .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'ja'));
-  }, [availableScopes]);
 
   const automationTagOptions = useMemo(() => {
     if (!sortedCategories || sortedCategories.length === 0) {
@@ -443,7 +384,6 @@ export default function TagsPage() {
       scopes: [],
       isActive: true,
     });
-    setScopeDraft('');
     setSetAsCategoryDefaultBgColor(false);
     setSetAsCategoryDefaultTextColor(false);
     openCategoryModal();
@@ -460,7 +400,6 @@ export default function TagsPage() {
       scopes: category.scopes ?? [],
       isActive: category.isActive,
     });
-    setScopeDraft('');
     openCategoryModal();
   };
 
@@ -506,17 +445,6 @@ export default function TagsPage() {
         displayOrder: orderIndex,
       })),
     });
-  };
-
-  const handleScopeDraftSubmit = () => {
-    const value = scopeDraft.trim();
-    if (!value) {
-      return;
-    }
-    if (!categoryForm.values.scopes.includes(value)) {
-      categoryForm.setFieldValue('scopes', [...categoryForm.values.scopes, value]);
-    }
-    setScopeDraft('');
   };
 
   // グループ操作
@@ -722,57 +650,48 @@ export default function TagsPage() {
 
   const handleEditAutomationRule = (rule: TagAutomationRule) => {
     setEditingAutomationRule(rule);
-    let tagIds: string[] = [];
-    let ageThreshold: AutomationRuleFormValues['ageThreshold'] = {
-      type: 'kitten',
-      kitten: {},
-      adult: {},
-    };
-    let pageAction: AutomationRuleFormValues['pageAction'] = {
-      page: 'cats',
-      action: 'create',
-      targetSelection: 'event_target',
-      specificCatIds: [],
-    };
-
-    if (rule.config && typeof rule.config === 'object') {
-      const config = rule.config as {
-        tagIds?: string[];
-        kitten?: { minDays?: number; maxDays?: number };
-        adult?: { minMonths?: number; maxMonths?: number };
-        page?: string;
-        action?: string;
-        targetSelection?: string;
-        specificCatIds?: string[];
-      };
-      tagIds = config.tagIds || [];
-      if (config.kitten) {
-        ageThreshold = { type: 'kitten', kitten: config.kitten, adult: {} };
-      } else if (config.adult) {
-        ageThreshold = { type: 'adult', kitten: {}, adult: config.adult };
-      }
-      if (config.page || config.action) {
-        pageAction = {
-          page: config.page || 'cats',
-          action: config.action || 'create',
-          targetSelection: config.targetSelection || 'event_target',
-          specificCatIds: config.specificCatIds || [],
-        };
-      }
+    
+    // configからデータを抽出
+    const config = (rule.config && typeof rule.config === 'object') ? rule.config as Record<string, unknown> : {};
+    const tagIds = (config.tagIds as string[]) || [];
+    
+    // ルールタイプの判定
+    let ruleType: AutomationRuleFormValues['ruleType'] = 'PAGE_ACTION';
+    if (rule.eventType === 'AGE_THRESHOLD') {
+      ruleType = 'AGE_THRESHOLD';
+    } else if (rule.eventType === 'TAG_ASSIGNED') {
+      ruleType = 'TAG_ASSIGNED';
     }
+    
+    // アクションタイプの判定
+    const actionType: AutomationRuleFormValues['actionType'] = 
+      (config.actionType as string) === 'REMOVE' ? 'REMOVE' : 'ASSIGN';
+    
+    // ページアクション設定
+    const pageAction: AutomationRuleFormValues['pageAction'] = {
+      page: (config.page as string) || 'cats',
+      action: (config.action as string) || '',
+    };
+    
+    // 年齢閾値設定
+    const ageThreshold: AutomationRuleFormValues['ageThreshold'] = {
+      ageType: (config.ageType as 'days' | 'months') || 'days',
+      threshold: (config.threshold as number) || 60,
+    };
+    
+    // トリガータグID
+    const triggerTagId = (config.triggerTagId as string) || '';
 
     automationRuleForm.setValues({
-      key: rule.key,
+      ruleType,
+      actionType,
+      tagIds,
       name: rule.name,
       description: rule.description || '',
-      triggerType: rule.triggerType,
-      eventType: rule.eventType || '',
-      scope: rule.scope || '',
-      priority: rule.priority,
       isActive: rule.isActive,
-      tagIds,
-      ageThreshold,
       pageAction,
+      ageThreshold,
+      triggerTagId,
     });
     openAutomationRuleModal();
   };
@@ -794,41 +713,32 @@ export default function TagsPage() {
   };
 
   const handleSubmitAutomationRule = automationRuleForm.onSubmit(async (values) => {
+    // configを構築
     const config: Record<string, unknown> = {
       tagIds: values.tagIds,
+      actionType: values.actionType,
     };
 
-    if (values.eventType === 'AGE_THRESHOLD' && values.ageThreshold) {
-      if (values.ageThreshold.type === 'kitten' && values.ageThreshold.kitten) {
-        config.kitten = values.ageThreshold.kitten;
-      } else if (values.ageThreshold.type === 'adult' && values.ageThreshold.adult) {
-        config.adult = values.ageThreshold.adult;
-      }
-    }
-
-    if (values.eventType === 'PAGE_ACTION' && values.pageAction) {
+    // ルールタイプに応じた設定を追加
+    if (values.ruleType === 'PAGE_ACTION') {
       config.page = values.pageAction.page;
       config.action = values.pageAction.action;
-      config.targetSelection = values.pageAction.targetSelection;
-      if (values.pageAction.targetSelection === 'specific_cats' && values.pageAction.specificCatIds) {
-        config.specificCatIds = values.pageAction.specificCatIds;
-      }
+    } else if (values.ruleType === 'AGE_THRESHOLD') {
+      config.ageType = values.ageThreshold.ageType;
+      config.threshold = values.ageThreshold.threshold;
+    } else if (values.ruleType === 'TAG_ASSIGNED') {
+      config.triggerTagId = values.triggerTagId;
     }
 
+    // ペイロードを構築（keyは省略してバックエンドで自動生成）
     const payload: CreateTagAutomationRuleRequest | UpdateTagAutomationRuleRequest = {
-      name: values.name,
+      name: values.name || undefined, // 空の場合はバックエンドで自動生成
       description: values.description || undefined,
-      triggerType: values.triggerType,
-      eventType: values.eventType || undefined,
-      scope: values.scope || undefined,
-      priority: values.priority,
+      triggerType: 'EVENT', // 全て EVENT トリガー
+      eventType: values.ruleType, // ruleTypeをeventTypeとして使用
       isActive: values.isActive,
       config,
     };
-
-    if (!editingAutomationRule) {
-      (payload as CreateTagAutomationRuleRequest).key = values.key;
-    }
 
     try {
       if (editingAutomationRule) {
@@ -893,38 +803,17 @@ export default function TagsPage() {
   return (
     <Container size="lg" pb="xl">
       <Stack gap="xl">
-        <Alert icon={<IconInfoCircle size={18} />} variant="light">
-          タグはカテゴリごとに整理され、カテゴリ単位でスコープ（利用ページ）やアクティブ状態を制御できます。並び替えや編集内容は保存すると即座にDBへ反映されます。
-        </Alert>
-
-        <Card withBorder padding="md" radius="md">
-          <Group justify="space-between" align="center" wrap="wrap">
-            <Group gap="md" wrap="wrap">
-              <MultiSelect
-                label="スコープフィルタ"
-                data={filterScopeOptions}
-                value={filters.scopes}
-                onChange={(value) => setFilters((prev) => ({ ...prev, scopes: value }))}
-                placeholder={filterScopeOptions.length ? 'スコープを選択' : '利用可能なスコープがありません'}
-                searchable
-                clearable
-                nothingFoundMessage="スコープが見つかりません"
-                size="sm"
-                maxDropdownHeight={200}
-                w={260}
-              />
-              <Switch
-                label="非アクティブを含める"
-                checked={filters.includeInactive}
-                onChange={(event) => {
-                  const checked = event.currentTarget?.checked ?? false;
-                  setFilters((prev) => ({ ...prev, includeInactive: checked }));
-                }}
-              />
-            </Group>
-            {isFetching && <Loader size="sm" />}
-          </Group>
-        </Card>
+        <Group justify="space-between" align="center" wrap="wrap">
+          <Switch
+            label="非アクティブを含める"
+            checked={filters.includeInactive}
+            onChange={(event) => {
+              const checked = event.currentTarget?.checked ?? false;
+              setFilters((prev) => ({ ...prev, includeInactive: checked }));
+            }}
+          />
+          {isFetching && <Loader size="sm" />}
+        </Group>
 
         <Tabs value={activeTab} onChange={handleTabChange} keepMounted={false} radius="md">
           <Tabs.List>
@@ -994,16 +883,12 @@ export default function TagsPage() {
           onClose={() => {
             closeCategoryModal();
             setEditingCategory(null);
-            setScopeDraft('');
           }}
           form={categoryForm}
           onSubmit={handleSubmitCategory}
           isEditing={!!editingCategory}
           isSubmitting={isCategorySubmitting}
-          categoryScopeOptions={categoryScopeOptions}
-          scopeDraft={scopeDraft}
-          onScopeDraftChange={setScopeDraft}
-          onScopeDraftSubmit={handleScopeDraftSubmit}
+          categoryScopeOptions={CATEGORY_SCOPE_OPTIONS}
           setAsCategoryDefaultBgColor={setAsCategoryDefaultBgColor}
           onSetAsCategoryDefaultBgColorChange={setSetAsCategoryDefaultBgColor}
           setAsCategoryDefaultTextColor={setAsCategoryDefaultTextColor}
@@ -1060,7 +945,6 @@ export default function TagsPage() {
           onSubmit={handleSubmitAutomationRule}
           isEditing={!!editingAutomationRule}
           isSubmitting={createAutomationRule.isPending || updateAutomationRule.isPending}
-          automationScopeOptions={automationScopeOptions}
           automationTagOptions={automationTagOptions}
           pageActionOptions={pageActionOptions}
         />
