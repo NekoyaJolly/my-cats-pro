@@ -16,6 +16,7 @@ import {
   IconHomePlus,
   IconHeartHandshake,
   IconChevronRight,
+  IconCloud,
 } from '@tabler/icons-react';
 import { useGetWeightRecords } from '@/lib/api/hooks/use-weight-records';
 import {
@@ -179,6 +180,8 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
   }
 
   const handleSetDisposition = (disposition: DispositionType) => {
+    // TODO: 将来的には、SALEの場合はモーダルを開いて購入者情報を入力させる
+    // 現在は仮データで作成し、後で編集する想定
     createDispositionMutation.mutate(
       {
         birthRecordId: kitten.birthPlanId,
@@ -213,14 +216,11 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
           // 行先登録に失敗した場合はユーザーにエラーを通知する
           notifications.show({
             title: '行先の登録に失敗しました',
-            message: '行先の登録中にエラーが発生しました。時間をおいて再度お試しください。',
+            message: error instanceof Error 
+              ? `エラー: ${error.message}` 
+              : '行先の登録中にエラーが発生しました。時間をおいて再度お試しください。',
             color: 'red',
           });
-          if (error instanceof Error) {
-            // 開発者向けのデバッグ情報
-            // eslint-disable-next-line no-console
-            console.error('Failed to create kitten disposition:', error);
-          }
         },
       }
     );
@@ -293,7 +293,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
               loading={createDispositionMutation.isPending}
               aria-label="死亡に設定"
             >
-              🌈
+              <IconCloud size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>

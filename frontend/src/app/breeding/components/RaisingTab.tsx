@@ -17,6 +17,7 @@ import {
   IconChevronRight,
   IconHomePlus,
   IconHeartHandshake,
+  IconCloud,
 } from '@tabler/icons-react';
 import { TagDisplay } from '@/components/TagSelector';
 import type { BirthPlan, KittenDisposition } from '@/lib/api/hooks/use-breeding';
@@ -129,7 +130,9 @@ export function RaisingTab({
       case 'DECEASED':
         return (
           <Tooltip label="死亡">
-            <Box component="span" style={{ fontSize: '14px' }}>🌈</Box>
+            <Box component="span">
+              <IconCloud size={16} color="var(--mantine-color-gray-5)" />
+            </Box>
           </Tooltip>
         );
       default:
