@@ -23,9 +23,21 @@ interface MotherWithKittens {
 }
 
 export interface WeightTabProps {
+  /**
+   * 登録されているすべての猫一覧（母猫・父猫・子猫を含む）
+   */
   allCats: Cat[];
+  /**
+   * 出産予定および出産済みの計画一覧（母猫や子猫の情報を含む）
+   */
   birthPlans: BirthPlan[];
+  /**
+   * 体重記録や関連データを読み込み中かどうか
+   */
   isLoading: boolean;
+  /**
+   * 体重記録の登録・更新後にデータを再取得するためのコールバック
+   */
   onRefetch: () => void;
 }
 
