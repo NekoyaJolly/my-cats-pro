@@ -300,8 +300,8 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
         const Icon = customIcon as React.ComponentType<{ size?: number | string }>;
         iconContent = <Icon size={iconSize} />;
       } else {
-        // 関数として実行
-        iconContent = customIcon();
+        // 関数として実行（型アサーションで明示的に型を指定）
+        iconContent = (customIcon as () => React.ReactNode)();
       }
     } else if (customIcon && typeof customIcon === 'object' && !('prototype' in customIcon)) {
       // ReactNode
