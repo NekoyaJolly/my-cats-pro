@@ -10,6 +10,12 @@ export type { BirthPlanTabProps } from './BirthPlanTab';
 export { RaisingTab } from './RaisingTab';
 export type { RaisingTabProps } from './RaisingTab';
 
+export { WeightTab } from './WeightTab';
+export type { WeightTabProps } from './WeightTab';
+
+export { ShippingTab } from './ShippingTab';
+export type { ShippingTabProps } from './ShippingTab';
+
 export { MaleSelectionModal } from './MaleSelectionModal';
 export type { MaleSelectionModalProps } from './MaleSelectionModal';
 

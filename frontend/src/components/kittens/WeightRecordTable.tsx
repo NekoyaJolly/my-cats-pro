@@ -38,7 +38,7 @@ interface MotherCat {
   fatherName: string;
   kittens: Kitten[];
   deliveryDate: string;
-  monthsOld: number;
+  daysOld: number;
 }
 
 interface WeightRecordTableProps {

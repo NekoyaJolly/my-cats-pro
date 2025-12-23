@@ -47,48 +47,70 @@ else
     failure "deploy-only.yml not found"
 fi
 
-# Check for staging substitutions
-if grep -q "_DATABASE_URL_SECRET_NAME=DATABASE_URL_STAGING" .github/workflows/deploy-only.yml; then
-    success "Staging uses correct secret name: DATABASE_URL_STAGING (uppercase)"
+# Check for production substitutions - 独自ドメイン
+if grep -q "BACKEND_URL=\"https://api.nekoya.co.jp\"" .github/workflows/deploy-only.yml; then
+    success "Production uses custom domain for backend (api.nekoya.co.jp)"
 else
-    failure "Staging secret name should be DATABASE_URL_STAGING (uppercase)"
+    failure "Production missing custom domain for backend"
 fi
 
-if grep -q "_DATABASE_URL_SECRET_VERSION=3" .github/workflows/deploy-only.yml; then
-    success "Staging includes DATABASE_URL_SECRET_VERSION=3"
+if grep -q "FRONTEND_URL=\"https://nekoya.co.jp\"" .github/workflows/deploy-only.yml; then
+    success "Production uses custom domain for frontend (nekoya.co.jp)"
 else
-    failure "Staging missing DATABASE_URL_SECRET_VERSION"
+    failure "Production missing custom domain for frontend"
 fi
 
-if grep -q "_JWT_SECRET_NAME=JWT_SECRET_STAGING" .github/workflows/deploy-only.yml; then
-    success "Staging uses correct JWT_SECRET_STAGING"
+# Check for RESEND_API_KEY configuration
+if grep -q "_RESEND_API_KEY_SECRET_NAME=RESEND_API_KEY" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes RESEND_API_KEY secret configuration"
 else
-    failure "Staging should use JWT_SECRET_STAGING"
+    failure "deploy-only.yml missing RESEND_API_KEY secret configuration"
 fi
 
-if grep -q "_JWT_SECRET_VERSION=1" .github/workflows/deploy-only.yml; then
-    success "Staging includes JWT_SECRET_VERSION"
+if grep -q "_RESEND_API_KEY_SECRET_VERSION=latest" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes RESEND_API_KEY version"
 else
-    failure "Staging missing JWT_SECRET_VERSION"
+    failure "deploy-only.yml missing RESEND_API_KEY version"
 fi
 
-# Check for production substitutions
-if grep -q "_CLOUD_SQL_CONNECTION_NAME=my-cats-pro:asia-northeast1:mycats-prod-db" .github/workflows/deploy-only.yml; then
-    success "Production includes Cloud SQL connection name"
+# Check for EMAIL configuration
+if grep -q "_EMAIL_FROM=noreply@nekoya.co.jp" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes EMAIL_FROM configuration"
 else
-    failure "Production missing Cloud SQL connection name"
+    failure "deploy-only.yml missing EMAIL_FROM configuration"
 fi
 
-if grep -q "_CORS_ORIGIN=https://nekoya.co.jp" .github/workflows/deploy-only.yml; then
-    success "Production includes CORS origin (独自ドメイン)"
+if grep -q "_EMAIL_FROM_NAME=MyCats Pro" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes EMAIL_FROM_NAME configuration"
 else
-    failure "Production missing CORS origin (should be https://nekoya.co.jp in .github/workflows/deploy-only.yml)"
+    failure "deploy-only.yml missing EMAIL_FROM_NAME configuration"
 fi
 
-if grep -q "_DATABASE_URL_SECRET_NAME=DATABASE_URL,_DATABASE_URL_SECRET_VERSION=1" .github/workflows/deploy-only.yml; then
-    success "Production includes DATABASE_URL secret with version"
+# Check for database secrets
+if grep -q "_DATABASE_URL_SECRET_NAME=DATABASE_URL" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes DATABASE_URL secret"
 else
-    failure "Production missing DATABASE_URL secret configuration"
+    failure "deploy-only.yml missing DATABASE_URL secret"
+fi
+
+# Check for JWT secrets
+if grep -q "_JWT_SECRET_NAME=JWT_SECRET" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes JWT_SECRET"
+else
+    failure "deploy-only.yml missing JWT_SECRET"
+fi
+
+if grep -q "_JWT_REFRESH_SECRET_NAME=JWT_REFRESH_SECRET" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes JWT_REFRESH_SECRET"
+else
+    failure "deploy-only.yml missing JWT_REFRESH_SECRET"
+fi
+
+# Check for CSRF token secret
+if grep -q "_CSRF_TOKEN_SECRET_NAME=CSRF_TOKEN_SECRET" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes CSRF_TOKEN_SECRET"
+else
+    failure "deploy-only.yml missing CSRF_TOKEN_SECRET"
 fi
 
 echo ""
@@ -109,11 +131,25 @@ else
     failure "cloudbuild.yaml NODE_ENV syntax incorrect"
 fi
 
-# Check for set-secrets syntax
-if grep -q 'DATABASE_URL=\${_DATABASE_URL_SECRET_NAME}:\${_DATABASE_URL_SECRET_VERSION}' cloudbuild.yaml; then
-    success "cloudbuild.yaml uses correct secret mounting syntax"
+# Check for set-secrets syntax including RESEND_API_KEY
+if grep -q 'RESEND_API_KEY=\${_RESEND_API_KEY_SECRET_NAME}:\${_RESEND_API_KEY_SECRET_VERSION}' cloudbuild.yaml; then
+    success "cloudbuild.yaml includes RESEND_API_KEY secret mounting"
 else
-    failure "cloudbuild.yaml secret syntax incorrect"
+    failure "cloudbuild.yaml missing RESEND_API_KEY secret mounting"
+fi
+
+# Check for EMAIL_FROM env var
+if grep -q 'EMAIL_FROM=\${_EMAIL_FROM}' cloudbuild.yaml; then
+    success "cloudbuild.yaml includes EMAIL_FROM env var"
+else
+    failure "cloudbuild.yaml missing EMAIL_FROM env var"
+fi
+
+# Check for EMAIL_FROM_NAME env var
+if grep -q 'EMAIL_FROM_NAME=\${_EMAIL_FROM_NAME}' cloudbuild.yaml; then
+    success "cloudbuild.yaml includes EMAIL_FROM_NAME env var"
+else
+    failure "cloudbuild.yaml missing EMAIL_FROM_NAME env var"
 fi
 
 echo ""
@@ -140,6 +176,31 @@ if [ -f "backend/src/common/environment.validation.ts" ]; then
     else
         warning "environment.validation.ts may need 'staging' update"
     fi
+fi
+
+echo ""
+echo "=== Checking GCP Secret Manager (requires gcloud auth) ==="
+echo ""
+
+# Check if gcloud is available
+if command -v gcloud &> /dev/null; then
+    PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
+    if [ -n "$PROJECT_ID" ]; then
+        echo "Project: $PROJECT_ID"
+        
+        # Check for required secrets
+        for secret in DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET CSRF_TOKEN_SECRET RESEND_API_KEY; do
+            if gcloud secrets describe "$secret" --project="$PROJECT_ID" &> /dev/null; then
+                success "GCP Secret exists: $secret"
+            else
+                failure "GCP Secret missing: $secret"
+            fi
+        done
+    else
+        warning "No GCP project configured, skipping secret validation"
+    fi
+else
+    warning "gcloud CLI not available, skipping GCP secret validation"
 fi
 
 echo ""
