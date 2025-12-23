@@ -7,6 +7,7 @@ import { WeightRecordModal } from '@/components/kittens/WeightRecordModal';
 import BulkWeightRecordModal from '@/components/kittens/BulkWeightRecordModal';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import type { BirthPlan } from '@/lib/api/hooks/use-breeding';
+import { calculateAgeInDays } from '../utils';
 
 interface MotherWithKittens {
   id: string;
@@ -19,13 +20,25 @@ interface MotherWithKittens {
     gender: 'オス' | 'メス';
   }[];
   deliveryDate: string;
-  monthsOld: number;
+  daysOld: number;
 }
 
 export interface WeightTabProps {
+  /**
+   * 登録されているすべての猫一覧（母猫・父猫・子猫を含む）
+   */
   allCats: Cat[];
+  /**
+   * 出産予定および出産済みの計画一覧（母猫や子猫の情報を含む）
+   */
   birthPlans: BirthPlan[];
+  /**
+   * 体重記録や関連データを読み込み中かどうか
+   */
   isLoading: boolean;
+  /**
+   * 体重記録の登録・更新後にデータを再取得するためのコールバック
+   */
   onRefetch: () => void;
 }
 
@@ -56,15 +69,13 @@ export function WeightTab({
       
       if (!activeBirthPlan) return false;
       
-      // 生後3ヶ月以内の子猫がいる母猫を抽出
+      // 生後90日以内の子猫がいる母猫を抽出
       const hasYoungKittens = allCats.some((kitten) => {
         if (kitten.motherId !== cat.id) return false;
         
-        const birthDate = new Date(kitten.birthDate);
-        const now = new Date();
-        const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const ageInDays = calculateAgeInDays(kitten.birthDate);
         
-        return ageInMonths <= 3;
+        return ageInDays <= 90;
       });
       
       return hasYoungKittens;
@@ -74,11 +85,9 @@ export function WeightTab({
       const kittens = allCats.filter((kitten) => {
         if (kitten.motherId !== mother.id) return false;
         
-        const birthDate = new Date(kitten.birthDate);
-        const now = new Date();
-        const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const ageInDays = calculateAgeInDays(kitten.birthDate);
         
-        return ageInMonths <= 3;
+        return ageInDays <= 90;
       });
 
       // 父猫を取得
@@ -100,8 +109,8 @@ export function WeightTab({
         ? new Date(oldestKitten.birthDate).toLocaleDateString('ja-JP')
         : '';
 
-      const monthsOld = oldestKitten
-        ? Math.floor((new Date().getTime() - new Date(oldestKitten.birthDate).getTime()) / (1000 * 60 * 60 * 24))
+      const daysOld = oldestKitten
+        ? calculateAgeInDays(oldestKitten.birthDate)
         : 0;
 
       return {
@@ -115,7 +124,7 @@ export function WeightTab({
           gender: k.gender === 'MALE' ? 'オス' as const : 'メス' as const,
         })),
         deliveryDate,
-        monthsOld,
+        daysOld,
       };
     });
 

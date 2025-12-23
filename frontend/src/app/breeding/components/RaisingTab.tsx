@@ -21,7 +21,7 @@ import { TagDisplay } from '@/components/TagSelector';
 import type { BirthPlan, KittenDisposition } from '@/lib/api/hooks/use-breeding';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import type { TagCategoryView } from '@/lib/api/hooks/use-tags';
-import { calculateAgeInMonths } from '../utils';
+import { calculateAgeInDays } from '../utils';
 
 export interface RaisingTabProps {
   allCats: Cat[];
@@ -68,15 +68,13 @@ export function RaisingTab({
       
       if (!activeBirthPlan) return false;
       
-      // 生後3ヶ月以内の子猫がいる母猫を抽出
+      // 生後90日以内の子猫がいる母猫を抽出
       const hasYoungKittens = allCats.some((kitten) => {
         if (kitten.motherId !== cat.id) return false;
         
-        const birthDate = new Date(kitten.birthDate);
-        const now = new Date();
-        const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const ageInDays = calculateAgeInDays(kitten.birthDate);
         
-        return ageInMonths <= 3;
+        return ageInDays <= 90;
       });
       
       return hasYoungKittens;
@@ -86,11 +84,9 @@ export function RaisingTab({
       const kittens = allCats.filter((kitten) => {
         if (kitten.motherId !== mother.id) return false;
         
-        const birthDate = new Date(kitten.birthDate);
-        const now = new Date();
-        const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const ageInDays = calculateAgeInDays(kitten.birthDate);
         
-        return ageInMonths <= 3;
+        return ageInDays <= 90;
       });
 
       // この母猫のBirthPlanを取得
@@ -171,8 +167,8 @@ export function RaisingTab({
               new Date(k.birthDate) < new Date(oldest.birthDate) ? k : oldest
             ) : null;
             
-            const ageInMonths = oldestKitten 
-              ? calculateAgeInMonths(oldestKitten.birthDate)
+            const ageInDays = oldestKitten 
+              ? calculateAgeInDays(oldestKitten.birthDate)
               : 0;
 
             // 出産数と死亡数を計算
@@ -212,7 +208,7 @@ export function RaisingTab({
                     }
                   </Table.Td>
                   <Table.Td>
-                    {ageInMonths}ヶ月
+                    {ageInDays}日
                   </Table.Td>
                   <Table.Td>
                     {alive}頭（{totalBorn}-{dead}）
@@ -284,7 +280,7 @@ export function RaisingTab({
                       </Table.Td>
                       <Table.Td>
                         <Text size="sm" c={hasDisposition ? 'dimmed' : undefined}>
-                          {calculateAgeInMonths(kitten.birthDate)}ヶ月
+                          {calculateAgeInDays(kitten.birthDate)}日
                         </Text>
                       </Table.Td>
                       <Table.Td>
@@ -311,6 +307,7 @@ export function RaisingTab({
                               onOpenManagementModal(mother.id);
                             }}
                             title="行先管理"
+                            aria-label="行先管理"
                           />
                         )}
                       </Table.Td>

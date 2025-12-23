@@ -56,7 +56,7 @@ interface MotherCat {
   fatherName: string;
   kittens: Kitten[];
   deliveryDate: string;
-  monthsOld: number;
+  daysOld: number;
 }
 
 /**
@@ -73,7 +73,7 @@ function convertKittenGroupToMotherCat(group: KittenGroup): MotherCat {
   };
 
   const deliveryDate = group.deliveryDate ? formatDate(group.deliveryDate) : '';
-  const monthsOld = group.deliveryDate
+  const daysOld = group.deliveryDate
     ? Math.floor((new Date().getTime() - new Date(group.deliveryDate).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
@@ -94,7 +94,7 @@ function convertKittenGroupToMotherCat(group: KittenGroup): MotherCat {
       disposition: undefined, // TODO: 処遇データの取得方法を別途検討
     })),
     deliveryDate,
-    monthsOld,
+    daysOld,
   };
 }
 
@@ -341,7 +341,7 @@ export default function KittensPage() {
                             <Text size="sm">{mother.deliveryDate}</Text>
                           </Table.Td>
                           <Table.Td>
-                            <Text size="sm">生後{mother.monthsOld}日</Text>
+                            <Text size="sm">生後{mother.daysOld}日</Text>
                           </Table.Td>
                           <Table.Td>
                             <Badge size="sm" variant="light">

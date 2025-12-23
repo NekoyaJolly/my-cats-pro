@@ -20,12 +20,12 @@ import { useGetWeightRecords } from '@/lib/api/hooks/use-weight-records';
 import {
   useCreateKittenDisposition,
   type BirthPlan,
-  type KittenDisposition,
   type DispositionType,
 } from '@/lib/api/hooks/use-breeding';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import { GenderBadge } from '@/components/GenderBadge';
 import { notifications } from '@mantine/notifications';
+import { calculateAgeInDays } from '../utils';
 
 /** 出荷準備対象となる体重閾値（グラム） */
 const SHIPPING_WEIGHT_THRESHOLD = 500;
@@ -47,7 +47,6 @@ interface KittenWithWeight {
   fatherName: string;
   birthDate: string;
   birthPlanId: string;
-  disposition?: KittenDisposition;
 }
 
 /**
@@ -71,15 +70,13 @@ export function ShippingTab({
         ? allCats.find((c) => c.id === birthPlan.fatherId)
         : null;
 
-      // この母猫の子猫を取得（生後3ヶ月以内）
+      // この母猫の子猫を取得（生後90日以内）
       const kittens = allCats.filter((kitten) => {
         if (kitten.motherId !== birthPlan.motherId) return false;
         
-        const birthDate = new Date(kitten.birthDate);
-        const now = new Date();
-        const ageInMonths = (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const ageInDays = calculateAgeInDays(kitten.birthDate);
         
-        return ageInMonths <= 3;
+        return ageInDays <= 90;
       });
 
       kittens.forEach((kitten) => {
@@ -100,7 +97,6 @@ export function ShippingTab({
           fatherName: father?.name ?? '不明',
           birthDate: kitten.birthDate,
           birthPlanId: birthPlan.id,
-          disposition: existingDisposition,
         });
       });
     });
@@ -128,7 +124,7 @@ export function ShippingTab({
   return (
     <Card padding="md" radius="md" withBorder>
       <Text size="sm" c="dimmed" mb="md">
-        体重{SHIPPING_WEIGHT_THRESHOLD}g超えの子猫が表示されます。行先アイコンをクリックして行先を確定してください。
+        生後90日以内で行先未確定の子猫を表示します。体重{SHIPPING_WEIGHT_THRESHOLD}g超えの子猫のみ行先を設定できます。
       </Text>
 
       <Table striped withTableBorder>
@@ -212,6 +208,19 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
           });
           onRefetch();
         },
+        onError: (error) => {
+          // 行先登録に失敗した場合はユーザーにエラーを通知する
+          notifications.show({
+            title: '行先の登録に失敗しました',
+            message: '行先の登録中にエラーが発生しました。時間をおいて再度お試しください。',
+            color: 'red',
+          });
+          if (error instanceof Error) {
+            // 開発者向けのデバッグ情報
+            // eslint-disable-next-line no-console
+            console.error('Failed to create kitten disposition:', error);
+          }
+        },
       }
     );
   };
@@ -256,6 +265,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
             onClick={() => handleSetDisposition('TRAINING')}
             loading={createDispositionMutation.isPending}
             title="養成"
+            aria-label="養成に設定"
           />
           <ActionIconButton
             action="confirm"
@@ -263,6 +273,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
             onClick={() => handleSetDisposition('SALE')}
             loading={createDispositionMutation.isPending}
             title="出荷"
+            aria-label="出荷に設定"
           />
           <ActionIconButton
             action="delete"
@@ -270,6 +281,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
             onClick={() => handleSetDisposition('DECEASED')}
             loading={createDispositionMutation.isPending}
             title="死亡"
+            aria-label="死亡に設定"
           />
         </Group>
       </Table.Td>
