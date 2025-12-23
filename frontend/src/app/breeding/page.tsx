@@ -17,6 +17,8 @@ import {
   IconPaw,
   IconSettings,
   IconBabyCarriage,
+  IconScale,
+  IconTruck,
 } from '@tabler/icons-react';
 
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
@@ -48,6 +50,8 @@ import {
   PregnancyCheckTab,
   BirthPlanTab,
   RaisingTab,
+  WeightTab,
+  ShippingTab,
   MaleSelectionModal,
   FemaleSelectionModal,
   BirthInfoModal,
@@ -779,6 +783,12 @@ export default function BreedingPage() {
             <Tabs.Tab value="raising" leftSection={<IconBabyCarriage size={16} />} style={{ whiteSpace: 'nowrap' }}>
               子育て中 ({mothersWithKittensCount})
             </Tabs.Tab>
+            <Tabs.Tab value="weight" leftSection={<IconScale size={16} />} style={{ whiteSpace: 'nowrap' }}>
+              体重管理
+            </Tabs.Tab>
+            <Tabs.Tab value="shipping" leftSection={<IconTruck size={16} />} style={{ whiteSpace: 'nowrap' }}>
+              出荷準備
+            </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="schedule" pt="md">
@@ -831,6 +841,29 @@ export default function BreedingPage() {
               onToggleExpand={handleToggleExpand}
               onComplete={handleComplete}
               onOpenManagementModal={handleOpenManagementModal}
+            />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="weight" pt="md">
+            <WeightTab
+              allCats={catsResponse?.data || []}
+              birthPlans={birthPlansResponse?.data || []}
+              isLoading={catsQuery.isLoading}
+              onRefetch={() => {
+                if (catsQuery.refetch) catsQuery.refetch();
+              }}
+            />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="shipping" pt="md">
+            <ShippingTab
+              allCats={catsResponse?.data || []}
+              birthPlans={birthPlansResponse?.data || []}
+              isLoading={catsQuery.isLoading}
+              onRefetch={() => {
+                if (catsQuery.refetch) catsQuery.refetch();
+                if (birthPlansQuery.refetch) birthPlansQuery.refetch();
+              }}
             />
           </Tabs.Panel>
         </Tabs>
