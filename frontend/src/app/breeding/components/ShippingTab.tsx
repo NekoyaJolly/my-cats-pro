@@ -213,6 +213,19 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
           });
           onRefetch();
         },
+        onError: (error) => {
+          // 行先登録に失敗した場合はユーザーにエラーを通知する
+          notifications.show({
+            title: '行先の登録に失敗しました',
+            message: '行先の登録中にエラーが発生しました。時間をおいて再度お試しください。',
+            color: 'red',
+          });
+          if (error instanceof Error) {
+            // 開発者向けのデバッグ情報
+            // eslint-disable-next-line no-console
+            console.error('Failed to create kitten disposition:', error);
+          }
+        },
       }
     );
   };
