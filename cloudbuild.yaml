@@ -86,8 +86,8 @@ steps:
           # gcloud --substitutionsでは値にカンマを含められないため、ワークフロー側でパイプ文字を使用
           # 注意: Cloud Buildの置換パターン[A-Z0-9_]+に一致しないよう小文字の変数名を使用
           cors_origin_final=$(echo "${_CORS_ORIGIN}" | sed 's/|/,/g')
-          echo   CORS_ORIGIN (input): "${_CORS_ORIGIN}"
-          echo   CORS_ORIGIN (final): "${cors_origin_final}"
+          echo "  CORS_ORIGIN (input): ${_CORS_ORIGIN}"
+          echo "  CORS_ORIGIN (final): ${cors_origin_final}"
 
           # Deploy with the service account passed from substitutions
           # Note: CORS_ORIGIN is set via --update-env-vars to avoid escaping issues with special characters.
