@@ -54,7 +54,7 @@ async function bootstrap() {
         origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
           const allowedOrigins =
             (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
-              ? (process.env.CORS_ORIGIN || '').split(',')
+              ? (process.env.CORS_ORIGIN || '').split(',').map((o: string) => o.trim()).filter(Boolean)
               : [
                   'http://localhost:3000',
                   'http://localhost:3002',
@@ -62,7 +62,7 @@ async function bootstrap() {
                   'http://localhost:3005',
                 ];
 
-          if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') && !process.env.CORS_ORIGIN) {
+          if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') && (!process.env.CORS_ORIGIN || allowedOrigins.length === 0)) {
             return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
           }
 
@@ -80,6 +80,11 @@ async function bootstrap() {
           }
         },
         credentials: true,
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cookie'],
+        exposedHeaders: ['Content-Length', 'Content-Type'],
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
       },
     });
 

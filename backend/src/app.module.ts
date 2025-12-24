@@ -15,7 +15,6 @@ import { envSchema } from "./common/config/env.validation";
 import { MasterDataController } from "./common/controllers/master-data.controller";
 import { EnhancedThrottlerGuard } from "./common/guards/enhanced-throttler.guard";
 import { CookieParserMiddleware } from "./common/middleware/cookie-parser.middleware";
-import { CorsMiddleware } from "./common/middleware/cors.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { DisplayPreferencesModule } from "./display-preferences/display-preferences.module";
@@ -133,8 +132,9 @@ const sanitizeLevel = (value: unknown): LogLevel => {
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    // CORSはmain.tsで設定済みのため、CorsMiddlewareは削除
     consumer
-      .apply(CorsMiddleware, RequestIdMiddleware, SecurityMiddleware, CookieParserMiddleware)
+      .apply(RequestIdMiddleware, SecurityMiddleware, CookieParserMiddleware)
       .forRoutes('*');
   }
 }

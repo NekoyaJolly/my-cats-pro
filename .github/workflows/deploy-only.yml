@@ -289,6 +289,19 @@ jobs:
           BACKEND_URL="https://api.nekoya.co.jp"
           FRONTEND_URL="https://nekoya.co.jp"
           
+          # Get actual Cloud Run frontend URL for CORS
+          CLOUD_RUN_FRONTEND_URL=$(gcloud run services describe mycats-pro-frontend \
+            --region=${{ env.REGION }} \
+            --project="${PROJECT_ID}" \
+            --format='value(status.url)' 2>/dev/null || echo "")
+          
+          # CORS_ORIGINに独自ドメインとCloud Run URLの両方を含める
+          if [ -n "${CLOUD_RUN_FRONTEND_URL}" ]; then
+            CORS_ORIGIN="${FRONTEND_URL},https://www.nekoya.co.jp,${CLOUD_RUN_FRONTEND_URL}"
+          else
+            CORS_ORIGIN="${FRONTEND_URL},https://www.nekoya.co.jp"
+          fi
+          
           gcloud builds submit \
             --config=cloudbuild.yaml \
             --substitutions="\
@@ -299,7 +312,7 @@ jobs:
           _CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN},\
           _BACKEND_SERVICE_ACCOUNT=${BACKEND_SA},\
           _FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA},\
-          _CORS_ORIGIN=${FRONTEND_URL},\
+          _CORS_ORIGIN=${CORS_ORIGIN},\
           _NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1,\
           _DATABASE_URL_SECRET_NAME=DATABASE_URL,\
           _DATABASE_URL_SECRET_VERSION=latest,\
