@@ -135,11 +135,19 @@ jobs:
             --format='value(status.url)' 2>/dev/null || echo "")
           
           # CORS_ORIGINに既定URLとCloud Run URLの両方を含める
+          # 注意: gcloud --substitutionsでは値にカンマを含められないため、
+          # 一時的にパイプ文字(|)を区切り文字として使用し、cloudbuild.yaml側でカンマに変換する
           if [ -n "${CLOUD_RUN_FRONTEND_URL}" ]; then
-            CORS_ORIGIN="${FRONTEND_URL},${CLOUD_RUN_FRONTEND_URL}"
+            CORS_ORIGIN="${FRONTEND_URL}|${CLOUD_RUN_FRONTEND_URL}"
           else
             CORS_ORIGIN="${FRONTEND_URL}"
           fi
+          
+          # gcloud --substitutions用にURLの特殊文字をエスケープ
+          # : を \: に、/ を \/ に、= を \= にエスケープ
+          # カンマは使わないため、エスケープ不要
+          ESCAPED_CORS_ORIGIN=$(echo "${CORS_ORIGIN}" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
+          ESCAPED_BACKEND_URL=$(echo "${BACKEND_URL}/api/v1" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
           
           gcloud builds submit \
             --config=cloudbuild.yaml \
@@ -151,8 +159,8 @@ jobs:
           _CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN},\
           _BACKEND_SERVICE_ACCOUNT=${BACKEND_SA},\
           _FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA},\
-          _CORS_ORIGIN=${CORS_ORIGIN},\
-          _NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1,\
+          _CORS_ORIGIN=${ESCAPED_CORS_ORIGIN},\
+          _NEXT_PUBLIC_API_URL=${ESCAPED_BACKEND_URL},\
           _DATABASE_URL_SECRET_NAME=DATABASE_URL,\
           _DATABASE_URL_SECRET_VERSION=latest,\
           _JWT_SECRET_NAME=JWT_SECRET,\
@@ -309,11 +317,19 @@ jobs:
             --format='value(status.url)' 2>/dev/null || echo "")
           
           # CORS_ORIGINに独自ドメインとCloud Run URLの両方を含める
+          # 注意: gcloud --substitutionsでは値にカンマを含められないため、
+          # 一時的にパイプ文字(|)を区切り文字として使用し、cloudbuild.yaml側でカンマに変換する
           if [ -n "${CLOUD_RUN_FRONTEND_URL}" ]; then
-            CORS_ORIGIN="${FRONTEND_URL},https://www.nekoya.co.jp,${CLOUD_RUN_FRONTEND_URL}"
+            CORS_ORIGIN="${FRONTEND_URL}|https://www.nekoya.co.jp|${CLOUD_RUN_FRONTEND_URL}"
           else
-            CORS_ORIGIN="${FRONTEND_URL},https://www.nekoya.co.jp"
+            CORS_ORIGIN="${FRONTEND_URL}|https://www.nekoya.co.jp"
           fi
+          
+          # gcloud --substitutions用にURLの特殊文字をエスケープ
+          # : を \: に、/ を \/ に、= を \= にエスケープ
+          # カンマは使わないため、エスケープ不要
+          ESCAPED_CORS_ORIGIN=$(echo "${CORS_ORIGIN}" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
+          ESCAPED_BACKEND_URL=$(echo "${BACKEND_URL}/api/v1" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
           
           gcloud builds submit \
             --config=cloudbuild.yaml \
@@ -325,8 +341,8 @@ jobs:
           _CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN},\
           _BACKEND_SERVICE_ACCOUNT=${BACKEND_SA},\
           _FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA},\
-          _CORS_ORIGIN=${CORS_ORIGIN},\
-          _NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1,\
+          _CORS_ORIGIN=${ESCAPED_CORS_ORIGIN},\
+          _NEXT_PUBLIC_API_URL=${ESCAPED_BACKEND_URL},\
           _DATABASE_URL_SECRET_NAME=DATABASE_URL,\
           _DATABASE_URL_SECRET_VERSION=latest,\
           _JWT_SECRET_NAME=JWT_SECRET,\
