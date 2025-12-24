@@ -113,6 +113,20 @@ else
     failure "deploy-only.yml missing CSRF_TOKEN_SECRET"
 fi
 
+# Check for Frontend Service Account configuration
+if grep -q "FRONTEND_SA.*GCP_RUN_SA_FRONTEND" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes FRONTEND_SA configuration"
+else
+    failure "deploy-only.yml missing FRONTEND_SA configuration"
+fi
+
+# Check for Frontend Service Account in substitutions
+if grep -q "_FRONTEND_SERVICE_ACCOUNT=\${FRONTEND_SA}" .github/workflows/deploy-only.yml; then
+    success "deploy-only.yml includes _FRONTEND_SERVICE_ACCOUNT in substitutions"
+else
+    failure "deploy-only.yml missing _FRONTEND_SERVICE_ACCOUNT in substitutions"
+fi
+
 echo ""
 echo "=== Checking cloudbuild.yaml Configuration ==="
 echo ""
