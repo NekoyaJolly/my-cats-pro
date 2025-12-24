@@ -90,7 +90,9 @@ steps:
           echo "  CORS_ORIGIN (final): ${cors_origin_final}"
 
           # Deploy with the service account passed from substitutions
-          # Note: CORS_ORIGIN is set via --update-env-vars to avoid escaping issues with special characters
+          # Note: CORS_ORIGIN is set via --update-env-vars to avoid escaping issues with special characters.
+          # Using both --set-env-vars and --update-env-vars together is deterministic:
+          # --set-env-vars replaces all env vars, then --update-env-vars modifies that new set.
           gcloud run deploy "${_BACKEND_SERVICE_NAME}" \
             --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest" \
             --region "${_LOCATION}" \
