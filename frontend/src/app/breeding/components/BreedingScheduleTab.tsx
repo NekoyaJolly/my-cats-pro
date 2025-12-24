@@ -15,7 +15,7 @@ import {
   ScrollArea,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconPlus, IconPaw } from '@tabler/icons-react';
+import { ActionButton } from '@/components/ActionButton';
 import { ContextMenuProvider } from '@/components/context-menu';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import type { BreedingScheduleEntry } from '../types';
@@ -109,24 +109,21 @@ export function BreedingScheduleTab({
           styles={{ input: { width: '70px' } }}
         />
         <Text size="sm" pb={isFullscreen ? 4 : 8}>月</Text>
-        <Button
-          variant="light"
-          size={isFullscreen ? "xs" : "sm"}
-          leftSection={<IconPaw size={16} />}
-          rightSection={<IconPlus size={16} />}
+        <ActionButton
+          action="create"
           onClick={onOpenMaleModal}
+          isSectionAction
         >
           オス追加
-        </Button>
-        <Button
-          variant="subtle"
-          size={isFullscreen ? "xs" : "sm"}
-          color="gray"
+        </ActionButton>
+        <ActionButton
+          action="cancel"
           onClick={handleClearData}
+          isSectionAction
           title="localStorageに保存された交配管理表のデータをクリア"
         >
           データクリア
-        </Button>
+        </ActionButton>
       </Group>
       
       <ScrollArea 

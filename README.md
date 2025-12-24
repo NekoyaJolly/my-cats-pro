@@ -386,10 +386,15 @@ NEXT_PUBLIC_AUTH_DISABLED=1
 |----------|------|
 | `pnpm run dev` | backend + frontend + Prisma sync を並列起動（フォアグラウンド） |
 | `pnpm run dev:stable` | **推奨**: バックグラウンドで安定起動（Ctrl+C の影響なし） |
+| `pnpm run dev:low-memory` | **メモリ制限付き**: メモリ使用量を抑制して起動（8GB以下PC推奨） |
+| `pnpm run dev:no-prisma-sync` | Prisma syncなしで起動（メモリ節約） |
 | `pnpm run dev:stop` | 安定版サーバーを停止 |
 | `pnpm run dev:health` | サーバーの稼働状況を確認 |
+| `pnpm run dev:memory-check` | Node.jsプロセスのメモリ使用量を確認 |
 
 > 💡 **安定版サーバーの詳細**: `pnpm run dev` は Ctrl+C で停止しやすい問題があります。長時間の開発には `pnpm run dev:stable` の使用を推奨します。詳細は [STABLE_SERVER_GUIDE.md](./STABLE_SERVER_GUIDE.md) を参照してください。
+
+> ⚠️ **メモリ使用量について**: 開発サーバーは複数のNode.jsプロセスが同時に起動するため、メモリを多く使用します（通常2-4GB）。メモリが不足する場合は `pnpm dev:low-memory` を使用するか、[メモリ最適化ガイド](./docs/MEMORY_OPTIMIZATION.md) を参照してください。
 
 ### その他のコマンド
 

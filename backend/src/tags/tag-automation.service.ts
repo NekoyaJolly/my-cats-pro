@@ -46,7 +46,7 @@ interface AgeThresholdConfig extends BaseConfig {
   threshold?: number;
 }
 
-// TAG_ASSIGNEDイベント用の設定は BaseConfig のみ使用
+// TAG_ASSIGNEDイベント用の設定（BaseConfig のみ使用）
 type TagAssignedConfig = BaseConfig;
 
 type AutomationConfig = PageActionConfig | AgeThresholdConfig | TagAssignedConfig | Record<string, unknown>;
@@ -211,7 +211,7 @@ export class TagAutomationService {
           const threshold = config.threshold ?? 0;
           return `生後${threshold}${ageType}達成時 → ${actionType}`;
         }
-        return `年齢条件 → ${actionType}`;
+        return `年齢閾値 → ${actionType}`;
       }
       case 'TAG_ASSIGNED': {
         return `タグ付与時 → ${actionType}`;

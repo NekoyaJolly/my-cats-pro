@@ -119,7 +119,7 @@ export default function CatRegistrationPage() {
   }, [isSubmitting]);
 
   return (
-    <Container size="xl" style={{ paddingTop: '2rem', paddingBottom: '2rem', position: 'relative' }}>
+    <Container size="xl" style={{ position: 'relative' }}>
       <LoadingOverlay visible={isSubmitting} zIndex={1000} overlayProps={{ blur: 2 }} />
 
       {/* タブコンポーネント */}
@@ -315,6 +315,7 @@ export default function CatRegistrationPage() {
                     action="create"
                     onClick={handleSubmit(onSubmit)}
                     loading={isSubmitting}
+                    isSectionAction
                   >
                     登録する
                   </ActionButton>

@@ -37,49 +37,56 @@ const ACTION_STYLES: Record<
     borderColor?: MantineColor;
     borderWidth?: number;
     icon: React.ComponentType<{ size?: number | string }>;
+    defaultSize: ButtonProps['size'];
   }
 > = {
   create: {
-    variant: 'outline',
-    color: 'blue',
+    variant: 'filled',
+    color: 'var(--accent)',
     icon: IconPlus,
+    defaultSize: 'md',
   },
   edit: {
-    variant: 'outline',
-    color: 'yellow',
+    variant: 'light',
+    color: 'orange',
     icon: IconEdit,
+    defaultSize: 'sm',
   },
   delete: {
-    variant: 'outline',
+    variant: 'light',
     color: 'red',
     icon: IconTrash,
+    defaultSize: 'sm',
   },
   view: {
-    variant: 'outline',
+    variant: 'subtle',
     color: 'gray',
     icon: IconEye,
+    defaultSize: 'sm',
   },
   save: {
-    variant: 'outline',
-    color: 'blue',
-    textColor: 'dark',
+    variant: 'filled',
+    color: 'var(--accent)',
     icon: IconDeviceFloppy,
+    defaultSize: 'md',
   },
   cancel: {
     variant: 'subtle',
     color: 'gray',
     icon: IconX,
+    defaultSize: 'sm',
   },
   confirm: {
-    variant: 'outline',
-    color: 'blue',
-    textColor: 'dark',
+    variant: 'filled',
+    color: 'var(--accent)',
     icon: IconCheck,
+    defaultSize: 'md',
   },
   back: {
-    variant: 'light',
+    variant: 'subtle',
     color: 'gray',
     icon: IconArrowLeft,
+    defaultSize: 'sm',
   },
 };
 
@@ -143,12 +150,12 @@ const createActionButtonOverrideStyles = (params: {
 export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'color' | 'leftSection'> {
   /** アクションタイプ（自動的にスタイルとアイコンが適用される） */
   action: ActionType;
-  /** アイコンのサイズ（デフォルト: 16） */
+  /** アイコンのサイズ（デフォルト: 18） */
   iconSize?: number;
   /** アイコンを表示しない場合はtrue */
   hideIcon?: boolean;
-  /** カスタムアイコンを使用する場合 */
-  customIcon?: React.ComponentType<{ size?: number | string }>;
+  /** カスタムアイコンを使用する場合（コンポーネント型またはReactNode） */
+  customIcon?: React.ComponentType<{ size?: number | string }> | React.ReactNode;
   /** ボタンテキストの色（Mantineテーマカラー or CSSカラー） */
   textColor?: MantineColor;
   /** 枠線の色（Mantineテーマカラー or CSSカラー） */
@@ -159,6 +166,10 @@ export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'color'
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   /** ローディング状態 */
   loading?: boolean;
+  /** セクション内の主要アクションとしてサイズを強制統一するか (md) */
+  isSectionAction?: boolean;
+  /** ツールチップ用のタイトル */
+  title?: string;
 }
 
 /**
@@ -186,7 +197,7 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
   (
     {
       action,
-      iconSize = 16,
+      iconSize = 18, // Slightly larger icons for better visibility
       hideIcon = false,
       customIcon,
       children,
@@ -196,12 +207,16 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
       loading,
       styles: buttonStyles,
       disabled,
+      isSectionAction,
       ...props
     },
     ref
   ) => {
     const style = ACTION_STYLES[action];
-    const Icon = customIcon || style.icon;
+    // customIconがReactNodeの場合はそのまま使用、コンポーネント型の場合はインスタンス化
+    const Icon = typeof customIcon === 'function' && 'prototype' in customIcon 
+      ? (customIcon as React.ComponentType<{ size?: number | string }>)
+      : style.icon;
 
     const effectiveTextColor = textColor ?? style.textColor;
     const effectiveBorderColor = borderColor ?? style.borderColor;
@@ -214,13 +229,18 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
     const mergedStyles = mergeButtonStyles(buttonStyles, overrideStyles);
 
     const effectiveDisabled = disabled === true || loading === true;
-    const leftSection = hideIcon ? undefined : <Icon size={iconSize} />;
+    const leftSection = hideIcon 
+      ? undefined 
+      : (typeof customIcon === 'object' && customIcon !== null && !('prototype' in customIcon)
+          ? customIcon as React.ReactNode
+          : <Icon size={iconSize} />);
 
     return (
       <Button
         ref={ref}
         variant={style.variant}
         color={style.color}
+        size={isSectionAction ? 'md' : (props.size || style.defaultSize)}
         leftSection={leftSection}
         styles={mergedStyles}
         loading={loading}
@@ -243,11 +263,16 @@ ActionButton.displayName = 'ActionButton';
 export interface ActionIconButtonProps extends Omit<ButtonProps, 'variant' | 'color'> {
   action: ActionType;
   iconSize?: number;
-  customIcon?: React.ComponentType<{ size?: number | string }>;
+  /** カスタムアイコン（コンポーネント型、ReactNode、または関数） */
+  customIcon?: React.ComponentType<{ size?: number | string }> | React.ReactNode | (() => React.ReactNode);
   /** 枠線の色（Mantineテーマカラー or CSSカラー） */
   borderColor?: MantineColor;
   /** 枠線の太さ（px） */
   borderWidth?: number;
+  /** ボタンクリック時のハンドラ */
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  /** ツールチップ用のタイトル */
+  title?: string;
 }
 
 export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonProps>(
@@ -266,7 +291,26 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
     ref
   ) => {
     const style = ACTION_STYLES[action];
-    const Icon = customIcon || style.icon;
+    // customIconの型に応じて適切に処理
+    let iconContent: React.ReactNode;
+    if (typeof customIcon === 'function') {
+      // 関数の場合は実行
+      if ('prototype' in customIcon) {
+        // コンポーネント型
+        const Icon = customIcon as React.ComponentType<{ size?: number | string }>;
+        iconContent = <Icon size={iconSize} />;
+      } else {
+        // 関数として実行（型アサーションで明示的に型を指定）
+        iconContent = (customIcon as () => React.ReactNode)();
+      }
+    } else if (customIcon && typeof customIcon === 'object' && !('prototype' in customIcon)) {
+      // ReactNode
+      iconContent = customIcon;
+    } else {
+      // デフォルトアイコン
+      const Icon = style.icon;
+      iconContent = <Icon size={iconSize} />;
+    }
 
     const effectiveBorderColor = borderColor ?? style.borderColor;
     const effectiveBorderWidth = borderWidth ?? style.borderWidth;
@@ -291,7 +335,7 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
         aria-busy={loading ? true : undefined}
         {...props}
       >
-        <Icon size={iconSize} />
+        {iconContent}
       </Button>
     );
   }

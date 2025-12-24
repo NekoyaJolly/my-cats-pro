@@ -7,8 +7,6 @@ import {
   Group,
   Table,
   Badge,
-  Button,
-  ActionIcon,
   Tooltip,
   Box,
 } from '@mantine/core';
@@ -19,6 +17,7 @@ import {
   IconHeartHandshake,
   IconCloud,
 } from '@tabler/icons-react';
+import { ActionButton, ActionIconButton } from '@/components/ActionButton';
 import { TagDisplay } from '@/components/TagSelector';
 import type { BirthPlan, KittenDisposition } from '@/lib/api/hooks/use-breeding';
 import type { Cat } from '@/lib/api/hooks/use-cats';
@@ -225,17 +224,15 @@ export function RaisingTab({
                   <Table.Td>
                     {birthPlan && !birthPlan.completedAt ? (
                       allDisposed ? (
-                        <Button
-                          size="xs"
-                          variant="light"
-                          color="blue"
+                        <ActionButton
+                          action="confirm"
                           onClick={(e) => {
                             e.stopPropagation();
                             onComplete(birthPlan);
                           }}
                         >
                           完了
-                        </Button>
+                        </ActionButton>
                       ) : (
                         <Text size="xs" c="dimmed">行先未確定</Text>
                       )
@@ -305,19 +302,16 @@ export function RaisingTab({
                       </Table.Td>
                       <Table.Td>
                         {!hasDisposition && (
-                          <ActionIcon
-                            size="sm"
-                            variant="light"
-                            color="blue"
+                          <ActionIconButton
+                            action="edit"
+                            customIcon={IconHomePlus}
                             onClick={(e) => {
                               e.stopPropagation();
                               onOpenManagementModal(mother.id);
                             }}
                             title="行先管理"
                             aria-label="行先管理"
-                          >
-                            <IconHomePlus size={14} />
-                          </ActionIcon>
+                          />
                         )}
                       </Table.Td>
                     </Table.Tr>

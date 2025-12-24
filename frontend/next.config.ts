@@ -39,8 +39,23 @@ const nextConfig: NextConfig = {
   },
   // モノレポ対応のためのワークスペースルート設定
   outputFileTracingRoot: path.join(__dirname, "../"),
-  // Memory optimization for CI/CD
+  // Memory optimization for CI/CD and development
   webpack: (config, { dev, isServer }) => {
+    // 開発環境でのメモリ最適化
+    if (dev) {
+      // 開発環境ではメモリ使用量を抑制するため、一部の最適化を無効化
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (config.optimization) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        config.optimization.removeAvailableModules = false;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        config.optimization.removeEmptyChunks = false;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        config.optimization.splitChunks = false;
+      }
+    }
+    
+    // 本番ビルド時の最適化
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (!dev && !isServer && config.optimization?.splitChunks?.cacheGroups) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access

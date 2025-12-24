@@ -5,11 +5,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
-  Button,
   Container,
   Group,
   Loader,
-  Menu,
   Stack,
   Switch,
   Tabs,
@@ -17,8 +15,8 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import {
-  IconChevronDown,
   IconFolderPlus,
+  IconPlus,
   IconRobot,
   IconTag,
   IconTags,
@@ -71,6 +69,8 @@ import {
   AutomationRuleModal,
   ExecuteRuleModal,
 } from './components';
+
+import { ActionMenu } from '@/app/tenants/_components/ActionMenu';
 
 // 有効なタブ値の型定義
 type TabValue = 'categories' | 'tags' | 'automation';
@@ -763,37 +763,31 @@ export default function TagsPage() {
   useEffect(() => {
     setPageHeader(
       'タグ管理',
-      <Menu shadow="md" width={200}>
-        <Menu.Target>
-          <Button leftSection={<IconTag size={16} />} rightSection={<IconChevronDown size={16} />} size="sm">
-            新規作成
-          </Button>
-        </Menu.Target>
-
-        <Menu.Dropdown>
-          <Menu.Item
-            leftSection={<IconFolderPlus size={16} />}
-            onClick={handleOpenCreateCategory}
-            disabled={isAnyMutationPending}
-          >
-            カテゴリ作成
-          </Menu.Item>
-          <Menu.Item
-            leftSection={<IconTags size={16} />}
-            onClick={() => handleOpenCreateGroup()}
-            disabled={sortedCategories.length === 0 || isAnyMutationPending}
-          >
-            グループ作成
-          </Menu.Item>
-          <Menu.Item
-            leftSection={<IconTag size={16} />}
-            onClick={() => handleOpenCreateTag()}
-            disabled={sortedCategories.length === 0 || isAnyMutationPending}
-          >
-            タグ作成
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+      <ActionMenu
+        buttonLabel="新規作成"
+        buttonIcon={IconPlus}
+        action="create"
+        items={[
+          {
+            id: 'category',
+            label: 'カテゴリ作成',
+            icon: <IconFolderPlus size={16} />,
+            onClick: handleOpenCreateCategory,
+          },
+          {
+            id: 'group',
+            label: 'グループ作成',
+            icon: <IconTags size={16} />,
+            onClick: () => handleOpenCreateGroup(),
+          },
+          {
+            id: 'tag',
+            label: 'タグ作成',
+            icon: <IconTag size={16} />,
+            onClick: () => handleOpenCreateTag(),
+          }
+        ]}
+      />
     );
 
     return () => setPageHeader(null);
@@ -801,7 +795,7 @@ export default function TagsPage() {
   }, [isAnyMutationPending, sortedCategories.length]);
 
   return (
-    <Container size="lg" pb="xl">
+    <Container size="lg">
       <Stack gap="xl">
         <Group justify="space-between" align="center" wrap="wrap">
           <Switch

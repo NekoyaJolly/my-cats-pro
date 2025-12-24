@@ -14,6 +14,7 @@ import {
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { ActionButton } from '@/components/ActionButton';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAuth, useAuthStore } from '@/lib/auth/store';
 import { apiClient, apiRequest } from '@/lib/api/client';
 
@@ -266,6 +267,7 @@ export function UserProfileForm() {
               action="save"
               onClick={handleProfileSubmit}
               loading={profileLoading}
+              isSectionAction
             >
               保存
             </ActionButton>
@@ -312,11 +314,17 @@ export function UserProfileForm() {
               action="save"
               onClick={handlePasswordSubmit}
               loading={passwordLoading}
+              isSectionAction
             >
               パスワードを変更
             </ActionButton>
           </Group>
         </Stack>
+      </Card>
+
+      {/* デザイン世界設定セクション */}
+      <Card shadow="sm" padding="lg" radius="md" withBorder>
+        <ThemeSwitcher />
       </Card>
     </Stack>
   );

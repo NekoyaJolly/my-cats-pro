@@ -7,8 +7,6 @@ import {
   Group,
   Table,
   Badge,
-  ActionIcon,
-  Tooltip,
   Center,
   Loader,
 } from '@mantine/core';
@@ -16,8 +14,8 @@ import {
   IconHomePlus,
   IconHeartHandshake,
   IconChevronRight,
-  IconCloud,
 } from '@tabler/icons-react';
+import { ActionIconButton } from '@/components/ActionButton';
 import { useGetWeightRecords } from '@/lib/api/hooks/use-weight-records';
 import {
   useCreateKittenDisposition,
@@ -260,42 +258,30 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
       </Table.Td>
       <Table.Td>
         <Group gap={4} justify="center">
-          <Tooltip label="養成">
-            <ActionIcon
-              size="md"
-              variant="light"
-              color="blue"
-              onClick={() => handleSetDisposition('TRAINING')}
-              loading={createDispositionMutation.isPending}
-              aria-label="養成に設定"
-            >
-              <IconHomePlus size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="出荷">
-            <ActionIcon
-              size="md"
-              variant="light"
-              color="green"
-              onClick={() => handleSetDisposition('SALE')}
-              loading={createDispositionMutation.isPending}
-              aria-label="出荷に設定"
-            >
-              <IconHeartHandshake size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="死亡">
-            <ActionIcon
-              size="md"
-              variant="light"
-              color="gray"
-              onClick={() => handleSetDisposition('DECEASED')}
-              loading={createDispositionMutation.isPending}
-              aria-label="死亡に設定"
-            >
-              <IconCloud size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <ActionIconButton
+            action="confirm"
+            customIcon={IconHomePlus}
+            onClick={() => handleSetDisposition('TRAINING')}
+            loading={createDispositionMutation.isPending}
+            title="養成"
+            aria-label="養成に設定"
+          />
+          <ActionIconButton
+            action="confirm"
+            customIcon={IconHeartHandshake}
+            onClick={() => handleSetDisposition('SALE')}
+            loading={createDispositionMutation.isPending}
+            title="出荷"
+            aria-label="出荷に設定"
+          />
+          <ActionIconButton
+            action="delete"
+            customIcon={() => <span>🌈</span>}
+            onClick={() => handleSetDisposition('DECEASED')}
+            loading={createDispositionMutation.isPending}
+            title="死亡"
+            aria-label="死亡に設定"
+          />
         </Group>
       </Table.Td>
     </Table.Tr>

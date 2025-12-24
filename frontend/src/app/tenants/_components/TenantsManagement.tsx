@@ -81,10 +81,14 @@ export function TenantsManagement() {
   const actionItems = getActionItems();
 
   return (
-    <Stack gap="lg" p="md">
+    <Stack gap="lg" p={0}>
       {actionItems.length > 0 && (
         <Group justify="flex-end">
-          <ActionMenu items={actionItems} buttonLabel="アクション" />
+          <ActionMenu 
+            items={actionItems} 
+            buttonLabel="アクション" 
+            isSectionAction
+          />
         </Group>
       )}
 

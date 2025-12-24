@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
-  Button,
   Group,
   Tabs,
 } from '@mantine/core';
@@ -15,15 +14,16 @@ import {
   IconHeart, 
   IconCalendar,
   IconPaw,
-  IconSettings,
   IconBabyCarriage,
   IconScale,
   IconTruck,
+  IconSettings,
 } from '@tabler/icons-react';
 
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
 import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
 import { useContextMenu } from '@/components/context-menu';
+import { ActionButton } from '@/components/ActionButton';
 
 import {
   useGetBreedingNgRules,
@@ -183,16 +183,15 @@ export default function BreedingPage() {
   // ページヘッダーを設定
   useEffect(() => {
     setPageHeader(
-      'breeding',
+      '交配管理',
       <Group gap="sm">
-        <Button
-          variant="light"
-          leftSection={<IconSettings size={16} />}
-          size="sm"
+        <ActionButton
+          action="view"
+          customIcon={IconSettings}
           onClick={openRulesModal}
         >
           NG設定
-        </Button>
+        </ActionButton>
       </Group>
     );
 
@@ -764,7 +763,6 @@ export default function BreedingPage() {
       <Container 
         size={isFullscreen ? "100%" : "xl"} 
         style={{ 
-          paddingTop: '1rem',
           height: isFullscreen ? 'calc(100vh - 80px)' : 'auto',
           overflow: isFullscreen ? 'hidden' : 'visible',
         }}
