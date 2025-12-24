@@ -128,9 +128,25 @@ jobs:
           BACKEND_URL="https://mycats-pro-backend-staging-687406216678.${{ env.REGION }}.run.app"
           FRONTEND_URL="https://mycats-pro-frontend-staging-687406216678.${{ env.REGION }}.run.app"
           
+          # Get actual Cloud Run frontend URL for CORS
+          CLOUD_RUN_FRONTEND_URL=$(gcloud run services describe mycats-pro-frontend-staging \
+            --region=${{ env.REGION }} \
+            --project="${PROJECT_ID}" \
+            --format='value(status.url)' 2>/dev/null || echo "")
+          
+          # CORS_ORIGINに既定URLとCloud Run URLの両方を含める
+          # 注意: gcloud --substitutionsでは値にカンマを含められないため、
+          # 一時的にパイプ文字(|)を区切り文字として使用し、cloudbuild.yaml側でカンマに変換する
+          if [ -n "${CLOUD_RUN_FRONTEND_URL}" ]; then
+            CORS_ORIGIN="${FRONTEND_URL}|${CLOUD_RUN_FRONTEND_URL}"
+          else
+            CORS_ORIGIN="${FRONTEND_URL}"
+          fi
+          
           # gcloud --substitutions用にURLの特殊文字をエスケープ
-          # : を \: に、/ を \/ に、= を \= に、, を \, にエスケープ
-          ESCAPED_CORS_ORIGIN=$(echo "${FRONTEND_URL}" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g' | sed 's/,/\\,/g')
+          # : を \: に、/ を \/ に、= を \= にエスケープ
+          # カンマは使わないため、エスケープ不要
+          ESCAPED_CORS_ORIGIN=$(echo "${CORS_ORIGIN}" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
           ESCAPED_BACKEND_URL=$(echo "${BACKEND_URL}/api/v1" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
           
           gcloud builds submit \
