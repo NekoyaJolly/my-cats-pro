@@ -58,17 +58,14 @@ steps:
       - |
           set -euo pipefail
 
-          # Clear any default gcloud service account settings to ensure explicit specification is used
           echo "🔧 Clearing default gcloud service account configuration..."
           gcloud config unset run/service-account 2>/dev/null || true
 
           EXTRA_FLAGS=()
           if [[ -n "${_BACKEND_DEPLOY_FLAGS}" ]]; then
-            # _BACKEND_DEPLOY_FLAGS may contain multiple flags separated by spaces.
             read -r -a EXTRA_FLAGS <<< "${_BACKEND_DEPLOY_FLAGS}"
           fi
 
-          # Debug output to verify correct service account and secrets are being used
           echo "📋 Deployment Configuration:"
           echo "  Environment: ${_ENVIRONMENT}"
           echo "  Service Name: ${_BACKEND_SERVICE_NAME}"
@@ -82,17 +79,24 @@ steps:
           echo "  CSRF_TOKEN_SECRET: ${_CSRF_TOKEN_SECRET_NAME}:${_CSRF_TOKEN_SECRET_VERSION}"
           echo "  RESEND_API_KEY: ${_RESEND_API_KEY_SECRET_NAME}:${_RESEND_API_KEY_SECRET_VERSION}"
 
-          # CORS_ORIGINのパイプ文字(|)をカンマ(,)に変換
-          # gcloud --substitutionsでは値にカンマを含められないため、ワークフロー側でパイプ文字を使用
-          # 注意: Cloud Buildの置換パターン[A-Z0-9_]+に一致しないよう小文字の変数名を使用
-          cors_origin_final=$(echo "${_CORS_ORIGIN}" | sed 's/|/,/g')
+          # CORS_ORIGIN: パイプ(|) → カンマ(,)
+          cors_origin_final="$(echo "${_CORS_ORIGIN}" | sed 's/|/,/g')"
           echo "  CORS_ORIGIN (input): ${_CORS_ORIGIN}"
           echo "  CORS_ORIGIN (final): ${cors_origin_final}"
 
-          # Deploy with the service account passed from substitutions
-          # Note: CORS_ORIGIN is set via --update-env-vars to avoid escaping issues with special characters.
-          # Using both --set-env-vars and --update-env-vars together is deterministic:
-          # --set-env-vars replaces all env vars, then --update-env-vars modifies that new set.
+          # ---- env-vars-file を生成 ----
+          cat << EOF > env.yaml
+          NODE_ENV: ${_ENVIRONMENT}
+          INSTANCE_CONNECTION_NAME: ${_CLOUD_SQL_CONNECTION_NAME}
+          EMAIL_FROM: ${_EMAIL_FROM}
+          EMAIL_FROM_NAME: ${_EMAIL_FROM_NAME}
+          CORS_ORIGIN: "${cors_origin_final}"
+          EOF
+
+          echo "📄 Generated env.yaml:"
+          cat env.yaml
+
+          # ---- Deploy ----
           gcloud run deploy "${_BACKEND_SERVICE_NAME}" \
             --image "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest" \
             --region "${_LOCATION}" \
@@ -100,9 +104,8 @@ steps:
             --execution-environment=gen2 \
             --service-account "${_BACKEND_SERVICE_ACCOUNT}" \
             --allow-unauthenticated \
+            --env-vars-file env.yaml \
             --set-secrets "DATABASE_URL=${_DATABASE_URL_SECRET_NAME}:${_DATABASE_URL_SECRET_VERSION},JWT_SECRET=${_JWT_SECRET_NAME}:${_JWT_SECRET_VERSION},JWT_REFRESH_SECRET=${_JWT_REFRESH_SECRET_NAME}:${_JWT_REFRESH_SECRET_VERSION},CSRF_TOKEN_SECRET=${_CSRF_TOKEN_SECRET_NAME}:${_CSRF_TOKEN_SECRET_VERSION},RESEND_API_KEY=${_RESEND_API_KEY_SECRET_NAME}:${_RESEND_API_KEY_SECRET_VERSION}" \
-            --set-env-vars "NODE_ENV=${_ENVIRONMENT},INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_CONNECTION_NAME},EMAIL_FROM=${_EMAIL_FROM},EMAIL_FROM_NAME=${_EMAIL_FROM_NAME}" \
-            --update-env-vars CORS_ORIGIN= "${cors_origin_final}" \
             --add-cloudsql-instances "${_CLOUD_SQL_CONNECTION_NAME}" \
             --concurrency 20 \
             --max-instances 3 \
@@ -115,6 +118,7 @@ steps:
             --startup-probe=failureThreshold=30,timeoutSeconds=5,periodSeconds=10,httpGet.port=8080,httpGet.path=/health \
             "${EXTRA_FLAGS[@]}"
     waitFor: ['Push Backend']
+
 
   # 6. Deploy Frontend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
