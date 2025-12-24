@@ -29,13 +29,17 @@ export function ActionMenu({
 }: ActionMenuProps) {
   if (items.length === 0) return null;
 
+  // コンポーネント型をReactNodeに変換
+  const ButtonIconComponent = buttonIcon;
+  const iconElement = ButtonIconComponent ? <ButtonIconComponent size={18} /> : undefined;
+
   return (
     <Menu shadow="md" width={200} radius="md" position="bottom-end" transitionProps={{ transition: 'pop', duration: 150 }}>
       <Menu.Target>
         <ActionButton 
           action={action}
           rightSection={<IconChevronDown size={16} />}
-          customIcon={buttonIcon}
+          customIcon={iconElement}
           isSectionAction={isSectionAction}
         >
           {buttonLabel}
