@@ -132,7 +132,7 @@ export default function MedicalRecordsPage() {
       '医療データ',
       <ActionButton
         action="create"
-        customIcon={IconCalendarPlus}
+        customIcon={<IconCalendarPlus size={18} />}
         onClick={openCreateModal}
       >
         新規医療記録
