@@ -187,7 +187,7 @@ export default function BreedingPage() {
       <Group gap="sm">
         <ActionButton
           action="view"
-          customIcon={IconSettings}
+          customIcon={<IconSettings size={18} />}
           onClick={openRulesModal}
         >
           NG設定

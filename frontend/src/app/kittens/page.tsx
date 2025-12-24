@@ -193,7 +193,7 @@ export default function KittensPage() {
         {tabParam === 'weight' && motherCats.length > 0 && (
           <ActionButton 
             action="view"
-            customIcon={IconScale}
+            customIcon={<IconScale size={18} />}
             onClick={openBulkWeightModal}
           >
             一括記録
