@@ -159,14 +159,8 @@ jobs:
             CORS_ORIGIN="${FRONTEND_URL}"
           fi
           
-          # gcloud --substitutions用にURLの特殊文字をエスケープ
-          # : を \: に、/ を \/ に、= を \= にエスケープ
-          # カンマは使わないため、エスケープ不要
-          ESCAPED_CORS_ORIGIN=$(echo "${CORS_ORIGIN}" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
-          ESCAPED_BACKEND_URL=$(echo "${BACKEND_URL}/api/v1" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
-          
-          # Build substitutions string with proper escaping
-          # Note: Ensure all values are properly escaped and no undefined variables are used
+          # Build substitutions string
+          # Note: パイプ文字で区切られたCORS_ORIGINはcloudbuild.yamlでカンマに変換される
           SUBSTITUTIONS="_ENVIRONMENT=staging"
           SUBSTITUTIONS="${SUBSTITUTIONS},_REPO_NAME=${{ env.REPO_NAME }}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_NAME=mycats-pro-backend-staging"
@@ -174,8 +168,8 @@ jobs:
           SUBSTITUTIONS="${SUBSTITUTIONS},_CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_ACCOUNT=${BACKEND_SA}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA}"
-          SUBSTITUTIONS="${SUBSTITUTIONS},_CORS_ORIGIN=${ESCAPED_CORS_ORIGIN}"
-          SUBSTITUTIONS="${SUBSTITUTIONS},_NEXT_PUBLIC_API_URL=${ESCAPED_BACKEND_URL}"
+          SUBSTITUTIONS="${SUBSTITUTIONS},_CORS_ORIGIN=${CORS_ORIGIN}"
+          SUBSTITUTIONS="${SUBSTITUTIONS},_NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DATABASE_URL_SECRET_NAME=DATABASE_URL"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DATABASE_URL_SECRET_VERSION=latest"
           SUBSTITUTIONS="${SUBSTITUTIONS},_JWT_SECRET_NAME=JWT_SECRET"
@@ -363,14 +357,8 @@ jobs:
             CORS_ORIGIN="${FRONTEND_URL}|https://www.nekoya.co.jp"
           fi
           
-          # gcloud --substitutions用にURLの特殊文字をエスケープ
-          # : を \: に、/ を \/ に、= を \= にエスケープ
-          # カンマは使わないため、エスケープ不要
-          ESCAPED_CORS_ORIGIN=$(echo "${CORS_ORIGIN}" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
-          ESCAPED_BACKEND_URL=$(echo "${BACKEND_URL}/api/v1" | sed 's/:/\\:/g' | sed 's/\//\\\//g' | sed 's/=/\\=/g')
-          
-          # Build substitutions string with proper escaping
-          # Note: Ensure all values are properly escaped and no undefined variables are used
+          # Build substitutions string
+          # Note: パイプ文字で区切られたCORS_ORIGINはcloudbuild.yamlでカンマに変換される
           SUBSTITUTIONS="_ENVIRONMENT=production"
           SUBSTITUTIONS="${SUBSTITUTIONS},_REPO_NAME=${{ env.REPO_NAME }}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_NAME=mycats-pro-backend"
@@ -378,8 +366,8 @@ jobs:
           SUBSTITUTIONS="${SUBSTITUTIONS},_CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_ACCOUNT=${BACKEND_SA}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA}"
-          SUBSTITUTIONS="${SUBSTITUTIONS},_CORS_ORIGIN=${ESCAPED_CORS_ORIGIN}"
-          SUBSTITUTIONS="${SUBSTITUTIONS},_NEXT_PUBLIC_API_URL=${ESCAPED_BACKEND_URL}"
+          SUBSTITUTIONS="${SUBSTITUTIONS},_CORS_ORIGIN=${CORS_ORIGIN}"
+          SUBSTITUTIONS="${SUBSTITUTIONS},_NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DATABASE_URL_SECRET_NAME=DATABASE_URL"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DATABASE_URL_SECRET_VERSION=latest"
           SUBSTITUTIONS="${SUBSTITUTIONS},_JWT_SECRET_NAME=JWT_SECRET"
