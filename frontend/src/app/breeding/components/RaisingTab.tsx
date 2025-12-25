@@ -304,7 +304,7 @@ export function RaisingTab({
                         {!hasDisposition && (
                           <ActionIconButton
                             action="edit"
-                            customIcon={IconHomePlus}
+                            customIcon={<IconHomePlus size={18} />}
                             onClick={(e) => {
                               e.stopPropagation();
                               onOpenManagementModal(mother.id);

@@ -243,7 +243,7 @@ function KittenWeightRow({ kitten, recordLimit, onRecordWeight }: KittenWeightRo
         <Tooltip label="体重を記録">
           <ActionIconButton 
             action="edit"
-            customIcon={IconScale}
+            customIcon={<IconScale size={18} />}
             onClick={onRecordWeight}
           />
         </Tooltip>

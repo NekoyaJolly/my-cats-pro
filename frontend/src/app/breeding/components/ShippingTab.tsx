@@ -260,7 +260,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
         <Group gap={4} justify="center">
           <ActionIconButton
             action="confirm"
-            customIcon={IconHomePlus}
+            customIcon={<IconHomePlus size={18} />}
             onClick={() => handleSetDisposition('TRAINING')}
             loading={createDispositionMutation.isPending}
             title="養成"
@@ -268,7 +268,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
           />
           <ActionIconButton
             action="confirm"
-            customIcon={IconHeartHandshake}
+            customIcon={<IconHeartHandshake size={18} />}
             onClick={() => handleSetDisposition('SALE')}
             loading={createDispositionMutation.isPending}
             title="出荷"
@@ -276,7 +276,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
           />
           <ActionIconButton
             action="delete"
-            customIcon={() => <span>🌈</span>}
+            customIcon={<span>🌈</span>}
             onClick={() => handleSetDisposition('DECEASED')}
             loading={createDispositionMutation.isPending}
             title="死亡"
