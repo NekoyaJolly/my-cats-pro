@@ -26,6 +26,55 @@
   color-scheme: light;
 }
 
+/* --- Theme 0: Classic Default (Standard Mantine Design) --- */
+.theme-default {
+  /* Base Colors: Clean and Simple */
+  --bg-base: #f8f9fa;
+  --bg-surface: #ffffff;
+  --bg-black: #000000;
+  --bg-white: #ffffff;
+  --bg-gray: #f1f3f5;
+  
+  /* Borders: Subtle */
+  --border-primary: #dee2e6;
+  --border-subtle: #e9ecef;
+  --border-width: 1px;
+  
+  /* Text Colors */
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #868e96;
+  
+  /* Accent: Blue */
+  --accent: #228be6;
+  --accent-soft: #e7f5ff;
+  
+  /* Status Colors */
+  --status-success: #40c057;
+  --status-warning: #fab005;
+  --status-error: #fa5252;
+  --status-info: #228be6;
+  
+  /* Effects */
+  --glass-blur: 0px;
+  --glass-bg: transparent;
+  --glass-bg-hover: transparent;
+  --glass-border: #dee2e6;
+  --shadow-ethereal: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-ethereal-hover: 0 4px 6px rgba(0, 0, 0, 0.15);
+  --radius-base: 8px;
+  
+  /* Form Elements */
+  --input-bg: #ffffff;
+  --slider-track: #e9ecef;
+  --switch-bg: #e9ecef;
+  --switch-thumb: #ffffff;
+  
+  /* Button Overrides */
+  --button-primary-radius: 8px;
+  --button-icon-color: #495057;
+}
+
 /* --- Theme 1: Architectural Monolith --- */
 .theme-monolith {
   /* Base Colors: Monochrome (Pure Black, White, Cold Gray) */

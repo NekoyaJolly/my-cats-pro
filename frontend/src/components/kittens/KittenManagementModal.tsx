@@ -16,10 +16,11 @@ import {
   Badge,
   ActionIcon,
   Flex,
-  Tabs,
+  Box,
 } from '@mantine/core';
-import { IconTrash, IconPlus, IconDeviceFloppy, IconX } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconDeviceFloppy, IconX, IconList, IconClipboard } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { TabsSection } from '@/components/TabsSection';
 import { useGetCats, useCreateCat, useUpdateCat, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetCoatColors, type CoatColor } from '@/lib/api/hooks/use-coat-colors';
 import { useGetBirthPlans, useCreateKittenDisposition, type BirthPlan } from '@/lib/api/hooks/use-breeding';
@@ -380,14 +381,26 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
         <Divider />
 
         {/* タブ */}
-        <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'list')}>
-          <Tabs.List>
-            <Tabs.Tab value="list">子猫リスト ({kittens.length}頭)</Tabs.Tab>
-            <Tabs.Tab value="disposition">処遇設定</Tabs.Tab>
-          </Tabs.List>
-
+        <TabsSection
+          value={activeTab}
+          onChange={(value) => setActiveTab(value || 'list')}
+          tabs={[
+            {
+              value: 'list',
+              label: '子猫リスト',
+              icon: <IconList size={14} />,
+              count: kittens.length,
+            },
+            {
+              value: 'disposition',
+              label: '処遇設定',
+              icon: <IconClipboard size={14} />,
+            },
+          ]}
+        >
           {/* 子猫リストタブ */}
-          <Tabs.Panel value="list" pt="md">
+          {activeTab === 'list' && (
+            <Box pt="md">
             <Stack gap="md">
               {/* 頭数登録（既存子猫がいない場合） */}
               {kittens.filter(k => k.id).length === 0 && (
@@ -532,11 +545,13 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
                 </Text>
               )}
             </Stack>
-          </Tabs.Panel>
+          </Box>
+          )}
 
           {/* 処遇設定タブ */}
-          <Tabs.Panel value="disposition" pt="md">
-            <Stack gap="md">
+          {activeTab === 'disposition' && (
+            <Box pt="md">
+              <Stack gap="md">
               <Text size="sm" c="dimmed">
                 選択した子猫に処遇を一括設定できます
               </Text>
@@ -626,8 +641,9 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
                 選択した子猫に適用
               </Button>
             </Stack>
-          </Tabs.Panel>
-        </Tabs>
+          </Box>
+          )}
+        </TabsSection>
 
         <Divider />
 

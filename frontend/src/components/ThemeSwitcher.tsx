@@ -1,10 +1,17 @@
 'use client';
 
 import { Group, Paper, Text, Stack, UnstyledButton, rem } from '@mantine/core';
-import { IconCircleCheckFilled, IconLayout, IconGlass, IconCloud } from '@tabler/icons-react';
+import { IconCircleCheckFilled, IconLayout, IconGlass, IconCloud, IconHome } from '@tabler/icons-react';
 import { useTheme, ThemeType } from '@/lib/store/theme-store';
 
 const themes: { id: ThemeType; label: string; description: string; icon: React.ComponentType<{ size?: number | string }>; color: string }[] = [
+  {
+    id: 'default',
+    label: 'Classic Default',
+    description: '親しみやすいスタンダードデザイン。シンプルで使いやすい。',
+    icon: IconHome,
+    color: '#228be6',
+  },
   {
     id: 'monolith',
     label: 'Architectural Monolith',

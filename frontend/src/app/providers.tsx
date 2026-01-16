@@ -30,6 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   ]
 
   // テーマを明示的に定義（将来的な拡張に対応）
+  const isDefault = currentTheme === 'default'
   const isMonolith = currentTheme === 'monolith'
   const isOrganic = currentTheme === 'organic'
   const isEthereal = currentTheme === 'ethereal'
@@ -42,7 +43,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       fontFamily: 'Inter, "Noto Sans JP", "Segoe UI", sans-serif',
       fontWeight: isMonolith ? '800' : isOrganic ? '600' : isEthereal ? '700' : '700',
     },
-    defaultRadius: isMonolith ? '0' : isOrganic ? '32px' : isEthereal ? 'xl' : 'xl',
+    defaultRadius: isDefault ? 'md' : isMonolith ? '0' : isOrganic ? '32px' : isEthereal ? 'xl' : 'xl',
     shadows: {
       xs: '0 1px 3px rgba(0,0,0,0.05)',
       sm: '0 4px 12px rgba(31, 38, 135, 0.05)',
@@ -66,7 +67,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     components: {
       Button: {
         defaultProps: {
-          radius: isMonolith ? '0' : isOrganic ? '32px' : 'xl',
+          radius: isDefault ? 'md' : isMonolith ? '0' : isOrganic ? '32px' : 'xl',
         },
         styles: {
           root: {
@@ -81,7 +82,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       },
       ActionIcon: {
         defaultProps: {
-          radius: isMonolith ? '0' : isOrganic ? '32px' : 'xl',
+          radius: isDefault ? 'md' : isMonolith ? '0' : isOrganic ? '32px' : 'xl',
         },
         styles: {
           root: {
@@ -108,7 +109,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       },
       Badge: {
         defaultProps: {
-          radius: isMonolith ? '0' : 'xl',
+          radius: isDefault ? 'md' : isMonolith ? '0' : 'xl',
           variant: isMonolith ? 'outline' : isOrganic ? 'filled' : 'light',
         },
         styles: {
@@ -150,7 +151,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         styles: {
           input: {
             backgroundColor: 'var(--input-bg) !important',
-            borderRadius: isMonolith ? '0 !important' : isOrganic ? '16px !important' : '12px !important',
+            borderRadius: isDefault ? '8px !important' : isMonolith ? '0 !important' : isOrganic ? '16px !important' : '12px !important',
             border: isMonolith ? 'var(--border-width, 1px) solid var(--border-primary) !important' : '1px solid var(--glass-border) !important',
             transition: 'all 0.2s ease',
           },
@@ -160,21 +161,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
         styles: {
           input: {
             backgroundColor: 'var(--input-bg) !important',
-            borderRadius: isMonolith ? '0 !important' : isOrganic ? '16px !important' : '12px !important',
+            borderRadius: isDefault ? '8px !important' : isMonolith ? '0 !important' : isOrganic ? '16px !important' : '12px !important',
             border: isMonolith ? 'var(--border-width, 1px) solid var(--border-primary) !important' : '1px solid var(--glass-border) !important',
           },
           dropdown: {
             backgroundColor: 'var(--glass-bg, #fff) !important',
             backdropFilter: 'blur(var(--glass-blur, 0px)) !important',
             WebkitBackdropFilter: 'blur(var(--glass-blur, 0px)) !important',
-            borderRadius: isMonolith ? '0 !important' : '12px !important',
+            borderRadius: isDefault ? '8px !important' : isMonolith ? '0 !important' : '12px !important',
             border: isMonolith ? 'var(--border-width, 1px) solid var(--border-primary) !important' : '1px solid var(--glass-border, transparent) !important',
           },
         },
       },
       Slider: {
         defaultProps: {
-          radius: isMonolith ? '0' : 'xl',
+          radius: isDefault ? 'md' : isMonolith ? '0' : 'xl',
         },
         styles: {
           root: {
@@ -201,7 +202,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       },
       Switch: {
         defaultProps: {
-          radius: isMonolith ? '0' : 'xl',
+          radius: isDefault ? 'md' : isMonolith ? '0' : 'xl',
         },
         styles: {
           track: {
@@ -236,12 +237,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       },
       Paper: {
         defaultProps: {
-          radius: isMonolith ? '0' : isOrganic ? '32px' : 'lg',
+          radius: isDefault ? 'md' : isMonolith ? '0' : isOrganic ? '32px' : 'lg',
         },
       },
       Card: {
         defaultProps: {
-          radius: isMonolith ? '0' : isOrganic ? '32px' : 'lg',
+          radius: isDefault ? 'md' : isMonolith ? '0' : isOrganic ? '32px' : 'lg',
         },
       },
       Modal: {

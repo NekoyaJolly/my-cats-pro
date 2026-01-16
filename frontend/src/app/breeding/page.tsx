@@ -5,7 +5,6 @@ import {
   Box,
   Container,
   Group,
-  Tabs,
 } from '@mantine/core';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { useDisclosure } from '@mantine/hooks';
@@ -22,6 +21,7 @@ import {
 
 import { BreedingScheduleEditModal } from '@/components/breeding/breeding-schedule-edit-modal';
 import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
+import { TabsSection } from '@/components/TabsSection';
 import { useContextMenu } from '@/components/context-menu';
 import { ActionButton } from '@/components/ActionButton';
 
@@ -767,104 +767,141 @@ export default function BreedingPage() {
           overflow: isFullscreen ? 'hidden' : 'visible',
         }}
       >
-        <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'schedule')} mb="md">
-          <Tabs.List style={{ gap: '4px', justifyContent: 'flex-start', flexWrap: 'nowrap', overflowX: 'auto' }}>
-            <Tabs.Tab value="schedule" leftSection={<IconCalendar size={16} />} style={{ whiteSpace: 'nowrap' }}>
-              交配管理
-            </Tabs.Tab>
-            <Tabs.Tab value="pregnancy" leftSection={<IconHeart size={16} />} style={{ whiteSpace: 'nowrap' }}>
-              妊娠確認 ({pregnancyChecksResponse?.data?.length || 0})
-            </Tabs.Tab>
-            <Tabs.Tab value="birth" leftSection={<IconPaw size={16} />} style={{ whiteSpace: 'nowrap' }}>
-              出産予定 ({birthPlansResponse?.data?.filter((item: BirthPlan) => item.status === 'EXPECTED').length || 0})
-            </Tabs.Tab>
-            <Tabs.Tab value="raising" leftSection={<IconBabyCarriage size={16} />} style={{ whiteSpace: 'nowrap' }}>
-              子育て中 ({mothersWithKittensCount})
-            </Tabs.Tab>
-            <Tabs.Tab value="weight" leftSection={<IconScale size={16} />} style={{ whiteSpace: 'nowrap' }}>
-              体重管理
-            </Tabs.Tab>
-            <Tabs.Tab value="shipping" leftSection={<IconTruck size={16} />} style={{ whiteSpace: 'nowrap' }}>
-              出荷準備
-            </Tabs.Tab>
-          </Tabs.List>
+        <TabsSection
+          value={activeTab}
+          onChange={setActiveTab}
+          mb="md"
+          tabs={[
+            {
+              value: 'schedule',
+              label: '交配管理',
+              icon: <IconCalendar size={16} />,
+            },
+            {
+              value: 'pregnancy',
+              label: '妊娠確認',
+              icon: <IconHeart size={16} />,
+              count: pregnancyChecksResponse?.data?.length || 0,
+              badgeColor: 'pink',
+            },
+            {
+              value: 'birth',
+              label: '出産予定',
+              icon: <IconPaw size={16} />,
+              count: birthPlansResponse?.data?.filter((item: BirthPlan) => item.status === 'EXPECTED').length || 0,
+              badgeColor: 'orange',
+            },
+            {
+              value: 'raising',
+              label: '子育て中',
+              icon: <IconBabyCarriage size={16} />,
+              count: mothersWithKittensCount || 0,
+              badgeColor: 'grape',
+            },
+            {
+              value: 'weight',
+              label: '体重管理',
+              icon: <IconScale size={16} />,
+              badgeColor: 'cyan',
+            },
+            {
+              value: 'shipping',
+              label: '出荷準備',
+              icon: <IconTruck size={16} />,
+              badgeColor: 'green',
+            },
+          ]}
+        >
+          <>
+            {activeTab === 'schedule' && (
+              <Box pt="md">
+                <BreedingScheduleTab
+                  isFullscreen={isFullscreen}
+                  selectedYear={selectedYear}
+                  selectedMonth={selectedMonth}
+                  activeMales={activeMales}
+                  breedingSchedule={breedingSchedule}
+                  selectedMaleForEdit={selectedMaleForEdit}
+                  onYearChange={setSelectedYear}
+                  onMonthChange={setSelectedMonth}
+                  onOpenMaleModal={openMaleModal}
+                  onMaleSelect={handleMaleSelect}
+                  onMaleNameClick={(maleId) => setSelectedMaleForEdit(selectedMaleForEdit === maleId ? null : maleId)}
+                  onRemoveMale={handleRemoveMale}
+                  onSaveMaleEdit={() => setSelectedMaleForEdit(null)}
+                  onMatingCheck={addMatingCheck}
+                  onMatingResult={handleMatingResult}
+                  onScheduleContextAction={handleScheduleContextAction}
+                  onClearData={clearScheduleData}
+                  getMatingCheckCount={getMatingCheckCount}
+                />
+              </Box>
+            )}
 
-          <Tabs.Panel value="schedule" pt="md">
-            <BreedingScheduleTab
-              isFullscreen={isFullscreen}
-              selectedYear={selectedYear}
-              selectedMonth={selectedMonth}
-              activeMales={activeMales}
-              breedingSchedule={breedingSchedule}
-              selectedMaleForEdit={selectedMaleForEdit}
-              onYearChange={setSelectedYear}
-              onMonthChange={setSelectedMonth}
-              onOpenMaleModal={openMaleModal}
-              onMaleSelect={handleMaleSelect}
-              onMaleNameClick={(maleId) => setSelectedMaleForEdit(selectedMaleForEdit === maleId ? null : maleId)}
-              onRemoveMale={handleRemoveMale}
-              onSaveMaleEdit={() => setSelectedMaleForEdit(null)}
-              onMatingCheck={addMatingCheck}
-              onMatingResult={handleMatingResult}
-              onScheduleContextAction={handleScheduleContextAction}
-              onClearData={clearScheduleData}
-              getMatingCheckCount={getMatingCheckCount}
-            />
-          </Tabs.Panel>
+            {activeTab === 'pregnancy' && (
+              <Box pt="md">
+                <PregnancyCheckTab
+                  pregnancyChecks={pregnancyChecksResponse?.data || []}
+                  allCats={catsResponse?.data || []}
+                  onPregnancyCheck={handlePregnancyCheck}
+                />
+              </Box>
+            )}
 
-          <Tabs.Panel value="pregnancy" pt="md">
-            <PregnancyCheckTab
-              pregnancyChecks={pregnancyChecksResponse?.data || []}
-              allCats={catsResponse?.data || []}
-              onPregnancyCheck={handlePregnancyCheck}
-            />
-          </Tabs.Panel>
+            {activeTab === 'birth' && (
+              <Box pt="md">
+                <BirthPlanTab
+                  birthPlans={birthPlansResponse?.data || []}
+                  allCats={catsResponse?.data || []}
+                  onBirthConfirm={handleBirthConfirm}
+                  onBirthCancel={handleBirthCancel}
+                />
+              </Box>
+            )}
 
-          <Tabs.Panel value="birth" pt="md">
-            <BirthPlanTab
-              birthPlans={birthPlansResponse?.data || []}
-              allCats={catsResponse?.data || []}
-              onBirthConfirm={handleBirthConfirm}
-              onBirthCancel={handleBirthCancel}
-            />
-          </Tabs.Panel>
+            {activeTab === 'raising' && (
+              <Box pt="md">
+                <RaisingTab
+                  allCats={catsResponse?.data || []}
+                  birthPlans={birthPlansResponse?.data || []}
+                  tagCategories={tagCategoriesQuery.data?.data || []}
+                  expandedRaisingCats={expandedRaisingCats}
+                  isLoading={catsQuery.isLoading}
+                  onToggleExpand={handleToggleExpand}
+                  onComplete={handleComplete}
+                  onOpenManagementModal={handleOpenManagementModal}
+                />
+              </Box>
+            )}
 
-          <Tabs.Panel value="raising" pt="md">
-            <RaisingTab
-              allCats={catsResponse?.data || []}
-              birthPlans={birthPlansResponse?.data || []}
-              tagCategories={tagCategoriesQuery.data?.data || []}
-              expandedRaisingCats={expandedRaisingCats}
-              isLoading={catsQuery.isLoading}
-              onToggleExpand={handleToggleExpand}
-              onComplete={handleComplete}
-              onOpenManagementModal={handleOpenManagementModal}
-            />
-          </Tabs.Panel>
+            {activeTab === 'weight' && (
+              <Box pt="md">
+                <WeightTab
+                  allCats={catsResponse?.data || []}
+                  birthPlans={birthPlansResponse?.data || []}
+                  isLoading={catsQuery.isLoading}
+                  onRefetch={() => {
+                    if (catsQuery.refetch) catsQuery.refetch();
+                  }}
+                />
+              </Box>
+            )}
 
-          <Tabs.Panel value="weight" pt="md">
-            <WeightTab
-              allCats={catsResponse?.data || []}
-              birthPlans={birthPlansResponse?.data || []}
-              isLoading={catsQuery.isLoading}
-              onRefetch={() => {
-                if (catsQuery.refetch) catsQuery.refetch();
-              }}
-            />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="shipping" pt="md">
-            <ShippingTab
-              allCats={catsResponse?.data || []}
-              birthPlans={birthPlansResponse?.data || []}
-              isLoading={catsQuery.isLoading}
-              onRefetch={() => {
-                if (catsQuery.refetch) catsQuery.refetch();
-                if (birthPlansQuery.refetch) birthPlansQuery.refetch();
-              }}
-            />
-          </Tabs.Panel>
-        </Tabs>
+            {activeTab === 'shipping' && (
+              <Box pt="md">
+                <ShippingTab
+                  allCats={catsResponse?.data || []}
+                  birthPlans={birthPlansResponse?.data || []}
+                  isLoading={catsQuery.isLoading}
+                  onRefetch={() => {
+                    if (catsQuery.refetch) catsQuery.refetch();
+                    if (birthPlansQuery.refetch) birthPlansQuery.refetch();
+                  }}
+                />
+              </Box>
+            )}
+          </>
+        </TabsSection>
       </Container>
 
       {/* モーダル群 */}

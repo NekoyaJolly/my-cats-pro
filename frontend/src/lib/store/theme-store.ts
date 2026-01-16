@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type ThemeType = 'monolith' | 'ethereal' | 'organic';
+export type ThemeType = 'default' | 'monolith' | 'ethereal' | 'organic';
 
 interface ThemeState {
   theme: ThemeType;
