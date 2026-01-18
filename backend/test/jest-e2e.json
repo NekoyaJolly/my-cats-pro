@@ -5,6 +5,9 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "moduleNameMapper": {
+    "^mime$": "<rootDir>/test/utils/mime-mock.js"
+  },
   "collectCoverageFrom": [
     "src/**/*.(t|j)s",
     "!src/scripts/**",

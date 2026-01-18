@@ -138,6 +138,8 @@ describe('AuthController rate limiting (integration)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+    // Express が mime を正しく初期化するための設定
+    app.enableCors();
     await app.init();
     server = app.getHttpServer();
     storageService = app.get(ThrottlerStorage) as ThrottlerStorageService;
