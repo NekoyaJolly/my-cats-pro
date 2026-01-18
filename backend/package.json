@@ -128,18 +128,13 @@
     "moduleFileExtensions": [
       "js",
       "json",
-      "ts",
-      "mjs"
+      "ts"
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest",
-      "^.+\\.mjs$": "ts-jest"
+      "^.+\\.(t|j)s$": "ts-jest"
     },
-    "transformIgnorePatterns": [
-      "node_modules/(?!(mime)/)"
-    ],
     "collectCoverageFrom": [
       "**/*.service.ts",
       "**/*.controller.ts",
