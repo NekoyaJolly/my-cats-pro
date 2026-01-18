@@ -5,10 +5,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerModule, ThrottlerStorage, ThrottlerStorageService } from '@nestjs/throttler';
 import request from 'supertest';
 
-import { EnhancedThrottlerGuard } from '../common/guards/enhanced-throttler.guard';
+import { EnhancedThrottlerGuard } from '../src/common/guards/enhanced-throttler.guard';
 
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthController } from '../src/auth/auth.controller';
+import { AuthService } from '../src/auth/auth.service';
 
 describe('AuthController rate limiting (integration)', () => {
   let app: INestApplication;
