@@ -9,6 +9,7 @@ FROM base AS development
 # ソースコードはボリュームマウントされるため、COPY は最小限にとどめる
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json ./backend/
+# pnpm workspace の依存関係解決に必要（frontend への参照がある場合に備える）
 COPY frontend/package.json ./frontend/
 COPY backend/prisma ./backend/prisma
 
@@ -16,6 +17,13 @@ COPY backend/prisma ./backend/prisma
 RUN pnpm install --frozen-lockfile --filter backend...
 
 # Prisma クライアントを生成
+# NOTE:
+# - このコマンドはビルド時点の Prisma スキーマを元にクライアントを生成します
+# - 開発コンテナ起動後にホスト側で backend/prisma/schema.prisma を変更した場合、
+#   生成済みクライアントがスキーマと不整合になる点に注意してください
+# - その場合は、以下のいずれかの方法で Prisma クライアントを再生成してください
+#   1. `pnpm run docker:dev:build` で開発用イメージを再ビルドする
+#   2. `docker exec -it mycats_dev_backend pnpm --filter backend run prisma:generate` を実行する
 WORKDIR /app/backend
 RUN pnpm prisma generate
 

@@ -65,8 +65,19 @@ pnpm run docker:dev:build
 2. 依存関係のインストール
 3. Prisma クライアントの生成
 4. PostgreSQL コンテナの起動
-5. Backend コンテナの起動（マイグレーション実行）
+5. Backend コンテナの起動
 6. Frontend コンテナの起動
+
+> **注意**: 開発用の `docker-compose.dev.yml` では、Backend コンテナ起動時に Prisma のマイグレーションは自動実行されません。初回起動後、データベーススキーマを最新状態にする場合は、別ターミナルから次のコマンドを実行してください。
+>
+> ```bash
+> docker exec -it mycats_dev_backend pnpm --filter backend run prisma:migrate
+> ```
+>
+> または、ローカル環境から実行する場合：
+> ```bash
+> pnpm --filter backend run prisma:migrate
+> ```
 
 **起動時間**: 初回は 5〜10 分程度（ネットワーク速度に依存）
 
@@ -145,28 +156,45 @@ NODE_ENV: development
 
 ```yaml
 volumes:
-  - ./backend:/app/backend:cached          # ソースコード（macOS最適化）
-  - ./node_modules:/app/node_modules:delegated
-  - /app/backend/node_modules              # コンテナ内で管理
+  - ./backend:/app/backend:cached              # ソースコード（macOS最適化）
+  - ./node_modules:/app/node_modules:delegated # ワークスペース root
+  - /app/backend/node_modules                  # コンテナ内で管理
+  - ./package.json:/app/package.json:cached    # ワークスペース設定
+  - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:cached
+  - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:cached
 ```
 
 **ポイント**:
 - `:cached` オプションでホスト→コンテナの書き込みパフォーマンス向上（macOS）
 - `node_modules` はコンテナ内で独立管理（ホストとの混在を防止）
+- ワークスペース設定ファイル（package.json, pnpm-lock.yaml）もマウントすることで、開発中の柔軟性を確保
+- **重要**: これらのファイルを変更した場合は `pnpm run docker:dev:build` で再ビルドが必要
 
 ### Frontend
 
 ```yaml
 volumes:
-  - ./frontend:/app/frontend:cached         # ソースコード（macOS最適化）
-  - ./node_modules:/app/node_modules:delegated
-  - /app/frontend/node_modules              # コンテナ内で管理
-  - /app/frontend/.next                     # Next.js キャッシュを永続化
+  - ./frontend:/app/frontend:cached            # ソースコード（macOS最適化）
+  - ./node_modules:/app/node_modules:delegated # ワークスペース root
+  - /app/frontend/node_modules                 # コンテナ内で管理
+  - /app/frontend/.next                        # Next.js キャッシュを永続化
+  - ./package.json:/app/package.json:cached    # ワークスペース設定
+  - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:cached
+  - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:cached
 ```
 
 **ポイント**:
 - `.next` ディレクトリをコンテナ内で管理（ビルドキャッシュ最適化）
 - Fast Refresh が正常に動作
+- ワークスペース設定ファイルの変更時は再ビルドが必要
+
+### pnpm ワークスペースと node_modules の扱い
+
+このプロジェクトは pnpm workspace を使用しているため、root の `node_modules` にはワークスペースパッケージへのシンボリックリンクが含まれます。以下の戦略で対応しています：
+
+1. **root node_modules のマウント**: ワークスペース解決のために必要
+2. **パッケージ個別の node_modules を匿名ボリューム化**: `/app/backend/node_modules`, `/app/frontend/node_modules` を独立管理
+3. **結果**: ホストとコンテナで異なるアーキテクチャでも動作し、依存関係の競合を回避
 
 ## トラブルシューティング
 
@@ -253,6 +281,33 @@ docker compose -f docker-compose.dev.yml build --no-cache
 # または
 pnpm run docker:dev:clean
 pnpm run docker:dev:build
+```
+
+### Prisma スキーマ変更が反映されない
+
+**症状**: `backend/prisma/schema.prisma` を変更したが、Prisma クライアントが古いまま
+
+**原因**: Prisma クライアントはイメージビルド時に生成されるため、コンテナ起動後のスキーマ変更は自動反映されない
+
+**解決方法**:
+
+**方法1**: コンテナ内で Prisma クライアントを再生成（推奨）
+```bash
+docker exec -it mycats_dev_backend pnpm --filter backend run prisma:generate
+```
+
+**方法2**: イメージを再ビルド（スキーマ + マイグレーション変更時）
+```bash
+pnpm run docker:dev:build
+```
+
+**方法3**: マイグレーション適用も必要な場合
+```bash
+# マイグレーション作成
+docker exec -it mycats_dev_backend pnpm --filter backend run prisma:migrate
+
+# Prisma クライアント再生成
+docker exec -it mycats_dev_backend pnpm --filter backend run prisma:generate
 ```
 
 ### メモリ不足エラー

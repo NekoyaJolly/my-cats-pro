@@ -10,6 +10,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: mycats
+      # 開発環境専用パスワード - 本番環境では絶対に使用しないこと
+      # ネットワークに公開する場合は変更を推奨
       POSTGRES_PASSWORD: mycats_dev_password
       POSTGRES_DB: mycats_development
       TZ: Asia/Tokyo
@@ -54,7 +56,7 @@ services:
         condition: service_healthy
     command: pnpm --filter backend run start:dev
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3004/health', res => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));\""]
       interval: 10s
       timeout: 5s
       retries: 5
