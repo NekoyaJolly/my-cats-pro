@@ -3,6 +3,23 @@ FROM node:20-alpine AS base
 WORKDIR /app
 RUN npm install -g pnpm@10.18.1
 
+# ---- Development Stage ----
+FROM base AS development
+# 開発モード: Next.js Fast Refresh 対応
+# ソースコードはボリュームマウントされるため、COPY は最小限にとどめる
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+
+# 開発依存関係を含む全依存関係をインストール
+RUN pnpm install --frozen-lockfile --filter frontend...
+
+# .next ディレクトリはボリュームマウントで管理される
+# ソースコードはボリュームマウントで提供される
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+CMD ["pnpm", "--filter", "frontend", "run", "dev"]
+
 # ---- Build Stage ----
 FROM base AS build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

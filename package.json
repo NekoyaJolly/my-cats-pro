@@ -47,7 +47,13 @@
     "diagnose": "./scripts/diagnose.sh",
     "help": "echo \"Available commands: dev, dev:stable, dev:stop, dev:health, dev:low-memory, dev:memory-check, backend:*, db:*, test:*, frontend:*, setup, diagnose\"",
     "install:all": "pnpm install",
-    "generate-secrets": "tsx ./scripts/generate-secrets.ts"
+    "generate-secrets": "tsx ./scripts/generate-secrets.ts",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up",
+    "docker:dev:build": "docker-compose -f docker-compose.dev.yml up --build",
+    "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:dev:clean": "docker-compose -f docker-compose.dev.yml down -v",
+    "build:parallel": "pnpm --parallel --filter './backend' --filter './frontend' run build",
+    "test:changed": "pnpm --filter './backend' run test:changed"
   },
   "devDependencies": {
     "@eslint/js": "^9",

@@ -3,6 +3,27 @@ FROM node:20-alpine3.22 AS base
 WORKDIR /app
 RUN npm install -g pnpm@10.18.1
 
+# ---- Development Stage ----
+FROM base AS development
+# 開発モード: ホットリロード対応
+# ソースコードはボリュームマウントされるため、COPY は最小限にとどめる
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+COPY backend/prisma ./backend/prisma
+
+# 開発依存関係を含む全依存関係をインストール
+RUN pnpm install --frozen-lockfile --filter backend...
+
+# Prisma クライアントを生成
+WORKDIR /app/backend
+RUN pnpm prisma generate
+
+# ソースコードはボリュームマウントで提供される
+# デフォルトコマンドは docker-compose.dev.yml で指定
+WORKDIR /app
+CMD ["pnpm", "--filter", "backend", "run", "start:dev"]
+
 # ---- Build Stage ----
 FROM base AS build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
