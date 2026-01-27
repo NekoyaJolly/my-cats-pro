@@ -338,6 +338,37 @@ pnpm run dev
 bash scripts/start-all.sh
 ```
 
+### 方法3: Docker Compose（完全コンテナ化）
+
+環境構築なしで全サービスを起動できます。Node.js や PostgreSQL のローカルインストールが不要です。
+
+```bash
+# 初回起動（ビルド含む）
+pnpm run docker:dev:build
+
+# 2回目以降
+pnpm run docker:dev
+
+# 停止
+pnpm run docker:dev:down
+
+# データベース含めて完全削除
+pnpm run docker:dev:clean
+```
+
+**メリット**:
+- 環境構築が不要（Docker のみで完結）
+- チーム間で統一された開発環境
+- ホストマシンの環境に影響されない
+
+**注意点**:
+- Docker Desktop が必要（推奨メモリ: 8GB以上）
+- 初回ビルドに 5〜10 分程度かかります
+
+**詳細ドキュメント**: [docs/DOCKER_DEV_SETUP.md](./docs/DOCKER_DEV_SETUP.md)
+
+アクセス URL は方法1,2と同じです。
+
 ### 5. アプリケーションへのアクセス
 
 - **フロントエンド**: <http://localhost:3000>
