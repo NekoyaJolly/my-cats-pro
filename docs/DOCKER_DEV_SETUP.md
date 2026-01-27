@@ -248,7 +248,7 @@ docker exec -it mycats_dev_postgres psql -U mycats -d mycats_development
 **解決方法**:
 ```bash
 # キャッシュなしで再ビルド
-docker-compose -f docker-compose.dev.yml build --no-cache
+docker compose -f docker-compose.dev.yml build --no-cache
 
 # または
 pnpm run docker:dev:clean
@@ -275,14 +275,14 @@ FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memor
 
 ```bash
 # すべてのコンテナのログを表示
-docker-compose -f docker-compose.dev.yml logs
+docker compose -f docker-compose.dev.yml logs
 
 # 特定のサービスのログのみ表示
-docker-compose -f docker-compose.dev.yml logs backend
-docker-compose -f docker-compose.dev.yml logs frontend
+docker compose -f docker-compose.dev.yml logs backend
+docker compose -f docker-compose.dev.yml logs frontend
 
 # リアルタイムでログを追跡
-docker-compose -f docker-compose.dev.yml logs -f backend
+docker compose -f docker-compose.dev.yml logs -f backend
 ```
 
 ## 高度な使い方
@@ -291,13 +291,13 @@ docker-compose -f docker-compose.dev.yml logs -f backend
 
 ```bash
 # PostgreSQL のみ起動
-docker-compose -f docker-compose.dev.yml up postgres
+docker compose -f docker-compose.dev.yml up postgres
 
 # Backend のみ起動（PostgreSQL は自動起動）
-docker-compose -f docker-compose.dev.yml up backend
+docker compose -f docker-compose.dev.yml up backend
 
 # Frontend のみ起動（Backend と PostgreSQL は自動起動）
-docker-compose -f docker-compose.dev.yml up frontend
+docker compose -f docker-compose.dev.yml up frontend
 ```
 
 ### コンテナ内でコマンド実行
