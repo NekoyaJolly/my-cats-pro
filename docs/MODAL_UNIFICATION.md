@@ -2,7 +2,7 @@
 
 ## 概要
 
-プロジェクト内の全32個のモーダルを統一されたデザインシステム（UnifiedModal）に移行し、視認性の問題を解決しました。
+プロジェクト内の全33個のモーダルを統一されたデザインシステム（UnifiedModal）に移行し、視認性の問題を解決しました。
 
 ## 問題の背景
 
@@ -176,7 +176,7 @@ UnifiedModal が自動的に Stack を追加するため、手動の Stack は�
 
 ## 更新されたモーダル一覧
 
-### breeding 関連（7個）
+### breeding 関連（8個）
 - ✅ BirthInfoModal
 - ✅ CompleteConfirmModal
 - ✅ FemaleSelectionModal
@@ -186,17 +186,18 @@ UnifiedModal が自動的に Stack を追加するため、手動の Stack は�
 - ✅ kitten-disposition-modal
 - ✅ breeding-schedule-edit-modal
 
-### tags 関連（4個）
+### tags 関連（5個）
 - ✅ TagModal
 - ✅ AutomationRuleModal
 - ✅ CategoryModal
 - ✅ ExecuteRuleModal
 - ✅ GroupModal
 
-### tenants 関連（3個）
+### tenants 関連（4個）
 - ✅ EditTenantModal
 - ✅ InviteTenantAdminModal
 - ✅ InviteUserModal
+- ✅ UsersList（削除確認モーダル）
 
 ### cats 関連（2個）
 - ✅ cat-edit-modal
@@ -215,14 +216,13 @@ UnifiedModal が自動的に Stack を追加するため、手動の Stack は�
 - ✅ 医療記録詳細モーダル
 - ✅ 医療記録追加モーダル
 
-### その他（7個）
+### その他（5個）
 - ✅ GalleryAddModal
-- ✅ operation-modal-manager（3種類）
-- ✅ ダッシュボードカード設定モーダル
-- ✅ ダイヤルメニュー設定モーダル
-- ✅ 印刷テンプレート管理モーダル
+- ✅ operation-modal-manager 削除確認モーダル
+- ✅ operation-modal-manager 詳細表示モーダル
+- ✅ operation-modal-manager 編集・作成モーダル
 
-**合計: 32個のモーダル**
+**合計: 33個のモーダル**
 
 ## 品質保証
 
