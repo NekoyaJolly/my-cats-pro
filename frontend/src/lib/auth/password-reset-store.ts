@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { apiClient, type ApiRequestBody, type ApiSuccessData } from '../api/client';
 
 export type PasswordResetStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -129,23 +130,33 @@ export const usePasswordResetStore = create<PasswordResetState>((set) => ({
   clearDevToken: () => set({ devToken: null }),
 }));
 
+// useShallowを使用して安定したセレクタを提供
 export function usePasswordResetSelectors() {
-  return usePasswordResetStore((state) => ({
-    requestStatus: state.requestStatus,
-    requestError: state.requestError,
-    resetStatus: state.resetStatus,
-    resetError: state.resetError,
-    lastRequestedEmail: state.lastRequestedEmail,
-    devToken: state.devToken,
-  }));
+  return usePasswordResetStore(
+    useShallow((state) => ({
+      requestStatus: state.requestStatus,
+      requestError: state.requestError,
+      resetStatus: state.resetStatus,
+      resetError: state.resetError,
+      lastRequestedEmail: state.lastRequestedEmail,
+      devToken: state.devToken,
+    }))
+  );
 }
 
+// アクションは安定した参照を持つため、個別に取得
 export function usePasswordResetActions() {
-  return usePasswordResetStore((state) => ({
-    requestPasswordReset: state.requestPasswordReset,
-    resetPassword: state.resetPassword,
-    resetRequestState: state.resetRequestState,
-    resetResetState: state.resetResetState,
-    clearDevToken: state.clearDevToken,
-  }));
+  const requestPasswordReset = usePasswordResetStore((state) => state.requestPasswordReset);
+  const resetPassword = usePasswordResetStore((state) => state.resetPassword);
+  const resetRequestState = usePasswordResetStore((state) => state.resetRequestState);
+  const resetResetState = usePasswordResetStore((state) => state.resetResetState);
+  const clearDevToken = usePasswordResetStore((state) => state.clearDevToken);
+
+  return {
+    requestPasswordReset,
+    resetPassword,
+    resetRequestState,
+    resetResetState,
+    clearDevToken,
+  };
 }
