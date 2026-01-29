@@ -1,8 +1,9 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
-import { Modal, Button, Group, Text, Stack } from '@mantine/core';
+import { Button, Group, Text, Stack } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { UnifiedModal } from '@/components/common';
 
 export type OperationType = 'view' | 'edit' | 'create' | 'delete' | 'duplicate' | 'custom';
 
@@ -72,50 +73,46 @@ export function OperationModalManager<T = unknown>({
   // 削除確認モーダル
   if (operationType === 'delete') {
     return (
-      <Modal
+      <UnifiedModal
         opened={true}
         onClose={onClose}
         title={`${entityType}の削除`}
         centered
         size="sm"
       >
-        <Stack gap="md">
-          <Text>この{entityType}を削除してもよろしいですか？</Text>
-          <Text size="sm" c="dimmed">
-            この操作は取り消せません。
-          </Text>
+        <Text>この{entityType}を削除してもよろしいですか？</Text>
+        <Text size="sm" c="dimmed">
+          この操作は取り消せません。
+        </Text>
 
-          <Group justify="flex-end" gap="sm" mt="md">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
-              キャンセル
-            </Button>
-            <Button color="red" onClick={handleConfirm} loading={isLoading}>
-              削除
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        <Group justify="flex-end" gap="sm" mt="md">
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            キャンセル
+          </Button>
+          <Button color="red" onClick={handleConfirm} loading={isLoading}>
+            削除
+          </Button>
+        </Group>
+      </UnifiedModal>
     );
   }
 
   // 詳細表示モーダル
   if (operationType === 'view') {
     return (
-      <Modal
+      <UnifiedModal
         opened={true}
         onClose={onClose}
         title={`${entityType}の詳細`}
         centered
         size="lg"
       >
-        <Stack gap="md">
-          {customContent || children}
-          
-          <Group justify="flex-end" gap="sm" mt="md">
-            <Button onClick={onClose}>閉じる</Button>
-          </Group>
-        </Stack>
-      </Modal>
+        {customContent || children}
+        
+        <Group justify="flex-end" gap="sm" mt="md">
+          <Button onClick={onClose}>閉じる</Button>
+        </Group>
+      </UnifiedModal>
     );
   }
 
@@ -130,25 +127,23 @@ export function OperationModalManager<T = unknown>({
   };
 
   return (
-    <Modal
+    <UnifiedModal
       opened={true}
       onClose={onClose}
       title={titles[operationType] || `${entityType}の操作`}
       centered
       size="lg"
     >
-      <Stack gap="md">
-        {customContent || children}
-        
-        <Group justify="flex-end" gap="sm" mt="md">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            キャンセル
-          </Button>
-          <Button onClick={handleConfirm} loading={isLoading}>
-            {operationType === 'create' ? '作成' : operationType === 'duplicate' ? '複製' : '保存'}
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+      {customContent || children}
+      
+      <Group justify="flex-end" gap="sm" mt="md">
+        <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          キャンセル
+        </Button>
+        <Button onClick={handleConfirm} loading={isLoading}>
+          {operationType === 'create' ? '作成' : operationType === 'duplicate' ? '複製' : '保存'}
+        </Button>
+      </Group>
+    </UnifiedModal>
   );
 }
