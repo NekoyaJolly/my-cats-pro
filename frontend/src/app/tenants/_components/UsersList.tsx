@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Table, Badge, Text, Card, Loader, Center, Alert, Select, Group, Modal, Stack } from '@mantine/core';
+import { Table, Badge, Text, Card, Loader, Center, Alert, Select, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { ActionButton, ActionIconButton } from '@/components/ActionButton';
+import { UnifiedModal } from '@/components/common';
 import { apiClient, apiRequest } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/lib/auth/store';
@@ -349,34 +350,32 @@ export function UsersList() {
       </Table>
 
       {/* ユーザー削除確認モーダル */}
-      <Modal
+      <UnifiedModal
         opened={deleteModalOpened}
         onClose={handleDeleteModalClose}
         title="ユーザー削除の確認"
         size="md"
       >
-        <Stack gap="md">
-          <Text>
-            以下のユーザーを削除しますか？この操作は取り消せません。
-          </Text>
-          <Text fw={600} size="lg">
-            {deletingUser?.firstName || deletingUser?.lastName
-              ? [deletingUser?.lastName, deletingUser?.firstName].filter(Boolean).join(' ')
-              : deletingUser?.email}
-          </Text>
-          <Text size="sm" c="dimmed">
-            メールアドレス: {deletingUser?.email}
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <ActionButton action="cancel" onClick={handleDeleteModalClose} disabled={deleteLoading}>
-              キャンセル
-            </ActionButton>
-            <ActionButton action="delete" onClick={handleDeleteUser} loading={deleteLoading}>
-              削除
-            </ActionButton>
-          </Group>
-        </Stack>
-      </Modal>
+        <Text>
+          以下のユーザーを削除しますか？この操作は取り消せません。
+        </Text>
+        <Text fw={600} size="lg">
+          {deletingUser?.firstName || deletingUser?.lastName
+            ? [deletingUser?.lastName, deletingUser?.firstName].filter(Boolean).join(' ')
+            : deletingUser?.email}
+        </Text>
+        <Text size="sm" c="dimmed">
+          メールアドレス: {deletingUser?.email}
+        </Text>
+        <Group justify="flex-end" mt="md">
+          <ActionButton action="cancel" onClick={handleDeleteModalClose} disabled={deleteLoading}>
+            キャンセル
+          </ActionButton>
+          <ActionButton action="delete" onClick={handleDeleteUser} loading={deleteLoading}>
+            削除
+          </ActionButton>
+        </Group>
+      </UnifiedModal>
     </Card>
   );
 }
