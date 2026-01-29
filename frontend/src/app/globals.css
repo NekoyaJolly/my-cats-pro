@@ -411,11 +411,6 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600 !important;
 }
 
-/* すべての Modal 内部要素 */
-.mantine-Modal-content * {
-  background-color: inherit !important;
-}
-
 @media (min-width: 768px) {
   :root {
     --layout-px: 24px;
