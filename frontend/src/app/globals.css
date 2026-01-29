@@ -411,16 +411,26 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600 !important;
 }
 
-/* Modal 内のすべての項目に枠線を追加 */
+/* モーダル内の最上位要素の枠線を削除（全体を囲まないため） */
 .mantine-Modal-body > * {
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* モーダル内のすべてのフィールドグループ（Stack、Group、Card）に枠線を追加 */
+.mantine-Modal-body .mantine-Stack-root,
+.mantine-Modal-body .mantine-Group-root,
+.mantine-Modal-body .mantine-Card-root {
   border: 1px solid #212529 !important;
   padding: 12px !important;
   border-radius: 4px !important;
+  margin-bottom: 8px !important;
 }
 
-/* 既に border を持つ要素は二重枠を避ける */
-.mantine-Modal-body .mantine-Card-root {
-  border: 1px solid #212529 !important;
+/* 入力フィールド自体の枠線は既存のものを保持 */
+.mantine-Modal-body .mantine-Input-input,
+.mantine-Modal-body .mantine-Select-input {
+  border: 1px solid #dee2e6 !important;
 }
 
 @media (min-width: 768px) {
