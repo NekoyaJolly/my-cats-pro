@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Modal,
   Stack,
   TextInput,
   Textarea,
@@ -16,6 +15,7 @@ import {
 } from "@mantine/core";
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
 import { format } from "date-fns";
+import { UnifiedModal } from '@/components/common';
 import { useGetCat, useUpdateCat, type Cat } from "@/lib/api/hooks/use-cats";
 import { useGetBreeds } from "@/lib/api/hooks/use-breeds";
 import { useGetCoatColors } from "@/lib/api/hooks/use-coat-colors";
@@ -143,13 +143,14 @@ export function CatEditModal({
     isCatLoading || isBreedsLoading || isCoatColorsLoading || isBreedMasterLoading || isCoatMasterLoading;
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={handleClose}
       title="猫の情報編集"
       size="lg"
       closeOnClickOutside={!updateCat.isPending}
       closeOnEscape={!updateCat.isPending}
+      addContentPadding={false}
     >
       {isLoading ? (
         <Center py="xl">
@@ -157,7 +158,7 @@ export function CatEditModal({
         </Center>
       ) : (
         <form onSubmit={handleSubmit}>
-          <Stack gap="md">
+          <Stack gap="md" p="md">
             <Grid gutter="md">
               <Grid.Col span={6}>
                 <TextInput
@@ -284,6 +285,6 @@ export function CatEditModal({
           </Stack>
         </form>
       )}
-    </Modal>
+    </UnifiedModal>
   );
 }

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Modal, Stack, TextInput, Switch, Group, Text } from '@mantine/core';
+import { Stack, TextInput, Switch, Group, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { UnifiedModal } from '@/components/common';
 import { apiRequest } from '@/lib/api/client';
 import { ActionButton } from '@/components/ActionButton';
 
@@ -108,53 +109,51 @@ export function EditTenantModal({ tenant, opened, onClose, onSuccess }: EditTena
   };
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={handleClose}
       title="テナントを編集"
       size="md"
     >
-      <Stack gap="md">
-        <TextInput
-          label="テナント名"
-          placeholder="サンプルテナント"
-          required
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+      <TextInput
+        label="テナント名"
+        placeholder="サンプルテナント"
+        required
+        value={formData.name}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        disabled={loading}
+      />
+
+      <TextInput
+        label="テナントスラッグ"
+        placeholder="sample-tenant"
+        required
+        description="半角英小文字、数字、ハイフンのみ使用可能"
+        value={formData.slug}
+        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+        disabled={loading}
+      />
+
+      <Group>
+        <Switch
+          label="有効"
+          checked={formData.isActive}
+          onChange={(e) => setFormData({ ...formData, isActive: e.currentTarget.checked })}
           disabled={loading}
         />
+        <Text size="sm" c="dimmed">
+          無効にするとテナントのユーザーはログインできなくなります
+        </Text>
+      </Group>
 
-        <TextInput
-          label="テナントスラッグ"
-          placeholder="sample-tenant"
-          required
-          description="半角英小文字、数字、ハイフンのみ使用可能"
-          value={formData.slug}
-          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-          disabled={loading}
-        />
-
-        <Group>
-          <Switch
-            label="有効"
-            checked={formData.isActive}
-            onChange={(e) => setFormData({ ...formData, isActive: e.currentTarget.checked })}
-            disabled={loading}
-          />
-          <Text size="sm" c="dimmed">
-            無効にするとテナントのユーザーはログインできなくなります
-          </Text>
-        </Group>
-
-        <Group justify="flex-end" mt="md">
-          <ActionButton action="cancel" onClick={handleClose} disabled={loading}>
-            キャンセル
-          </ActionButton>
-          <ActionButton action="save" onClick={handleSubmit} loading={loading}>
-            保存
-          </ActionButton>
-        </Group>
-      </Stack>
-    </Modal>
+      <Group justify="flex-end" mt="md">
+        <ActionButton action="cancel" onClick={handleClose} disabled={loading}>
+          キャンセル
+        </ActionButton>
+        <ActionButton action="save" onClick={handleSubmit} loading={loading}>
+          保存
+        </ActionButton>
+      </Group>
+    </UnifiedModal>
   );
 }

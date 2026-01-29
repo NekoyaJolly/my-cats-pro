@@ -2,7 +2,6 @@
 
 import React from 'react';
 import {
-  Modal,
   Stack,
   Text,
   Card,
@@ -12,6 +11,7 @@ import {
   Badge,
   Button,
 } from '@mantine/core';
+import { UnifiedModal } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import { calculateAgeInMonths } from '../utils';
 
@@ -39,13 +39,14 @@ export function MaleSelectionModal({
   );
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title="オス猫をスケジュールに追加"
       size="md"
+      addContentPadding={false}
     >
-      <Stack gap="sm">
+      <Stack gap="sm" p="md">
         <Text size="sm" c="dimmed">
           スケジュールに追加するオス猫を選択してください
         </Text>
@@ -82,7 +83,7 @@ export function MaleSelectionModal({
           </Text>
         )}
       </Stack>
-    </Modal>
+    </UnifiedModal>
   );
 }
 

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Modal,
   Button,
   Group,
   Stack,
@@ -10,6 +9,7 @@ import {
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
+import { UnifiedModal } from '@/components/common';
 
 interface CatQuickEditModalProps {
   opened: boolean;
@@ -91,56 +91,54 @@ export function CatQuickEditModal({
   };
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title="猫情報の編集"
       size="md"
       centered
     >
-      <Stack gap="md">
+      <TextInput
+        label="名前"
+        placeholder="猫の名前"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+        error={error && error.includes('名前') ? error : undefined}
+        autoFocus
+      />
+
+      <DateInput
+        label="誕生日"
+        placeholder="誕生日を選択"
+        value={date}
+        onChange={(value) => {
+          if (typeof value === 'string') {
+            setDate(new Date(value));
+          } else {
+            setDate(value);
+          }
+        }}
+        required
+        error={error && error.includes('誕生日') ? error : undefined}
+        valueFormat="YYYY/MM/DD"
+      />
+
+      {error && !error.includes('名前') && !error.includes('誕生日') && (
         <TextInput
-          label="名前"
-          placeholder="猫の名前"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          error={error && error.includes('名前') ? error : undefined}
-          autoFocus
+          error={error}
+          styles={{ input: { display: 'none' } }}
         />
+      )}
 
-        <DateInput
-          label="誕生日"
-          placeholder="誕生日を選択"
-          value={date}
-          onChange={(value) => {
-            if (typeof value === 'string') {
-              setDate(new Date(value));
-            } else {
-              setDate(value);
-            }
-          }}
-          required
-          error={error && error.includes('誕生日') ? error : undefined}
-          valueFormat="YYYY/MM/DD"
-        />
-
-        {error && !error.includes('名前') && !error.includes('誕生日') && (
-          <TextInput
-            error={error}
-            styles={{ input: { display: 'none' } }}
-          />
-        )}
-
-        <Group justify="flex-end" gap="sm">
-          <Button variant="outline" onClick={onClose} disabled={isSaving}>
-            キャンセル
-          </Button>
-          <Button onClick={handleSave} loading={isSaving}>
-            保存
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+      <Group justify="flex-end" gap="sm">
+        <Button variant="outline" onClick={onClose} disabled={isSaving}>
+          キャンセル
+        </Button>
+        <Button onClick={handleSave} loading={isSaving}>
+          保存
+        </Button>
+      </Group>
+    </UnifiedModal>
   );
 }

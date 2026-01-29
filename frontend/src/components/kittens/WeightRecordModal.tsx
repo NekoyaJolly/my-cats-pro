@@ -2,7 +2,6 @@
 
 import React, { useEffect } from 'react';
 import {
-  Modal,
   TextInput,
   NumberInput,
   Textarea,
@@ -10,6 +9,7 @@ import {
   Group,
   Stack,
   Text,
+  Box,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
@@ -20,6 +20,7 @@ import {
   type WeightRecord,
   type CreateWeightRecordRequest,
 } from '@/lib/api/hooks/use-weight-records';
+import { UnifiedModal } from '@/components/common';
 
 interface WeightRecordModalProps {
   opened: boolean;
@@ -131,7 +132,7 @@ export function WeightRecordModal({
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title={
@@ -143,9 +144,10 @@ export function WeightRecordModal({
         </Group>
       }
       size="md"
+      addContentPadding={false}
     >
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap="md">
+      <Box component="form" onSubmit={form.onSubmit(handleSubmit)}>
+        <Stack gap="md" p="md">
           {/* 対象の猫名 */}
           <TextInput
             label="対象"
@@ -204,8 +206,8 @@ export function WeightRecordModal({
             </Button>
           </Group>
         </Stack>
-      </form>
-    </Modal>
+      </Box>
+    </UnifiedModal>
   );
 }
 
