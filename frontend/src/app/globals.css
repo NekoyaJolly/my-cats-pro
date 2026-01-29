@@ -411,6 +411,26 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600 !important;
 }
 
+/* Modal 内の Card - 背景色を灰色に */
+.mantine-Modal-body .mantine-Card-root {
+  background-color: #f8f9fa !important;
+  border: 1px solid #dee2e6 !important;
+}
+
+/* Modal 内の Input - 背景色を白に */
+.mantine-Modal-body .mantine-Input-input,
+.mantine-Modal-body .mantine-Select-input,
+.mantine-Modal-body .mantine-TextInput-input {
+  background-color: #ffffff !important;
+  border: 1px solid #dee2e6 !important;
+}
+
+/* Modal 内のグループやセクションの背景色 */
+.mantine-Modal-body [class*="Stack"],
+.mantine-Modal-body [class*="Group"] {
+  background-color: transparent !important;
+}
+
 @media (min-width: 768px) {
   :root {
     --layout-px: 24px;
