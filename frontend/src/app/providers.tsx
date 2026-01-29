@@ -226,27 +226,32 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultProps: {
           radius: 'md',
           overlayProps: {
-            color: 'black',
-            opacity: 0.55,
+            backgroundOpacity: 0.55,
             blur: 3,
           },
         },
         styles: {
+          root: {
+            // Modal ルート
+          },
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
+          },
           content: {
-            backgroundColor: '#ffffff !important',
-            borderRadius: '8px !important',
-            border: '1px solid var(--border-primary) !important',
-            color: 'var(--text-primary) !important',
+            backgroundColor: '#ffffff',
+            borderRadius: '8px',
+            border: '1px solid #dee2e6',
+            color: '#212529',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
           },
           header: {
-            backgroundColor: '#ffffff !important',
-            borderBottom: '1px solid var(--border-subtle)',
-            color: 'var(--text-primary) !important',
+            backgroundColor: '#ffffff',
+            borderBottom: '1px solid #e9ecef',
+            color: '#212529',
           },
           body: {
-            backgroundColor: '#ffffff !important',
-            color: 'var(--text-primary) !important',
+            backgroundColor: '#ffffff',
+            color: '#212529',
           },
         },
       },

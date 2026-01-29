@@ -360,7 +360,9 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
       title="子猫管理"
       size="xl"
       styles={{
-        body: { maxHeight: '70vh', overflowY: 'auto' },
+        content: { backgroundColor: '#ffffff' },
+        header: { backgroundColor: '#ffffff' },
+        body: { maxHeight: '70vh', overflowY: 'auto', backgroundColor: '#ffffff' },
       }}
     >
       <Stack gap="md">
