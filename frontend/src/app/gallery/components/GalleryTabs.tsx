@@ -62,9 +62,9 @@ export function GalleryTabs({ counts, loading }: GalleryTabsProps) {
         }
       }}
       variant="outline"
-      radius="md"
+      radius="0"
     >
-      <Tabs.List>
+      <Tabs.List grow>
         {validTabs.map((tab) => (
           <Tabs.Tab
             key={tab}

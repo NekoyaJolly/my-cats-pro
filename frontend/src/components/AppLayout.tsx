@@ -47,7 +47,6 @@ import { ContextMenuManager } from '@/components/context-menu';
 import { apiClient, type ApiQueryParams } from '@/lib/api/client';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import { useBottomNavSettings } from '@/lib/hooks/use-bottom-nav-settings';
-import { useTheme } from '@/lib/store/theme-store';
 
 const navigationItems = [
   {
@@ -147,7 +146,6 @@ interface CatStats {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { theme } = useTheme();
   const pathname = usePathname() ?? '/';
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -337,14 +335,14 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (!requiresAuth) {
     return (
-      <div className={`theme-${theme}`} style={{ minHeight: '100vh' }}>
+      <div className="theme-default" style={{ minHeight: '100vh' }}>
         {children}
       </div>
     );
   }
 
   return (
-    <div className={`theme-${theme}`}>
+    <div className="theme-default">
     <ContextMenuManager>
     <AppShell
       header={{ height: 60 }}
@@ -549,7 +547,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         >
           {children}
         </Box>
-        <BottomNavigation pathname={pathname} theme={theme} />
+        <BottomNavigation pathname={pathname} />
       </AppShell.Main>
     </AppShell>
     </ContextMenuManager>
@@ -557,35 +555,30 @@ export function AppLayout({ children }: AppLayoutProps) {
   );
 }
 
-function BottomNavigation({ pathname, theme }: { pathname: string; theme: string }) {
+function BottomNavigation({ pathname }: { pathname: string }) {
   const { visibleItems, isLoading } = useBottomNavSettings(bottomNavigationItems);
 
   if (isLoading) return null;
 
-  // Monolithの時はシンプルな固定バーにする
-  const isMonolith = theme === 'monolith';
-
   return (
     <Box
       component="footer"
-      className={isMonolith ? '' : 'glass-effect'}
+      className="glass-effect"
       style={{
         position: 'fixed',
-        left: isMonolith ? 0 : '50%',
-        transform: isMonolith ? 'none' : 'translateX(-50%)',
-        bottom: isMonolith ? 0 : 20,
-        width: isMonolith ? '100%' : 'calc(100% - 40px)',
-        maxWidth: isMonolith ? 'none' : 600,
-        height: isMonolith ? 64 : 72,
-        borderRadius: isMonolith ? 0 : 36,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        bottom: 20,
+        width: 'calc(100% - 40px)',
+        maxWidth: 600,
+        height: 72,
+        borderRadius: 36,
         zIndex: 100,
         padding: '0 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
-        border: isMonolith ? 'none' : '1px solid rgba(255, 255, 255, 0.5)',
-        borderTop: isMonolith ? '1px solid var(--border-primary, #1e293b)' : undefined,
-        backgroundColor: isMonolith ? 'var(--bg-surface, #ffffff)' : undefined,
+        border: '1px solid rgba(255, 255, 255, 0.5)',
       }}
     >
       {visibleItems.map((item) => {
@@ -606,10 +599,10 @@ function BottomNavigation({ pathname, theme }: { pathname: string; theme: string
               justifyContent: 'center',
               position: 'relative',
               transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              transform: !isMonolith && isActive ? 'scale(1.1) translateY(-4px)' : 'scale(1)',
+              transform: isActive ? 'scale(1.1) translateY(-4px)' : 'scale(1)',
             }}
           >
-            {isActive && !isMonolith && (
+            {isActive && (
               <Box 
                 style={{ 
                   position: 'absolute', 
@@ -629,23 +622,10 @@ function BottomNavigation({ pathname, theme }: { pathname: string; theme: string
                 color: isActive ? 'var(--accent)' : 'var(--text-muted)',
                 fontWeight: isActive ? 700 : 500,
                 marginTop: 4,
-                textTransform: isMonolith ? 'uppercase' : 'none',
-                letterSpacing: isMonolith ? '0.05em' : 'normal',
               }}
             >
               {item.label}
             </Text>
-            {isActive && isMonolith && (
-              <Box 
-                style={{ 
-                  position: 'absolute', 
-                  bottom: -10, 
-                  width: '100%', 
-                  height: 2, 
-                  backgroundColor: 'var(--accent)' 
-                }} 
-              />
-            )}
           </Box>
         );
       })}

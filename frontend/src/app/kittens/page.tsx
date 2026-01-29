@@ -259,7 +259,7 @@ export default function KittensPage() {
       </Card>
 
       {/* タブ - URLパラメータで状態を管理 */}
-      <Tabs value={tabParam} onChange={handleTabChange} variant="outline" mb="md">
+      <Tabs value={tabParam} onChange={handleTabChange} variant="outline" radius="0" mb="md">
         <Tabs.List grow>
           <Tabs.Tab value="list" leftSection={<IconEdit size={14} />}>
             子猫一覧

@@ -16,7 +16,7 @@ type ThemeStore = ThemeState & ThemeActions;
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set) => ({
-      theme: 'ethereal', // Default is Ethereal as recently implemented
+      theme: 'default', // Classic Default に統一
       setTheme: (theme) => set({ theme }),
     }),
     {

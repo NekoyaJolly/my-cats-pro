@@ -66,10 +66,10 @@ export function TabsSection({
         }
       }}
       variant="outline"
-      radius="md"
+      radius="0"
       {...tabsProps}
     >
-      <Tabs.List>
+      <Tabs.List grow>
         {tabs.map((tab) => (
           <Tabs.Tab
             key={tab.value}
