@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
-import { Button, Group, Text, Stack } from '@mantine/core';
+import { Button, Group, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { UnifiedModal } from '@/components/common';
 

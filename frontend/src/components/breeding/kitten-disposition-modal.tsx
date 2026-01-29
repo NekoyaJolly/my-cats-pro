@@ -1,6 +1,6 @@
 'use client';
 
-import { Stack, TextInput, Select, NumberInput, Textarea, Button, Group } from '@mantine/core';
+import { TextInput, Select, NumberInput, Textarea, Button, Group } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { UnifiedModal } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';

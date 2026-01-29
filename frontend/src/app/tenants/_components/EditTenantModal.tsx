@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Stack, TextInput, Switch, Group, Text } from '@mantine/core';
+import { TextInput, Switch, Group, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { UnifiedModal } from '@/components/common';
 import { apiRequest } from '@/lib/api/client';

@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Group,
-  Stack,
   Text,
 } from '@mantine/core';
 import { IconInfoCircle, IconWand } from '@tabler/icons-react';
