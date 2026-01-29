@@ -411,20 +411,26 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600 !important;
 }
 
-/* モーダル内の最上位要素の枠線を削除（全体を囲まないため） */
-.mantine-Modal-body > * {
+/* モーダル内の最上位のStackのみ枠線なし */
+.mantine-Modal-body > .mantine-Stack-root {
   border: none !important;
   padding: 0 !important;
 }
 
-/* モーダル内のすべてのフィールドグループ（Stack、Group、Card）に枠線を追加 */
-.mantine-Modal-body .mantine-Stack-root,
-.mantine-Modal-body .mantine-Group-root,
-.mantine-Modal-body .mantine-Card-root {
+/* モーダル内の最上位Stack直下のすべての要素に枠線を追加（フィールドグループ） */
+.mantine-Modal-body > .mantine-Stack-root > * {
   border: 1px solid #212529 !important;
+  border-radius: 8px !important;
   padding: 12px !important;
-  border-radius: 4px !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 0 !important;
+}
+
+/* ネストされた子要素の二重枠を除外 */
+.mantine-Modal-body > .mantine-Stack-root > * .mantine-Stack-root,
+.mantine-Modal-body > .mantine-Stack-root > * .mantine-Group-root {
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
 }
 
 /* 入力フィールド自体の枠線は既存のものを保持 */
