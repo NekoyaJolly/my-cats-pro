@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Modal,
   Stack,
   TextInput,
   Select,
@@ -15,6 +14,7 @@ import {
   Text,
 } from '@mantine/core';
 import { IconCheck, IconCopy, IconMail } from '@tabler/icons-react';
+import { UnifiedModal } from '@/components/common';
 import { ActionButton } from '@/components/ActionButton';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/store';
@@ -156,7 +156,7 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
   }
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={handleClose}
       title="ユーザーを招待"
@@ -164,7 +164,7 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
     >
       {invitationResult ? (
         // 招待成功後の表示
-        <Stack gap="md">
+        <>
           <Alert icon={<IconMail size={16} />} title="招待を作成しました" color="green">
             <Text size="sm" mb="xs">
               <strong>{invitationResult.email}</strong> を
@@ -203,10 +203,10 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
               閉じる
             </ActionButton>
           </Group>
-        </Stack>
+        </>
       ) : (
         // 招待フォーム
-        <Stack gap="md">
+        <>
           <TextInput
             label="メールアドレス"
             placeholder="user@example.com"
@@ -234,8 +234,8 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
               招待を送信
             </ActionButton>
           </Group>
-        </Stack>
+        </>
       )}
-    </Modal>
+    </UnifiedModal>
   );
 }

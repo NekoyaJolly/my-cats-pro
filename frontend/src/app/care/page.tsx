@@ -12,7 +12,6 @@ import {
   Divider,
   Group,
   LoadingOverlay,
-  Modal,
   Pagination,
   Radio,
   RadioGroup,
@@ -31,6 +30,7 @@ import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconCheck, IconPlus, IconX, IconCalendarPlus, IconLayoutGrid, IconRefresh } from '@tabler/icons-react';
 import dayjs from 'dayjs';
+import { UnifiedModal } from '@/components/common';
 
 import {
   type CareSchedule,
@@ -738,14 +738,14 @@ export default function CarePage() {
         </Stack>
       </Card>
 
-      <Modal
+      <UnifiedModal
         opened={detailModalOpened}
         onClose={closeDetailModal}
         title="ケア予定の詳細"
         size="lg"
       >
         {detailSchedule && (
-          <Stack gap="md">
+          <>
             <Box>
               <Text size="sm" c="dimmed" mb={4}>
                 対象猫
@@ -842,15 +842,14 @@ export default function CarePage() {
                 閉じる
               </ActionButton>
             </Group>
-          </Stack>
+          </>
         )}
-      </Modal>
+      </UnifiedModal>
 
-      <Modal opened={createModalOpened} onClose={() => {
+      <UnifiedModal opened={createModalOpened} onClose={() => {
         closeCreateModal();
         resetCreateForm();
       }} title="ケア予定を追加" size="lg">
-        <Stack gap="md">
           <TextInput
             label="ケア名"
             placeholder="例: 年次健康診断"
@@ -1128,46 +1127,43 @@ export default function CarePage() {
               登録する
             </ActionButton>
           </Group>
-        </Stack>
-      </Modal>
+      </UnifiedModal>
 
       {/* カードを追加モーダル */}
-      <Modal
+      <UnifiedModal
         opened={addCardModalOpened}
         onClose={closeAddCardModal}
         title="カードを追加"
         size="sm"
       >
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">
-            統計カードとして表示するケア名を選択してください
-          </Text>
-          <Select
-            placeholder="ケア名を選択"
-            data={(availableCareNames || []).map((name) => ({ value: name, label: name }))}
-            value={null}
-            onChange={(value) => {
-              if (value && !selectedCareNames.includes(value)) {
-                setSelectedCareNames((prev) => [...prev, value]);
-                closeAddCardModal();
-              }
-            }}
-            searchable
-          />
-          <Group justify="flex-end" mt="md">
-            <ActionButton action="cancel" onClick={closeAddCardModal}>
-              キャンセル
-            </ActionButton>
-          </Group>
-        </Stack>
-      </Modal>
+        <Text size="sm" c="dimmed">
+          統計カードとして表示するケア名を選択してください
+        </Text>
+        <Select
+          placeholder="ケア名を選択"
+          data={(availableCareNames || []).map((name) => ({ value: name, label: name }))}
+          value={null}
+          onChange={(value) => {
+            if (value && !selectedCareNames.includes(value)) {
+              setSelectedCareNames((prev) => [...prev, value]);
+              closeAddCardModal();
+            }
+          }}
+          searchable
+        />
+        <Group justify="flex-end" mt="md">
+          <ActionButton action="cancel" onClick={closeAddCardModal}>
+            キャンセル
+          </ActionButton>
+        </Group>
+      </UnifiedModal>
 
-      <Modal opened={completeModalOpened} onClose={() => {
+      <UnifiedModal opened={completeModalOpened} onClose={() => {
         closeCompleteModal();
         setTargetSchedule(null);
   }} title={targetSchedule ? `${targetSchedule.cat?.name ?? '未設定'} - ${targetSchedule.name || targetSchedule.title} を完了` : 'ケア完了処理'} size="lg">
         {targetSchedule ? (
-          <Stack gap="md">
+          <>
             <Card withBorder shadow="xs" radius="md">
               <Stack gap={4}>
                 <Group justify="space-between">
@@ -1237,16 +1233,16 @@ export default function CarePage() {
                 完了として記録
               </ActionButton>
             </Group>
-          </Stack>
+          </>
         ) : (
           <Text size="sm" c="dimmed">
             対象のケア予定が見つかりませんでした。
           </Text>
         )}
-      </Modal>
+      </UnifiedModal>
 
       {/* 編集モーダル */}
-      <Modal
+      <UnifiedModal
         opened={editModalOpened}
         onClose={() => {
           closeEditModal();
@@ -1256,7 +1252,6 @@ export default function CarePage() {
         title="ケア予定を編集"
         size="lg"
       >
-        <Stack gap="md">
           <TextInput
             label="ケア名"
             placeholder="例: 年次健康診断"
@@ -1538,11 +1533,10 @@ export default function CarePage() {
               更新
             </ActionButton>
           </Group>
-        </Stack>
-      </Modal>
+      </UnifiedModal>
 
       {/* 削除確認モーダル */}
-      <Modal
+      <UnifiedModal
         opened={deleteModalOpened}
         onClose={() => {
           closeDeleteModal();
@@ -1552,7 +1546,7 @@ export default function CarePage() {
         size="md"
       >
         {deletingSchedule && (
-          <Stack gap="md">
+          <>
             <Alert color="red" icon={<IconAlertCircle size={18} />}>
               以下のケア予定を削除します。この操作は取り消せません。
             </Alert>
@@ -1589,9 +1583,9 @@ export default function CarePage() {
                 削除
               </ActionButton>
             </Group>
-          </Stack>
+          </>
         )}
-      </Modal>
+      </UnifiedModal>
 
       {/* コンテキストメニュー操作モーダル */}
       <OperationModalManager

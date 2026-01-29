@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Modal,
   Stack,
   TextInput,
   Group,
@@ -14,6 +13,7 @@ import {
   Text,
 } from '@mantine/core';
 import { IconCheck, IconCopy, IconMail } from '@tabler/icons-react';
+import { UnifiedModal } from '@/components/common';
 import { ActionButton } from '@/components/ActionButton';
 import { apiClient } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
@@ -135,7 +135,7 @@ export function InviteTenantAdminModal({ opened, onClose }: InviteTenantAdminMod
   };
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={handleClose}
       title="テナント管理者を招待"
@@ -143,7 +143,7 @@ export function InviteTenantAdminModal({ opened, onClose }: InviteTenantAdminMod
     >
       {invitationResult ? (
         // 招待成功後の表示
-        <Stack gap="md">
+        <>
           <Alert icon={<IconMail size={16} />} title="招待を作成しました" color="green">
             <Text size="sm" mb="xs">
               <strong>{invitationResult.email}</strong> 宛ての招待を作成しました。
@@ -181,10 +181,10 @@ export function InviteTenantAdminModal({ opened, onClose }: InviteTenantAdminMod
               閉じる
             </ActionButton>
           </Group>
-        </Stack>
+        </>
       ) : (
         // 招待フォーム
-        <Stack gap="md">
+        <>
           <TextInput
             label="メールアドレス"
             placeholder="admin@example.com"
@@ -220,8 +220,8 @@ export function InviteTenantAdminModal({ opened, onClose }: InviteTenantAdminMod
               招待を送信
             </ActionButton>
           </Group>
-        </Stack>
+        </>
       )}
-    </Modal>
+    </UnifiedModal>
   );
 }

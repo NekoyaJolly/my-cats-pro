@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Modal,
   NumberInput,
   Textarea,
   Button,
@@ -30,6 +29,7 @@ import {
   type BulkWeightRecordItem,
 } from '@/lib/api/hooks/use-weight-records';
 import { GenderBadge } from '@/components/GenderBadge';
+import { UnifiedModal } from '@/components/common';
 
 interface Kitten {
   id: string;
@@ -178,7 +178,7 @@ export function BulkWeightRecordModal({
   }
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title={
@@ -190,105 +190,103 @@ export function BulkWeightRecordModal({
       size="lg"
       centered
     >
-      <Stack gap="md">
-        {/* 母猫ナビゲーション */}
-        <Card padding="sm" bg="gray.0" radius="md">
-          <Group justify="space-between" align="center">
-            <ActionIcon
-              variant="subtle"
-              disabled={currentIndex === 0}
-              onClick={handlePrev}
-              aria-label="前の母猫"
-            >
-              <IconChevronLeft size={20} />
-            </ActionIcon>
+      {/* 母猫ナビゲーション */}
+      <Card padding="sm" bg="gray.0" radius="md">
+        <Group justify="space-between" align="center">
+          <ActionIcon
+            variant="subtle"
+            disabled={currentIndex === 0}
+            onClick={handlePrev}
+            aria-label="前の母猫"
+          >
+            <IconChevronLeft size={20} />
+          </ActionIcon>
 
-            <Stack gap={2} align="center">
-              <Text fw={600} size="lg">
-                {currentGroup.motherName}
+          <Stack gap={2} align="center">
+            <Text fw={600} size="lg">
+              {currentGroup.motherName}
+            </Text>
+            <Group gap="xs">
+              <Text size="xs" c="dimmed">
+                父: {currentGroup.fatherName}
               </Text>
-              <Group gap="xs">
-                <Text size="xs" c="dimmed">
-                  父: {currentGroup.fatherName}
-                </Text>
-                <Text size="xs" c="dimmed">
-                  •
-                </Text>
-                <Text size="xs" c="dimmed">
-                  {currentGroup.deliveryDate}
-                </Text>
-              </Group>
-              {hasMultipleGroups && (
-                <Badge size="xs" variant="light">
-                  {currentIndex + 1} / {motherGroups.length}
-                </Badge>
-              )}
-            </Stack>
+              <Text size="xs" c="dimmed">
+                •
+              </Text>
+              <Text size="xs" c="dimmed">
+                {currentGroup.deliveryDate}
+              </Text>
+            </Group>
+            {hasMultipleGroups && (
+              <Badge size="xs" variant="light">
+                {currentIndex + 1} / {motherGroups.length}
+              </Badge>
+            )}
+          </Stack>
 
-            <ActionIcon
-              variant="subtle"
-              disabled={currentIndex === motherGroups.length - 1}
-              onClick={handleNext}
-              aria-label="次の母猫"
-            >
-              <IconChevronRight size={20} />
-            </ActionIcon>
-          </Group>
-        </Card>
-
-        {/* 記録日時 */}
-        <DateTimePicker
-          label="測定日時"
-          placeholder="測定日時を選択"
-          maxDate={new Date()}
-          value={recordedAt}
-          onChange={(value) => {
-            if (value) {
-              // DateTimePicker は string を返すので Date に変換
-              const dateValue = typeof value === 'string' ? new Date(value) : value;
-              setRecordedAt(dateValue);
-            }
-          }}
-          valueFormat="YYYY/MM/DD HH:mm"
-        />
-
-        <Divider />
-
-        {/* 子猫の体重入力グリッド */}
-        <Grid gutter="sm">
-          {currentGroup.kittens.map((kitten) => (
-            <Grid.Col key={kitten.id} span={{ base: 12, xs: 6 }}>
-              <KittenWeightInput
-                kitten={kitten}
-                value={weightInputs[kitten.id]?.weight ?? ''}
-                notes={weightInputs[kitten.id]?.notes ?? ''}
-                onWeightChange={(weight) => handleWeightChange(kitten.id, weight)}
-                onNotesChange={(notes) => handleNotesChange(kitten.id, notes)}
-              />
-            </Grid.Col>
-          ))}
-        </Grid>
-
-        {/* ボタン */}
-        <Group justify="space-between" mt="md">
-          <Text size="sm" c="dimmed">
-            {filledCount} / {currentGroup.kittens.length} 頭入力済み
-          </Text>
-          <Group>
-            <Button variant="default" onClick={onClose} disabled={isLoading}>
-              閉じる
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              loading={isLoading}
-              disabled={filledCount === 0}
-            >
-              保存 ({filledCount}件)
-            </Button>
-          </Group>
+          <ActionIcon
+            variant="subtle"
+            disabled={currentIndex === motherGroups.length - 1}
+            onClick={handleNext}
+            aria-label="次の母猫"
+          >
+            <IconChevronRight size={20} />
+          </ActionIcon>
         </Group>
-      </Stack>
-    </Modal>
+      </Card>
+
+      {/* 記録日時 */}
+      <DateTimePicker
+        label="測定日時"
+        placeholder="測定日時を選択"
+        maxDate={new Date()}
+        value={recordedAt}
+        onChange={(value) => {
+          if (value) {
+            // DateTimePicker は string を返すので Date に変換
+            const dateValue = typeof value === 'string' ? new Date(value) : value;
+            setRecordedAt(dateValue);
+          }
+        }}
+        valueFormat="YYYY/MM/DD HH:mm"
+      />
+
+      <Divider />
+
+      {/* 子猫の体重入力グリッド */}
+      <Grid gutter="sm">
+        {currentGroup.kittens.map((kitten) => (
+          <Grid.Col key={kitten.id} span={{ base: 12, xs: 6 }}>
+            <KittenWeightInput
+              kitten={kitten}
+              value={weightInputs[kitten.id]?.weight ?? ''}
+              notes={weightInputs[kitten.id]?.notes ?? ''}
+              onWeightChange={(weight) => handleWeightChange(kitten.id, weight)}
+              onNotesChange={(notes) => handleNotesChange(kitten.id, notes)}
+            />
+          </Grid.Col>
+        ))}
+      </Grid>
+
+      {/* ボタン */}
+      <Group justify="space-between" mt="md">
+        <Text size="sm" c="dimmed">
+          {filledCount} / {currentGroup.kittens.length} 頭入力済み
+        </Text>
+        <Group>
+          <Button variant="default" onClick={onClose} disabled={isLoading}>
+            閉じる
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            loading={isLoading}
+            disabled={filledCount === 0}
+          >
+            保存 ({filledCount}件)
+          </Button>
+        </Group>
+      </Group>
+    </UnifiedModal>
   );
 }
 

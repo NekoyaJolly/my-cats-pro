@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Modal,
   Stack,
   Select,
   Group,
@@ -24,6 +23,7 @@ import { TabsSection } from '@/components/TabsSection';
 import { useGetCats, useCreateCat, useUpdateCat, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetCoatColors, type CoatColor } from '@/lib/api/hooks/use-coat-colors';
 import { useGetBirthPlans, useCreateKittenDisposition, type BirthPlan } from '@/lib/api/hooks/use-breeding';
+import { UnifiedModal } from '@/components/common';
 
 interface KittenData {
   id?: string; // 既存の子猫の場合はID、新規の場合はundefined
@@ -354,7 +354,7 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
   };
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={handleClose}
       title="子猫管理"
@@ -363,309 +363,307 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
         body: { maxHeight: '70vh', overflowY: 'auto' },
       }}
     >
-      <Stack gap="md">
-        {/* 母猫選択 */}
-        <Select
-          label="母猫選択"
-          placeholder="母猫を選択してください"
-          value={selectedMotherId}
-          onChange={(value) => setSelectedMotherId(value || '')}
-          data={motherCats.map((cat: Cat) => ({
-            value: cat.id,
-            label: `${cat.name} (${cat.birthDate})`,
-          }))}
-          disabled={!!motherId} // 外部から指定された場合は変更不可
-          searchable
-        />
+      {/* 母猫選択 */}
+      <Select
+        label="母猫選択"
+        placeholder="母猫を選択してください"
+        value={selectedMotherId}
+        onChange={(value) => setSelectedMotherId(value || '')}
+        data={motherCats.map((cat: Cat) => ({
+          value: cat.id,
+          label: `${cat.name} (${cat.birthDate})`,
+        }))}
+        disabled={!!motherId} // 外部から指定された場合は変更不可
+        searchable
+      />
 
-        <Divider />
+      <Divider />
 
-        {/* タブ */}
-        <TabsSection
-          value={activeTab}
-          onChange={(value) => setActiveTab(value || 'list')}
-          tabs={[
-            {
-              value: 'list',
-              label: '子猫リスト',
-              icon: <IconList size={14} />,
-              count: kittens.length,
-            },
-            {
-              value: 'disposition',
-              label: '処遇設定',
-              icon: <IconClipboard size={14} />,
-            },
-          ]}
-        >
-          {/* 子猫リストタブ */}
-          {activeTab === 'list' && (
-            <Box pt="md">
-            <Stack gap="md">
-              {/* 頭数登録（既存子猫がいない場合） */}
-              {kittens.filter(k => k.id).length === 0 && (
-                <Card padding="sm" withBorder>
-                  <Text size="sm" fw={500} mb="xs">新規子猫登録</Text>
-                  <Group grow>
-                    <NumberInput
-                      label="オス頭数"
-                      value={maleCount}
-                      onChange={(value) => handleCountChange('male', Number(value) || 0)}
-                      min={0}
-                      max={10}
-                    />
-                    <NumberInput
-                      label="メス頭数"
-                      value={femaleCount}
-                      onChange={(value) => handleCountChange('female', Number(value) || 0)}
-                      min={0}
-                      max={10}
-                    />
-                  </Group>
-                </Card>
-              )}
-
-              {/* 全選択ボタン */}
-              {kittens.length > 0 && (
-                <Group justify="space-between">
-                  <Checkbox
-                    label={`全選択 (${kittens.filter(k => k.isSelected).length}/${kittens.length}頭)`}
-                    checked={kittens.length > 0 && kittens.every(k => k.isSelected)}
-                    indeterminate={kittens.some(k => k.isSelected) && !kittens.every(k => k.isSelected)}
-                    onChange={toggleSelectAll}
-                  />
-                  <Group gap="xs">
-                    <Button
-                      size="xs"
-                      variant="light"
-                      leftSection={<IconPlus size={14} />}
-                      onClick={() => {
-                        const mother = motherCats.find(cat => cat.id === selectedMotherId);
-                        const motherName = mother?.name || '子猫';
-                        const kittenNumber = kittens.length + 1;
-                        
-                        setKittens(prev => [...prev, {
-                          tempId: `temp-${Date.now()}`,
-                          name: `${motherName}${kittenNumber}号`,
-                          gender: 'MALE',
-                          coatColorId: '',
-                          birthDate: new Date().toISOString().split('T')[0],
-                          isSelected: false,
-                        }]);
-                      }}
-                      disabled={!selectedMotherId}
-                    >
-                      子猫追加
-                    </Button>
-                  </Group>
-                </Group>
-              )}
-
-              {/* 子猫リスト */}
-              {kittens.map((kitten, index) => (
-                <Card key={kitten.id || kitten.tempId} padding="sm" withBorder>
-                  <Flex gap="sm" align="flex-start">
-                    <Checkbox
-                      checked={kitten.isSelected}
-                      onChange={(e) => updateKitten(index, 'isSelected', e.currentTarget.checked)}
-                      mt="md"
-                    />
-                    <Stack gap="xs" style={{ flex: 1 }}>
-                      <Group grow>
-                        <TextInput
-                          label="名前"
-                          value={kitten.name}
-                          onChange={(e) => updateKitten(index, 'name', e.target.value)}
-                          required
-                        />
-                        <Select
-                          label="性別"
-                          value={kitten.gender}
-                          onChange={(value) => updateKitten(index, 'gender', value as 'MALE' | 'FEMALE')}
-                          data={[
-                            { value: 'MALE', label: 'オス' },
-                            { value: 'FEMALE', label: 'メス' },
-                          ]}
-                          required
-                        />
-                      </Group>
-                      <Group grow>
-                        <Select
-                          label="色柄"
-                          value={kitten.coatColorId}
-                          onChange={(value) => updateKitten(index, 'coatColorId', value || '')}
-                          data={coatColors.map((color: CoatColor) => ({
-                            value: color.id,
-                            label: color.name,
-                          }))}
-                          placeholder={hasCoatColors ? "選択してください" : "※データ未登録"}
-                          searchable
-                          clearable
-                          disabled={!hasCoatColors}
-                          description={!hasCoatColors ? "色柄マスタデータが未登録です" : undefined}
-                        />
-                        <TextInput
-                          label="生年月日"
-                          type="date"
-                          value={kitten.birthDate}
-                          onChange={(e) => updateKitten(index, 'birthDate', e.target.value)}
-                          required
-                        />
-                      </Group>
-                      {kitten.disposition && (
-                        <Badge
-                          size="sm"
-                          color={
-                            kitten.disposition.type === 'TRAINING' ? 'blue' :
-                            kitten.disposition.type === 'SALE' ? 'green' :
-                            'gray'
-                          }
-                        >
-                          {kitten.disposition.type === 'TRAINING' ? '🎓 養成中' :
-                           kitten.disposition.type === 'SALE' ? '💰 出荷済' :
-                           '🌈 死亡'}
-                        </Badge>
-                      )}
-                    </Stack>
-                    <ActionIcon
-                      color="red"
-                      variant="light"
-                      onClick={() => removeKitten(index)}
-                      mt="md"
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Flex>
-                </Card>
-              ))}
-
-              {kittens.length === 0 && (
-                <Text ta="center" c="dimmed" py="xl">
-                  子猫がいません。頭数を入力して登録してください。
-                </Text>
-              )}
-            </Stack>
-          </Box>
-          )}
-
-          {/* 処遇設定タブ */}
-          {activeTab === 'disposition' && (
-            <Box pt="md">
-              <Stack gap="md">
-              <Text size="sm" c="dimmed">
-                選択した子猫に処遇を一括設定できます
-              </Text>
-              <Text size="xs" c="dimmed">
-                選択中: {kittens.filter(k => k.isSelected).length}頭
-              </Text>
-
-              {/* 処遇タイプ選択 */}
-              <Select
-                label="処遇を選択してください"
-                placeholder="処遇を選択"
-                value={dispositionDetails.type || ''}
-                onChange={(value) => setDispositionDetails({ type: value as 'TRAINING' | 'SALE' | 'DECEASED' })}
-                data={[
-                  { value: 'TRAINING', label: '🎓 養成中' },
-                  { value: 'SALE', label: '💰 出荷済' },
-                  { value: 'DECEASED', label: '🌈 死亡' },
-                ]}
-              />
-
-              {/* 養成中の入力フィールド */}
-              {dispositionDetails.type === 'TRAINING' && (
-                <Stack gap="sm">
-                  <TextInput
-                    label="養成開始日"
-                    type="date"
-                    value={dispositionDetails.trainingStartDate || ''}
-                    onChange={(e) => setDispositionDetails(prev => ({ ...prev, trainingStartDate: e.target.value }))}
-                    required
-                  />
-                </Stack>
-              )}
-
-              {/* 出荷済の入力フィールド */}
-              {dispositionDetails.type === 'SALE' && (
-                <Stack gap="sm">
-                  <TextInput
-                    label="出荷先"
-                    placeholder="出荷先名を入力"
-                    value={dispositionDetails.buyer || ''}
-                    onChange={(e) => setDispositionDetails(prev => ({ ...prev, buyer: e.target.value }))}
-                    required
+      {/* タブ */}
+      <TabsSection
+        value={activeTab}
+        onChange={(value) => setActiveTab(value || 'list')}
+        tabs={[
+          {
+            value: 'list',
+            label: '子猫リスト',
+            icon: <IconList size={14} />,
+            count: kittens.length,
+          },
+          {
+            value: 'disposition',
+            label: '処遇設定',
+            icon: <IconClipboard size={14} />,
+          },
+        ]}
+      >
+        {/* 子猫リストタブ */}
+        {activeTab === 'list' && (
+          <Box pt="md">
+          <Stack gap="md">
+            {/* 頭数登録（既存子猫がいない場合） */}
+            {kittens.filter(k => k.id).length === 0 && (
+              <Card padding="sm" withBorder>
+                <Text size="sm" fw={500} mb="xs">新規子猫登録</Text>
+                <Group grow>
+                  <NumberInput
+                    label="オス頭数"
+                    value={maleCount}
+                    onChange={(value) => handleCountChange('male', Number(value) || 0)}
+                    min={0}
+                    max={10}
                   />
                   <NumberInput
-                    label="価格"
-                    placeholder="価格を入力"
-                    value={dispositionDetails.price || 0}
-                    onChange={(value) => setDispositionDetails(prev => ({ ...prev, price: Number(value) }))}
+                    label="メス頭数"
+                    value={femaleCount}
+                    onChange={(value) => handleCountChange('female', Number(value) || 0)}
                     min={0}
-                    required
+                    max={10}
                   />
-                  <TextInput
-                    label="出荷日"
-                    type="date"
-                    value={dispositionDetails.saleDate || ''}
-                    onChange={(e) => setDispositionDetails(prev => ({ ...prev, saleDate: e.target.value }))}
-                    required
+                </Group>
+              </Card>
+            )}
+
+            {/* 全選択ボタン */}
+            {kittens.length > 0 && (
+              <Group justify="space-between">
+                <Checkbox
+                  label={`全選択 (${kittens.filter(k => k.isSelected).length}/${kittens.length}頭)`}
+                  checked={kittens.length > 0 && kittens.every(k => k.isSelected)}
+                  indeterminate={kittens.some(k => k.isSelected) && !kittens.every(k => k.isSelected)}
+                  onChange={toggleSelectAll}
+                />
+                <Group gap="xs">
+                  <Button
+                    size="xs"
+                    variant="light"
+                    leftSection={<IconPlus size={14} />}
+                    onClick={() => {
+                      const mother = motherCats.find(cat => cat.id === selectedMotherId);
+                      const motherName = mother?.name || '子猫';
+                      const kittenNumber = kittens.length + 1;
+                      
+                      setKittens(prev => [...prev, {
+                        tempId: `temp-${Date.now()}`,
+                        name: `${motherName}${kittenNumber}号`,
+                        gender: 'MALE',
+                        coatColorId: '',
+                        birthDate: new Date().toISOString().split('T')[0],
+                        isSelected: false,
+                      }]);
+                    }}
+                    disabled={!selectedMotherId}
+                  >
+                    子猫追加
+                  </Button>
+                </Group>
+              </Group>
+            )}
+
+            {/* 子猫リスト */}
+            {kittens.map((kitten, index) => (
+              <Card key={kitten.id || kitten.tempId} padding="sm" withBorder>
+                <Flex gap="sm" align="flex-start">
+                  <Checkbox
+                    checked={kitten.isSelected}
+                    onChange={(e) => updateKitten(index, 'isSelected', e.currentTarget.checked)}
+                    mt="md"
                   />
-                </Stack>
-              )}
+                  <Stack gap="xs" style={{ flex: 1 }}>
+                    <Group grow>
+                      <TextInput
+                        label="名前"
+                        value={kitten.name}
+                        onChange={(e) => updateKitten(index, 'name', e.target.value)}
+                        required
+                      />
+                      <Select
+                        label="性別"
+                        value={kitten.gender}
+                        onChange={(value) => updateKitten(index, 'gender', value as 'MALE' | 'FEMALE')}
+                        data={[
+                          { value: 'MALE', label: 'オス' },
+                          { value: 'FEMALE', label: 'メス' },
+                        ]}
+                        required
+                      />
+                    </Group>
+                    <Group grow>
+                      <Select
+                        label="色柄"
+                        value={kitten.coatColorId}
+                        onChange={(value) => updateKitten(index, 'coatColorId', value || '')}
+                        data={coatColors.map((color: CoatColor) => ({
+                          value: color.id,
+                          label: color.name,
+                        }))}
+                        placeholder={hasCoatColors ? "選択してください" : "※データ未登録"}
+                        searchable
+                        clearable
+                        disabled={!hasCoatColors}
+                        description={!hasCoatColors ? "色柄マスタデータが未登録です" : undefined}
+                      />
+                      <TextInput
+                        label="生年月日"
+                        type="date"
+                        value={kitten.birthDate}
+                        onChange={(e) => updateKitten(index, 'birthDate', e.target.value)}
+                        required
+                      />
+                    </Group>
+                    {kitten.disposition && (
+                      <Badge
+                        size="sm"
+                        color={
+                          kitten.disposition.type === 'TRAINING' ? 'blue' :
+                          kitten.disposition.type === 'SALE' ? 'green' :
+                          'gray'
+                        }
+                      >
+                        {kitten.disposition.type === 'TRAINING' ? '🎓 養成中' :
+                         kitten.disposition.type === 'SALE' ? '💰 出荷済' :
+                         '🌈 死亡'}
+                      </Badge>
+                    )}
+                  </Stack>
+                  <ActionIcon
+                    color="red"
+                    variant="light"
+                    onClick={() => removeKitten(index)}
+                    mt="md"
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Flex>
+              </Card>
+            ))}
 
-              {/* 死亡の入力フィールド */}
-              {dispositionDetails.type === 'DECEASED' && (
-                <Stack gap="sm">
-                  <TextInput
-                    label="死亡日"
-                    type="date"
-                    value={dispositionDetails.deathDate || ''}
-                    onChange={(e) => setDispositionDetails(prev => ({ ...prev, deathDate: e.target.value }))}
-                    required
-                  />
-                  <TextInput
-                    label="死亡理由"
-                    placeholder="死亡理由を入力"
-                    value={dispositionDetails.deathReason || ''}
-                    onChange={(e) => setDispositionDetails(prev => ({ ...prev, deathReason: e.target.value }))}
-                  />
-                </Stack>
-              )}
+            {kittens.length === 0 && (
+              <Text ta="center" c="dimmed" py="xl">
+                子猫がいません。頭数を入力して登録してください。
+              </Text>
+            )}
+          </Stack>
+        </Box>
+        )}
 
-              {/* 適用ボタン */}
-              <Button
-                fullWidth
-                onClick={() => dispositionDetails.type && applyDispositionToSelected(dispositionDetails.type)}
-                disabled={!dispositionDetails.type || kittens.filter(k => k.isSelected).length === 0}
-              >
-                選択した子猫に適用
-              </Button>
-            </Stack>
-          </Box>
-          )}
-        </TabsSection>
+        {/* 処遇設定タブ */}
+        {activeTab === 'disposition' && (
+          <Box pt="md">
+            <Stack gap="md">
+            <Text size="sm" c="dimmed">
+              選択した子猫に処遇を一括設定できます
+            </Text>
+            <Text size="xs" c="dimmed">
+              選択中: {kittens.filter(k => k.isSelected).length}頭
+            </Text>
 
-        <Divider />
+            {/* 処遇タイプ選択 */}
+            <Select
+              label="処遇を選択してください"
+              placeholder="処遇を選択"
+              value={dispositionDetails.type || ''}
+              onChange={(value) => setDispositionDetails({ type: value as 'TRAINING' | 'SALE' | 'DECEASED' })}
+              data={[
+                { value: 'TRAINING', label: '🎓 養成中' },
+                { value: 'SALE', label: '💰 出荷済' },
+                { value: 'DECEASED', label: '🌈 死亡' },
+              ]}
+            />
 
-        {/* アクションボタン */}
-        <Group justify="flex-end">
-          <Button
-            variant="outline"
-            leftSection={<IconX size={16} />}
-            onClick={handleClose}
-          >
-            キャンセル
-          </Button>
-          <Button
-            leftSection={<IconDeviceFloppy size={16} />}
-            onClick={handleSave}
-            loading={createCatMutation.isPending || updateCatMutation.isPending}
-            disabled={!selectedMotherId || kittens.length === 0}
-          >
-            保存
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+            {/* 養成中の入力フィールド */}
+            {dispositionDetails.type === 'TRAINING' && (
+              <Stack gap="sm">
+                <TextInput
+                  label="養成開始日"
+                  type="date"
+                  value={dispositionDetails.trainingStartDate || ''}
+                  onChange={(e) => setDispositionDetails(prev => ({ ...prev, trainingStartDate: e.target.value }))}
+                  required
+                />
+              </Stack>
+            )}
+
+            {/* 出荷済の入力フィールド */}
+            {dispositionDetails.type === 'SALE' && (
+              <Stack gap="sm">
+                <TextInput
+                  label="出荷先"
+                  placeholder="出荷先名を入力"
+                  value={dispositionDetails.buyer || ''}
+                  onChange={(e) => setDispositionDetails(prev => ({ ...prev, buyer: e.target.value }))}
+                  required
+                />
+                <NumberInput
+                  label="価格"
+                  placeholder="価格を入力"
+                  value={dispositionDetails.price || 0}
+                  onChange={(value) => setDispositionDetails(prev => ({ ...prev, price: Number(value) }))}
+                  min={0}
+                  required
+                />
+                <TextInput
+                  label="出荷日"
+                  type="date"
+                  value={dispositionDetails.saleDate || ''}
+                  onChange={(e) => setDispositionDetails(prev => ({ ...prev, saleDate: e.target.value }))}
+                  required
+                />
+              </Stack>
+            )}
+
+            {/* 死亡の入力フィールド */}
+            {dispositionDetails.type === 'DECEASED' && (
+              <Stack gap="sm">
+                <TextInput
+                  label="死亡日"
+                  type="date"
+                  value={dispositionDetails.deathDate || ''}
+                  onChange={(e) => setDispositionDetails(prev => ({ ...prev, deathDate: e.target.value }))}
+                  required
+                />
+                <TextInput
+                  label="死亡理由"
+                  placeholder="死亡理由を入力"
+                  value={dispositionDetails.deathReason || ''}
+                  onChange={(e) => setDispositionDetails(prev => ({ ...prev, deathReason: e.target.value }))}
+                />
+              </Stack>
+            )}
+
+            {/* 適用ボタン */}
+            <Button
+              fullWidth
+              onClick={() => dispositionDetails.type && applyDispositionToSelected(dispositionDetails.type)}
+              disabled={!dispositionDetails.type || kittens.filter(k => k.isSelected).length === 0}
+            >
+              選択した子猫に適用
+            </Button>
+          </Stack>
+        </Box>
+        )}
+      </TabsSection>
+
+      <Divider />
+
+      {/* アクションボタン */}
+      <Group justify="flex-end">
+        <Button
+          variant="outline"
+          leftSection={<IconX size={16} />}
+          onClick={handleClose}
+        >
+          キャンセル
+        </Button>
+        <Button
+          leftSection={<IconDeviceFloppy size={16} />}
+          onClick={handleSave}
+          loading={createCatMutation.isPending || updateCatMutation.isPending}
+          disabled={!selectedMotherId || kittens.length === 0}
+        >
+          保存
+        </Button>
+      </Group>
+    </UnifiedModal>
   );
 }

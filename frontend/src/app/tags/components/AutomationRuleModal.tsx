@@ -7,7 +7,6 @@ import {
   Card,
   Divider,
   Group,
-  Modal,
   MultiSelect,
   NumberInput,
   Radio,
@@ -19,6 +18,7 @@ import {
 } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { UseFormReturnType } from '@mantine/form';
+import { UnifiedModal } from '@/components/common';
 
 import type { AutomationRuleFormValues, RuleType, ActionType } from '../types';
 import {
@@ -67,14 +67,15 @@ export function AutomationRuleModal({
   };
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title={isEditing ? '自動化ルールの編集' : '自動化ルールの作成'}
       size="lg"
+      addContentPadding={false}
     >
       <Box component="form" onSubmit={onSubmit}>
-        <Stack gap="md">
+        <Stack gap="md" p="md">
           {/* ルールタイプ選択 */}
           <Radio.Group
             label="いつ実行するか"
@@ -265,6 +266,6 @@ export function AutomationRuleModal({
           </Group>
         </Stack>
       </Box>
-    </Modal>
+    </UnifiedModal>
   );
 }

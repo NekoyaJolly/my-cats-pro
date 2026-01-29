@@ -93,7 +93,7 @@ export function TenantsManagement() {
       )}
 
       <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
+        <Tabs.List grow>
           <Tabs.Tab value="profile">ユーザー設定</Tabs.Tab>
           {isSuperAdmin && <Tabs.Tab value="tenants">テナント一覧</Tabs.Tab>}
           {hasUserManagementAccess && <Tabs.Tab value="users">ユーザー一覧</Tabs.Tab>}

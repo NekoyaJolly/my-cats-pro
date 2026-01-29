@@ -7,7 +7,6 @@ import {
   Checkbox,
   ColorInput,
   Group,
-  Modal,
   Select,
   Stack,
   Switch,
@@ -15,6 +14,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
+import { UnifiedModal } from '@/components/common';
 
 import type { GroupFormValues } from '../types';
 import {
@@ -60,15 +60,16 @@ export function GroupModal({
   onInheritGroupColorFromCategoryChange,
 }: GroupModalProps) {
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title={isEditing ? 'タググループを編集' : 'タググループを追加'}
       size="lg"
       keepMounted={false}
+      addContentPadding={false}
     >
       <Box component="form" onSubmit={onSubmit}>
-        <Stack gap="md">
+        <Stack gap="md" p="md">
           <Select
             label="カテゴリ"
             data={categoryOptions}
@@ -154,7 +155,7 @@ export function GroupModal({
           </Group>
         </Stack>
       </Box>
-    </Modal>
+    </UnifiedModal>
   );
 }
 

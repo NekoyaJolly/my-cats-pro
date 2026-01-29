@@ -7,7 +7,6 @@
 
 import { useState } from 'react';
 import {
-  Modal,
   Stack,
   TextInput,
   Select,
@@ -16,12 +15,14 @@ import {
   Group,
   Divider,
   Text,
+  Box,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { IconPlus } from '@tabler/icons-react';
 import { ImageUploader } from './ImageUploader';
 import { YouTubeInput } from './YouTubeInput';
+import { UnifiedModal } from '@/components/common';
 import type {
   GalleryCategory,
   CreateGalleryEntryDto,
@@ -163,15 +164,16 @@ export function GalleryAddModal({
   };
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={handleClose}
       title={CATEGORY_TITLES[category]}
       size="lg"
       centered
+      addContentPadding={false}
     >
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap="md">
+      <Box component="form" onSubmit={form.onSubmit(handleSubmit)}>
+        <Stack gap="md" p="md">
           {/* 基本情報 */}
           <TextInput
             label="名前"
@@ -287,7 +289,7 @@ export function GalleryAddModal({
             </Button>
           </Group>
         </Stack>
-      </form>
-    </Modal>
+      </Box>
+    </UnifiedModal>
   );
 }

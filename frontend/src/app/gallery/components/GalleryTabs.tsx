@@ -61,8 +61,6 @@ export function GalleryTabs({ counts, loading }: GalleryTabsProps) {
           setTab(value as GalleryCategory);
         }
       }}
-      variant="outline"
-      radius="md"
     >
       <Tabs.List>
         {validTabs.map((tab) => (

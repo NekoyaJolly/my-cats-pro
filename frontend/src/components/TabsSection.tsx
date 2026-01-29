@@ -65,8 +65,6 @@ export function TabsSection({
           onChange(val);
         }
       }}
-      variant="outline"
-      radius="md"
       {...tabsProps}
     >
       <Tabs.List>

@@ -7,7 +7,6 @@ import {
   Checkbox,
   ColorInput,
   Group,
-  Modal,
   MultiSelect,
   Stack,
   Switch,
@@ -15,6 +14,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
+import { UnifiedModal } from '@/components/common';
 
 import type { CategoryFormValues } from '../types';
 import {
@@ -56,15 +56,16 @@ export function CategoryModal({
   onSetAsCategoryDefaultTextColorChange,
 }: CategoryModalProps) {
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title={isEditing ? 'カテゴリを編集' : 'カテゴリを追加'}
       size="lg"
       keepMounted={false}
+      addContentPadding={false}
     >
       <Box component="form" onSubmit={onSubmit}>
-        <Stack gap="md">
+        <Stack gap="md" p="md">
           <TextInput
             label="キー"
             description="URLなどで利用する識別子（未入力の場合は自動生成）"
@@ -154,6 +155,6 @@ export function CategoryModal({
           </Group>
         </Stack>
       </Box>
-    </Modal>
+    </UnifiedModal>
   );
 }

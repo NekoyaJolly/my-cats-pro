@@ -57,8 +57,8 @@
   
   /* Effects */
   --glass-blur: 0px;
-  --glass-bg: transparent;
-  --glass-bg-hover: transparent;
+  --glass-bg: #ffffff;
+  --glass-bg-hover: #f8f9fa;
   --glass-border: #dee2e6;
   --shadow-ethereal: 0 1px 3px rgba(0, 0, 0, 0.12);
   --shadow-ethereal-hover: 0 4px 6px rgba(0, 0, 0, 0.15);
@@ -355,6 +355,68 @@ h1, h2, h3, h4, h5, h6 {
     --layout-px: 20px;
     --section-gap: 20px;
   }
+}
+/* Tabs Active State Styling */
+.mantine-Tabs-tab[aria-selected="true"] {
+  border-bottom: 3px solid #3b82f6 !important;
+  color: #3b82f6 !important;
+  fontWeight: 600 !important;
+  background-color: transparent !important;
+}
+
+.mantine-Tabs-tab[aria-selected="false"] {
+  border-bottom: 3px solid transparent !important;
+  color: var(--text-secondary) !important;
+  fontWeight: 500 !important;
+  background-color: transparent !important;
+}
+
+/* Modal Styling - Ensure visibility */
+.mantine-Modal-root {
+  z-index: 200 !important;
+}
+
+.mantine-Modal-overlay {
+  background-color: rgba(0, 0, 0, 0.55) !important;
+  opacity: 1 !important;
+  z-index: 200 !important;
+}
+
+/* Mantine Modal content - 最も重要 */
+.mantine-Modal-content {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+  border-radius: 8px !important;
+  border: 1px solid #dee2e6 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  z-index: 201 !important;
+}
+
+/* Modal header */
+.mantine-Modal-header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e9ecef !important;
+  color: #212529 !important;
+}
+
+/* Modal body */
+.mantine-Modal-body {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+/* Modal title */
+.mantine-Modal-title {
+  color: #212529 !important;
+  font-weight: 600 !important;
+}
+
+/* 入力フィールドの枠線を明確に */
+.mantine-Modal-body .mantine-Input-input,
+.mantine-Modal-body .mantine-Select-input,
+.mantine-Modal-body .mantine-Textarea-input {
+  border: 1px solid #dee2e6 !important;
+  background-color: #ffffff !important;
 }
 
 @media (min-width: 768px) {

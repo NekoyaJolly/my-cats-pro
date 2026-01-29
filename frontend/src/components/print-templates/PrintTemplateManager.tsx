@@ -880,7 +880,7 @@ export function PrintTemplateManager() {
                 </Group>
 
                 <Tabs defaultValue="settings">
-                  <Tabs.List>
+                  <Tabs.List grow>
                     <Tabs.Tab value="settings" leftSection={<IconSettings size={14} />}>
                       基本設定
                     </Tabs.Tab>
