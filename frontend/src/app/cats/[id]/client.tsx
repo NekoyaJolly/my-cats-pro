@@ -200,7 +200,7 @@ export default function CatDetailClient({ catId }: Props) {
 
       <Container size="lg" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
         {/* タブで詳細情報 - URLパラメータで状態を永続化 */}
-        <Tabs value={tabParam} onChange={handleTabChange} variant="outline" radius="0">
+        <Tabs value={tabParam} onChange={handleTabChange}>
           <Tabs.List grow>
             <Tabs.Tab value="basic">基本情報</Tabs.Tab>
             <Tabs.Tab value="pedigree" leftSection={<IconDna size={16} />}>血統</Tabs.Tab>

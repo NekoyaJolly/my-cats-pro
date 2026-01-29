@@ -54,6 +54,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultProps: {
           radius: 'md',
           size: 'md',
+          variant: 'outline', // デフォルトを outline に統一
         },
         styles: {
           root: {
@@ -225,47 +226,75 @@ export function Providers({ children }: { children: React.ReactNode }) {
       Modal: {
         defaultProps: {
           radius: 'md',
+          overlayProps: {
+            opacity: 0.55,
+            blur: 3,
+          },
         },
         styles: {
           content: {
-            backgroundColor: 'var(--bg-surface) !important',
+            backgroundColor: '#ffffff !important', // 完全不透明な白背景
             backdropFilter: 'none !important',
             WebkitBackdropFilter: 'none !important',
             borderRadius: '8px !important',
             border: '1px solid var(--border-primary) !important',
             color: 'var(--text-primary) !important',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
           },
           header: {
-            backgroundColor: 'var(--bg-surface) !important',
+            backgroundColor: '#ffffff !important', // 完全不透明な白背景
             borderBottom: '1px solid var(--border-subtle)',
             color: 'var(--text-primary) !important',
           },
           body: {
+            backgroundColor: '#ffffff !important', // 完全不透明な白背景
             color: 'var(--text-primary) !important',
           },
         },
       },
       Tabs: {
         defaultProps: {
-          variant: 'outline',
+          variant: 'default', // outline から default に変更して枠線を削除
           radius: '0',
         },
         styles: {
+          root: {
+            // 横スクロール対応
+          },
           tab: {
-            borderBottom: '2px solid transparent',
+            borderBottom: '3px solid transparent', // 太めの下線
             fontWeight: 500,
             transition: 'all 0.2s ease',
             color: 'var(--text-secondary)',
+            border: 'none', // 枠線を完全に削除
+            backgroundColor: 'transparent',
+            padding: '12px 20px',
             
             '&[data-active]': {
-              borderBottom: '2px solid var(--accent)',
-              color: 'var(--accent)',
+              borderBottom: '3px solid #3b82f6', // 青色の下線で強調
+              color: '#3b82f6', // アクティブタブも青色
               fontWeight: 600,
+              backgroundColor: 'transparent',
+            },
+            
+            '&:hover': {
+              backgroundColor: 'rgba(59, 130, 246, 0.05)',
             },
           },
           list: {
-            borderBottom: '1px solid var(--border-primary)',
+            borderBottom: 'none', // リスト全体の枠線も削除
+            flexWrap: 'nowrap', // 折り返さない
+            overflowX: 'auto', // 横スクロール
+            overflowY: 'hidden',
+            WebkitOverflowScrolling: 'touch', // スムーズなスクロール
+            scrollbarWidth: 'thin', // Firefox用
+            '&::-webkit-scrollbar': {
+              height: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              borderRadius: '2px',
+            },
           },
         },
       },

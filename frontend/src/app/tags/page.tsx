@@ -809,8 +809,8 @@ export default function TagsPage() {
           {isFetching && <Loader size="sm" />}
         </Group>
 
-        <Tabs value={activeTab} onChange={handleTabChange} keepMounted={false} variant="outline" radius="0">
-          <Tabs.List grow>
+        <Tabs value={activeTab} onChange={handleTabChange} keepMounted={false}>
+          <Tabs.List>
             <Tabs.Tab value="categories">カテゴリ</Tabs.Tab>
             <Tabs.Tab value="tags">タグ一覧</Tabs.Tab>
             <Tabs.Tab value="automation" leftSection={<IconRobot size={16} />}>

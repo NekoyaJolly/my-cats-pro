@@ -454,10 +454,8 @@ export default function CatsPage() {
               value={activeTab} 
               onChange={(value) => setActiveTab(value || 'cats')} 
               style={{ flex: 1, minWidth: 'fit-content' }}
-              variant="outline"
-              radius="0"
             >
-              <Tabs.List grow>
+              <Tabs.List>
                 <Tabs.Tab value="cats">Cats ({isStatisticsLoading ? '...' : totalCount})</Tabs.Tab>
                 <Tabs.Tab value="male">Male ({isStatisticsLoading ? '...' : maleCount})</Tabs.Tab>
                 <Tabs.Tab value="female">Female ({isStatisticsLoading ? '...' : femaleCount})</Tabs.Tab>

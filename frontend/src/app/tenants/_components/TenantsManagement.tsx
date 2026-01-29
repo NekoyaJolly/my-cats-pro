@@ -92,7 +92,7 @@ export function TenantsManagement() {
         </Group>
       )}
 
-      <Tabs value={activeTab} onChange={setActiveTab} variant="outline" radius="0">
+      <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List grow>
           <Tabs.Tab value="profile">ユーザー設定</Tabs.Tab>
           {isSuperAdmin && <Tabs.Tab value="tenants">テナント一覧</Tabs.Tab>}

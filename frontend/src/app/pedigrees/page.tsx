@@ -56,7 +56,7 @@ export default function PedigreesPage() {
 
   return (
     <Container size="xl" py="md">
-      <Tabs value={tabParam} onChange={handleTabChange} variant="outline" radius="0" mt="md">
+      <Tabs value={tabParam} onChange={handleTabChange} mt="md">
         <Tabs.List grow>
           <Tabs.Tab value="register" leftSection={<IconPlus size={14} />}>
             新規登録

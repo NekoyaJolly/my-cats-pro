@@ -65,11 +65,9 @@ export function TabsSection({
           onChange(val);
         }
       }}
-      variant="outline"
-      radius="0"
       {...tabsProps}
     >
-      <Tabs.List grow>
+      <Tabs.List>
         {tabs.map((tab) => (
           <Tabs.Tab
             key={tab.value}
