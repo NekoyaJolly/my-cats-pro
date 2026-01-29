@@ -2,7 +2,6 @@
 
 import React, { ChangeEvent } from 'react';
 import {
-  Modal,
   Stack,
   Text,
   Card,
@@ -14,6 +13,7 @@ import {
   NumberInput,
   Checkbox,
 } from '@mantine/core';
+import { UnifiedModal } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 
 export interface FemaleSelectionModalProps {
@@ -40,13 +40,14 @@ export function FemaleSelectionModal({
   isNGPairing,
 }: FemaleSelectionModalProps) {
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title="交配するメス猫を選択"
       size="md"
+      addContentPadding={false}
     >
-      <Stack gap="md">
+      <Stack gap="md" p="md">
         <Text size="sm" c="dimmed">
           {selectedMale?.name} との交配相手を選択してください
         </Text>
@@ -114,7 +115,7 @@ export function FemaleSelectionModal({
           </Text>
         )}
       </Stack>
-    </Modal>
+    </UnifiedModal>
   );
 }
 

@@ -163,6 +163,7 @@ const eslintConfig = [
       "**/*_old.ts",
       "*.config.js",
       "*.config.mjs",
+      "check-syntax.js",
       "src/lib/api/generated/**",
       "**/*.bak",
       "**/*.backup.ts",

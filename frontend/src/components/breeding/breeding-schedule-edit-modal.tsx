@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Modal,
   Button,
   Group,
-  Stack,
   Text,
   NumberInput,
   Badge,
   Select,
 } from '@mantine/core';
+import { UnifiedModal } from '@/components/common';
 
 interface Cat {
   id: string;
@@ -112,75 +111,73 @@ export function BreedingScheduleEditModal({
   }));
 
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title={schedule.isHistory ? '過去の交配スケジュールの編集' : '交配スケジュールの編集'}
       size="md"
       centered
     >
-      <Stack gap="md">
-        <Group gap="xs" wrap="wrap">
-          <Badge color="blue">{schedule.maleName}</Badge>
-          <Text size="sm">×</Text>
-          <Badge color="pink">{schedule.femaleName}</Badge>
-          {schedule.isHistory && (
-            <Badge color="gray" variant="light">過去</Badge>
+      <Group gap="xs" wrap="wrap">
+        <Badge color="blue">{schedule.maleName}</Badge>
+        <Text size="sm">×</Text>
+        <Badge color="pink">{schedule.femaleName}</Badge>
+        {schedule.isHistory && (
+          <Badge color="gray" variant="light">過去</Badge>
+        )}
+      </Group>
+
+      <Text size="sm" c="dimmed">
+        開始日: {startDateStr}
+      </Text>
+
+      <Select
+        label="メス猫"
+        description="交配相手のメス猫を変更できます"
+        value={femaleId}
+        onChange={(value) => setFemaleId(value || '')}
+        data={femaleOptions}
+        searchable
+      />
+
+      <NumberInput
+        label="交配期間"
+        description="交配を行う日数を設定してください"
+        value={duration}
+        onChange={(value) => setDuration(typeof value === 'number' ? value : 1)}
+        min={1}
+        max={7}
+        suffix="日間"
+      />
+
+      {!schedule.isHistory && (
+        <Text size="xs" c="dimmed">
+          ※ 期間を短縮すると、最終日以降のスケジュールが削除されます
+        </Text>
+      )}
+
+      <Group justify="space-between" gap="sm">
+        <Group gap="xs">
+          {onDelete && (
+            <Button 
+              variant="outline" 
+              color="red" 
+              onClick={handleDelete}
+              loading={isDeleting}
+            >
+              削除
+            </Button>
           )}
         </Group>
-
-        <Text size="sm" c="dimmed">
-          開始日: {startDateStr}
-        </Text>
-
-        <Select
-          label="メス猫"
-          description="交配相手のメス猫を変更できます"
-          value={femaleId}
-          onChange={(value) => setFemaleId(value || '')}
-          data={femaleOptions}
-          searchable
-        />
-
-        <NumberInput
-          label="交配期間"
-          description="交配を行う日数を設定してください"
-          value={duration}
-          onChange={(value) => setDuration(typeof value === 'number' ? value : 1)}
-          min={1}
-          max={7}
-          suffix="日間"
-        />
-
-        {!schedule.isHistory && (
-          <Text size="xs" c="dimmed">
-            ※ 期間を短縮すると、最終日以降のスケジュールが削除されます
-          </Text>
-        )}
-
-        <Group justify="space-between" gap="sm">
-          <Group gap="xs">
-            {onDelete && (
-              <Button 
-                variant="outline" 
-                color="red" 
-                onClick={handleDelete}
-                loading={isDeleting}
-              >
-                削除
-              </Button>
-            )}
-          </Group>
-          <Group gap="xs">
-            <Button variant="outline" onClick={onClose} disabled={isSaving || isDeleting}>
-              キャンセル
-            </Button>
-            <Button onClick={handleSave} loading={isSaving} disabled={isDeleting}>
-              保存
-            </Button>
-          </Group>
+        <Group gap="xs">
+          <Button variant="outline" onClick={onClose} disabled={isSaving || isDeleting}>
+            キャンセル
+          </Button>
+          <Button onClick={handleSave} loading={isSaving} disabled={isDeleting}>
+            保存
+          </Button>
         </Group>
-      </Stack>
-    </Modal>
+      </Group>
+    </UnifiedModal>
   );
 }

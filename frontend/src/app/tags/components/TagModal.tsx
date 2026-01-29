@@ -8,7 +8,6 @@ import {
   Checkbox,
   ColorInput,
   Group,
-  Modal,
   Select,
   Stack,
   Switch,
@@ -16,6 +15,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
+import { UnifiedModal } from '@/components/common';
 
 import type { TagFormValues } from '../types';
 import {
@@ -63,15 +63,16 @@ export function TagModal({
   onInheritTagColorFromGroupChange,
 }: TagModalProps) {
   return (
-    <Modal
+    <UnifiedModal
       opened={opened}
       onClose={onClose}
       title={isEditing ? 'タグを編集' : 'タグを追加'}
       size="lg"
       keepMounted={false}
+      addContentPadding={false}
     >
       <Box component="form" onSubmit={onSubmit}>
-        <Stack gap="md">
+        <Stack gap="md" p="md">
           <Select
             label="カテゴリ"
             data={categoryOptions}
@@ -213,7 +214,7 @@ export function TagModal({
           </Group>
         </Stack>
       </Box>
-    </Modal>
+    </UnifiedModal>
   );
 }
 
