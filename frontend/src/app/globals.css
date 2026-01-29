@@ -57,8 +57,8 @@
   
   /* Effects */
   --glass-blur: 0px;
-  --glass-bg: transparent;
-  --glass-bg-hover: transparent;
+  --glass-bg: #ffffff;
+  --glass-bg-hover: #f8f9fa;
   --glass-border: #dee2e6;
   --shadow-ethereal: 0 1px 3px rgba(0, 0, 0, 0.12);
   --shadow-ethereal-hover: 0 4px 6px rgba(0, 0, 0, 0.15);
@@ -356,7 +356,20 @@ h1, h2, h3, h4, h5, h6 {
     --section-gap: 20px;
   }
 }
+/* Tabs Active State Styling */
+.mantine-Tabs-tab[aria-selected="true"] {
+  border-bottom: 3px solid #3b82f6 !important;
+  color: #3b82f6 !important;
+  fontWeight: 600 !important;
+  background-color: transparent !important;
+}
 
+.mantine-Tabs-tab[aria-selected="false"] {
+  border-bottom: 3px solid transparent !important;
+  color: var(--text-secondary) !important;
+  fontWeight: 500 !important;
+  background-color: transparent !important;
+}
 @media (min-width: 768px) {
   :root {
     --layout-px: 24px;

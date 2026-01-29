@@ -54,7 +54,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultProps: {
           radius: 'md',
           size: 'md',
-          variant: 'outline', // デフォルトを outline に統一
         },
         styles: {
           root: {
@@ -227,67 +226,58 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultProps: {
           radius: 'md',
           overlayProps: {
+            color: 'black',
             opacity: 0.55,
             blur: 3,
           },
         },
         styles: {
           content: {
-            backgroundColor: '#ffffff !important', // 完全不透明な白背景
-            backdropFilter: 'none !important',
-            WebkitBackdropFilter: 'none !important',
+            backgroundColor: '#ffffff !important',
             borderRadius: '8px !important',
             border: '1px solid var(--border-primary) !important',
             color: 'var(--text-primary) !important',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
           },
           header: {
-            backgroundColor: '#ffffff !important', // 完全不透明な白背景
+            backgroundColor: '#ffffff !important',
             borderBottom: '1px solid var(--border-subtle)',
             color: 'var(--text-primary) !important',
           },
           body: {
-            backgroundColor: '#ffffff !important', // 完全不透明な白背景
+            backgroundColor: '#ffffff !important',
             color: 'var(--text-primary) !important',
           },
         },
       },
       Tabs: {
         defaultProps: {
-          variant: 'default', // outline から default に変更して枠線を削除
-          radius: '0',
+          variant: 'default',
         },
         styles: {
           root: {
             // 横スクロール対応
           },
           tab: {
-            borderBottom: '3px solid transparent', // 太めの下線
             fontWeight: 500,
             transition: 'all 0.2s ease',
-            color: 'var(--text-secondary)',
-            border: 'none', // 枠線を完全に削除
+            border: 'none',
             backgroundColor: 'transparent',
-            padding: '12px 20px',
-            
-            '&[data-active]': {
-              borderBottom: '3px solid #3b82f6', // 青色の下線で強調
-              color: '#3b82f6', // アクティブタブも青色
-              fontWeight: 600,
-              backgroundColor: 'transparent',
-            },
+            padding: '12px 16px',
+            whiteSpace: 'nowrap', // テキストを折り返さない
+            flexShrink: 0, // 縮小を防ぐ
             
             '&:hover': {
               backgroundColor: 'rgba(59, 130, 246, 0.05)',
             },
           },
           list: {
-            borderBottom: 'none', // リスト全体の枠線も削除
-            flexWrap: 'nowrap', // 折り返さない
-            overflowX: 'auto', // 横スクロール
+            borderBottom: 'none',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
             overflowY: 'hidden',
-            WebkitOverflowScrolling: 'touch', // スムーズなスクロール
-            scrollbarWidth: 'thin', // Firefox用
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin',
             '&::-webkit-scrollbar': {
               height: '4px',
             },
@@ -297,7 +287,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             },
           },
         },
-      },
+      }
     },
   }
 
