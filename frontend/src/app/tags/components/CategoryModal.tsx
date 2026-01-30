@@ -12,6 +12,7 @@ import {
   Switch,
   Text,
   TextInput,
+  Divider,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { UnifiedModal } from '@/components/common';
@@ -85,6 +86,9 @@ export function CategoryModal({
             value={form.values.description}
             onChange={(event) => form.setFieldValue('description', event.currentTarget.value)}
           />
+
+          <Divider label="カラー設定" labelPosition="center" />
+
           <Group gap="md" align="flex-end">
             <Stack gap="xs" style={{ flex: 1 }}>
               <ColorInput
@@ -129,6 +133,9 @@ export function CategoryModal({
             <Text fw={600}>{form.values.name || 'カテゴリ名'}</Text>
             <Text size="xs">サンプルプレビュー</Text>
           </Card>
+
+          <Divider label="設定" labelPosition="center" />
+
           <MultiSelect
             label="利用ページ"
             description="このカテゴリのタグを表示するページを選択"
@@ -145,6 +152,9 @@ export function CategoryModal({
             checked={form.values.isActive}
             onChange={(event) => form.setFieldValue('isActive', event.currentTarget.checked)}
           />
+
+          <Divider />
+
           <Group justify="flex-end" gap="sm">
             <Button variant="outline" onClick={onClose}>
               キャンセル

@@ -275,6 +275,8 @@ export function GalleryAddModal({
             {...form.getInputProps('notes')}
           />
 
+          <Divider />
+
           {/* ボタン */}
           <Group justify="flex-end" mt="md">
             <Button variant="subtle" onClick={handleClose} disabled={loading}>

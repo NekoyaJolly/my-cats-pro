@@ -5,6 +5,7 @@ import {
   Button,
   Group,
   TextInput,
+  Divider,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
@@ -129,6 +130,8 @@ export function CatQuickEditModal({
           styles={{ input: { display: 'none' } }}
         />
       )}
+
+      <Divider />
 
       <Group justify="flex-end" gap="sm">
         <Button variant="outline" onClick={onClose} disabled={isSaving}>

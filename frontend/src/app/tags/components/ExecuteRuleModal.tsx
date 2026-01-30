@@ -7,6 +7,7 @@ import {
   Button,
   Group,
   Text,
+  Divider,
 } from '@mantine/core';
 import { IconInfoCircle, IconWand } from '@tabler/icons-react';
 import { UnifiedModal } from '@/components/common';
@@ -43,6 +44,8 @@ export function ExecuteRuleModal({
           <Alert icon={<IconInfoCircle size={18} />} variant="light" color="blue">
             このルールをテスト実行します。実際のデータに対してタグの付与が行われますのでご注意ください。
           </Alert>
+
+          <Divider label="ルール詳細" labelPosition="center" />
 
           <Box>
             <Text size="sm" fw={500} mb={4}>
@@ -90,9 +93,13 @@ export function ExecuteRuleModal({
             </Box>
           )}
 
+          <Divider />
+
           <Alert icon={<IconInfoCircle size={18} />} variant="light" color="yellow">
             注意: テスト用のダミーデータでイベントを発行します。実際の猫データには影響しません。
           </Alert>
+
+          <Divider />
         </>
       )}
 

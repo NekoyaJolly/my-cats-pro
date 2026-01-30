@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TextInput, Switch, Group, Text } from '@mantine/core';
+import { TextInput, Switch, Group, Text, Divider } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { UnifiedModal } from '@/components/common';
 import { apiRequest } from '@/lib/api/client';
@@ -134,6 +134,8 @@ export function EditTenantModal({ tenant, opened, onClose, onSuccess }: EditTena
         disabled={loading}
       />
 
+      <Divider />
+
       <Group>
         <Switch
           label="有効"
@@ -145,6 +147,8 @@ export function EditTenantModal({ tenant, opened, onClose, onSuccess }: EditTena
           無効にするとテナントのユーザーはログインできなくなります
         </Text>
       </Group>
+
+      <Divider />
 
       <Group justify="flex-end" mt="md">
         <ActionButton action="cancel" onClick={handleClose} disabled={loading}>

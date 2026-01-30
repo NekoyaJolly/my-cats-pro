@@ -12,6 +12,7 @@ import {
   CopyButton,
   Button,
   Text,
+  Divider,
 } from '@mantine/core';
 import { IconCheck, IconCopy, IconMail } from '@tabler/icons-react';
 import { UnifiedModal } from '@/components/common';
@@ -175,6 +176,8 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
             </Text>
           </Alert>
 
+          <Divider label="招待URL" labelPosition="center" />
+
           <Stack gap="xs">
             <Text size="sm" fw={500}>招待URL:</Text>
             <Code block style={{ wordBreak: 'break-all' }}>
@@ -197,6 +200,8 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
           <Text size="xs" c="dimmed">
             ※ 招待URLは7日間有効です。
           </Text>
+
+          <Divider />
 
           <Group justify="flex-end" mt="md">
             <ActionButton action="save" onClick={handleFinish}>
@@ -225,6 +230,8 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
             onChange={(value) => setFormData({ ...formData, role: value || 'USER' })}
             disabled={loading}
           />
+
+          <Divider />
 
           <Group justify="flex-end" mt="md">
             <ActionButton action="cancel" onClick={handleClose} disabled={loading}>

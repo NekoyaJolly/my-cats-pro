@@ -1151,6 +1151,9 @@ export default function CarePage() {
           }}
           searchable
         />
+
+        <Divider />
+
         <Group justify="flex-end" mt="md">
           <ActionButton action="cancel" onClick={closeAddCardModal}>
             キャンセル
@@ -1564,6 +1567,8 @@ export default function CarePage() {
               </Text>
               <Text>{deletingSchedule.cats.length}頭</Text>
             </Box>
+
+            <Divider />
 
             <Group justify="flex-end">
               <ActionButton
