@@ -12,10 +12,9 @@ import {
   Switch,
   Text,
   TextInput,
-  Divider,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 
 import type { CategoryFormValues } from '../types';
 import {
@@ -56,17 +55,11 @@ export function CategoryModal({
   setAsCategoryDefaultTextColor,
   onSetAsCategoryDefaultTextColorChange,
 }: CategoryModalProps) {
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={onClose}
-      title={isEditing ? 'カテゴリを編集' : 'カテゴリを追加'}
-      size="lg"
-      keepMounted={false}
-      addContentPadding={false}
-    >
-      <Box component="form" onSubmit={onSubmit}>
-        <Stack gap="md" p="md">
+  const sections: ModalSection[] = [
+    {
+      label: '基本情報',
+      content: (
+        <>
           <TextInput
             label="キー"
             description="URLなどで利用する識別子（未入力の場合は自動生成）"
@@ -86,9 +79,13 @@ export function CategoryModal({
             value={form.values.description}
             onChange={(event) => form.setFieldValue('description', event.currentTarget.value)}
           />
-
-          <Divider label="カラー設定" labelPosition="center" />
-
+        </>
+      ),
+    },
+    {
+      label: 'カラー設定',
+      content: (
+        <>
           <Group gap="md" align="flex-end">
             <Stack gap="xs" style={{ flex: 1 }}>
               <ColorInput
@@ -133,9 +130,13 @@ export function CategoryModal({
             <Text fw={600}>{form.values.name || 'カテゴリ名'}</Text>
             <Text size="xs">サンプルプレビュー</Text>
           </Card>
-
-          <Divider label="設定" labelPosition="center" />
-
+        </>
+      ),
+    },
+    {
+      label: '設定',
+      content: (
+        <>
           <MultiSelect
             label="利用ページ"
             description="このカテゴリのタグを表示するページを選択"
@@ -152,19 +153,33 @@ export function CategoryModal({
             checked={form.values.isActive}
             onChange={(event) => form.setFieldValue('isActive', event.currentTarget.checked)}
           />
+        </>
+      ),
+    },
+    {
+      content: (
+        <Group justify="flex-end" gap="sm">
+          <Button variant="outline" onClick={onClose}>
+            キャンセル
+          </Button>
+          <Button type="submit" loading={isSubmitting}>
+            {isEditing ? '更新' : '作成'}
+          </Button>
+        </Group>
+      ),
+    },
+  ];
 
-          <Divider />
-
-          <Group justify="flex-end" gap="sm">
-            <Button variant="outline" onClick={onClose}>
-              キャンセル
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {isEditing ? '更新' : '作成'}
-            </Button>
-          </Group>
-        </Stack>
-      </Box>
-    </UnifiedModal>
+  return (
+    <Box component="form" onSubmit={onSubmit}>
+      <UnifiedModal
+        opened={opened}
+        onClose={onClose}
+        title={isEditing ? 'カテゴリを編集' : 'カテゴリを追加'}
+        size="lg"
+        keepMounted={false}
+        sections={sections}
+      />
+    </Box>
   );
 }

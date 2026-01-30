@@ -220,9 +220,14 @@ h1, h2, h3, h4, h5, h6 {
 /* 入力フィールドの枠線を明確に */
 .mantine-Modal-body .mantine-Input-input,
 .mantine-Modal-body .mantine-Select-input,
-.mantine-Modal-body .mantine-Textarea-input {
+.mantine-Modal-body .mantine-Textarea-input,
+.mantine-Modal-body .mantine-DateInput-input,
+.mantine-Modal-body .mantine-TimeInput-input,
+.mantine-Modal-body .mantine-NumberInput-input,
+.mantine-Modal-body .mantine-PasswordInput-input,
+.mantine-Modal-body .mantine-ColorInput-input {
   border: 1px solid #dee2e6 !important;
-  background-color: #ffffff !important;
+  background-color: #f8f9fa !important;
 }
 
 @media (min-width: 768px) {

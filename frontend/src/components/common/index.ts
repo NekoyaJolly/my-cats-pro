@@ -1,1 +1,1 @@
-export { UnifiedModal, type UnifiedModalProps } from './UnifiedModal';
+export { UnifiedModal, type UnifiedModalProps, type ModalSection } from './UnifiedModal';
