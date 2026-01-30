@@ -5,6 +5,7 @@ import {
   Text,
   Group,
   Button,
+  Divider,
 } from '@mantine/core';
 import { UnifiedModal } from '@/components/common';
 import type { BirthPlan } from '@/lib/api/hooks/use-breeding';
@@ -38,6 +39,9 @@ export function CompleteConfirmModal({
       <Text size="sm" c="dimmed">
         この操作は元に戻せません。
       </Text>
+
+      <Divider />
+
       <Group justify="flex-end" gap="sm" mt="md">
         <Button
           variant="outline"

@@ -12,6 +12,7 @@ import {
   Button,
   NumberInput,
   Checkbox,
+  Divider,
 } from '@mantine/core';
 import { UnifiedModal } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';
@@ -70,6 +71,8 @@ export function FemaleSelectionModal({
             }
           />
         </Stack>
+
+        <Divider label="メス猫一覧" labelPosition="center" />
 
         {availableFemales.map((female) => {
           const isNG = selectedMale ? isNGPairing(selectedMale.id, female.id) : false;

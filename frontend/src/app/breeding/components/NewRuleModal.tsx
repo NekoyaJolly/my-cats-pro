@@ -9,6 +9,7 @@ import {
   Radio,
   Group,
   Button,
+  Divider,
 } from '@mantine/core';
 import { UnifiedModal } from '@/components/common';
 import type { BreedingNgRuleType } from '@/lib/api/hooks/use-breeding';
@@ -65,6 +66,8 @@ export function NewRuleModal({
         onChange={(e) => onRuleChange({ ...newRule, name: e.target.value })}
         required
       />
+
+      <Divider label="ルール設定" labelPosition="center" />
 
       <Radio.Group
         label="ルールタイプ"
@@ -141,6 +144,8 @@ export function NewRuleModal({
         value={newRule.description}
         onChange={(e) => onRuleChange({ ...newRule, description: e.target.value })}
       />
+
+      <Divider />
 
       <Group justify="flex-end" gap="sm" mt="md">
         <Button

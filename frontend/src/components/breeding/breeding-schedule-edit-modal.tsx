@@ -8,6 +8,7 @@ import {
   NumberInput,
   Badge,
   Select,
+  Divider,
 } from '@mantine/core';
 import { UnifiedModal } from '@/components/common';
 
@@ -131,6 +132,8 @@ export function BreedingScheduleEditModal({
         開始日: {startDateStr}
       </Text>
 
+      <Divider label="スケジュール設定" labelPosition="center" />
+
       <Select
         label="メス猫"
         description="交配相手のメス猫を変更できます"
@@ -155,6 +158,8 @@ export function BreedingScheduleEditModal({
           ※ 期間を短縮すると、最終日以降のスケジュールが削除されます
         </Text>
       )}
+
+      <Divider />
 
       <Group justify="space-between" gap="sm">
         <Group gap="xs">

@@ -1,6 +1,6 @@
 'use client';
 
-import { TextInput, Select, NumberInput, Textarea, Button, Group } from '@mantine/core';
+import { TextInput, Select, NumberInput, Textarea, Button, Group, Divider } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { UnifiedModal } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';
@@ -116,6 +116,8 @@ export function KittenDispositionModal({
             readOnly
           />
 
+        <Divider label="処遇設定" labelPosition="center" />
+
         <Select
           label="処遇"
           value={disposition}
@@ -195,6 +197,8 @@ export function KittenDispositionModal({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
+
+        <Divider />
 
         <Group justify="flex-end" gap="sm" mt="md">
           <Button

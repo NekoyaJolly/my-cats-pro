@@ -10,6 +10,7 @@ import {
   Stack,
   Text,
   Box,
+  Divider,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
@@ -195,6 +196,8 @@ export function WeightRecordModal({
             maxRows={4}
             {...form.getInputProps('notes')}
           />
+
+          <Divider />
 
           {/* ボタン */}
           <Group justify="flex-end" mt="md">
