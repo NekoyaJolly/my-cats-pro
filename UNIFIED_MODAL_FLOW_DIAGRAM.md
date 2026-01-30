@@ -249,8 +249,9 @@ Output: ─────── Only ───────
 ### レンダリング回数
 
 - 各セクションは独立した `<div>` でラップ
-- `key={index}` で React の差分検出を最適化
-- セクション内容の変更時、該当セクションのみ再レンダリング
+- `key` はセクションごとに安定した値（例: `section.key` や `section.label`）を使用することを推奨
+- セクション順が固定された静的リストでは `key={index}` の使用も可能だが、動的に追加・削除・並び替えが発生するセクションでは使用しない
+- セクション内容の変更時、適切な `key` 設定により、React は該当セクションのみを再レンダリング
 
 ### メモリ使用
 
@@ -279,10 +280,14 @@ sections = [{ label: 'Test', content: null }]
 ### 動的セクション
 
 ```typescript
-const sections = useMemo(() => [
-  condition && { label: 'A', content: <X> },
-  { label: 'B', content: <Y> },
-].filter(Boolean), [condition]);
+const sections = useMemo(
+  () =>
+    [
+      condition && { label: 'A', content: <X /> },
+      { label: 'B', content: <Y /> },
+    ].filter((section): section is ModalSection => Boolean(section)),
+  [condition],
+);
 // → 条件に応じてセクション数が変動
 ```
 

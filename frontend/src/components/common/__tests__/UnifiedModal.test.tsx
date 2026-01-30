@@ -69,7 +69,7 @@ describe('UnifiedModal Component', () => {
     );
 
     const dividers = screen.getAllByTestId('divider');
-    // 最初のセクションにラベルがあるので1つ、残り2つのセクション前に2つ、合計3つ
+    // 最初のセクションにラベルがあるため1つ、2番目のセクション前に1つ、3番目のセクション前に1つ、合計3つ
     expect(dividers.length).toBe(3);
     
     // ラベルの確認
@@ -96,7 +96,7 @@ describe('UnifiedModal Component', () => {
     expect(screen.getByText('No label content 1')).toBeInTheDocument();
     expect(screen.getByText('With label content')).toBeInTheDocument();
     
-    // 最初のセクションにラベルなし、2番目のセクションにラベルあり、合計1つ
+    // 最初のセクションにラベルなしのため0個、2番目のセクション(index > 0)のため1個、合計1つ
     const dividers = screen.getAllByTestId('divider');
     expect(dividers.length).toBe(1);
     expect(dividers[0]).toHaveAttribute('data-label', 'With Label');
@@ -144,5 +144,33 @@ describe('UnifiedModal Component', () => {
     );
 
     expect(screen.getByText('Content without padding')).toBeInTheDocument();
+  });
+
+  it('should respect addContentPadding with sections', () => {
+    const sections: ModalSection[] = [
+      {
+        label: 'Section 1',
+        content: <div>Content 1</div>,
+      },
+      {
+        label: 'Section 2',
+        content: <div>Content 2</div>,
+      },
+    ];
+
+    render(
+      <UnifiedModal 
+        opened={true} 
+        onClose={() => {}} 
+        title="Sections No Padding"
+        sections={sections}
+        addContentPadding={false}
+      />
+    );
+
+    expect(screen.getByText('Content 1')).toBeInTheDocument();
+    expect(screen.getByText('Content 2')).toBeInTheDocument();
+    // With addContentPadding=false, sections should not be wrapped in Stack
+    expect(screen.queryByTestId('stack')).not.toBeInTheDocument();
   });
 });

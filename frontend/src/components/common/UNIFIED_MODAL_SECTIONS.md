@@ -21,7 +21,7 @@ import { UnifiedModal } from '@/components/common';
 ### 新しいセクション機能を使う方法
 
 ```tsx
-import { UnifiedModal, type ModalSection } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common/UnifiedModal';
 
 const sections: ModalSection[] = [
   {
@@ -229,4 +229,5 @@ type UnifiedModalProps = Omit<ModalProps, 'children'> & {
 - `children` と `sections` は相互排他的です。どちらか一方のみを使用してください。
 - TypeScriptが型チェックで両方を同時に使用することを防ぎます。
 - 既存のモーダルは `children` を使い続けることができ、後方互換性が保たれています。
-- セクションの `label` は省略可能です。ラベルがない場合、Dividerは表示されません（最初のセクション以外）。
+- セクションの `label` は省略可能です。2番目以降のセクションは常にDividerが表示されます（ラベルがない場合は区切り線のみ）。最初のセクションは、ラベルがある場合のみDividerが表示されます。
+- セクションを動的に追加・削除・並び替えする場合は、`ModalSection`の`key`プロパティで安定したキーを指定することを推奨します。

@@ -11,6 +11,8 @@ export interface ModalSection {
   label?: string;
   /** セクションのコンテンツ */
   content: ReactNode;
+  /** セクションの一意なキー（動的に追加・削除・並び替えを行う場合に推奨） */
+  key?: string;
 }
 
 /**
@@ -54,29 +56,31 @@ export function UnifiedModal({
   // sectionsが提供された場合は、セクション間にDividerを挿入してレンダリング
   const renderContent = () => {
     if (sections) {
-      return (
-        <Stack gap="md">
-          {sections.map((section, index) => (
-            <div key={index}>
-              {index > 0 && (
-                <Divider
-                  label={section.label}
-                  labelPosition="center"
-                  mb="md"
-                />
-              )}
-              {index === 0 && section.label && (
-                <Divider
-                  label={section.label}
-                  labelPosition="center"
-                  mb="md"
-                />
-              )}
-              {section.content}
-            </div>
-          ))}
-        </Stack>
-      );
+      const sectionNodes = sections.map((section, index) => (
+        <div key={section.key ?? index}>
+          {index > 0 && (
+            <Divider
+              label={section.label}
+              labelPosition="center"
+              mb="md"
+            />
+          )}
+          {index === 0 && section.label && (
+            <Divider
+              label={section.label}
+              labelPosition="center"
+              mb="md"
+            />
+          )}
+          {section.content}
+        </div>
+      ));
+
+      if (addContentPadding) {
+        return <Stack gap="md">{sectionNodes}</Stack>;
+      }
+
+      return <>{sectionNodes}</>;
     }
 
     // childrenの場合は従来の動作を維持
