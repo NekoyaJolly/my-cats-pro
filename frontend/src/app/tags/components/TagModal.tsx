@@ -13,6 +13,7 @@ import {
   Switch,
   Text,
   TextInput,
+  Divider,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { UnifiedModal } from '@/components/common';
@@ -107,6 +108,9 @@ export function TagModal({
             value={form.values.description}
             onChange={(event) => form.setFieldValue('description', event.currentTarget.value)}
           />
+
+          <Divider label="カラー設定" labelPosition="center" />
+
           <Checkbox
             label="親グループのカラーを継承"
             checked={inheritTagColorFromGroup}
@@ -187,6 +191,9 @@ export function TagModal({
               </Badge>
             </Group>
           </Card>
+
+          <Divider label="設定" labelPosition="center" />
+
           <Group gap="lg">
             <Switch
               label="手動付与を許可"
@@ -204,6 +211,9 @@ export function TagModal({
             checked={form.values.isActive}
             onChange={(event) => form.setFieldValue('isActive', event.currentTarget.checked)}
           />
+
+          <Divider />
+
           <Group justify="flex-end" gap="sm">
             <Button variant="outline" onClick={onClose}>
               キャンセル

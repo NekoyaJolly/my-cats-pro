@@ -10,6 +10,7 @@ import {
   Group,
   Badge,
   Button,
+  Divider,
 } from '@mantine/core';
 import { UnifiedModal } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';
@@ -50,6 +51,8 @@ export function MaleSelectionModal({
         <Text size="sm" c="dimmed">
           スケジュールに追加するオス猫を選択してください
         </Text>
+
+        <Divider />
         
         {availableMales.map((male) => (
           <Card key={male.id} shadow="sm" padding="sm" radius="md" withBorder>

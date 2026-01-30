@@ -7,6 +7,7 @@ import {
   Group,
   Button,
   ActionIcon,
+  Divider,
 } from '@mantine/core';
 import { IconBabyCarriage, IconRainbow } from '@tabler/icons-react';
 import { UnifiedModal } from '@/components/common';
@@ -67,6 +68,8 @@ export function BirthInfoModal({
         readOnly
       />
 
+      <Divider label="出産情報" labelPosition="center" />
+
       {/* 出産日 */}
       <TextInput
         label="出産日"
@@ -114,6 +117,8 @@ export function BirthInfoModal({
           <IconRainbow size={20} />
         </ActionIcon>
       </Group>
+
+      <Divider />
 
       {/* アクションボタン */}
       <Group justify="flex-end" gap="sm" mt="md">

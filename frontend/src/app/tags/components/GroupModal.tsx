@@ -12,6 +12,7 @@ import {
   Switch,
   Text,
   TextInput,
+  Divider,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { UnifiedModal } from '@/components/common';
@@ -91,6 +92,9 @@ export function GroupModal({
             value={form.values.description}
             onChange={(event) => form.setFieldValue('description', event.currentTarget.value)}
           />
+
+          <Divider label="カラー設定" labelPosition="center" />
+
           <Checkbox
             label="親カテゴリのカラーを継承"
             checked={inheritGroupColorFromCategory}
@@ -140,11 +144,17 @@ export function GroupModal({
             <Text fw={600}>{form.values.name || 'タググループ名'}</Text>
             <Text size="xs">サンプルプレビュー</Text>
           </Card>
+
+          <Divider />
+
           <Switch
             label="アクティブ"
             checked={form.values.isActive}
             onChange={(event) => form.setFieldValue('isActive', event.currentTarget.checked)}
           />
+
+          <Divider />
+
           <Group justify="flex-end" gap="sm">
             <Button variant="outline" onClick={onClose}>
               キャンセル

@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
-import { Button, Group, Text } from '@mantine/core';
+import { Button, Group, Text, Divider } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { UnifiedModal } from '@/components/common';
 
@@ -85,6 +85,8 @@ export function OperationModalManager<T = unknown>({
           この操作は取り消せません。
         </Text>
 
+        <Divider />
+
         <Group justify="flex-end" gap="sm" mt="md">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             キャンセル
@@ -108,6 +110,8 @@ export function OperationModalManager<T = unknown>({
         size="lg"
       >
         {customContent || children}
+
+        <Divider />
         
         <Group justify="flex-end" gap="sm" mt="md">
           <Button onClick={onClose}>閉じる</Button>
@@ -135,6 +139,8 @@ export function OperationModalManager<T = unknown>({
       size="lg"
     >
       {customContent || children}
+
+      <Divider />
       
       <Group justify="flex-end" gap="sm" mt="md">
         <Button variant="outline" onClick={onClose} disabled={isLoading}>
