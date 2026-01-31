@@ -85,3 +85,27 @@ CVE-2025-55184
 # CI version has been updated to 9.15.0 (was "9" which could install any 9.x)
 # This project also uses separate workspaces as additional mitigation
 CVE-2024-53866
+
+# fast-xml-parser DoS vulnerability (2025)
+# GHSA-37qj-frw5-hhjh: RangeError DoS Numeric Entities Bug
+# Affects: >=4.3.6 <=5.3.3
+# Fixed in: >=5.3.4
+# Our override ensures: >=5.3.4 (transitive dependency)
+GHSA-37qj-frw5-hhjh
+
+# lodash Prototype Pollution (2024)
+# GHSA-xxjr-mmjv-4gpg: Prototype Pollution in _.unset and _.omit
+# Affects: >=4.0.0 <=4.17.22
+# Fixed in: >=4.17.23
+# Our override ensures: >=4.17.23 (transitive dependency)
+GHSA-xxjr-mmjv-4gpg
+
+# Next.js Image Optimizer DoS (2025)
+# GHSA-9g9p-9gw9-jx7f: DoS via Image Optimizer remotePatterns
+# Affects: >=15.6.0-canary.0 <16.1.5
+# Fixed in: >=16.1.5
+# Current version: 15.6.0-canary.61 (vulnerable range)
+# Severity: MODERATE (only affects self-hosted with specific remotePatterns config)
+# Impact: Low for this project (not using remotePatterns in production)
+# Note: Will be resolved when upgrading to Next.js 16.1.5+ or stable 16.x
+GHSA-9g9p-9gw9-jx7f
