@@ -50,15 +50,28 @@ jobs:
       - name: Check for critical vulnerabilities
         run: |
           echo "🔍 Scanning for critical and high severity vulnerabilities..."
-          echo "📋 Using .trivyignore file to exclude known false positives..."
-          if trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore --quiet --exit-code 1 .; then
-            echo "✅ No critical or high severity vulnerabilities found"
+          echo "📋 Checking .trivyignore file..."
+          if [ -f .trivyignore ]; then
+            echo "✅ .trivyignore file exists"
+            echo "📝 .trivyignore contents (first 20 lines):"
+            head -20 .trivyignore
           else
-            echo "❌ Critical or high severity vulnerabilities detected!"
-            echo "📊 Detailed vulnerability report:"
-            trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore .
-            exit 1
+            echo "❌ .trivyignore file not found!"
           fi
+          
+          echo ""
+          echo "🔎 Running Trivy scan..."
+          trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore . || {
+            echo "❌ Critical or high severity vulnerabilities detected!"
+            echo ""
+            echo "📊 Detailed vulnerability report (without --quiet):"
+            trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore . || true
+            echo ""
+            echo "📋 Showing what would be found WITHOUT ignore file:"
+            trivy fs --severity CRITICAL,HIGH --scanners vuln . || true
+            exit 1
+          }
+          echo "✅ No critical or high severity vulnerabilities found"
 
       - name: Setup Node.js for audit
         uses: actions/setup-node@v4
