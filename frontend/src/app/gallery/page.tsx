@@ -5,7 +5,7 @@
  * 4つのカテゴリ（子猫 / 父猫 / 母猫 / 卒業猫）をタブ切り替えで表示
  */
 
-import React, { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import {
   Container,
   Stack,
@@ -44,7 +44,7 @@ function GalleryContent() {
     useDisclosure(false);
 
   // ページヘッダー設定
-  React.useEffect(() => {
+  useEffect(() => {
     setPageHeader(
       'ギャラリー',
       <ActionButton

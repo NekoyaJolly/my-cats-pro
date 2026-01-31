@@ -10,10 +10,6 @@ const bundleAnalyzer = withBundleAnalyzer({
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: [],
-  eslint: {
-    // 本番ビルド時にESLintエラーを無視
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // 本番ビルド時にTypeScriptエラーを無視（開発時は型チェックが有効）
     ignoreBuildErrors: false,
@@ -37,6 +33,10 @@ const nextConfig: NextConfig = {
       '@tabler/icons-react',
     ],
   },
+  // Turbopack 設定
+  // Next.js 15.6.0-canary 系で発生する Turbopack 関連の警告を抑制するための空設定
+  // 将来的に該当バージョンのワークアラウンドが不要になったら削除を検討する
+  turbopack: {},
   // モノレポ対応のためのワークスペースルート設定
   outputFileTracingRoot: path.join(__dirname, "../"),
   // Memory optimization for CI/CD and development

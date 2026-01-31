@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { Fragment, useMemo, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
@@ -653,7 +653,7 @@ export default function CatsPage() {
                   const isExpanded = expandedMotherIds.has(cat.id);
 
                   return (
-                    <React.Fragment key={cat.id}>
+                    <Fragment key={cat.id}>
                       {/* 猫の行（母猫または通常の猫） */}
                       <ContextMenuProvider
                         entity={cat}
@@ -876,7 +876,7 @@ export default function CatsPage() {
                           </Table.Tr>
                         </ContextMenuProvider>
                       ))}
-                    </React.Fragment>
+                    </Fragment>
                   );
                 })}
               </Table.Tbody>

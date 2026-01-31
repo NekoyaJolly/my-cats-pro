@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useDisclosure } from '@mantine/hooks';
 import WeightRecordTable from '@/components/kittens/WeightRecordTable';
 import { WeightRecordModal } from '@/components/kittens/WeightRecordModal';
