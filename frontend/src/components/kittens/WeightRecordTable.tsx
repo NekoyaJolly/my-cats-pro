@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import { Fragment } from 'react';
 import {
   Card,
   Table,
@@ -107,7 +107,7 @@ export function WeightRecordTable({
               </Table.Thead>
               <Table.Tbody>
                 {motherCats.map((mother) => (
-                  <React.Fragment key={mother.id}>
+                  <Fragment key={mother.id}>
                     {/* 母猫ヘッダー行 */}
                     <Table.Tr style={{ backgroundColor: 'var(--mantine-color-blue-0)' }}>
                       <Table.Td
@@ -137,7 +137,7 @@ export function WeightRecordTable({
                         onRecordWeight={() => onRecordWeight(kitten)}
                       />
                     ))}
-                  </React.Fragment>
+                  </Fragment>
                 ))}
               </Table.Tbody>
             </Table>

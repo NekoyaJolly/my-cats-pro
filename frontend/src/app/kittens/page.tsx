@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import {
   Tabs,
   Button,
@@ -315,7 +315,7 @@ export default function KittensPage() {
                   {getFilteredMotherCats().map((mother) => {
                     const isExpanded = expandedCats.has(mother.id);
                     return (
-                      <React.Fragment key={mother.id}>
+                      <Fragment key={mother.id}>
                         {/* 母猫の行 */}
                         <Table.Tr
                           style={{ 
@@ -418,7 +418,7 @@ export default function KittensPage() {
                             </ContextMenuProvider>
                           );
                         })}
-                      </React.Fragment>
+                      </Fragment>
                     );
                   })}
                 </Table.Tbody>

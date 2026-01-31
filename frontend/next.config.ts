@@ -10,10 +10,6 @@ const bundleAnalyzer = withBundleAnalyzer({
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: [],
-  eslint: {
-    // 本番ビルド時にESLintエラーを無視
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // 本番ビルド時にTypeScriptエラーを無視（開発時は型チェックが有効）
     ignoreBuildErrors: false,
@@ -37,6 +33,8 @@ const nextConfig: NextConfig = {
       '@tabler/icons-react',
     ],
   },
+  // Turbopack configuration (empty to silence canary warnings)
+  turbopack: {},
   // モノレポ対応のためのワークスペースルート設定
   outputFileTracingRoot: path.join(__dirname, "../"),
   // Memory optimization for CI/CD and development
