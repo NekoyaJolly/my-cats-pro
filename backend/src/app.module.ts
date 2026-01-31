@@ -24,6 +24,7 @@ import { GalleryModule } from "./gallery/gallery.module";
 import { GalleryUploadModule } from "./gallery-upload/gallery-upload.module";
 import { GraduationModule } from "./graduation/graduation.module";
 import { HealthModule } from "./health/health.module";
+import { ImportModule } from "./import/import.module";
 import { PedigreeModule } from "./pedigree/pedigree.module";
 import { PrintTemplatesModule } from "./print-templates/print-templates.module";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -123,6 +124,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     GalleryModule,
     EmailModule,
     ExportModule,
+    ImportModule,
   ],
   controllers: [MasterDataController],
   providers: [
