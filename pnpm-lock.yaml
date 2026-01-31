@@ -15,7 +15,7 @@ overrides:
   jsonwebtoken: '>=9.0.3'
   jws: '>=4.0.1'
   multer: 2.0.2
-  next: 15.6.0-canary.61
+  next: '>=15.6.0-canary.61 <16.0.0'
   path-to-regexp: '>=0.1.12'
   qs: 6.14.1
   tmp: '>=0.2.3'
@@ -357,7 +357,7 @@ importers:
         specifier: ^12.23.26
         version: 12.23.26(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       next:
-        specifier: 15.6.0-canary.61
+        specifier: '>=15.6.0-canary.61 <16.0.0'
         version: 15.6.0-canary.61(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       openapi-typescript:
         specifier: ^7.9.1
@@ -1988,7 +1988,7 @@ packages:
     resolution: {integrity: sha512-poUjt8KF/6RKn0AwBYgtFu764nduziCYpuLgfDNTs7qAMWBMq3tTnDiXxjwJCDnaPeZRAK2pfoAEZxWSXf+22w==}
     engines: {node: '>=14.18'}
     peerDependencies:
-      next: 15.6.0-canary.61
+      next: '>=15.6.0-canary.61 <16.0.0'
 
   '@sentry/node@8.55.0':
     resolution: {integrity: sha512-h10LJLDTRAzYgay60Oy7moMookqqSZSviCWkkmHZyaDn+4WURnPp5SKhhfrzPRQcXKrweiOwDSHBgn1tweDssg==}

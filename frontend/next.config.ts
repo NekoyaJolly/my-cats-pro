@@ -33,7 +33,9 @@ const nextConfig: NextConfig = {
       '@tabler/icons-react',
     ],
   },
-  // Turbopack configuration (empty to silence canary warnings)
+  // Turbopack 設定
+  // Next.js 15.6.0-canary 系で発生する Turbopack 関連の警告を抑制するための空設定
+  // 将来的に該当バージョンのワークアラウンドが不要になったら削除を検討する
   turbopack: {},
   // モノレポ対応のためのワークスペースルート設定
   outputFileTracingRoot: path.join(__dirname, "../"),
