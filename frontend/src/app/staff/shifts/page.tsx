@@ -9,7 +9,6 @@ import {
   Stack,
   Button,
   Paper,
-  Modal,
   TextInput,
   ColorInput,
   ScrollArea,
@@ -48,6 +47,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { Draggable, EventReceiveArg } from '@fullcalendar/interaction';
 import type { EventDropArg, EventClickArg, EventContentArg, DayCellContentArg } from '@fullcalendar/core';
+import { UnifiedModal } from '@/components/common';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { apiClient, ApiError } from '@/lib/api/typesafe-client';
 import type {
@@ -844,246 +844,305 @@ export default function StaffShiftsPage() {
       <LoadingOverlay visible={loading} />
 
       {/* スタッフ作成モーダル */}
-      <Modal opened={createOpened} onClose={closeCreate} title="スタッフ追加" size="md">
-        <form onSubmit={createForm.onSubmit(handleCreateStaff)}>
-          <Stack gap="md">
-            <TextInput
-              label="名前"
-              placeholder="田中 太郎"
-              required
-              {...createForm.getInputProps('name')}
-            />
+      <UnifiedModal
+        opened={createOpened}
+        onClose={closeCreate}
+        title="スタッフ追加"
+        size="md"
+        sections={[
+          {
+            label: '基本情報',
+            content: (
+              <Stack gap="md">
+                <TextInput
+                  label="名前"
+                  placeholder="田中 太郎"
+                  required
+                  {...createForm.getInputProps('name')}
+                />
 
-            <TextInput
-              label="メールアドレス（任意）"
-              placeholder="tanaka@example.com"
-              type="email"
-              {...createForm.getInputProps('email')}
-            />
+                <TextInput
+                  label="メールアドレス（任意）"
+                  placeholder="tanaka@example.com"
+                  type="email"
+                  {...createForm.getInputProps('email')}
+                />
 
-            <TextInput
-              label="役職"
-              placeholder="スタッフ"
-              {...createForm.getInputProps('role')}
-            />
+                <TextInput
+                  label="役職"
+                  placeholder="スタッフ"
+                  {...createForm.getInputProps('role')}
+                />
 
-            <ColorInput
-              label="表示カラー"
-              placeholder="カラーを選択"
-              format="hex"
-              swatches={[
-                '#4c6ef5',
-                '#f06595',
-                '#20c997',
-                '#fd7e14',
-                '#fab005',
-                '#51cf66',
-                '#4dabf7',
-                '#845ef7',
-                '#ff6b6b',
-                '#74c0fc',
-              ]}
-              {...createForm.getInputProps('color')}
-            />
+                <ColorInput
+                  label="表示カラー"
+                  placeholder="カラーを選択"
+                  format="hex"
+                  swatches={[
+                    '#4c6ef5',
+                    '#f06595',
+                    '#20c997',
+                    '#fd7e14',
+                    '#fab005',
+                    '#51cf66',
+                    '#4dabf7',
+                    '#845ef7',
+                    '#ff6b6b',
+                    '#74c0fc',
+                  ]}
+                  {...createForm.getInputProps('color')}
+                />
+              </Stack>
+            ),
+          },
+          {
+            label: '出勤設定',
+            content: (
+              <>
+                <Checkbox.Group
+                  label="出勤曜日"
+                  description="通常出勤する曜日を選択してください"
+                  {...createForm.getInputProps('workingDays')}
+                >
+                  <Group mt="xs">
+                    <Checkbox value="mon" label="月" />
+                    <Checkbox value="tue" label="火" />
+                    <Checkbox value="wed" label="水" />
+                    <Checkbox value="thu" label="木" />
+                    <Checkbox value="fri" label="金" />
+                    <Checkbox value="sat" label="土" />
+                    <Checkbox value="sun" label="日" />
+                  </Group>
+                </Checkbox.Group>
 
-            <Checkbox.Group
-              label="出勤曜日"
-              description="通常出勤する曜日を選択してください"
-              {...createForm.getInputProps('workingDays')}
-            >
-              <Group mt="xs">
-                <Checkbox value="mon" label="月" />
-                <Checkbox value="tue" label="火" />
-                <Checkbox value="wed" label="水" />
-                <Checkbox value="thu" label="木" />
-                <Checkbox value="fri" label="金" />
-                <Checkbox value="sat" label="土" />
-                <Checkbox value="sun" label="日" />
+                <Group grow>
+                  <NumberInput
+                    label="出勤開始時刻（テンプレート）"
+                    description="0〜23の範囲で入力（例: 9）"
+                    min={0}
+                    max={23}
+                    step={1}
+                    suffix=" 時"
+                    {...createForm.getInputProps('workTimeTemplate.startHour')}
+                  />
+                  <NumberInput
+                    label="出勤終了時刻（テンプレート）"
+                    description="1〜24の範囲で入力（例: 18）"
+                    min={1}
+                    max={24}
+                    step={1}
+                    suffix=" 時"
+                    {...createForm.getInputProps('workTimeTemplate.endHour')}
+                  />
+                </Group>
+              </>
+            ),
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  onClick={closeCreate}
+                  disabled={operationLoading}
+                  leftSection={<IconX size={16} />}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={() => {
+                    createForm.validate();
+                    if (createForm.isValid()) {
+                      void handleCreateStaff(createForm.values);
+                    }
+                  }}
+                  loading={operationLoading}
+                  variant="filled"
+                  color="blue"
+                  leftSection={<IconDeviceFloppy size={16} />}
+                >
+                  作成
+                </Button>
               </Group>
-            </Checkbox.Group>
-
-            <Group grow>
-              <NumberInput
-                label="出勤開始時刻（テンプレート）"
-                description="0〜23の範囲で入力（例: 9）"
-                min={0}
-                max={23}
-                step={1}
-                suffix=" 時"
-                {...createForm.getInputProps('workTimeTemplate.startHour')}
-              />
-              <NumberInput
-                label="出勤終了時刻（テンプレート）"
-                description="1〜24の範囲で入力（例: 18）"
-                min={1}
-                max={24}
-                step={1}
-                suffix=" 時"
-                {...createForm.getInputProps('workTimeTemplate.endHour')}
-              />
-            </Group>
-
-            <Group justify="flex-end" mt="md">
-              <Button
-                variant="subtle"
-                color="gray"
-                onClick={closeCreate}
-                disabled={operationLoading}
-                leftSection={<IconX size={16} />}
-              >
-                キャンセル
-              </Button>
-              <Button
-                type="submit"
-                loading={operationLoading}
-                variant="filled"
-                color="blue"
-                leftSection={<IconDeviceFloppy size={16} />}
-              >
-                作成
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
+            ),
+          },
+        ]}
+      />
 
       {/* スタッフ編集モーダル */}
-      <Modal opened={editOpened} onClose={closeEdit} title="スタッフ編集" size="md">
-        <form onSubmit={editForm.onSubmit(handleEditStaff)}>
-          <Stack gap="md">
-            <TextInput
-              label="名前"
-              placeholder="田中 太郎"
-              required
-              {...editForm.getInputProps('name')}
-            />
+      <UnifiedModal
+        opened={editOpened}
+        onClose={closeEdit}
+        title="スタッフ編集"
+        size="md"
+        sections={[
+          {
+            label: '基本情報',
+            content: (
+              <Stack gap="md">
+                <TextInput
+                  label="名前"
+                  placeholder="田中 太郎"
+                  required
+                  {...editForm.getInputProps('name')}
+                />
 
-            <TextInput
-              label="メールアドレス（任意）"
-              placeholder="tanaka@example.com"
-              type="email"
-              {...editForm.getInputProps('email')}
-            />
+                <TextInput
+                  label="メールアドレス（任意）"
+                  placeholder="tanaka@example.com"
+                  type="email"
+                  {...editForm.getInputProps('email')}
+                />
 
-            <TextInput
-              label="役職"
-              placeholder="スタッフ"
-              {...editForm.getInputProps('role')}
-            />
+                <TextInput
+                  label="役職"
+                  placeholder="スタッフ"
+                  {...editForm.getInputProps('role')}
+                />
 
-            <ColorInput
-              label="表示カラー"
-              placeholder="カラーを選択"
-              format="hex"
-              swatches={[
-                '#4c6ef5',
-                '#f06595',
-                '#20c997',
-                '#fd7e14',
-                '#fab005',
-                '#51cf66',
-                '#4dabf7',
-                '#845ef7',
-                '#ff6b6b',
-                '#74c0fc',
-              ]}
-              {...editForm.getInputProps('color')}
-            />
+                <ColorInput
+                  label="表示カラー"
+                  placeholder="カラーを選択"
+                  format="hex"
+                  swatches={[
+                    '#4c6ef5',
+                    '#f06595',
+                    '#20c997',
+                    '#fd7e14',
+                    '#fab005',
+                    '#51cf66',
+                    '#4dabf7',
+                    '#845ef7',
+                    '#ff6b6b',
+                    '#74c0fc',
+                  ]}
+                  {...editForm.getInputProps('color')}
+                />
+              </Stack>
+            ),
+          },
+          {
+            label: '出勤設定',
+            content: (
+              <>
+                <Checkbox.Group
+                  label="出勤曜日"
+                  description="通常出勤する曜日を選択してください"
+                  {...editForm.getInputProps('workingDays')}
+                >
+                  <Group mt="xs">
+                    <Checkbox value="mon" label="月" />
+                    <Checkbox value="tue" label="火" />
+                    <Checkbox value="wed" label="水" />
+                    <Checkbox value="thu" label="木" />
+                    <Checkbox value="fri" label="金" />
+                    <Checkbox value="sat" label="土" />
+                    <Checkbox value="sun" label="日" />
+                  </Group>
+                </Checkbox.Group>
 
-            <Checkbox.Group
-              label="出勤曜日"
-              description="通常出勤する曜日を選択してください"
-              {...editForm.getInputProps('workingDays')}
-            >
-              <Group mt="xs">
-                <Checkbox value="mon" label="月" />
-                <Checkbox value="tue" label="火" />
-                <Checkbox value="wed" label="水" />
-                <Checkbox value="thu" label="木" />
-                <Checkbox value="fri" label="金" />
-                <Checkbox value="sat" label="土" />
-                <Checkbox value="sun" label="日" />
+                <Group grow>
+                  <NumberInput
+                    label="出勤開始時刻（テンプレート）"
+                    description="0〜23の範囲で入力（例: 9）"
+                    min={0}
+                    max={23}
+                    step={1}
+                    suffix=" 時"
+                    {...editForm.getInputProps('workTimeTemplate.startHour')}
+                  />
+                  <NumberInput
+                    label="出勤終了時刻（テンプレート）"
+                    description="1〜24の範囲で入力（例: 18）"
+                    min={1}
+                    max={24}
+                    step={1}
+                    suffix=" 時"
+                    {...editForm.getInputProps('workTimeTemplate.endHour')}
+                  />
+                </Group>
+              </>
+            ),
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  onClick={closeEdit}
+                  disabled={operationLoading}
+                  leftSection={<IconX size={16} />}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={() => {
+                    editForm.validate();
+                    if (editForm.isValid()) {
+                      void handleEditStaff(editForm.values);
+                    }
+                  }}
+                  loading={operationLoading}
+                  variant="filled"
+                  color="blue"
+                  leftSection={<IconDeviceFloppy size={16} />}
+                >
+                  保存
+                </Button>
               </Group>
-            </Checkbox.Group>
-
-            <Group grow>
-              <NumberInput
-                label="出勤開始時刻（テンプレート）"
-                description="0〜23の範囲で入力（例: 9）"
-                min={0}
-                max={23}
-                step={1}
-                suffix=" 時"
-                {...editForm.getInputProps('workTimeTemplate.startHour')}
-              />
-              <NumberInput
-                label="出勤終了時刻（テンプレート）"
-                description="1〜24の範囲で入力（例: 18）"
-                min={1}
-                max={24}
-                step={1}
-                suffix=" 時"
-                {...editForm.getInputProps('workTimeTemplate.endHour')}
-              />
-            </Group>
-
-            <Group justify="flex-end" mt="md">
-              <Button
-                variant="subtle"
-                color="gray"
-                onClick={closeEdit}
-                disabled={operationLoading}
-                leftSection={<IconX size={16} />}
-              >
-                キャンセル
-              </Button>
-              <Button
-                type="submit"
-                loading={operationLoading}
-                variant="filled"
-                color="blue"
-                leftSection={<IconDeviceFloppy size={16} />}
-              >
-                保存
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
+            ),
+          },
+        ]}
+      />
 
       {/* スタッフ削除確認モーダル */}
-      <Modal opened={deleteOpened} onClose={closeDelete} title="スタッフ削除" size="sm">
-        <Stack gap="md">
-          <Text>{selectedStaff?.name} を削除してもよろしいですか?</Text>
-          <Text size="sm" c="dimmed">
-            この操作は取り消せません。
-          </Text>
-
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="subtle"
-              color="gray"
-              onClick={closeDelete}
-              disabled={operationLoading}
-              leftSection={<IconX size={16} />}
-            >
-              キャンセル
-              </Button>
-            <Button
-              onClick={handleDeleteStaff}
-              loading={operationLoading}
-              variant="filled"
-              color="red"
-              leftSection={<IconTrash size={16} />}
-            >
-              削除
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <UnifiedModal
+        opened={deleteOpened}
+        onClose={closeDelete}
+        title="スタッフ削除"
+        size="sm"
+        sections={[
+          {
+            content: (
+              <>
+                <Text>{selectedStaff?.name} を削除してもよろしいですか?</Text>
+                <Text size="sm" c="dimmed">
+                  この操作は取り消せません。
+                </Text>
+              </>
+            ),
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  onClick={closeDelete}
+                  disabled={operationLoading}
+                  leftSection={<IconX size={16} />}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={handleDeleteStaff}
+                  loading={operationLoading}
+                  variant="filled"
+                  color="red"
+                  leftSection={<IconTrash size={16} />}
+                >
+                  削除
+                </Button>
+              </Group>
+            ),
+          },
+        ]}
+      />
 
       {/* スタッフ選択モーダル（テンプレート入力用） */}
-      <Modal
+      <UnifiedModal
         opened={selectStaffOpened}
         onClose={() => {
           closeSelectStaff();
@@ -1091,106 +1150,114 @@ export default function StaffShiftsPage() {
         }}
         title="スタッフ選択"
         size="md"
-      >
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">
-            テンプレート入力するスタッフを選択してください。
-            出勤曜日が設定されているスタッフのみが対象です。
-          </Text>
+        sections={[
+          {
+            content: (
+              <>
+                <Text size="sm" c="dimmed">
+                  テンプレート入力するスタッフを選択してください。
+                  出勤曜日が設定されているスタッフのみが対象です。
+                </Text>
 
-          <Checkbox.Group
-            value={selectedStaffIds}
-            onChange={setSelectedStaffIds}
-          >
-            <Stack gap="xs">
-              {staffList.map((staff) => {
-                const hasTemplate = staff.workingDays && staff.workingDays.length > 0;
-                const timeLabel = staff.workTimeTemplate
-                  ? `${staff.workTimeTemplate.startHour}〜${staff.workTimeTemplate.endHour}`
-                  : '';
-                const daysLabel = staff.workingDays
-                  ? staff.workingDays.map((d) => {
-                      const dayMap: Record<string, string> = {
-                        mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日'
-                      };
-                      return dayMap[d] ?? d;
-                    }).join('・')
-                  : '';
+                <Checkbox.Group
+                  value={selectedStaffIds}
+                  onChange={setSelectedStaffIds}
+                >
+                  <Stack gap="xs">
+                    {staffList.map((staff) => {
+                      const hasTemplate = staff.workingDays && staff.workingDays.length > 0;
+                      const timeLabel = staff.workTimeTemplate
+                        ? `${staff.workTimeTemplate.startHour}〜${staff.workTimeTemplate.endHour}`
+                        : '';
+                      const daysLabel = staff.workingDays
+                        ? staff.workingDays.map((d) => {
+                            const dayMap: Record<string, string> = {
+                              mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日'
+                            };
+                            return dayMap[d] ?? d;
+                          }).join('・')
+                        : '';
 
-                return (
-                  <Checkbox
-                    key={staff.id}
-                    value={staff.id}
-                    disabled={!hasTemplate}
-                    label={
-                      <Group gap="xs">
-                        <Box
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: '50%',
-                            backgroundColor: staff.color,
-                          }}
+                      return (
+                        <Checkbox
+                          key={staff.id}
+                          value={staff.id}
+                          disabled={!hasTemplate}
+                          label={
+                            <Group gap="xs">
+                              <Box
+                                style={{
+                                  width: 10,
+                                  height: 10,
+                                  borderRadius: '50%',
+                                  backgroundColor: staff.color,
+                                }}
+                              />
+                              <Text size="sm" fw={500}>
+                                {staff.name}
+                              </Text>
+                              {hasTemplate ? (
+                                <Text size="xs" c="dimmed">
+                                  ({daysLabel}{timeLabel && ` ${timeLabel}`})
+                                </Text>
+                              ) : (
+                                <Text size="xs" c="red">
+                                  ※曜日未設定
+                                </Text>
+                              )}
+                            </Group>
+                          }
                         />
-                        <Text size="sm" fw={500}>
-                          {staff.name}
-                        </Text>
-                        {hasTemplate ? (
-                          <Text size="xs" c="dimmed">
-                            ({daysLabel}{timeLabel && ` ${timeLabel}`})
-                          </Text>
-                        ) : (
-                          <Text size="xs" c="red">
-                            ※曜日未設定
-                          </Text>
-                        )}
-                      </Group>
-                    }
-                  />
-                );
-              })}
-            </Stack>
-          </Checkbox.Group>
-
-          <Group justify="space-between" mt="md">
-            <Button
-              variant="subtle"
-              size="xs"
-              onClick={() => {
-                const selectableIds = staffList
-                  .filter((s) => s.workingDays && s.workingDays.length > 0)
-                  .map((s) => s.id);
-                setSelectedStaffIds(selectableIds);
-              }}
-            >
-              全選択
-            </Button>
-            <Group gap="xs">
-              <Button
-                variant="subtle"
-                color="gray"
-                onClick={() => {
-                  closeSelectStaff();
-                  setSelectedStaffIds([]);
-                }}
-                leftSection={<IconX size={16} />}
-              >
-                キャンセル
-              </Button>
-              <Button
-                onClick={handleSelectedTemplateInput}
-                loading={operationLoading}
-                variant="filled"
-                color="blue"
-                leftSection={<IconCalendarEvent size={16} />}
-                disabled={selectedStaffIds.length === 0}
-              >
-                入力実行
-              </Button>
-            </Group>
-          </Group>
-        </Stack>
-      </Modal>
+                      );
+                    })}
+                  </Stack>
+                </Checkbox.Group>
+              </>
+            ),
+          },
+          {
+            content: (
+              <Group justify="space-between">
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  onClick={() => {
+                    const selectableIds = staffList
+                      .filter((s) => s.workingDays && s.workingDays.length > 0)
+                      .map((s) => s.id);
+                    setSelectedStaffIds(selectableIds);
+                  }}
+                >
+                  全選択
+                </Button>
+                <Group gap="xs">
+                  <Button
+                    variant="subtle"
+                    color="gray"
+                    onClick={() => {
+                      closeSelectStaff();
+                      setSelectedStaffIds([]);
+                    }}
+                    leftSection={<IconX size={16} />}
+                  >
+                    キャンセル
+                  </Button>
+                  <Button
+                    onClick={handleSelectedTemplateInput}
+                    loading={operationLoading}
+                    variant="filled"
+                    color="blue"
+                    leftSection={<IconCalendarEvent size={16} />}
+                    disabled={selectedStaffIds.length === 0}
+                  >
+                    入力実行
+                  </Button>
+                </Group>
+              </Group>
+            ),
+          },
+        ]}
+      />
 
       {/* メインコンテンツ: レスポンシブレイアウト */}
       {/* モバイル: 左にスタッフバッジ、右にカレンダー、下にテキストシフト */}

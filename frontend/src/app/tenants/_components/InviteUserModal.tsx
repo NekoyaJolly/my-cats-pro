@@ -12,10 +12,9 @@ import {
   CopyButton,
   Button,
   Text,
-  Divider,
 } from '@mantine/core';
 import { IconCheck, IconCopy, IconMail } from '@tabler/icons-react';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 import { ActionButton } from '@/components/ActionButton';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/store';
@@ -156,29 +155,26 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
     return null;
   }
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={handleClose}
-      title="ユーザーを招待"
-      size="md"
-    >
-      {invitationResult ? (
-        // 招待成功後の表示
-        <>
-          <Alert icon={<IconMail size={16} />} title="招待を作成しました" color="green">
+  const sections: ModalSection[] = invitationResult
+    ? [
+        {
+          content: (
+            <Alert icon={<IconMail size={16} />} title="招待を作成しました" color="green">
             <Text size="sm" mb="xs">
               <strong>{invitationResult.email}</strong> を
               <strong>{getRoleLabel(invitationResult.role)}</strong>として招待しました。
             </Text>
             <Text size="sm" c="dimmed">
-              以下の招待URLをコピーして、招待者に共有してください。
+                以下の招待URLをコピーして、招待者に共有してください。
             </Text>
           </Alert>
-
-          <Divider label="招待URL" labelPosition="center" />
-
-          <Stack gap="xs">
+          ),
+        },
+        {
+          label: "招待URL",
+          content: (
+            <>
+              <Stack gap="xs">
             <Text size="sm" fw={500}>招待URL:</Text>
             <Code block style={{ wordBreak: 'break-all' }}>
               {getInvitationUrl(invitationResult.invitationToken)}
@@ -195,24 +191,29 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
                 </Button>
               )}
             </CopyButton>
-          </Stack>
+              </Stack>
 
-          <Text size="xs" c="dimmed">
-            ※ 招待URLは7日間有効です。
-          </Text>
-
-          <Divider />
-
-          <Group justify="flex-end" mt="md">
+              <Text size="xs" c="dimmed">
+                ※ 招待URLは7日間有効です。
+              </Text>
+            </>
+          ),
+        },
+        {
+          content: (
+            <Group justify="flex-end" mt="md">
             <ActionButton action="save" onClick={handleFinish}>
-              閉じる
+                閉じる
             </ActionButton>
           </Group>
-        </>
-      ) : (
-        // 招待フォーム
-        <>
-          <TextInput
+          ),
+        },
+      ]
+    : [
+        {
+          content: (
+            <>
+              <TextInput
             label="メールアドレス"
             placeholder="user@example.com"
             required
@@ -228,21 +229,32 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
             data={ROLE_OPTIONS}
             value={formData.role}
             onChange={(value) => setFormData({ ...formData, role: value || 'USER' })}
-            disabled={loading}
-          />
-
-          <Divider />
-
-          <Group justify="flex-end" mt="md">
+              disabled={loading}
+            />
+            </>
+          ),
+        },
+        {
+          content: (
+            <Group justify="flex-end" mt="md">
             <ActionButton action="cancel" onClick={handleClose} disabled={loading}>
               キャンセル
             </ActionButton>
             <ActionButton action="save" onClick={handleSubmit} loading={loading}>
-              招待を送信
+                招待を送信
             </ActionButton>
           </Group>
-        </>
-      )}
-    </UnifiedModal>
+          ),
+        },
+      ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={handleClose}
+      title="ユーザーを招待"
+      size="md"
+      sections={sections}
+    />
   );
 }

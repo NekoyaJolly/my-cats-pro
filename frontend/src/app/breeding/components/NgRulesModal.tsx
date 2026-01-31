@@ -9,10 +9,9 @@ import {
   Badge,
   Button,
   ActionIcon,
-  Divider,
 } from '@mantine/core';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 import type { NgPairingRule } from '../types';
 
 export interface NgRulesModalProps {
@@ -34,21 +33,17 @@ export function NgRulesModal({
   onOpenNewRuleModal,
   onDeleteRule,
 }: NgRulesModalProps) {
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={onClose}
-      title="交配NG設定"
-      size="xl"
-      centered
-    >
-      <Text size="sm" c="dimmed">
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <Text size="sm" c="dimmed">
         交配を禁止するルールを設定できます。設定したルールに該当する組み合わせを選択すると警告が表示されます。
-      </Text>
-
-      <Divider />
-      
-      <Button
+        </Text>
+      ),
+    },
+    {
+      content: (
+        <Button
         leftSection={<IconPlus size={16} />}
         onClick={onOpenNewRuleModal}
         variant="light"
@@ -56,10 +51,13 @@ export function NgRulesModal({
       >
         新しいルールを追加
       </Button>
-
-      <Divider label="登録済みルール" labelPosition="center" />
-
-      {isLoading ? (
+      ),
+    },
+    {
+      label: "登録済みルール",
+      content: (
+        <>
+          {isLoading ? (
         <Text size="sm" c="dimmed" ta="center">
           読み込み中...
         </Text>
@@ -133,10 +131,23 @@ export function NgRulesModal({
                 </Group>
               </Group>
             </Card>
-          ))}
-        </Stack>
-      )}
-    </UnifiedModal>
+            ))}
+          </Stack>
+        )}
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title="交配NG設定"
+      size="xl"
+      centered
+      sections={sections}
+    />
   );
 }
 

@@ -12,7 +12,6 @@ import {
   Grid,
   ActionIcon,
   Badge,
-  Divider,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import {
@@ -29,7 +28,7 @@ import {
   type BulkWeightRecordItem,
 } from '@/lib/api/hooks/use-weight-records';
 import { GenderBadge } from '@/components/GenderBadge';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 
 interface Kitten {
   id: string;
@@ -177,21 +176,10 @@ export function BulkWeightRecordModal({
     return null;
   }
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={onClose}
-      title={
-        <Group gap="xs">
-          <IconScale size={20} />
-          <Text fw={600}>体重を一括記録</Text>
-        </Group>
-      }
-      size="lg"
-      centered
-    >
-      {/* 母猫ナビゲーション */}
-      <Card padding="sm" bg="gray.0" radius="md">
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <Card padding="sm" bg="gray.0" radius="md">
         <Group justify="space-between" align="center">
           <ActionIcon
             variant="subtle"
@@ -233,10 +221,12 @@ export function BulkWeightRecordModal({
             <IconChevronRight size={20} />
           </ActionIcon>
         </Group>
-      </Card>
-
-      {/* 記録日時 */}
-      <DateTimePicker
+        </Card>
+      ),
+    },
+    {
+      content: (
+        <DateTimePicker
         label="測定日時"
         placeholder="測定日時を選択"
         maxDate={new Date()}
@@ -248,13 +238,13 @@ export function BulkWeightRecordModal({
             setRecordedAt(dateValue);
           }
         }}
-        valueFormat="YYYY/MM/DD HH:mm"
-      />
-
-      <Divider />
-
-      {/* 子猫の体重入力グリッド */}
-      <Grid gutter="sm">
+          valueFormat="YYYY/MM/DD HH:mm"
+        />
+      ),
+    },
+    {
+      content: (
+        <Grid gutter="sm">
         {currentGroup.kittens.map((kitten) => (
           <Grid.Col key={kitten.id} span={{ base: 12, xs: 6 }}>
             <KittenWeightInput
@@ -266,27 +256,46 @@ export function BulkWeightRecordModal({
             />
           </Grid.Col>
         ))}
-      </Grid>
-
-      {/* ボタン */}
-      <Group justify="space-between" mt="md">
-        <Text size="sm" c="dimmed">
-          {filledCount} / {currentGroup.kittens.length} 頭入力済み
-        </Text>
-        <Group>
-          <Button variant="default" onClick={onClose} disabled={isLoading}>
-            閉じる
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            loading={isLoading}
-            disabled={filledCount === 0}
-          >
-            保存 ({filledCount}件)
-          </Button>
+        </Grid>
+      ),
+    },
+    {
+      content: (
+        <Group justify="space-between" mt="md">
+          <Text size="sm" c="dimmed">
+            {filledCount} / {currentGroup.kittens.length} 頭入力済み
+          </Text>
+          <Group>
+            <Button variant="default" onClick={onClose} disabled={isLoading}>
+              閉じる
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              loading={isLoading}
+              disabled={filledCount === 0}
+            >
+              保存 ({filledCount}件)
+            </Button>
+          </Group>
         </Group>
-      </Group>
-    </UnifiedModal>
+      ),
+    },
+  ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title={
+        <Group gap="xs">
+          <IconScale size={20} />
+          <Text fw={600}>体重を一括記録</Text>
+        </Group>
+      }
+      size="lg"
+      centered
+      sections={sections}
+    />
   );
 }
 

@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { UseFormReturnType } from '@mantine/form';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 
 import type { AutomationRuleFormValues, RuleType, ActionType } from '../types';
 import {
@@ -66,18 +66,13 @@ export function AutomationRuleModal({
     }
   };
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={onClose}
-      title={isEditing ? '自動化ルールの編集' : '自動化ルールの作成'}
-      size="lg"
-      addContentPadding={false}
-    >
-      <Box component="form" onSubmit={onSubmit}>
-        <Stack gap="md" p="md">
-          {/* ルールタイプ選択 */}
-          <Radio.Group
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <Box component="form" onSubmit={onSubmit}>
+          <Stack gap="md" p="md">
+            {/* ルールタイプ選択 */}
+            <Radio.Group
             label="いつ実行するか"
             value={ruleType}
             onChange={(value) => handleRuleTypeChange(value as RuleType)}
@@ -254,18 +249,30 @@ export function AutomationRuleModal({
                 {form.values.tagIds.length > 0 && ` (${form.values.tagIds.length}件)`}
               </Text>
             </Stack>
-          </Card>
+            </Card>
 
-          <Group justify="flex-end" mt="md">
-            <Button variant="subtle" onClick={onClose}>
-              キャンセル
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {isEditing ? '更新' : '作成'}
-            </Button>
-          </Group>
-        </Stack>
-      </Box>
-    </UnifiedModal>
+            <Group justify="flex-end" mt="md">
+              <Button variant="subtle" onClick={onClose}>
+                キャンセル
+              </Button>
+              <Button type="submit" loading={isSubmitting}>
+                {isEditing ? '更新' : '作成'}
+              </Button>
+            </Group>
+          </Stack>
+        </Box>
+      ),
+    },
+  ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title={isEditing ? '自動化ルールの編集' : '自動化ルールの作成'}
+      size="lg"
+      addContentPadding={false}
+      sections={sections}
+    />
   );
 }

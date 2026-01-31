@@ -846,288 +846,314 @@ export default function CarePage() {
         )}
       </UnifiedModal>
 
-      <UnifiedModal opened={createModalOpened} onClose={() => {
-        closeCreateModal();
-        resetCreateForm();
-      }} title="ケア予定を追加" size="lg">
-          <TextInput
-            label="ケア名"
-            placeholder="例: 年次健康診断"
-            value={createForm.name}
-            onChange={(event) =>
-              setCreateForm((prev) => ({
-                ...prev,
-                name: event.target.value,
-              }))
-            }
-            required
-          />
-
-          <RadioGroup
-            label="カテゴリ"
-            value={createForm.category}
-            onChange={(value) => setCreateForm((prev) => ({ ...prev, category: value as 'Male' | 'Female' | 'Kitten' | 'Adult' }))}
-          >
-            <Group mt="xs">
-              <Radio value="Male" label="Male" />
-              <Radio value="Female" label="Female" />
-              <Radio value="Kitten" label="Kitten" />
-              <Radio value="Adult" label="Adult" />
-            </Group>
-          </RadioGroup>
-
-          <div>
-            <Group grow align="flex-end" gap="xs">
-              <Select
-                label="タグ"
-                placeholder="タグを選択"
-                data={allTags || []}
-                value={selectedTag}
-                onChange={(value) => setSelectedTag(value)}
-              />
-              <Button
-                leftSection={<IconPlus size={16} />}
-                onClick={() => {
-                  if (selectedTag && !(createForm.tags || []).includes(selectedTag)) {
+      <UnifiedModal 
+        opened={createModalOpened} 
+        onClose={() => {
+          closeCreateModal();
+          resetCreateForm();
+        }} 
+        title="ケア予定を追加" 
+        size="lg"
+        sections={[
+          {
+            label: '基本情報',
+            content: (
+              <>
+                <TextInput
+                  label="ケア名"
+                  placeholder="例: 年次健康診断"
+                  value={createForm.name}
+                  onChange={(event) =>
                     setCreateForm((prev) => ({
                       ...prev,
-                      tags: [...(prev.tags || []), selectedTag],
-                    }));
-                    setSelectedTag(null);
+                      name: event.target.value,
+                    }))
                   }
-                }}
-                disabled={!selectedTag}
-                w="auto"
-              >
-                追加
-              </Button>
-            </Group>
-            {(createForm.tags || []).length > 0 && (
-              <Group mt="xs" gap="xs">
-                {(createForm.tags || []).map((tagId) => {
-                  const tag = allTags.find((t) => t.value === tagId);
-                  return (
-                    <Badge
-                      key={tagId}
-                      variant="light"
-                      rightSection={
-                        <ActionIcon
-                          size="xs"
-                          variant="transparent"
-                          onClick={() =>
-                            setCreateForm((prev) => ({
-                              ...prev,
-                              tags: (prev.tags || []).filter((id) => id !== tagId),
-                            }))
-                          }
-                        >
-                          <IconX size={12} />
-                        </ActionIcon>
-                      }
-                    >
-                      {tag?.label || tagId}
-                    </Badge>
-                  );
-                })}
-              </Group>
-            )}
-          </div>
+                  required
+                />
 
-          <Group justify="space-between" align="center">
-            <Text size="sm" fw={500}>対象猫</Text>
-            <Text size="sm" c="dimmed">{filteredCats.length}頭</Text>
-          </Group>
+                <RadioGroup
+                  label="カテゴリ"
+                  value={createForm.category}
+                  onChange={(value) => setCreateForm((prev) => ({ ...prev, category: value as 'Male' | 'Female' | 'Kitten' | 'Adult' }))}
+                >
+                  <Group mt="xs">
+                    <Radio value="Male" label="Male" />
+                    <Radio value="Female" label="Female" />
+                    <Radio value="Kitten" label="Kitten" />
+                    <Radio value="Adult" label="Adult" />
+                  </Group>
+                </RadioGroup>
 
-          <Accordion>
-            <Accordion.Item value="select-cats">
-              <Accordion.Control>更に選択する</Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap="xs">
-                  {filteredCats.length === 0 ? (
-                    <Text size="sm" c="dimmed">絞り込まれた猫がありません</Text>
-                  ) : (
-                    filteredCats.map((cat) => (
-                      <Checkbox
-                        key={cat.id}
-                        label={`${cat.name} (${cat.gender})`}
-                        checked={createForm.selectedCatIds.includes(cat.id)}
-                        onChange={(event) => {
-                          const checked = event.currentTarget.checked;
+                <div>
+                  <Group grow align="flex-end" gap="xs">
+                    <Select
+                      label="タグ"
+                      placeholder="タグを選択"
+                      data={allTags || []}
+                      value={selectedTag}
+                      onChange={(value) => setSelectedTag(value)}
+                    />
+                    <Button
+                      leftSection={<IconPlus size={16} />}
+                      onClick={() => {
+                        if (selectedTag && !(createForm.tags || []).includes(selectedTag)) {
                           setCreateForm((prev) => ({
                             ...prev,
-                            selectedCatIds: checked
-                              ? [...prev.selectedCatIds, cat.id]
-                              : prev.selectedCatIds.filter((id) => id !== cat.id),
+                            tags: [...(prev.tags || []), selectedTag],
                           }));
-                        }}
-                      />
-                    ))
+                          setSelectedTag(null);
+                        }
+                      }}
+                      disabled={!selectedTag}
+                      w="auto"
+                    >
+                      追加
+                    </Button>
+                  </Group>
+                  {(createForm.tags || []).length > 0 && (
+                    <Group mt="xs" gap="xs">
+                      {(createForm.tags || []).map((tagId) => {
+                        const tag = allTags.find((t) => t.value === tagId);
+                        return (
+                          <Badge
+                            key={tagId}
+                            variant="light"
+                            rightSection={
+                              <ActionIcon
+                                size="xs"
+                                variant="transparent"
+                                onClick={() =>
+                                  setCreateForm((prev) => ({
+                                    ...prev,
+                                    tags: (prev.tags || []).filter((id) => id !== tagId),
+                                  }))
+                                }
+                              >
+                                <IconX size={12} />
+                              </ActionIcon>
+                            }
+                          >
+                            {tag?.label || tagId}
+                          </Badge>
+                        );
+                      })}
+                    </Group>
                   )}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
+                </div>
+              </>
+            ),
+          },
+          {
+            label: '対象猫',
+            content: (
+              <>
+                <Group justify="space-between" align="center">
+                  <Text size="sm" fw={500}>対象猫</Text>
+                  <Text size="sm" c="dimmed">{filteredCats.length}頭</Text>
+                </Group>
 
-          <Select
-            label="スケジュールタイプ"
-            placeholder="スケジュールタイプを選択"
-            data={[
-              { value: 'daily', label: '毎日' },
-              { value: 'weekly', label: '毎週○曜日' },
-              { value: 'monthly', label: '毎月○日' },
-              { value: 'period', label: '○日〜○日（期間指定）' },
-              { value: 'birthday', label: '生後○日目' },
-              { value: 'single', label: '単日' },
-            ]}
-            value={createForm.schedule?.type || null}
-            onChange={(value) => setCreateForm((prev) => ({
-              ...prev,
-              schedule: value ? { type: value as 'daily' | 'weekly' | 'monthly' | 'period' | 'birthday' | 'single' } : null
-            }))}
-          />
+                <Accordion>
+                  <Accordion.Item value="select-cats">
+                    <Accordion.Control>更に選択する</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="xs">
+                        {filteredCats.length === 0 ? (
+                          <Text size="sm" c="dimmed">絞り込まれた猫がありません</Text>
+                        ) : (
+                          filteredCats.map((cat) => (
+                            <Checkbox
+                              key={cat.id}
+                              label={`${cat.name} (${cat.gender})`}
+                              checked={createForm.selectedCatIds.includes(cat.id)}
+                              onChange={(event) => {
+                                const checked = event.currentTarget.checked;
+                                setCreateForm((prev) => ({
+                                  ...prev,
+                                  selectedCatIds: checked
+                                    ? [...prev.selectedCatIds, cat.id]
+                                    : prev.selectedCatIds.filter((id) => id !== cat.id),
+                                }));
+                              }}
+                            />
+                          ))
+                        )}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              </>
+            ),
+          },
+          {
+            label: 'スケジュール設定',
+            content: (
+              <>
+                <Select
+                  label="スケジュールタイプ"
+                  placeholder="スケジュールタイプを選択"
+                  data={[
+                    { value: 'daily', label: '毎日' },
+                    { value: 'weekly', label: '毎週○曜日' },
+                    { value: 'monthly', label: '毎月○日' },
+                    { value: 'period', label: '○日〜○日（期間指定）' },
+                    { value: 'birthday', label: '生後○日目' },
+                    { value: 'single', label: '単日' },
+                  ]}
+                  value={createForm.schedule?.type || null}
+                  onChange={(value) => setCreateForm((prev) => ({
+                    ...prev,
+                    schedule: value ? { type: value as 'daily' | 'weekly' | 'monthly' | 'period' | 'birthday' | 'single' } : null
+                  }))}
+                />
 
-          {createForm.schedule?.type === 'weekly' && (
-            <Select
-              label="曜日"
-              placeholder="曜日を選択"
-              data={[
-                { value: '0', label: '日曜日' },
-                { value: '1', label: '月曜日' },
-                { value: '2', label: '火曜日' },
-                { value: '3', label: '水曜日' },
-                { value: '4', label: '木曜日' },
-                { value: '5', label: '金曜日' },
-                { value: '6', label: '土曜日' },
-              ]}
-              value={createForm.schedule.daysOfWeek?.[0]?.toString() || null}
-              onChange={(value) => setCreateForm((prev) => {
-                if (!prev.schedule) {
-                  return prev;
-                }
-                return {
-                  ...prev,
-                  schedule: {
-                    ...prev.schedule,
-                    daysOfWeek: value ? [parseInt(value, 10)] : [],
-                  },
-                };
-              })}
-            />
-          )}
+                {createForm.schedule?.type === 'weekly' && (
+                  <Select
+                    label="曜日"
+                    placeholder="曜日を選択"
+                    data={[
+                      { value: '0', label: '日曜日' },
+                      { value: '1', label: '月曜日' },
+                      { value: '2', label: '火曜日' },
+                      { value: '3', label: '水曜日' },
+                      { value: '4', label: '木曜日' },
+                      { value: '5', label: '金曜日' },
+                      { value: '6', label: '土曜日' },
+                    ]}
+                    value={createForm.schedule.daysOfWeek?.[0]?.toString() || null}
+                    onChange={(value) => setCreateForm((prev) => {
+                      if (!prev.schedule) {
+                        return prev;
+                      }
+                      return {
+                        ...prev,
+                        schedule: {
+                          ...prev.schedule,
+                          daysOfWeek: value ? [parseInt(value, 10)] : [],
+                        },
+                      };
+                    })}
+                  />
+                )}
 
-          {createForm.schedule?.type === 'monthly' && (
-            <Select
-              label="日付"
-              placeholder="日付を選択"
-              data={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: `${i + 1}日` }))}
-              value={createForm.schedule.dayOfMonth?.toString() || null}
-              onChange={(value) => setCreateForm((prev) => {
-                if (!prev.schedule) {
-                  return prev;
-                }
-                return {
-                  ...prev,
-                  schedule: {
-                    ...prev.schedule,
-                    dayOfMonth: value ? parseInt(value, 10) : undefined,
-                  },
-                };
-              })}
-            />
-          )}
+                {createForm.schedule?.type === 'monthly' && (
+                  <Select
+                    label="日付"
+                    placeholder="日付を選択"
+                    data={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: `${i + 1}日` }))}
+                    value={createForm.schedule.dayOfMonth?.toString() || null}
+                    onChange={(value) => setCreateForm((prev) => {
+                      if (!prev.schedule) {
+                        return prev;
+                      }
+                      return {
+                        ...prev,
+                        schedule: {
+                          ...prev.schedule,
+                          dayOfMonth: value ? parseInt(value, 10) : undefined,
+                        },
+                      };
+                    })}
+                  />
+                )}
 
-          {createForm.schedule?.type === 'period' && (
-            <Group grow>
-              <DatePickerInput
-                label="開始日"
-                value={createForm.schedule.startDate ? new Date(createForm.schedule.startDate) : null}
-                onChange={(value) => setCreateForm((prev) => ({
-                  ...prev,
-                  schedule: prev.schedule ? {
-                    ...prev.schedule,
-                    startDate: value
-                  } : null
-                }))}
-              />
-              <DatePickerInput
-                label="終了日"
-                value={createForm.schedule.endDate ? new Date(createForm.schedule.endDate) : null}
-                onChange={(value) => setCreateForm((prev) => ({
-                  ...prev,
-                  schedule: prev.schedule ? {
-                    ...prev.schedule,
-                    endDate: value
-                  } : null
-                }))}
-              />
-            </Group>
-          )}
+                {createForm.schedule?.type === 'period' && (
+                  <Group grow>
+                    <DatePickerInput
+                      label="開始日"
+                      value={createForm.schedule.startDate ? new Date(createForm.schedule.startDate) : null}
+                      onChange={(value) => setCreateForm((prev) => ({
+                        ...prev,
+                        schedule: prev.schedule ? {
+                          ...prev.schedule,
+                          startDate: value
+                        } : null
+                      }))}
+                    />
+                    <DatePickerInput
+                      label="終了日"
+                      value={createForm.schedule.endDate ? new Date(createForm.schedule.endDate) : null}
+                      onChange={(value) => setCreateForm((prev) => ({
+                        ...prev,
+                        schedule: prev.schedule ? {
+                          ...prev.schedule,
+                          endDate: value
+                        } : null
+                      }))}
+                    />
+                  </Group>
+                )}
 
-          {createForm.schedule?.type === 'birthday' && (
-            <TextInput
-              label="生後日数"
-              placeholder="例: 21"
-              type="number"
-              value={createForm.schedule.daysAfterBirth?.toString() || ''}
-              onChange={(event) => setCreateForm((prev) => {
-                if (!prev.schedule) {
-                  return prev;
-                }
-                const value = parseInt(event.target.value, 10);
-                return {
-                  ...prev,
-                  schedule: {
-                    ...prev.schedule,
-                    daysAfterBirth: Number.isNaN(value) ? undefined : value,
-                  },
-                };
-              })}
-            />
-          )}
+                {createForm.schedule?.type === 'birthday' && (
+                  <TextInput
+                    label="生後日数"
+                    placeholder="例: 21"
+                    type="number"
+                    value={createForm.schedule.daysAfterBirth?.toString() || ''}
+                    onChange={(event) => setCreateForm((prev) => {
+                      if (!prev.schedule) {
+                        return prev;
+                      }
+                      const value = parseInt(event.target.value, 10);
+                      return {
+                        ...prev,
+                        schedule: {
+                          ...prev.schedule,
+                          daysAfterBirth: Number.isNaN(value) ? undefined : value,
+                        },
+                      };
+                    })}
+                  />
+                )}
 
-          {createForm.schedule?.type === 'single' && (
-            <DatePickerInput
-              label="日付"
-              value={createForm.schedule.startDate ? new Date(createForm.schedule.startDate) : null}
-              onChange={(value) => setCreateForm((prev) => ({
-                ...prev,
-                schedule: prev.schedule ? {
-                  ...prev.schedule,
-                  startDate: value
-                } : null
-              }))}
-            />
-          )}
+                {createForm.schedule?.type === 'single' && (
+                  <DatePickerInput
+                    label="日付"
+                    value={createForm.schedule.startDate ? new Date(createForm.schedule.startDate) : null}
+                    onChange={(value) => setCreateForm((prev) => ({
+                      ...prev,
+                      schedule: prev.schedule ? {
+                        ...prev.schedule,
+                        startDate: value
+                      } : null
+                    }))}
+                  />
+                )}
 
-          <Textarea
-            label="備考"
-            placeholder="ケアの詳細やメモを入力（任意）"
-            value={createForm.description}
-            onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
-            minRows={3}
-            autosize
-          />
+                <Textarea
+                  label="備考"
+                  placeholder="ケアの詳細やメモを入力（任意）"
+                  value={createForm.description}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
+                  minRows={3}
+                  autosize
+                />
 
-          {createError && (
-            <Alert color="red" icon={<IconAlertCircle size={16} />}>
-              {createError}
-            </Alert>
-          )}
-
-          <Divider />
-
-          <Group justify="flex-end">
-            <ActionButton action="cancel" onClick={() => {
-              closeCreateModal();
-              resetCreateForm();
-            }}>
-              キャンセル
-            </ActionButton>
-            <ActionButton action="save" onClick={handleCreateSubmit} loading={addScheduleMutation.isPending}>
-              登録する
-            </ActionButton>
-          </Group>
-      </UnifiedModal>
+                {createError && (
+                  <Alert color="red" icon={<IconAlertCircle size={16} />}>
+                    {createError}
+                  </Alert>
+                )}
+              </>
+            ),
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <ActionButton action="cancel" onClick={() => {
+                  closeCreateModal();
+                  resetCreateForm();
+                }}>
+                  キャンセル
+                </ActionButton>
+                <ActionButton action="save" onClick={handleCreateSubmit} loading={addScheduleMutation.isPending}>
+                  登録する
+                </ActionButton>
+              </Group>
+            ),
+          },
+        ]}
+      />
 
       {/* カードを追加モーダル */}
       <UnifiedModal
@@ -1161,88 +1187,106 @@ export default function CarePage() {
         </Group>
       </UnifiedModal>
 
-      <UnifiedModal opened={completeModalOpened} onClose={() => {
-        closeCompleteModal();
-        setTargetSchedule(null);
-  }} title={targetSchedule ? `${targetSchedule.cat?.name ?? '未設定'} - ${targetSchedule.name || targetSchedule.title} を完了` : 'ケア完了処理'} size="lg">
-        {targetSchedule ? (
-          <>
-            <Card withBorder shadow="xs" radius="md">
-              <Stack gap={4}>
-                <Group justify="space-between">
-                  <Text size="sm" c="dimmed">
-                    予定日: {formatDate(targetSchedule.scheduleDate)}
-                  </Text>
-                </Group>
-                <Stack gap={2}>
-                  <Text fw={600}>{targetSchedule.name || targetSchedule.title}</Text>
-                  <Text size="sm">{targetSchedule.description ?? 'メモは登録されていません'}</Text>
+      <UnifiedModal 
+        opened={completeModalOpened} 
+        onClose={() => {
+          closeCompleteModal();
+          setTargetSchedule(null);
+        }} 
+        title={targetSchedule ? `${targetSchedule.cat?.name ?? '未設定'} - ${targetSchedule.name || targetSchedule.title} を完了` : 'ケア完了処理'} 
+        size="lg"
+        sections={targetSchedule ? [
+          {
+            label: 'ケア予定詳細',
+            content: (
+              <Card withBorder shadow="xs" radius="md">
+                <Stack gap={4}>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">
+                      予定日: {formatDate(targetSchedule.scheduleDate)}
+                    </Text>
+                  </Group>
+                  <Stack gap={2}>
+                    <Text fw={600}>{targetSchedule.name || targetSchedule.title}</Text>
+                    <Text size="sm">{targetSchedule.description ?? 'メモは登録されていません'}</Text>
+                  </Stack>
                 </Stack>
-              </Stack>
-            </Card>
+              </Card>
+            ),
+          },
+          {
+            label: '完了情報',
+            content: (
+              <>
+                <DatePickerInput
+                  label="完了日"
+                  placeholder="完了日を選択"
+                  value={completeForm.completedDate}
+                  onChange={(value) =>
+                    setCompleteForm((prev) => ({
+                      ...prev,
+                      completedDate: value ? new Date(value) : null,
+                    }))
+                  }
+                  required
+                />
 
-            <DatePickerInput
-              label="完了日"
-              placeholder="完了日を選択"
-              value={completeForm.completedDate}
-              onChange={(value) =>
-                setCompleteForm((prev) => ({
-                  ...prev,
-                  completedDate: value ? new Date(value) : null,
-                }))
-              }
-              required
-            />
+                <DatePickerInput
+                  label="次回予定日 (任意)"
+                  placeholder="次回ケアを予定している場合は選択"
+                  value={completeForm.nextScheduledDate}
+                  onChange={(value) =>
+                    setCompleteForm((prev) => ({
+                      ...prev,
+                      nextScheduledDate: value ? new Date(value) : null,
+                    }))
+                  }
+                  minDate={completeForm.completedDate ?? undefined}
+                />
 
-            <DatePickerInput
-              label="次回予定日 (任意)"
-              placeholder="次回ケアを予定している場合は選択"
-              value={completeForm.nextScheduledDate}
-              onChange={(value) =>
-                setCompleteForm((prev) => ({
-                  ...prev,
-                  nextScheduledDate: value ? new Date(value) : null,
-                }))
-              }
-              minDate={completeForm.completedDate ?? undefined}
-            />
-
-            <Textarea
-              label="メモ"
-              placeholder="ケア内容の詳細、体調、次回の注意点など"
-              value={completeForm.notes}
-              onChange={(event) => setCompleteForm((prev) => ({ ...prev, notes: event.target.value }))}
-              autosize
-              minRows={3}
-            />
-
-            <Divider />
-
-            <Group justify="flex-end">
-              <ActionButton
-                action="cancel"
-                onClick={() => {
-                  closeCompleteModal();
-                  setTargetSchedule(null);
-                }}
-              >
-                キャンセル
-              </ActionButton>
-              <ActionButton
-                action="confirm"
-                onClick={handleCompleteSubmit}
-                loading={completeScheduleMutation.isPending}
-              >
-                完了として記録
-              </ActionButton>
-            </Group>
-          </>
-        ) : (
-          <Text size="sm" c="dimmed">
-            対象のケア予定が見つかりませんでした。
-          </Text>
-        )}
-      </UnifiedModal>
+                <Textarea
+                  label="メモ"
+                  placeholder="ケア内容の詳細、体調、次回の注意点など"
+                  value={completeForm.notes}
+                  onChange={(event) => setCompleteForm((prev) => ({ ...prev, notes: event.target.value }))}
+                  autosize
+                  minRows={3}
+                />
+              </>
+            ),
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <ActionButton
+                  action="cancel"
+                  onClick={() => {
+                    closeCompleteModal();
+                    setTargetSchedule(null);
+                  }}
+                >
+                  キャンセル
+                </ActionButton>
+                <ActionButton
+                  action="confirm"
+                  onClick={handleCompleteSubmit}
+                  loading={completeScheduleMutation.isPending}
+                >
+                  完了として記録
+                </ActionButton>
+              </Group>
+            ),
+          },
+        ] : [
+          {
+            content: (
+              <Text size="sm" c="dimmed">
+                対象のケア予定が見つかりませんでした。
+              </Text>
+            ),
+          },
+        ]}
+      />
 
       {/* 編集モーダル */}
       <UnifiedModal
