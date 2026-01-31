@@ -4,7 +4,13 @@ import { UnifiedModal, type ModalSection } from '../UnifiedModal';
 
 // Mantineコンポーネントのモック
 jest.mock('@mantine/core', () => ({
-  Modal: ({ children, opened, title, ...props }: { children: React.ReactNode; opened: boolean; title?: string }) => (
+  Modal: ({ children, opened, title, overlayProps: _overlayProps, styles: _styles, ...props }: { 
+    children: React.ReactNode; 
+    opened: boolean; 
+    title?: string;
+    overlayProps?: unknown;
+    styles?: unknown;
+  }) => (
     opened ? <div data-testid="modal" {...props}><h1>{title}</h1>{children}</div> : null
   ),
   Stack: ({ children, gap }: { children: React.ReactNode; gap?: string }) => (

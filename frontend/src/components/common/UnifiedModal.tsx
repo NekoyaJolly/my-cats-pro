@@ -72,9 +72,13 @@ export function UnifiedModal({
               mb="md"
             />
           )}
-          <Stack gap="md">
-            {section.content}
-          </Stack>
+          {addContentPadding ? (
+            <Stack gap="md">
+              {section.content}
+            </Stack>
+          ) : (
+            section.content
+          )}
         </div>
       ));
 
@@ -96,9 +100,9 @@ export function UnifiedModal({
     <Modal
       {...modalProps}
       overlayProps={{
+        ...modalProps.overlayProps,
         backgroundOpacity: 0.55,
         blur: 3,
-        ...modalProps.overlayProps,
       }}
       styles={{
         content: {
