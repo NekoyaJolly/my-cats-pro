@@ -38,9 +38,6 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.49.0
         version: 8.49.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      baseline-browser-mapping:
-        specifier: 2.9.19
-        version: 2.9.19
       cross-env:
         specifier: ^10.0.0
         version: 10.1.0
