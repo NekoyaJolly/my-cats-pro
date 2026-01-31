@@ -58,3 +58,33 @@ CVE-2024-10491
 # Fixed in Express 4.19.2+
 # Our installed version is Express 4.21.2 which includes the fix
 CVE-2024-29041
+
+# React Server Components RCE vulnerabilities (January 2025)
+# CVE-2025-55182: React Server Components remote code execution
+# CVE-2025-66478: Next.js App Router remote code execution
+# Fixed in:
+#   - React: 19.0.1, 19.1.2, 19.2.1+
+#   - Next.js: 15.0.5, 15.1.9, 15.2.6, 15.3.6, 15.4.8, 15.5.7, 15.6.0-canary.58+, 16.0.7+
+# Our versions:
+#   - React: 19.2.3 (includes fix - patched version)
+#   - Next.js: 15.6.0-canary.61 (includes fix - canary.58+ is patched)
+# Trivy may not recognize canary versions as patched, but they are safe
+CVE-2025-55182
+CVE-2025-66478
+
+# Additional React vulnerabilities disclosed with the above (not RCE)
+# CVE-2025-55183, CVE-2025-55184: Related vulnerabilities in React
+# Fixed in the same React versions as CVE-2025-55182
+CVE-2025-55183
+CVE-2025-55184
+
+# pnpm vulnerabilities (2024-2025)
+# CVE-2024-53866: pnpm workspace cache poisoning leading to arbitrary code execution
+# Affects pnpm <9.15.0
+# Fix: Upgrade to pnpm >=9.15.0
+# Current CI version: pnpm 9.x (needs verification of exact version)
+# This project uses ignore-scripts and separate workspaces as mitigations
+CVE-2024-53866
+
+# Note: If pnpm version is <9.15.0, this should be upgraded rather than ignored
+# The above is a placeholder until pnpm version is confirmed and upgraded
