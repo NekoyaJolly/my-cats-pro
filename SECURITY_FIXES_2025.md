@@ -15,7 +15,7 @@
 - CVE-2025-55184 (React関連)
 
 **脆弱性の詳細:**
-- React Server Components (RSC) のプロトコルにおける安全でないデシリアライゼーションの問題
+- React Server Components (RSC) のプロトコルにおける安全でないデシリアリゼーションの問題
 - 認証なしでリモートコード実行が可能
 - 2025年1月に公開され、即座に大規模な攻撃が観測された
 
@@ -29,7 +29,7 @@
 - **状態: ✅ パッチ適用済み**
 
 **注意事項:**
-Trivyの脆弱性データベースがcanaryバージョンを正しく認識しない可能性があるため、`.trivyignore`に追加して誤検知を防止しています。
+Trivyの脆弱性データベースがcanaryバージョンを正しく認識しない可能性があるため、`.trivyignore.yaml`に追加して誤検知を防止しています。
 
 ### 2. pnpm キャッシュポイズニング (CVSS 9.8 - Critical)
 
@@ -48,9 +48,9 @@ Trivyの脆弱性データベースがcanaryバージョンを正しく認識し
 - CI/CDワークフローのPNPM_VERSIONを"9"から"9.15.0"に明示的に指定
 - **状態: ✅ 修正完了**
 
-## 既に対応済みの脆弱性（.trivyignoreに記載）
+## 既に対応済みの脆弱性（.trivyignore.yamlに記載）
 
-以下の脆弱性は、既に修正済みのバージョンを使用しているため、`.trivyignore`で除外しています:
+以下の脆弱性は、既に修正済みのバージョンを使用しているため、`.trivyignore.yaml`で除外しています:
 
 ### Express関連
 - CVE-2024-10491: Express 3.x Link header injection（Express 4.21.2使用中）
@@ -81,11 +81,11 @@ trivy fs --severity CRITICAL,HIGH --quiet --exit-code 1 .
 
 **変更後:**
 ```bash
-trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore --quiet --exit-code 1 .
+trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore.yaml --quiet --exit-code 1 .
 ```
 
 **改善点:**
-1. `--ignorefile .trivyignore`を明示的に指定（自動検出に依存しない）
+1. `--ignorefile .trivyignore.yaml`を明示的に指定（Trivy 2025年版では.yaml拡張子が必須）
 2. `--scanners vuln`でスキャン対象を脆弱性のみに限定（シークレットは別ステップで既にスキャン済み）
 3. エラー時の詳細レポート出力を追加
 
@@ -125,7 +125,9 @@ trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore --qu
 - React/Next.js RCE脆弱性の調査と対応（CVE-2025-55182, CVE-2025-66478, etc）
 - pnpm CVE-2024-53866への対応（9.15.0へのアップグレード）
 - Trivyスキャン設定の最適化
-- `.trivyignore`ファイルの更新と整理
+- `.trivyignore`を`.trivyignore.yaml`にリネーム（Trivy 2025年版の要件）
+- `.trivyignore.yaml`ファイルの更新と整理
+- 誤字修正: "デシリアライゼーション" → "デシリアリゼーション"
 
 ---
 
