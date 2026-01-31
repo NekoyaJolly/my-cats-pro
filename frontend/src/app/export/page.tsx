@@ -6,8 +6,6 @@ import {
   Container,
   Card,
   Stack,
-  Title,
-  Text,
   Select,
   Button,
   Group,
@@ -140,7 +138,13 @@ export default function ExportPage() {
               description="指定した日付以降のデータをエクスポート"
               placeholder="日付を選択"
               value={startDate}
-              onChange={setStartDate}
+              onChange={(value) => {
+                if (typeof value === 'string') {
+                  setStartDate(new Date(value));
+                } else {
+                  setStartDate(value);
+                }
+              }}
               clearable
             />
 
@@ -149,7 +153,13 @@ export default function ExportPage() {
               description="指定した日付以前のデータをエクスポート"
               placeholder="日付を選択"
               value={endDate}
-              onChange={setEndDate}
+              onChange={(value) => {
+                if (typeof value === 'string') {
+                  setEndDate(new Date(value));
+                } else {
+                  setEndDate(value);
+                }
+              }}
               clearable
             />
 
