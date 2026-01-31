@@ -111,7 +111,7 @@ describe('Export API (e2e)', () => {
     });
 
     it('should reject invalid data type', async () => {
-      const res = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/api/v1/export')
         .set('Authorization', `Bearer ${authToken}`)
         .send({

@@ -1,13 +1,20 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+
 import { PrismaService } from '../prisma/prisma.service';
-import { ExportDataType, ExportFormat, ExportRequestDto } from './dto/export-request.dto';
+
+import { ExportDataType, ExportRequestDto } from './dto/export-request.dto';
+
+interface ExportResult {
+  [key: string]: string | number | boolean | null;
+}
 
 @Injectable()
 export class ExportService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async exportData(dto: ExportRequestDto, userId: string): Promise<{ data: any[]; filename: string }> {
-    let data: any[] = [];
+  async exportData(dto: ExportRequestDto, userId: string): Promise<{ data: ExportResult[]; filename: string }> {
+    let data: ExportResult[] = [];
     let filename = '';
 
     switch (dto.dataType) {
@@ -16,19 +23,19 @@ export class ExportService {
         filename = `cats_export_${new Date().toISOString().split('T')[0]}`;
         break;
       case ExportDataType.PEDIGREES:
-        data = await this.exportPedigrees(dto, userId);
+        data = await this.exportPedigrees(dto);
         filename = `pedigrees_export_${new Date().toISOString().split('T')[0]}`;
         break;
       case ExportDataType.MEDICAL_RECORDS:
-        data = await this.exportMedicalRecords(dto, userId);
+        data = await this.exportMedicalRecords();
         filename = `medical_records_export_${new Date().toISOString().split('T')[0]}`;
         break;
       case ExportDataType.CARE_SCHEDULES:
-        data = await this.exportCareSchedules(dto, userId);
+        data = await this.exportCareSchedules(dto);
         filename = `care_schedules_export_${new Date().toISOString().split('T')[0]}`;
         break;
       case ExportDataType.TAGS:
-        data = await this.exportTags(dto, userId);
+        data = await this.exportTags();
         filename = `tags_export_${new Date().toISOString().split('T')[0]}`;
         break;
       default:
@@ -38,26 +45,28 @@ export class ExportService {
     return { data, filename: `${filename}.${dto.format}` };
   }
 
-  private async exportCats(dto: ExportRequestDto, userId: string): Promise<any[]> {
-    const where: any = { ownerId: userId };
+  private async exportCats(dto: ExportRequestDto, _userId: string): Promise<ExportResult[]> {
+    const where: Prisma.CatWhereInput = {};
     
     if (dto.ids && dto.ids.length > 0) {
       where.id = { in: dto.ids };
     }
 
-    if (dto.startDate) {
-      where.createdAt = { ...where.createdAt, gte: new Date(dto.startDate) };
-    }
-
-    if (dto.endDate) {
-      where.createdAt = { ...where.createdAt, lte: new Date(dto.endDate) };
+    if (dto.startDate || dto.endDate) {
+      where.createdAt = {};
+      if (dto.startDate) {
+        where.createdAt.gte = new Date(dto.startDate);
+      }
+      if (dto.endDate) {
+        where.createdAt.lte = new Date(dto.endDate);
+      }
     }
 
     const cats = await this.prisma.cat.findMany({
       where,
       include: {
         breed: true,
-        color: true,
+        coatColor: true,
         father: true,
         mother: true,
       },
@@ -67,22 +76,22 @@ export class ExportService {
     return cats.map(cat => ({
       id: cat.id,
       name: cat.name,
-      registrationNumber: cat.registrationNumber,
+      registrationNumber: cat.registrationNumber || '',
       gender: cat.gender,
       birthDate: cat.birthDate?.toISOString().split('T')[0] || '',
       breed: cat.breed?.name || '',
-      color: cat.color?.name || '',
+      color: cat.coatColor?.name || '',
       microchipNumber: cat.microchipNumber || '',
       fatherName: cat.father?.name || '',
       motherName: cat.mother?.name || '',
-      notes: cat.notes || '',
+      notes: cat.description || '',
       createdAt: cat.createdAt.toISOString(),
       updatedAt: cat.updatedAt.toISOString(),
     }));
   }
 
-  private async exportPedigrees(dto: ExportRequestDto, userId: string): Promise<any[]> {
-    const where: any = {};
+  private async exportPedigrees(dto: ExportRequestDto): Promise<ExportResult[]> {
+    const where: Prisma.PedigreeWhereInput = {};
     
     if (dto.ids && dto.ids.length > 0) {
       where.id = { in: dto.ids };
@@ -106,40 +115,44 @@ export class ExportService {
     }));
   }
 
-  private async exportMedicalRecords(dto: ExportRequestDto, userId: string): Promise<any[]> {
+  private async exportMedicalRecords(): Promise<ExportResult[]> {
     // 医療記録のエクスポート実装（現在は空配列を返す）
     return [];
   }
 
-  private async exportCareSchedules(dto: ExportRequestDto, userId: string): Promise<any[]> {
-    const where: any = {};
+  private async exportCareSchedules(dto: ExportRequestDto): Promise<ExportResult[]> {
+    const where: Prisma.ScheduleWhereInput = {};
     
     if (dto.ids && dto.ids.length > 0) {
       where.id = { in: dto.ids };
     }
 
-    const schedules = await this.prisma.careSchedule.findMany({
+    const schedules = await this.prisma.schedule.findMany({
       where,
       include: {
-        cats: true,
+        scheduleCats: {
+          include: {
+            cat: true,
+          },
+        },
       },
-      orderBy: { scheduledDate: 'desc' },
+      orderBy: { scheduleDate: 'desc' },
     });
 
     return schedules.flatMap(schedule =>
-      schedule.cats.map(cat => ({
+      schedule.scheduleCats.map(scheduleCat => ({
         scheduleId: schedule.id,
-        catName: cat.name,
-        careType: schedule.careType,
-        scheduledDate: schedule.scheduledDate.toISOString().split('T')[0],
-        completedDate: schedule.completedDate?.toISOString().split('T')[0] || '',
+        catName: scheduleCat.cat.name,
+        careType: schedule.careType || '',
+        scheduledDate: schedule.scheduleDate.toISOString().split('T')[0],
+        completedDate: schedule.status === 'COMPLETED' ? schedule.updatedAt.toISOString().split('T')[0] : '',
         description: schedule.description || '',
-        notes: schedule.notes || '',
+        title: schedule.title || '',
       }))
     );
   }
 
-  private async exportTags(dto: ExportRequestDto, userId: string): Promise<any[]> {
+  private async exportTags(): Promise<ExportResult[]> {
     const tags = await this.prisma.tag.findMany({
       include: {
         group: {
@@ -162,7 +175,7 @@ export class ExportService {
     }));
   }
 
-  convertToCSV(data: any[]): string {
+  convertToCSV(data: ExportResult[]): string {
     if (data.length === 0) return '';
 
     const headers = Object.keys(data[0]);
