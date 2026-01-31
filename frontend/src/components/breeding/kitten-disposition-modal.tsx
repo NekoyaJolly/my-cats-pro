@@ -1,8 +1,8 @@
 'use client';
 
-import { TextInput, Select, NumberInput, Textarea, Button, Group, Divider } from '@mantine/core';
+import { TextInput, Select, NumberInput, Textarea, Button, Group } from '@mantine/core';
 import { useState, useEffect } from 'react';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import type { DispositionType, SaleInfo } from '@/lib/api/hooks/use-breeding';
 
@@ -96,29 +96,27 @@ export function KittenDispositionModal({
     setNotes('');
   };
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={() => {
-        resetForm();
-        onClose();
-      }}
-      title={`子猫処遇登録: ${kitten?.name || ''}`}
-      size="md"
-    >
-      {!kitten ? (
-        <div>子猫情報がありません</div>
-      ) : (
-        <>
-          <TextInput
-            label="子猫名"
-            value={kitten.name}
-            readOnly
-          />
-
-        <Divider label="処遇設定" labelPosition="center" />
-
-        <Select
+  const sections: ModalSection[] = !kitten
+    ? [
+        {
+          content: <div>子猫情報がありません</div>,
+        },
+      ]
+    : [
+        {
+          content: (
+            <TextInput
+              label="子猫名"
+              value={kitten.name}
+              readOnly
+            />
+          ),
+        },
+        {
+          label: "処遇設定",
+          content: (
+            <>
+              <Select
           label="処遇"
           value={disposition}
           onChange={(value) => setDisposition(value as DispositionType)}
@@ -197,10 +195,12 @@ export function KittenDispositionModal({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
-
-        <Divider />
-
-        <Group justify="flex-end" gap="sm" mt="md">
+            </>
+          ),
+        },
+        {
+          content: (
+            <Group justify="flex-end" gap="sm" mt="md">
           <Button
             variant="outline"
             onClick={() => {
@@ -217,8 +217,20 @@ export function KittenDispositionModal({
             登録
           </Button>
         </Group>
-        </>
-      )}
-    </UnifiedModal>
+          ),
+        },
+      ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={() => {
+        resetForm();
+        onClose();
+      }}
+      title={`子猫処遇登録: ${kitten?.name || ''}`}
+      size="md"
+      sections={sections}
+    />
   );
 }

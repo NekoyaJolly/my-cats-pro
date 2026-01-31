@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Modal,
   TextInput,
   Button,
   Group,
-  Stack,
   Select,
   NumberInput,
   Textarea,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 
 type FieldType = 'text' | 'number' | 'date' | 'select' | 'textarea';
 
@@ -167,17 +166,12 @@ export function FieldEditModal({
     }
   };
 
-  return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={title}
-      size="md"
-      centered
-    >
-      <Stack gap="md">
-        {renderInput()}
-
+  const sections: ModalSection[] = [
+    {
+      content: renderInput(),
+    },
+    {
+      content: (
         <Group justify="flex-end" gap="sm">
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             キャンセル
@@ -186,7 +180,18 @@ export function FieldEditModal({
             保存
           </Button>
         </Group>
-      </Stack>
-    </Modal>
+      ),
+    },
+  ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title={title}
+      size="md"
+      centered
+      sections={sections}
+    />
   );
 }

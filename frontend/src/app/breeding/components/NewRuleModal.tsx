@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import {
   Stack,
   TextInput,
@@ -9,9 +8,8 @@ import {
   Radio,
   Group,
   Button,
-  Divider,
 } from '@mantine/core';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 import type { BreedingNgRuleType } from '@/lib/api/hooks/use-breeding';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import type { NewRuleState } from '../types';
@@ -51,25 +49,23 @@ export function NewRuleModal({
     onClose();
   };
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={handleClose}
-      title="新規NGルール作成"
-      size="lg"
-      centered
-    >
-      <TextInput
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <TextInput
         label="ルール名"
         placeholder="例: 同血統禁止"
         value={newRule.name}
-        onChange={(e) => onRuleChange({ ...newRule, name: e.target.value })}
-        required
-      />
-
-      <Divider label="ルール設定" labelPosition="center" />
-
-      <Radio.Group
+          onChange={(e) => onRuleChange({ ...newRule, name: e.target.value })}
+          required
+        />
+      ),
+    },
+    {
+      label: "ルール設定",
+      content: (
+        <>
+          <Radio.Group
         label="ルールタイプ"
         value={newRule.type}
         onChange={(value) => onRuleChange({ ...newRule, type: value as BreedingNgRuleType })}
@@ -141,13 +137,15 @@ export function NewRuleModal({
       <TextInput
         label="説明（任意）"
         placeholder="このルールの詳細説明"
-        value={newRule.description}
-        onChange={(e) => onRuleChange({ ...newRule, description: e.target.value })}
-      />
-
-      <Divider />
-
-      <Group justify="flex-end" gap="sm" mt="md">
+          value={newRule.description}
+          onChange={(e) => onRuleChange({ ...newRule, description: e.target.value })}
+        />
+        </>
+      ),
+    },
+    {
+      content: (
+        <Group justify="flex-end" gap="sm" mt="md">
         <Button
           variant="outline"
           onClick={handleClose}
@@ -158,10 +156,22 @@ export function NewRuleModal({
           onClick={onSubmit}
           loading={isLoading}
         >
-          作成
-        </Button>
-      </Group>
-    </UnifiedModal>
+            作成
+          </Button>
+        </Group>
+      ),
+    },
+  ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={handleClose}
+      title="新規NGルール作成"
+      size="lg"
+      centered
+      sections={sections}
+    />
   );
 }
 

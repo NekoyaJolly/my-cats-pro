@@ -13,7 +13,6 @@ import {
   Textarea,
   Button,
   Group,
-  Divider,
   Text,
   Box,
 } from '@mantine/core';
@@ -22,7 +21,7 @@ import { useForm } from '@mantine/form';
 import { IconPlus } from '@tabler/icons-react';
 import { ImageUploader } from './ImageUploader';
 import { YouTubeInput } from './YouTubeInput';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 import type {
   GalleryCategory,
   CreateGalleryEntryDto,
@@ -163,18 +162,11 @@ export function GalleryAddModal({
     setMediaItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={handleClose}
-      title={CATEGORY_TITLES[category]}
-      size="lg"
-      centered
-      addContentPadding={false}
-    >
-      <Box component="form" onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap="md" p="md">
-          {/* 基本情報 */}
+  const sections: ModalSection[] = [
+    {
+      label: '基本情報',
+      content: (
+        <>
           <TextInput
             label="名前"
             placeholder="猫の名前を入力"
@@ -202,66 +194,64 @@ export function GalleryAddModal({
             placeholder="例: アメリカンショートヘア"
             {...form.getInputProps('breed')}
           />
-
-          {/* 卒業猫の場合のみ表示 */}
-          {category === 'GRADUATION' && (
-            <>
-              <Divider label="卒業情報" labelPosition="center" />
-              <Group grow>
-                <DateInput
-                  label="卒業日"
-                  placeholder="日付を選択"
-                  valueFormat="YYYY/MM/DD"
-                  {...form.getInputProps('transferDate')}
-                />
-                <TextInput
-                  label="お届け先"
-                  placeholder="例: 東京都"
-                  {...form.getInputProps('destination')}
-                />
-              </Group>
-            </>
+        </>
+      ),
+    },
+    ...(category === 'GRADUATION' ? [{
+      label: '卒業情報',
+      content: (
+        <Group grow>
+          <DateInput
+            label="卒業日"
+            placeholder="日付を選択"
+            valueFormat="YYYY/MM/DD"
+            {...form.getInputProps('transferDate')}
+          />
+          <TextInput
+            label="お届け先"
+            placeholder="例: 東京都"
+            {...form.getInputProps('destination')}
+          />
+        </Group>
+      ),
+    }] : []),
+    {
+      label: '写真・動画',
+      content: (
+        <Stack gap="sm">
+          {mediaItems.length > 0 && (
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>
+                追加済み ({mediaItems.length}件)
+              </Text>
+              {mediaItems.map((item, index) => (
+                <Group key={index} justify="space-between">
+                  <Text size="sm" c="dimmed" lineClamp={1}>
+                    {item.type === 'YOUTUBE' ? '🎬 YouTube動画' : '🖼️ 画像'}:{' '}
+                    {item.url.substring(0, 50)}...
+                  </Text>
+                  <Button
+                    variant="subtle"
+                    color="red"
+                    size="xs"
+                    onClick={() => handleRemoveMedia(index)}
+                  >
+                    削除
+                  </Button>
+                </Group>
+              ))}
+            </Stack>
           )}
 
-          {/* メディアアップロード */}
-          <Divider label="写真・動画" labelPosition="center" />
-
-          <Stack gap="sm">
-            {/* アップロード済みメディア一覧 */}
-            {mediaItems.length > 0 && (
-              <Stack gap="xs">
-                <Text size="sm" fw={500}>
-                  追加済み ({mediaItems.length}件)
-                </Text>
-                {mediaItems.map((item, index) => (
-                  <Group key={index} justify="space-between">
-                    <Text size="sm" c="dimmed" lineClamp={1}>
-                      {item.type === 'YOUTUBE' ? '🎬 YouTube動画' : '🖼️ 画像'}:{' '}
-                      {item.url.substring(0, 50)}...
-                    </Text>
-                    <Button
-                      variant="subtle"
-                      color="red"
-                      size="xs"
-                      onClick={() => handleRemoveMedia(index)}
-                    >
-                      削除
-                    </Button>
-                  </Group>
-                ))}
-              </Stack>
-            )}
-
-            {/* 画像アップロード */}
-            <ImageUploader onUploaded={handleImageUploaded} />
-
-            {/* YouTube URL入力 */}
-            <YouTubeInput onAdded={handleYouTubeAdded} />
-          </Stack>
-
-          {/* その他の情報 */}
-          <Divider label="その他" labelPosition="center" />
-
+          <ImageUploader onUploaded={handleImageUploaded} />
+          <YouTubeInput onAdded={handleYouTubeAdded} />
+        </Stack>
+      ),
+    },
+    {
+      label: 'その他',
+      content: (
+        <>
           <TextInput
             label="外部リンク"
             placeholder="https://..."
@@ -274,24 +264,37 @@ export function GalleryAddModal({
             rows={3}
             {...form.getInputProps('notes')}
           />
+        </>
+      ),
+    },
+    {
+      content: (
+        <Group justify="flex-end" mt="md">
+          <Button variant="subtle" onClick={handleClose} disabled={loading}>
+            キャンセル
+          </Button>
+          <Button
+            type="submit"
+            leftSection={<IconPlus size={16} />}
+            loading={loading}
+          >
+            追加
+          </Button>
+        </Group>
+      ),
+    },
+  ];
 
-          <Divider />
-
-          {/* ボタン */}
-          <Group justify="flex-end" mt="md">
-            <Button variant="subtle" onClick={handleClose} disabled={loading}>
-              キャンセル
-            </Button>
-            <Button
-              type="submit"
-              leftSection={<IconPlus size={16} />}
-              loading={loading}
-            >
-              追加
-            </Button>
-          </Group>
-        </Stack>
-      </Box>
-    </UnifiedModal>
+  return (
+    <Box component="form" onSubmit={form.onSubmit(handleSubmit)}>
+      <UnifiedModal
+        opened={opened}
+        onClose={handleClose}
+        title={CATEGORY_TITLES[category]}
+        size="lg"
+        centered
+        sections={sections}
+      />
+    </Box>
   );
 }

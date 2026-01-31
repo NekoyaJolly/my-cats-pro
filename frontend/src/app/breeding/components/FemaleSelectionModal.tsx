@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ChangeEvent } from 'react';
+import { ChangeEvent } from 'react';
 import {
   Stack,
   Text,
@@ -14,7 +14,7 @@ import {
   Checkbox,
   Divider,
 } from '@mantine/core';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 
 export interface FemaleSelectionModalProps {
@@ -40,15 +40,10 @@ export function FemaleSelectionModal({
   onSelectFemale,
   isNGPairing,
 }: FemaleSelectionModalProps) {
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={onClose}
-      title="交配するメス猫を選択"
-      size="md"
-      addContentPadding={false}
-    >
-      <Stack gap="md" p="md">
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <Stack gap="md" p="md">
         <Text size="sm" c="dimmed">
           {selectedMale?.name} との交配相手を選択してください
         </Text>
@@ -118,7 +113,19 @@ export function FemaleSelectionModal({
           </Text>
         )}
       </Stack>
-    </UnifiedModal>
+      ),
+    },
+  ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title="交配するメス猫を選択"
+      size="md"
+      addContentPadding={false}
+      sections={sections}
+    />
   );
 }
 

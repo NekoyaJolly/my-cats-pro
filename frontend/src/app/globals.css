@@ -75,142 +75,6 @@
   --button-icon-color: #495057;
 }
 
-/* --- Theme 1: Architectural Monolith --- */
-.theme-monolith {
-  /* Base Colors: Monochrome (Pure Black, White, Cold Gray) */
-  --bg-base: #ffffff;
-  --bg-surface: #ffffff;
-  --bg-black: #000000;
-  --bg-white: #ffffff;
-  --bg-gray: #e2e8f0;
-  
-  /* Borders: All 1px solid */
-  --border-primary: #1e293b;
-  --border-subtle: #e2e8f0;
-  --border-width: 1px;
-  
-  /* Text Colors */
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  
-  /* Accent: Cobalt Blue (Status Only) */
-  --accent: #2563eb;
-  --accent-soft: #f1f5f9;
-  
-  /* Status Colors: Monochrome + Cobalt Blue Only */
-  --status-success: #2563eb;
-  --status-warning: #64748b;
-  --status-error: #1e293b;
-  --status-info: #2563eb;
-  
-  /* Effects */
-  --glass-blur: 0px;
-  --shadow-ethereal: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-ethereal-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --radius-base: 0px;
-  
-  /* Form Elements */
-  --input-bg: #ffffff;
-  --slider-track: #e2e8f0;
-  --switch-bg: #e2e8f0;
-  --switch-thumb: #1e293b;
-  
-  /* Monolith Button Overrides */
-  --button-primary-radius: 0px;
-  --button-icon-color: #1e293b;
-}
-
-/* --- Theme 2: Ethereal Layering (Current) --- */
-.theme-ethereal {
-  /* Background: Organic Gradient (4 colors unified) */
-  --bg-gradient-1: #f8fafc;
-  --bg-gradient-2: #e0e7ff;
-  --bg-gradient-3: #fdf2f8;
-  --bg-gradient-4: #ecfdf5;
-  
-  /* Glass Effect: Unified transparency and blur */
-  --glass-bg: rgba(255, 255, 255, 0.45);
-  --glass-bg-hover: rgba(255, 255, 255, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --glass-blur: 16px;
-  
-  /* Shadows & Light */
-  --shadow-ethereal: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --shadow-ethereal-hover: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
-  --light-reflection: inset 1px 1px 0 rgba(255, 255, 255, 0.4);
-  
-  /* Text Colors */
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  
-  /* Accent: Blue (Maintained) */
-  --accent: #3b82f6;
-  --accent-soft: rgba(59, 130, 246, 0.1);
-  
-  /* Status Colors: Within Gradient Palette */
-  --status-success: #10b981;
-  --status-warning: #f59e0b;
-  --status-error: #ef4444;
-  --status-info: #3b82f6;
-  
-  /* Radius & Form Elements */
-  --radius-base: 24px;
-  --input-bg: rgba(255, 255, 255, 0.3);
-  --slider-track: rgba(255, 255, 255, 0.4);
-  --switch-bg: rgba(0, 0, 0, 0.1);
-  --switch-thumb: #ffffff;
-}
-
-/* --- Theme 3: Organic Squircle --- */
-.theme-organic {
-  /* Earth Colors: Warm, Life-like Palette */
-  --bg-base: #fcf9f4; /* Warm skin/paper */
-  --bg-surface: #ffffff;
-  --bg-terracotta: #d97706;
-  --bg-sage: #84cc16;
-  --bg-warm: #fcf9f4;
-  
-  /* Accent: Terracotta (Primary), Sage (Secondary) */
-  --accent: #d97706; /* Terracotta */
-  --accent-secondary: #84cc16; /* Sage Green */
-  --accent-soft: #fef3c7;
-  
-  /* Text Colors: Earth tones */
-  --text-primary: #451a03;
-  --text-secondary: #78350f;
-  --text-muted: #a16207;
-  
-  /* Status Colors: Earth Palette */
-  --status-success: #84cc16; /* Sage Green */
-  --status-warning: #d97706; /* Terracotta */
-  --status-error: #dc2626;
-  --status-info: #0891b2;
-  
-  /* Glass Effect: Subtle */
-  --glass-blur: 8px;
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(217, 119, 6, 0.2);
-  
-  /* Shadows: Warm */
-  --shadow-ethereal: 0 10px 25px -5px rgba(217, 119, 6, 0.1);
-  --shadow-ethereal-hover: 0 20px 25px -5px rgba(217, 119, 6, 0.15);
-  
-  /* Radius: Large Squircle */
-  --radius-base: 32px;
-  
-  /* Form Elements */
-  --input-bg: #ffffff;
-  --slider-track: #fef3c7;
-  --switch-bg: #fef3c7;
-  --switch-thumb: #ffffff;
-  
-  /* Organic Button Overrides */
-  --button-primary-radius: 32px;
-  --button-icon-color: #78350f;
-}
-
 html,
 body {
   height: 100%;
@@ -226,22 +90,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.5s ease, color 0.3s ease;
-}
-
-/* Ethereal Specific Background */
-.theme-ethereal body {
-  background: 
-    radial-gradient(at 0% 0%, var(--bg-gradient-2) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, var(--bg-gradient-3) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, var(--bg-gradient-4) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, var(--bg-gradient-2) 0px, transparent 50%),
-    var(--bg-gradient-1);
-  background-attachment: fixed;
-  background-size: cover;
-}
-
-.theme-monolith body,
-.theme-organic body {
   background-color: var(--bg-base);
 }
 
@@ -260,25 +108,6 @@ body {
   margin: 0 auto;
   padding: var(--section-gap);
   width: 100%;
-}
-
-/* Theme-specific responsive adjustments */
-/* Monolith: Maintain grid alignment at all screen sizes */
-.theme-monolith .floating-island {
-  padding-left: var(--layout-px);
-  padding-right: var(--layout-px);
-}
-
-/* Ethereal: Golden ratio margins for floating island */
-.theme-ethereal .floating-island {
-  margin-top: calc(var(--section-gap) * var(--golden-ratio));
-  margin-bottom: calc(var(--section-gap) * var(--golden-ratio));
-}
-
-/* Organic: Consistent information density across all screen sizes */
-.theme-organic .floating-island {
-  padding-left: max(var(--layout-px), 5vw);
-  padding-right: max(var(--layout-px), 5vw);
 }
 
 * {
@@ -308,29 +137,6 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-base, 16px) !important;
   transition: transform 0.3s ease, box-shadow 0.3s ease !important;
   color: var(--text-primary) !important;
-}
-
-/* Force square shapes in Monolith */
-.theme-monolith .mantine-Switch-track,
-.theme-monolith .mantine-Switch-thumb,
-.theme-monolith .mantine-Checkbox-input,
-.theme-monolith .mantine-Slider-thumb,
-.theme-monolith .mantine-Slider-track,
-.theme-monolith .mantine-Button-root,
-.theme-monolith .mantine-Badge-root,
-.theme-monolith .mantine-TextInput-input,
-.theme-monolith .mantine-Select-input,
-.theme-monolith .mantine-PasswordInput-input {
-  border-radius: 0 !important;
-}
-
-/* Theme specific borders for Monolith: All 1px solid */
-.theme-monolith .mantine-Switch-track,
-.theme-monolith .mantine-Checkbox-input,
-.theme-monolith .mantine-TextInput-input,
-.theme-monolith .mantine-Select-input,
-.theme-monolith .mantine-PasswordInput-input {
-  border: var(--border-width, 1px) solid var(--border-primary) !important;
 }
 
 .mantine-AppShell-header,
@@ -414,9 +220,22 @@ h1, h2, h3, h4, h5, h6 {
 /* 入力フィールドの枠線を明確に */
 .mantine-Modal-body .mantine-Input-input,
 .mantine-Modal-body .mantine-Select-input,
-.mantine-Modal-body .mantine-Textarea-input {
+.mantine-Modal-body .mantine-Textarea-input,
+.mantine-Modal-body .mantine-DateInput-input,
+.mantine-Modal-body .mantine-TimeInput-input,
+.mantine-Modal-body .mantine-NumberInput-input,
+.mantine-Modal-body .mantine-PasswordInput-input,
+.mantine-Modal-body .mantine-ColorInput-input,
+.mantine-Modal-content .mantine-Input-input,
+.mantine-Modal-content .mantine-Select-input,
+.mantine-Modal-content .mantine-Textarea-input,
+.mantine-Modal-content .mantine-DateInput-input,
+.mantine-Modal-content .mantine-TimeInput-input,
+.mantine-Modal-content .mantine-NumberInput-input,
+.mantine-Modal-content .mantine-PasswordInput-input,
+.mantine-Modal-content .mantine-ColorInput-input {
   border: 1px solid #dee2e6 !important;
-  background-color: #ffffff !important;
+  background-color: #f8f9fa !important;
 }
 
 @media (min-width: 768px) {

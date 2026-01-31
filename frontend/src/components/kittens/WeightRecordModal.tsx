@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   TextInput,
   NumberInput,
@@ -10,7 +10,6 @@ import {
   Stack,
   Text,
   Box,
-  Divider,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
@@ -21,7 +20,7 @@ import {
   type WeightRecord,
   type CreateWeightRecordRequest,
 } from '@/lib/api/hooks/use-weight-records';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 
 interface WeightRecordModalProps {
   opened: boolean;
@@ -132,6 +131,84 @@ export function WeightRecordModal({
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <Box component="form" onSubmit={form.onSubmit(handleSubmit)}>
+          <Stack gap="md" p="md">
+            {/* 対象の猫名 */}
+            <TextInput
+              label="対象"
+              value={catName}
+              disabled
+              styles={{
+                input: {
+                  backgroundColor: 'var(--mantine-color-gray-1)',
+                },
+              }}
+            />
+
+            {/* 体重入力 */}
+            <NumberInput
+              label="体重"
+              description="グラム単位で入力してください"
+              placeholder="350"
+              min={1}
+              max={50000}
+              step={5}
+              suffix=" g"
+              leftSection={<IconScale size={16} />}
+              required
+              {...form.getInputProps('weight')}
+            />
+
+            {/* 記録日時 */}
+            <DateTimePicker
+              label="記録日時"
+              placeholder="記録日時を選択"
+              leftSection={<IconCalendar size={16} />}
+              maxDate={new Date()}
+              required
+              valueFormat="YYYY/MM/DD HH:mm"
+              {...form.getInputProps('recordedAt')}
+            />
+
+            {/* メモ */}
+            <Textarea
+              label="メモ"
+              placeholder="例: ミルクをよく飲んでいる、元気がある など"
+              leftSection={<IconNotes size={16} />}
+              autosize
+              minRows={2}
+              maxRows={4}
+              {...form.getInputProps('notes')}
+            />
+          </Stack>
+        </Box>
+      ),
+    },
+    {
+      content: (
+        <Group justify="flex-end" mt="md">
+          <Button variant="default" onClick={onClose} disabled={isLoading}>
+            キャンセル
+          </Button>
+          <Button 
+            loading={isLoading} 
+            onClick={() => {
+              form.validate();
+              if (form.isValid()) {
+                void handleSubmit(form.values);
+              }
+            }}
+          >
+            {isEditMode ? '更新' : '記録'}
+          </Button>
+        </Group>
+      ),
+    },
+  ];
+
   return (
     <UnifiedModal
       opened={opened}
@@ -146,71 +223,8 @@ export function WeightRecordModal({
       }
       size="md"
       addContentPadding={false}
-    >
-      <Box component="form" onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap="md" p="md">
-          {/* 対象の猫名 */}
-          <TextInput
-            label="対象"
-            value={catName}
-            disabled
-            styles={{
-              input: {
-                backgroundColor: 'var(--mantine-color-gray-1)',
-              },
-            }}
-          />
-
-          {/* 体重入力 */}
-          <NumberInput
-            label="体重"
-            description="グラム単位で入力してください"
-            placeholder="350"
-            min={1}
-            max={50000}
-            step={5}
-            suffix=" g"
-            leftSection={<IconScale size={16} />}
-            required
-            {...form.getInputProps('weight')}
-          />
-
-          {/* 記録日時 */}
-          <DateTimePicker
-            label="記録日時"
-            placeholder="記録日時を選択"
-            leftSection={<IconCalendar size={16} />}
-            maxDate={new Date()}
-            required
-            valueFormat="YYYY/MM/DD HH:mm"
-            {...form.getInputProps('recordedAt')}
-          />
-
-          {/* メモ */}
-          <Textarea
-            label="メモ"
-            placeholder="例: ミルクをよく飲んでいる、元気がある など"
-            leftSection={<IconNotes size={16} />}
-            autosize
-            minRows={2}
-            maxRows={4}
-            {...form.getInputProps('notes')}
-          />
-
-          <Divider />
-
-          {/* ボタン */}
-          <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={onClose} disabled={isLoading}>
-              キャンセル
-            </Button>
-            <Button type="submit" loading={isLoading}>
-              {isEditMode ? '更新' : '記録'}
-            </Button>
-          </Group>
-        </Stack>
-      </Box>
-    </UnifiedModal>
+      sections={sections}
+    />
   );
 }
 

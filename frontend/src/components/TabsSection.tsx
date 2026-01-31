@@ -6,7 +6,6 @@
  */
 
 import { Tabs, Group, Badge, type TabsProps } from '@mantine/core';
-import React from 'react';
 
 export interface TabDefinition {
   /** タブの値 */

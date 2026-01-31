@@ -10,7 +10,6 @@ import {
   Stack,
   Card,
   Button,
-  Modal,
   SimpleGrid,
   Tooltip,
   Loader,
@@ -25,6 +24,7 @@ import {
   type TagCategoryView,
   type TagView,
 } from '@/lib/api/hooks/use-tags';
+import { UnifiedModal } from '@/components/common';
 
 interface TagSelectorProps {
   selectedTags: string[];
@@ -281,98 +281,113 @@ export default function TagSelector({
         </Group>
       )}
 
-      <Modal opened={opened} onClose={close} title="タグ選択" size="lg" keepMounted={false}>
-        {isLoading && (
-          <Center py="xl">
-            <Loader />
-          </Center>
-        )}
+      <UnifiedModal
+        opened={opened}
+        onClose={close}
+        title="タグ選択"
+        size="lg"
+        sections={[
+          {
+            content: (
+              <>
+                {isLoading && (
+                  <Center py="xl">
+                    <Loader />
+                  </Center>
+                )}
 
-        {!isLoading && categories.length === 0 && (
-          <Center py="xl">
-            <Text c="dimmed">利用可能なカテゴリがありません。</Text>
-          </Center>
-        )}
+                {!isLoading && categories.length === 0 && (
+                  <Center py="xl">
+                    <Text c="dimmed">利用可能なカテゴリがありません。</Text>
+                  </Center>
+                )}
 
-        {!isLoading && categories.length > 0 && (
-          <Stack gap="md">
-            {categories.map((category) => (
-              <Card key={category.id} padding="md" withBorder>
-                <Stack gap="sm">
-                  <Group gap="xs">
-                    <Box w={12} h={12} bg={category.color || 'var(--mantine-primary-color-filled)'} style={{ borderRadius: 2 }} />
-                    <Text fw={500} c={category.color}>
-                      {category.name}
-                    </Text>
-                  </Group>
+                {!isLoading && categories.length > 0 && (
+                  <Stack gap="md">
+                    {categories.map((category) => (
+                      <Card key={category.id} padding="md" withBorder>
+                        <Stack gap="sm">
+                          <Group gap="xs">
+                            <Box w={12} h={12} bg={category.color || 'var(--mantine-primary-color-filled)'} style={{ borderRadius: 2 }} />
+                            <Text fw={500} c={category.color}>
+                              {category.name}
+                            </Text>
+                          </Group>
 
-                  {category.description && (
-                    <Text size="xs" c="dimmed">
-                      {category.description}
-                    </Text>
-                  )}
+                          {category.description && (
+                            <Text size="xs" c="dimmed">
+                              {category.description}
+                            </Text>
+                          )}
 
-                  <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="xs">
-                    {(category.tags ?? []).map((tag) => {
-                      const isSelected = selectedTags.includes(tag.id);
-                      const automationMeta = showAutomationBadges
-                        ? autoAssignments?.[tag.id] ?? extractAutomationMeta(tag)
-                        : undefined;
+                          <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="xs">
+                            {(category.tags ?? []).map((tag) => {
+                              const isSelected = selectedTags.includes(tag.id);
+                              const automationMeta = showAutomationBadges
+                                ? autoAssignments?.[tag.id] ?? extractAutomationMeta(tag)
+                                : undefined;
 
-                      return (
-                        <Tooltip
-                          key={tag.id}
-                          label={
-                            tag.description
-                              ? tag.description
-                              : `使用回数: ${tag.usageCount.toLocaleString()}回`
-                          }
-                          withArrow
-                          withinPortal
-                        >
-                          <Badge
-                            size="md"
-                            radius="md"
-                            variant="light"
-                            style={{
-                              cursor: 'pointer',
-                              backgroundColor: isSelected
-                                ? tag.color ?? 'var(--mantine-primary-color-filled)'
-                                : tag.color
-                                  ? `${tag.color}15`
-                                  : 'var(--mantine-color-gray-1)',
-                              color: isSelected
-                                ? tag.color
-                                  ? 'var(--mantine-color-white)'
-                                  : 'var(--mantine-color-dark-6)'
-                                : tag.color ?? 'var(--mantine-color-dark-6)',
-                              border: isSelected && tag.color
-                                ? `1px solid ${tag.color}`
-                                : undefined,
-                            }}
-                            onClick={() => handleToggleTag(tag.id)}
-                          >
-                            {tag.name}
-                            {showAutomationBadges && automationMeta && (
-                              <Box component="span" ml={6}>
-                                {renderAutomationBadge(automationMeta)}
-                              </Box>
-                            )}
-                          </Badge>
-                        </Tooltip>
-                      );
-                    })}
-                  </SimpleGrid>
-                </Stack>
-              </Card>
-            ))}
-
-            <Group justify="flex-end">
-              <Button onClick={close}>完了</Button>
-            </Group>
-          </Stack>
-        )}
-      </Modal>
+                              return (
+                                <Tooltip
+                                  key={tag.id}
+                                  label={
+                                    tag.description
+                                      ? tag.description
+                                      : `使用回数: ${tag.usageCount.toLocaleString()}回`
+                                  }
+                                  withArrow
+                                  withinPortal
+                                >
+                                  <Badge
+                                    size="md"
+                                    radius="md"
+                                    variant="light"
+                                    style={{
+                                      cursor: 'pointer',
+                                      backgroundColor: isSelected
+                                        ? tag.color ?? 'var(--mantine-primary-color-filled)'
+                                        : tag.color
+                                          ? `${tag.color}15`
+                                          : 'var(--mantine-color-gray-1)',
+                                      color: isSelected
+                                        ? tag.color
+                                          ? 'var(--mantine-color-white)'
+                                          : 'var(--mantine-color-dark-6)'
+                                        : tag.color ?? 'var(--mantine-color-dark-6)',
+                                      border: isSelected && tag.color
+                                        ? `1px solid ${tag.color}`
+                                        : undefined,
+                                    }}
+                                    onClick={() => handleToggleTag(tag.id)}
+                                  >
+                                    {tag.name}
+                                    {showAutomationBadges && automationMeta && (
+                                      <Box component="span" ml={6}>
+                                        {renderAutomationBadge(automationMeta)}
+                                      </Box>
+                                    )}
+                                  </Badge>
+                                </Tooltip>
+                              );
+                            })}
+                          </SimpleGrid>
+                        </Stack>
+                      </Card>
+                    ))}
+                  </Stack>
+                )}
+              </>
+            ),
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <Button onClick={close}>完了</Button>
+              </Group>
+            ),
+          },
+        ]}
+      />
     </Box>
   );
 }

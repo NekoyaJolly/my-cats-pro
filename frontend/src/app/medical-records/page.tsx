@@ -8,10 +8,8 @@ import {
   Button,
   Card,
   Container,
-  Divider,
   Group,
   LoadingOverlay,
-  Modal,
   Pagination,
   Select,
   SegmentedControl,
@@ -39,6 +37,7 @@ import { usePageHeader } from '@/lib/contexts/page-header-context';
 
 import { ActionButton } from '@/components/ActionButton';
 import { IconActionButton } from '@/components/buttons';
+import { UnifiedModal } from '@/components/common';
 
 const STATUS_LABELS = {
   TREATING: '治療中',
@@ -359,341 +358,373 @@ export default function MedicalRecordsPage() {
         </Stack>
       </Card>
 
-      <Modal
+      <UnifiedModal
         opened={detailModalOpened}
         onClose={closeDetailModal}
         title="医療記録の詳細"
         size="lg"
-      >
-        {detailRecord && (
-          <Stack gap="md">
-            <Group justify="space-between">
-              <Box>
-                <Text size="sm" c="dimmed" mb={4}>
-                  受診日
-                </Text>
-                <Text fw={500}>{formatDate(detailRecord.visitDate)}</Text>
-              </Box>
-              <Box>
-                <Text size="sm" c="dimmed" mb={4}>
-                  状態
-                </Text>
-                <Badge color={STATUS_COLORS[detailRecord.status]} variant="light">
-                  {STATUS_LABELS[detailRecord.status]}
-                </Badge>
-              </Box>
-            </Group>
-
-            <Box>
-              <Text size="sm" c="dimmed" mb={4}>
-                対象猫
-              </Text>
-              <Text fw={500}>{detailRecord.cat.name}</Text>
-            </Box>
-
-            <Box>
-              <Text size="sm" c="dimmed" mb={4}>
-                病院名
-              </Text>
-              <Text fw={500}>{detailRecord.hospitalName || '未設定'}</Text>
-            </Box>
-
-            <Box>
-              <Text size="sm" c="dimmed" mb={4}>
-                症状
-              </Text>
-              <Text>{detailRecord.symptom || '記録なし'}</Text>
-            </Box>
-
-            {detailRecord.tags && detailRecord.tags.length > 0 && (
-              <Box>
-                <Text size="sm" c="dimmed" mb={8}>
-                  症状タグ
-                </Text>
-                <Group gap="xs">
-                  {detailRecord.tags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      color={tag.color || 'blue'}
-                      variant="light"
-                      size="lg"
-                    >
-                      {tag.categoryName && `${tag.categoryName} > `}
-                      {tag.groupName && `${tag.groupName} > `}
-                      {tag.name}
-                    </Badge>
-                  ))}
-                </Group>
-              </Box>
-            )}
-
-            <Box>
-              <Text size="sm" c="dimmed" mb={4}>
-                病名
-              </Text>
-              <Text>{detailRecord.diseaseName || '記録なし'}</Text>
-            </Box>
-
-            {detailRecord.symptomDetails && detailRecord.symptomDetails.length > 0 && (
-              <Box>
-                <Text size="sm" c="dimmed" mb={8}>
-                  症状詳細
-                </Text>
-                <Stack gap="xs">
-                  {detailRecord.symptomDetails.map((symptom, index) => (
-                    <Card key={index} withBorder padding="sm">
-                      <Text fw={500} size="sm">{symptom.label}</Text>
-                      {symptom.note && (
-                        <Text size="sm" c="dimmed" mt={4}>{symptom.note}</Text>
-                      )}
-                    </Card>
-                  ))}
-                </Stack>
-              </Box>
-            )}
-
-            <Box>
-              <Text size="sm" c="dimmed" mb={4}>
-                診断
-              </Text>
-              <Text>{detailRecord.diagnosis || '記録なし'}</Text>
-            </Box>
-
-            <Box>
-              <Text size="sm" c="dimmed" mb={4}>
-                治療計画
-              </Text>
-              <Text>{detailRecord.treatmentPlan || '記録なし'}</Text>
-            </Box>
-
-            {detailRecord.medications && detailRecord.medications.length > 0 && (
-              <Box>
-                <Text size="sm" c="dimmed" mb={8}>
-                  投薬
-                </Text>
-                <Stack gap="xs">
-                  {detailRecord.medications.map((medication, index) => (
-                    <Card key={index} withBorder padding="sm">
-                      <Text fw={500} size="sm">{medication.name}</Text>
-                      {medication.dosage && (
-                        <Text size="sm" c="dimmed" mt={4}>{medication.dosage}</Text>
-                      )}
-                    </Card>
-                  ))}
-                </Stack>
-              </Box>
-            )}
-
-            <Group grow>
-              <Box>
-                <Text size="sm" c="dimmed" mb={4}>
-                  次回予定日
-                </Text>
-                <Text>{formatDate(detailRecord.followUpDate)}</Text>
-              </Box>
-            </Group>
-
-            <Box>
-              <Text size="sm" c="dimmed" mb={4}>
-                備考
-              </Text>
-              <Text>{detailRecord.notes || 'なし'}</Text>
-            </Box>
-
-            <Divider />
-
-            <Group justify="space-between">
-              <Text size="xs" c="dimmed">
-                記録者: {detailRecord.recordedBy}
-              </Text>
-              <Text size="xs" c="dimmed">
-                作成日: {dayjs(detailRecord.createdAt).format('YYYY/MM/DD HH:mm')}
-              </Text>
-            </Group>
-
-            <Group justify="flex-end" mt="md">
-              <ActionButton action="cancel" onClick={closeDetailModal}>
-                閉じる
-              </ActionButton>
-            </Group>
-          </Stack>
-        )}
-      </Modal>
-
-      <Modal opened={createModalOpened} onClose={() => {
-        closeCreateModal();
-        resetCreateForm();
-      }} title="医療記録を追加" size="lg">
-        <Stack gap="md">
-          {/* 1. 対象猫 */}
-          <Select
-            label="対象猫"
-            placeholder="猫を選択"
-            data={(catsQuery.data?.data ?? []).map((cat) => ({
-              value: cat.id,
-              label: cat.name,
-            }))}
-            value={createForm.catId}
-            onChange={(value) => setCreateForm((prev) => ({ ...prev, catId: value || '' }))}
-            required
-          />
-
-          {/* 2. 受診日 */}
-          <DatePickerInput
-            label="受診日"
-            placeholder="受診日を選択"
-            value={createForm.visitDate}
-            onChange={(value) =>
-              setCreateForm((prev) => ({
-                ...prev,
-                visitDate: value ? new Date(value) : null,
-              }))
-            }
-            required
-          />
-
-          {/* 3. 病院名 */}
-          <TextInput
-            label="病院名"
-            placeholder="例: ねこクリニック東京"
-            value={createForm.hospitalName}
-            onChange={(event) =>
-              setCreateForm((prev) => ({
-                ...prev,
-                hospitalName: event.target.value,
-              }))
-            }
-          />
-
-          {/* 4. 症状タグ */}
-          <Box>
-            <Text size="sm" fw={500} mb="xs">
-              症状タグ
-            </Text>
-            {tagsQuery.isLoading ? (
-              <Skeleton height={40} />
-            ) : medicalTags.length > 0 ? (
+        sections={[
+          {
+            label: '基本情報',
+            content: detailRecord ? (
               <>
-                <Group gap="xs" mb="sm">
-                  {medicalTags.map((tag) => {
-                    const isSelected = createForm.symptomTags.includes(tag.id);
-                    return (
-                      <Button
-                        key={tag.id}
-                        variant={isSelected ? 'filled' : 'outline'}
-                        color={isSelected ? tag.color || 'blue' : 'gray'}
-                        size="xs"
-                        rightSection={isSelected ? <IconX size={12} /> : undefined}
-                        onClick={() => {
-                          setCreateForm((prev) => ({
-                            ...prev,
-                            symptomTags: isSelected
-                              ? prev.symptomTags.filter((id) => id !== tag.id)
-                              : [...prev.symptomTags, tag.id],
-                          }));
-                        }}
-                      >
-                        {tag.name}
-                      </Button>
-                    );
-                  })}
+                <Group justify="space-between">
+                  <Box>
+                    <Text size="sm" c="dimmed" mb={4}>
+                      受診日
+                    </Text>
+                    <Text fw={500}>{formatDate(detailRecord.visitDate)}</Text>
+                  </Box>
+                  <Box>
+                    <Text size="sm" c="dimmed" mb={4}>
+                      状態
+                    </Text>
+                    <Badge color={STATUS_COLORS[detailRecord.status]} variant="light">
+                      {STATUS_LABELS[detailRecord.status]}
+                    </Badge>
+                  </Box>
                 </Group>
-                {createForm.symptomTags.length > 0 && (
-                  <Text size="xs" c="dimmed">
-                    選択されたタグ: {createForm.symptomTags.map(id => {
-                      const tag = medicalTags.find(t => t.id === id);
-                      return tag?.name || id;
-                    }).join(', ')}
+
+                <Box>
+                  <Text size="sm" c="dimmed" mb={4}>
+                    対象猫
                   </Text>
+                  <Text fw={500}>{detailRecord.cat.name}</Text>
+                </Box>
+
+                <Box>
+                  <Text size="sm" c="dimmed" mb={4}>
+                    病院名
+                  </Text>
+                  <Text fw={500}>{detailRecord.hospitalName || '未設定'}</Text>
+                </Box>
+              </>
+            ) : null,
+          },
+          {
+            label: '症状',
+            content: detailRecord ? (
+              <>
+                <Box>
+                  <Text size="sm" c="dimmed" mb={4}>
+                    症状
+                  </Text>
+                  <Text>{detailRecord.symptom || '記録なし'}</Text>
+                </Box>
+
+                {detailRecord.tags && detailRecord.tags.length > 0 && (
+                  <Box>
+                    <Text size="sm" c="dimmed" mb={8}>
+                      症状タグ
+                    </Text>
+                    <Group gap="xs">
+                      {detailRecord.tags.map((tag) => (
+                        <Badge
+                          key={tag.id}
+                          color={tag.color || 'blue'}
+                          variant="light"
+                          size="lg"
+                        >
+                          {tag.categoryName && `${tag.categoryName} > `}
+                          {tag.groupName && `${tag.groupName} > `}
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </Group>
+                  </Box>
+                )}
+
+                <Box>
+                  <Text size="sm" c="dimmed" mb={4}>
+                    病名
+                  </Text>
+                  <Text>{detailRecord.diseaseName || '記録なし'}</Text>
+                </Box>
+
+                {detailRecord.symptomDetails && detailRecord.symptomDetails.length > 0 && (
+                  <Box>
+                    <Text size="sm" c="dimmed" mb={8}>
+                      症状詳細
+                    </Text>
+                    <Stack gap="xs">
+                      {detailRecord.symptomDetails.map((symptom, index) => (
+                        <Card key={index} withBorder padding="sm">
+                          <Text fw={500} size="sm">{symptom.label}</Text>
+                          {symptom.note && (
+                            <Text size="sm" c="dimmed" mt={4}>{symptom.note}</Text>
+                          )}
+                        </Card>
+                      ))}
+                    </Stack>
+                  </Box>
                 )}
               </>
-            ) : (
-              <Alert color="yellow" icon={<IconAlertCircle size={16} />}>
-                タグ管理ページで「健康」カテゴリのタグを作成してください
-              </Alert>
-            )}
-          </Box>
+            ) : null,
+          },
+          {
+            label: '診断・治療',
+            content: detailRecord ? (
+              <>
+                <Box>
+                  <Text size="sm" c="dimmed" mb={4}>
+                    診断
+                  </Text>
+                  <Text>{detailRecord.diagnosis || '記録なし'}</Text>
+                </Box>
 
-          {/* 5. 診断結果 */}
-          <Textarea
-            label="診断結果"
-            placeholder="診断結果"
-            value={createForm.diagnosis}
-            onChange={(event) => setCreateForm((prev) => ({ ...prev, diagnosis: event.target.value }))}
-            minRows={2}
-            autosize
-          />
+                <Box>
+                  <Text size="sm" c="dimmed" mb={4}>
+                    治療計画
+                  </Text>
+                  <Text>{detailRecord.treatmentPlan || '記録なし'}</Text>
+                </Box>
 
-          {/* 6. 治療計画 */}
-          <Textarea
-            label="治療計画"
-            placeholder="治療内容や計画"
-            value={createForm.treatmentPlan}
-            onChange={(event) => setCreateForm((prev) => ({ ...prev, treatmentPlan: event.target.value }))}
-            minRows={2}
-            autosize
-          />
+                {detailRecord.medications && detailRecord.medications.length > 0 && (
+                  <Box>
+                    <Text size="sm" c="dimmed" mb={8}>
+                      投薬
+                    </Text>
+                    <Stack gap="xs">
+                      {detailRecord.medications.map((medication, index) => (
+                        <Card key={index} withBorder padding="sm">
+                          <Text fw={500} size="sm">{medication.name}</Text>
+                          {medication.dosage && (
+                            <Text size="sm" c="dimmed" mt={4}>{medication.dosage}</Text>
+                          )}
+                        </Card>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
 
-          {/* 治療ステータス */}
-          <Box>
-            <Text size="sm" fw={500} mb="xs">
-              治療ステータス
-            </Text>
-            <SegmentedControl
-              value={createForm.status}
-              onChange={(value) => setCreateForm((prev) => ({ ...prev, status: value }))}
-              data={[
-                { label: '治療中', value: 'TREATING' },
-                { label: '完了', value: 'COMPLETED' },
-              ]}
-              fullWidth
-            />
-          </Box>
+                <Group grow>
+                  <Box>
+                    <Text size="sm" c="dimmed" mb={4}>
+                      次回予定日
+                    </Text>
+                    <Text>{formatDate(detailRecord.followUpDate)}</Text>
+                  </Box>
+                </Group>
 
-          {/* 7. 次回予定日 */}
-          <DatePickerInput
-            label="次回予定日"
-            placeholder="次回の受診予定日"
-            value={createForm.followUpDate}
-            onChange={(value) =>
-              setCreateForm((prev) => ({
-                ...prev,
-                followUpDate: value ? new Date(value) : null,
-              }))
-            }
-          />
+                <Box>
+                  <Text size="sm" c="dimmed" mb={4}>
+                    備考
+                  </Text>
+                  <Text>{detailRecord.notes || 'なし'}</Text>
+                </Box>
 
-          {/* 8. 備考 */}
-          <Textarea
-            label="備考"
-            placeholder="その他のメモ"
-            value={createForm.notes}
-            onChange={(event) => setCreateForm((prev) => ({ ...prev, notes: event.target.value }))}
-            minRows={3}
-            autosize
-          />
+                <Group justify="space-between" mt="md">
+                  <Text size="xs" c="dimmed">
+                    記録者: {detailRecord.recordedBy}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    作成日: {dayjs(detailRecord.createdAt).format('YYYY/MM/DD HH:mm')}
+                  </Text>
+                </Group>
+              </>
+            ) : null,
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <ActionButton action="cancel" onClick={closeDetailModal}>
+                  閉じる
+                </ActionButton>
+              </Group>
+            ),
+          },
+        ]}
+      />
 
-          {createError && (
-            <Alert color="red" icon={<IconAlertCircle size={16} />}>
-              {createError}
-            </Alert>
-          )}
+      <UnifiedModal
+        opened={createModalOpened}
+        onClose={() => {
+          closeCreateModal();
+          resetCreateForm();
+        }}
+        title="医療記録を追加"
+        size="lg"
+        sections={[
+          {
+            label: '基本情報',
+            content: (
+              <>
+                <Select
+                  label="対象猫"
+                  placeholder="猫を選択"
+                  data={(catsQuery.data?.data ?? []).map((cat) => ({
+                    value: cat.id,
+                    label: cat.name,
+                  }))}
+                  value={createForm.catId}
+                  onChange={(value) => setCreateForm((prev) => ({ ...prev, catId: value || '' }))}
+                  required
+                />
 
-          <Divider />
+                <DatePickerInput
+                  label="受診日"
+                  placeholder="受診日を選択"
+                  value={createForm.visitDate}
+                  onChange={(value) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      visitDate: value ? new Date(value) : null,
+                    }))
+                  }
+                  required
+                />
 
-          <Group justify="flex-end">
-            <ActionButton action="cancel" onClick={() => {
-              closeCreateModal();
-              resetCreateForm();
-            }}>
-              キャンセル
-            </ActionButton>
-            <ActionButton action="save" onClick={handleCreateSubmit} loading={createMedicalRecordMutation.isPending}>
-              登録する
-            </ActionButton>
-          </Group>
-        </Stack>
-      </Modal>
+                <TextInput
+                  label="病院名"
+                  placeholder="例: ねこクリニック東京"
+                  value={createForm.hospitalName}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      hospitalName: event.target.value,
+                    }))
+                  }
+                />
+              </>
+            ),
+          },
+          {
+            label: '症状・診断',
+            content: (
+              <>
+                <Box>
+                  <Text size="sm" fw={500} mb="xs">
+                    症状タグ
+                  </Text>
+                  {tagsQuery.isLoading ? (
+                    <Skeleton height={40} />
+                  ) : medicalTags.length > 0 ? (
+                    <>
+                      <Group gap="xs" mb="sm">
+                        {medicalTags.map((tag) => {
+                          const isSelected = createForm.symptomTags.includes(tag.id);
+                          return (
+                            <Button
+                              key={tag.id}
+                              variant={isSelected ? 'filled' : 'outline'}
+                              color={isSelected ? tag.color || 'blue' : 'gray'}
+                              size="xs"
+                              rightSection={isSelected ? <IconX size={12} /> : undefined}
+                              onClick={() => {
+                                setCreateForm((prev) => ({
+                                  ...prev,
+                                  symptomTags: isSelected
+                                    ? prev.symptomTags.filter((id) => id !== tag.id)
+                                    : [...prev.symptomTags, tag.id],
+                                }));
+                              }}
+                            >
+                              {tag.name}
+                            </Button>
+                          );
+                        })}
+                      </Group>
+                      {createForm.symptomTags.length > 0 && (
+                        <Text size="xs" c="dimmed">
+                          選択されたタグ: {createForm.symptomTags.map(id => {
+                            const tag = medicalTags.find(t => t.id === id);
+                            return tag?.name || id;
+                          }).join(', ')}
+                        </Text>
+                      )}
+                    </>
+                  ) : (
+                    <Alert color="yellow" icon={<IconAlertCircle size={16} />}>
+                      タグ管理ページで「健康」カテゴリのタグを作成してください
+                    </Alert>
+                  )}
+                </Box>
+
+                <Textarea
+                  label="診断結果"
+                  placeholder="診断結果"
+                  value={createForm.diagnosis}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, diagnosis: event.target.value }))}
+                  minRows={2}
+                  autosize
+                />
+              </>
+            ),
+          },
+          {
+            label: '治療計画',
+            content: (
+              <>
+                <Textarea
+                  label="治療計画"
+                  placeholder="治療内容や計画"
+                  value={createForm.treatmentPlan}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, treatmentPlan: event.target.value }))}
+                  minRows={2}
+                  autosize
+                />
+
+                <Box>
+                  <Text size="sm" fw={500} mb="xs">
+                    治療ステータス
+                  </Text>
+                  <SegmentedControl
+                    value={createForm.status}
+                    onChange={(value) => setCreateForm((prev) => ({ ...prev, status: value }))}
+                    data={[
+                      { label: '治療中', value: 'TREATING' },
+                      { label: '完了', value: 'COMPLETED' },
+                    ]}
+                    fullWidth
+                  />
+                </Box>
+
+                <DatePickerInput
+                  label="次回予定日"
+                  placeholder="次回の受診予定日"
+                  value={createForm.followUpDate}
+                  onChange={(value) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      followUpDate: value ? new Date(value) : null,
+                    }))
+                  }
+                />
+
+                <Textarea
+                  label="備考"
+                  placeholder="その他のメモ"
+                  value={createForm.notes}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, notes: event.target.value }))}
+                  minRows={3}
+                  autosize
+                />
+
+                {createError && (
+                  <Alert color="red" icon={<IconAlertCircle size={16} />}>
+                    {createError}
+                  </Alert>
+                )}
+              </>
+            ),
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <ActionButton action="cancel" onClick={() => {
+                  closeCreateModal();
+                  resetCreateForm();
+                }}>
+                  キャンセル
+                </ActionButton>
+                <ActionButton action="save" onClick={handleCreateSubmit} loading={createMedicalRecordMutation.isPending}>
+                  登録する
+                </ActionButton>
+              </Group>
+            ),
+          },
+        ]}
+      />
     </Container>
   );
 }

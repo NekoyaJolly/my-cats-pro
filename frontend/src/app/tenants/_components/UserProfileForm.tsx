@@ -14,7 +14,6 @@ import {
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { ActionButton } from '@/components/ActionButton';
-import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAuth, useAuthStore } from '@/lib/auth/store';
 import { apiClient, apiRequest } from '@/lib/api/client';
 
@@ -320,11 +319,6 @@ export function UserProfileForm() {
             </ActionButton>
           </Group>
         </Stack>
-      </Card>
-
-      {/* デザイン世界設定セクション */}
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <ThemeSwitcher />
       </Card>
     </Stack>
   );

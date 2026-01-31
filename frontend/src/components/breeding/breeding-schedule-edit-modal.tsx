@@ -8,9 +8,8 @@ import {
   NumberInput,
   Badge,
   Select,
-  Divider,
 } from '@mantine/core';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 
 interface Cat {
   id: string;
@@ -111,15 +110,11 @@ export function BreedingScheduleEditModal({
     label: cat.name,
   }));
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={onClose}
-      title={schedule.isHistory ? '過去の交配スケジュールの編集' : '交配スケジュールの編集'}
-      size="md"
-      centered
-    >
-      <Group gap="xs" wrap="wrap">
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <>
+          <Group gap="xs" wrap="wrap">
         <Badge color="blue">{schedule.maleName}</Badge>
         <Text size="sm">×</Text>
         <Badge color="pink">{schedule.femaleName}</Badge>
@@ -131,10 +126,14 @@ export function BreedingScheduleEditModal({
       <Text size="sm" c="dimmed">
         開始日: {startDateStr}
       </Text>
-
-      <Divider label="スケジュール設定" labelPosition="center" />
-
-      <Select
+        </>
+      ),
+    },
+    {
+      label: "スケジュール設定",
+      content: (
+        <>
+          <Select
         label="メス猫"
         description="交配相手のメス猫を変更できます"
         value={femaleId}
@@ -158,10 +157,12 @@ export function BreedingScheduleEditModal({
           ※ 期間を短縮すると、最終日以降のスケジュールが削除されます
         </Text>
       )}
-
-      <Divider />
-
-      <Group justify="space-between" gap="sm">
+        </>
+      ),
+    },
+    {
+      content: (
+        <Group justify="space-between" gap="sm">
         <Group gap="xs">
           {onDelete && (
             <Button 
@@ -183,6 +184,18 @@ export function BreedingScheduleEditModal({
           </Button>
         </Group>
       </Group>
-    </UnifiedModal>
+      ),
+    },
+  ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title={schedule.isHistory ? '過去の交配スケジュールの編集' : '交配スケジュールの編集'}
+      size="md"
+      centered
+      sections={sections}
+    />
   );
 }

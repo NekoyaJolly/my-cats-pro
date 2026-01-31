@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import {
   Stack,
   Text,
@@ -10,9 +9,8 @@ import {
   Group,
   Badge,
   Button,
-  Divider,
 } from '@mantine/core';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import { calculateAgeInMonths } from '../utils';
 
@@ -39,22 +37,15 @@ export function MaleSelectionModal({
     !activeMales.some((am) => am.id === cat.id)
   );
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={onClose}
-      title="オス猫をスケジュールに追加"
-      size="md"
-      addContentPadding={false}
-    >
-      <Stack gap="sm" p="md">
-        <Text size="sm" c="dimmed">
-          スケジュールに追加するオス猫を選択してください
-        </Text>
-
-        <Divider />
-        
-        {availableMales.map((male) => (
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <Stack gap="sm" p="md">
+          <Text size="sm" c="dimmed">
+            スケジュールに追加するオス猫を選択してください
+          </Text>
+          
+          {availableMales.map((male) => (
           <Card key={male.id} shadow="sm" padding="sm" radius="md" withBorder>
             <Flex justify="space-between" align="center">
               <Box>
@@ -79,14 +70,26 @@ export function MaleSelectionModal({
               </Button>
             </Flex>
           </Card>
-        ))}
-        {availableMales.length === 0 && (
-          <Text ta="center" c="dimmed">
-            追加可能なオス猫がいません
-          </Text>
-        )}
-      </Stack>
-    </UnifiedModal>
+          ))}
+          {availableMales.length === 0 && (
+            <Text ta="center" c="dimmed">
+              追加可能なオス猫がいません
+            </Text>
+          )}
+        </Stack>
+      ),
+    },
+  ];
+
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title="オス猫をスケジュールに追加"
+      size="md"
+      addContentPadding={false}
+      sections={sections}
+    />
   );
 }
 

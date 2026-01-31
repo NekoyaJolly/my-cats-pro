@@ -13,10 +13,9 @@ import {
   Switch,
   Text,
   TextInput,
-  Divider,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 
 import type { TagFormValues } from '../types';
 import {
@@ -63,17 +62,11 @@ export function TagModal({
   inheritTagColorFromGroup,
   onInheritTagColorFromGroupChange,
 }: TagModalProps) {
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={onClose}
-      title={isEditing ? 'タグを編集' : 'タグを追加'}
-      size="lg"
-      keepMounted={false}
-      addContentPadding={false}
-    >
-      <Box component="form" onSubmit={onSubmit}>
-        <Stack gap="md" p="md">
+  const sections: ModalSection[] = [
+    {
+      label: '基本情報',
+      content: (
+        <>
           <Select
             label="カテゴリ"
             data={categoryOptions}
@@ -108,9 +101,13 @@ export function TagModal({
             value={form.values.description}
             onChange={(event) => form.setFieldValue('description', event.currentTarget.value)}
           />
-
-          <Divider label="カラー設定" labelPosition="center" />
-
+        </>
+      ),
+    },
+    {
+      label: 'カラー設定',
+      content: (
+        <>
           <Checkbox
             label="親グループのカラーを継承"
             checked={inheritTagColorFromGroup}
@@ -191,9 +188,13 @@ export function TagModal({
               </Badge>
             </Group>
           </Card>
-
-          <Divider label="設定" labelPosition="center" />
-
+        </>
+      ),
+    },
+    {
+      label: '設定',
+      content: (
+        <>
           <Group gap="lg">
             <Switch
               label="手動付与を許可"
@@ -211,20 +212,34 @@ export function TagModal({
             checked={form.values.isActive}
             onChange={(event) => form.setFieldValue('isActive', event.currentTarget.checked)}
           />
+        </>
+      ),
+    },
+    {
+      content: (
+        <Group justify="flex-end" gap="sm">
+          <Button variant="outline" onClick={onClose}>
+            キャンセル
+          </Button>
+          <Button type="submit" loading={isSubmitting}>
+            {isEditing ? '更新' : '作成'}
+          </Button>
+        </Group>
+      ),
+    },
+  ];
 
-          <Divider />
-
-          <Group justify="flex-end" gap="sm">
-            <Button variant="outline" onClick={onClose}>
-              キャンセル
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {isEditing ? '更新' : '作成'}
-            </Button>
-          </Group>
-        </Stack>
-      </Box>
-    </UnifiedModal>
+  return (
+    <Box component="form" onSubmit={onSubmit}>
+      <UnifiedModal
+        opened={opened}
+        onClose={onClose}
+        title={isEditing ? 'タグを編集' : 'タグを追加'}
+        size="lg"
+        keepMounted={false}
+        sections={sections}
+      />
+    </Box>
   );
 }
 

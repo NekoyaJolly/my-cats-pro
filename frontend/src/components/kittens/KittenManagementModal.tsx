@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Stack,
   Select,
@@ -11,7 +11,6 @@ import {
   NumberInput,
   Card,
   Text,
-  Divider,
   Badge,
   ActionIcon,
   Flex,
@@ -23,7 +22,7 @@ import { TabsSection } from '@/components/TabsSection';
 import { useGetCats, useCreateCat, useUpdateCat, type Cat } from '@/lib/api/hooks/use-cats';
 import { useGetCoatColors, type CoatColor } from '@/lib/api/hooks/use-coat-colors';
 import { useGetBirthPlans, useCreateKittenDisposition, type BirthPlan } from '@/lib/api/hooks/use-breeding';
-import { UnifiedModal } from '@/components/common';
+import { UnifiedModal, type ModalSection } from '@/components/common';
 
 interface KittenData {
   id?: string; // 既存の子猫の場合はID、新規の場合はundefined
@@ -353,34 +352,26 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
     onClose();
   };
 
-  return (
-    <UnifiedModal
-      opened={opened}
-      onClose={handleClose}
-      title="子猫管理"
-      size="xl"
-      styles={{
-        body: { maxHeight: '70vh', overflowY: 'auto' },
-      }}
-    >
-      {/* 母猫選択 */}
-      <Select
-        label="母猫選択"
-        placeholder="母猫を選択してください"
-        value={selectedMotherId}
-        onChange={(value) => setSelectedMotherId(value || '')}
-        data={motherCats.map((cat: Cat) => ({
-          value: cat.id,
-          label: `${cat.name} (${cat.birthDate})`,
-        }))}
-        disabled={!!motherId} // 外部から指定された場合は変更不可
-        searchable
-      />
-
-      <Divider />
-
-      {/* タブ */}
-      <TabsSection
+  const sections: ModalSection[] = [
+    {
+      content: (
+        <Select
+          label="母猫選択"
+          placeholder="母猫を選択してください"
+          value={selectedMotherId}
+          onChange={(value) => setSelectedMotherId(value || '')}
+          data={motherCats.map((cat: Cat) => ({
+            value: cat.id,
+            label: `${cat.name} (${cat.birthDate})`,
+          }))}
+          disabled={!!motherId}
+          searchable
+        />
+      ),
+    },
+    {
+      content: (
+        <TabsSection
         value={activeTab}
         onChange={(value) => setActiveTab(value || 'list')}
         tabs={[
@@ -642,28 +633,42 @@ export function KittenManagementModal({ opened, onClose, motherId, onSuccess }: 
           </Stack>
         </Box>
         )}
-      </TabsSection>
+        </TabsSection>
+      ),
+    },
+    {
+      content: (
+        <Group justify="flex-end">
+          <Button
+            variant="outline"
+            leftSection={<IconX size={16} />}
+            onClick={handleClose}
+          >
+            キャンセル
+          </Button>
+          <Button
+            leftSection={<IconDeviceFloppy size={16} />}
+            onClick={handleSave}
+            loading={createCatMutation.isPending || updateCatMutation.isPending}
+            disabled={!selectedMotherId || kittens.length === 0}
+          >
+            保存
+          </Button>
+        </Group>
+      ),
+    },
+  ];
 
-      <Divider />
-
-      {/* アクションボタン */}
-      <Group justify="flex-end">
-        <Button
-          variant="outline"
-          leftSection={<IconX size={16} />}
-          onClick={handleClose}
-        >
-          キャンセル
-        </Button>
-        <Button
-          leftSection={<IconDeviceFloppy size={16} />}
-          onClick={handleSave}
-          loading={createCatMutation.isPending || updateCatMutation.isPending}
-          disabled={!selectedMotherId || kittens.length === 0}
-        >
-          保存
-        </Button>
-      </Group>
-    </UnifiedModal>
+  return (
+    <UnifiedModal
+      opened={opened}
+      onClose={handleClose}
+      title="子猫管理"
+      size="xl"
+      styles={{
+        body: { maxHeight: '70vh', overflowY: 'auto' },
+      }}
+      sections={sections}
+    />
   );
 }

@@ -130,9 +130,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       Input: {
         styles: {
           input: {
-            backgroundColor: 'var(--input-bg) !important',
+            backgroundColor: '#f8f9fa !important',
             borderRadius: '8px !important',
-            border: '1px solid var(--border-primary) !important',
+            border: '1px solid #dee2e6 !important',
             transition: 'all 0.2s ease',
           },
         },
@@ -140,9 +140,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       Select: {
         styles: {
           input: {
-            backgroundColor: 'var(--input-bg) !important',
+            backgroundColor: '#f8f9fa !important',
             borderRadius: '8px !important',
-            border: '1px solid var(--border-primary) !important',
+            border: '1px solid #dee2e6 !important',
           },
           dropdown: {
             backgroundColor: '#fff !important',
@@ -203,9 +203,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       Checkbox: {
         styles: {
           input: {
-            backgroundColor: 'var(--input-bg) !important',
+            backgroundColor: '#f8f9fa !important',
             borderRadius: '4px !important',
-            border: '1px solid var(--border-primary) !important',
+            border: '1px solid #dee2e6 !important',
           },
           icon: {
             color: 'var(--accent) !important',

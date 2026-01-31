@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import { Fragment } from 'react';
 import {
   Card,
   Text,
@@ -186,7 +186,7 @@ export function RaisingTab({
             const allDisposed = disposedCount === kittens.length && kittens.length > 0;
 
             return (
-              <React.Fragment key={mother.id}>
+              <Fragment key={mother.id}>
                 {/* 母猫の行 */}
                 <Table.Tr
                   style={{ cursor: 'pointer', backgroundColor: isExpanded ? '#f8f9fa' : undefined }}
@@ -317,7 +317,7 @@ export function RaisingTab({
                     </Table.Tr>
                   );
                 })}
-              </React.Fragment>
+              </Fragment>
             );
           })}
         </Table.Tbody>
