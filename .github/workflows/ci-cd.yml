@@ -50,13 +50,13 @@ jobs:
       - name: Check for critical vulnerabilities
         run: |
           echo "🔍 Scanning for critical and high severity vulnerabilities..."
-          echo "📋 Using .trivyignore.yaml file to exclude known false positives..."
-          if trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore.yaml --quiet --exit-code 1 .; then
+          echo "📋 Using .trivyignore file to exclude known false positives..."
+          if trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore --quiet --exit-code 1 .; then
             echo "✅ No critical or high severity vulnerabilities found"
           else
             echo "❌ Critical or high severity vulnerabilities detected!"
             echo "📊 Detailed vulnerability report:"
-            trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore.yaml .
+            trivy fs --severity CRITICAL,HIGH --scanners vuln --ignorefile .trivyignore .
             exit 1
           fi
 
