@@ -72,7 +72,9 @@ export function UnifiedModal({
               mb="md"
             />
           )}
-          {section.content}
+          <Stack gap="md">
+            {section.content}
+          </Stack>
         </div>
       ));
 

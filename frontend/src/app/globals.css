@@ -225,7 +225,15 @@ h1, h2, h3, h4, h5, h6 {
 .mantine-Modal-body .mantine-TimeInput-input,
 .mantine-Modal-body .mantine-NumberInput-input,
 .mantine-Modal-body .mantine-PasswordInput-input,
-.mantine-Modal-body .mantine-ColorInput-input {
+.mantine-Modal-body .mantine-ColorInput-input,
+.mantine-Modal-content .mantine-Input-input,
+.mantine-Modal-content .mantine-Select-input,
+.mantine-Modal-content .mantine-Textarea-input,
+.mantine-Modal-content .mantine-DateInput-input,
+.mantine-Modal-content .mantine-TimeInput-input,
+.mantine-Modal-content .mantine-NumberInput-input,
+.mantine-Modal-content .mantine-PasswordInput-input,
+.mantine-Modal-content .mantine-ColorInput-input {
   border: 1px solid #dee2e6 !important;
   background-color: #f8f9fa !important;
 }
