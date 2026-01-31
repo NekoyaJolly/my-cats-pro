@@ -82,9 +82,6 @@ CVE-2025-55184
 # CVE-2024-53866: pnpm workspace cache poisoning leading to arbitrary code execution
 # Affects pnpm <9.15.0
 # Fix: Upgrade to pnpm >=9.15.0
-# Current CI version: pnpm 9.x (needs verification of exact version)
-# This project uses ignore-scripts and separate workspaces as mitigations
+# CI version has been updated to 9.15.0 (was "9" which could install any 9.x)
+# This project also uses separate workspaces as additional mitigation
 CVE-2024-53866
-
-# Note: If pnpm version is <9.15.0, this should be upgraded rather than ignored
-# The above is a placeholder until pnpm version is confirmed and upgraded
