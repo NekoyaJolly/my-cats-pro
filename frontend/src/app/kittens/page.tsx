@@ -206,7 +206,7 @@ export default function KittensPage() {
             openManagementModal();
           }}
         >
-          新規登録
+          作成
         </ActionButton>
       </Group>
     );

@@ -210,7 +210,7 @@ export default function CatsPage() {
         action="create"
         onClick={() => router.push('/cats/new')}
       >
-        新規登録
+        作成
       </ActionButton>
     );
 

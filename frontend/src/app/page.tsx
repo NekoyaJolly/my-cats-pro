@@ -368,7 +368,7 @@ export default function Home() {
       href: card.href,
       badge: card.badge,
       subActions: card.id === 'cats' ? [
-        { id: 'cats-new', title: '新規登録', icon: <IconPlus size={18} />, href: '/cats/new' },
+        { id: 'cats-new', title: '作成', icon: <IconPlus size={18} />, href: '/cats/new' },
         { id: 'cats-list', title: '一覧', icon: <IconList size={18} />, href: '/cats' },
       ] : card.id === 'breeding' ? [
         { id: 'breeding-list', title: '一覧', icon: <IconList size={18} />, href: '/breeding' },
@@ -378,13 +378,13 @@ export default function Home() {
         { id: 'care-medical', title: '医療記録', icon: <IconStethoscope size={18} />, href: '/care' },
       ] : card.id === 'kittens' ? [
         { id: 'kittens-list', title: '一覧', icon: <IconList size={18} />, href: '/kittens' },
-        { id: 'kittens-new', title: '新規登録', icon: <IconPlus size={18} />, href: '/kittens/new' },
+        { id: 'kittens-new', title: '作成', icon: <IconPlus size={18} />, href: '/kittens/new' },
       ] : card.id === 'pedigrees' ? [
         { id: 'pedigrees-list', title: '一覧', icon: <IconList size={18} />, href: '/pedigrees' },
-        { id: 'pedigrees-new', title: '新規作成', icon: <IconPlus size={18} />, href: '/pedigrees/new' },
+        { id: 'pedigrees-new', title: '作成', icon: <IconPlus size={18} />, href: '/pedigrees/new' },
       ] : card.id === 'medical-records' ? [
         { id: 'medical-list', title: '一覧', icon: <IconList size={18} />, href: '/medical-records' },
-        { id: 'medical-new', title: '新規登録', icon: <IconPlus size={18} />, href: '/medical-records/new' },
+        { id: 'medical-new', title: '作成', icon: <IconPlus size={18} />, href: '/medical-records/new' },
       ] : undefined,
     }));
 

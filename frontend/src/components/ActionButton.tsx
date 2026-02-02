@@ -16,6 +16,9 @@ import {
 } from '@tabler/icons-react';
 import { forwardRef } from 'react';
 
+// サイズプリセット型の定義
+export type ActionButtonSizePreset = 'icon' | 'small' | 'medium' | 'large';
+
 // アクションタイプの定義
 export type ActionType =
   | 'create'
@@ -27,6 +30,25 @@ export type ActionType =
   | 'confirm'
   | 'back';
 
+// サイズプリセットの定義
+const ACTION_BUTTON_SIZE_PRESETS: Record<
+  ActionButtonSizePreset,
+  { size: ButtonProps['size']; iconSize: number }
+> = {
+  icon: { size: 'xs', iconSize: 16 },
+  small: { size: 'sm', iconSize: 16 },
+  medium: { size: 'md', iconSize: 18 },
+  large: { size: 'lg', iconSize: 20 },
+};
+
+// サイズプリセット別の最小幅（px）
+const ACTION_BUTTON_WIDTH_PRESETS: Record<ActionButtonSizePreset, number> = {
+  icon: 40,
+  small: 96,
+  medium: 112,
+  large: 136,
+};
+
 // アクションタイプごとのスタイル設定
 const ACTION_STYLES: Record<
   ActionType,
@@ -37,56 +59,56 @@ const ACTION_STYLES: Record<
     borderColor?: MantineColor;
     borderWidth?: number;
     icon: React.ComponentType<{ size?: number | string }>;
-    defaultSize: ButtonProps['size'];
+    defaultSize: ActionButtonSizePreset;
   }
 > = {
   create: {
-    variant: 'filled',
+    variant: 'light',
     color: 'var(--accent)',
     icon: IconPlus,
-    defaultSize: 'md',
+    defaultSize: 'small',
   },
   edit: {
     variant: 'light',
     color: 'orange',
     icon: IconEdit,
-    defaultSize: 'sm',
+    defaultSize: 'small',
   },
   delete: {
     variant: 'light',
     color: 'red',
     icon: IconTrash,
-    defaultSize: 'sm',
+    defaultSize: 'small',
   },
   view: {
-    variant: 'subtle',
+    variant: 'light',
     color: 'gray',
     icon: IconEye,
-    defaultSize: 'sm',
+    defaultSize: 'small',
   },
   save: {
-    variant: 'filled',
+    variant: 'light',
     color: 'var(--accent)',
     icon: IconDeviceFloppy,
-    defaultSize: 'md',
+    defaultSize: 'small',
   },
   cancel: {
-    variant: 'subtle',
+    variant: 'light',
     color: 'gray',
     icon: IconX,
-    defaultSize: 'sm',
+    defaultSize: 'small',
   },
   confirm: {
-    variant: 'filled',
+    variant: 'light',
     color: 'var(--accent)',
     icon: IconCheck,
-    defaultSize: 'md',
+    defaultSize: 'small',
   },
   back: {
-    variant: 'subtle',
+    variant: 'light',
     color: 'gray',
     icon: IconArrowLeft,
-    defaultSize: 'sm',
+    defaultSize: 'small',
   },
 };
 
@@ -122,22 +144,28 @@ const createActionButtonOverrideStyles = (params: {
   borderColor?: MantineColor;
   borderWidth?: number;
   textColor?: MantineColor;
+  sizePreset?: ActionButtonSizePreset;
 }): ButtonProps['styles'] | undefined => {
-  const { borderColor, borderWidth, textColor } = params;
+  const { borderColor, borderWidth, textColor, sizePreset } = params;
 
-  if (!borderColor && borderWidth === undefined && !textColor) return undefined;
+  if (!borderColor && borderWidth === undefined && !textColor && !sizePreset) return undefined;
 
   return (theme) => {
     const resolvedBorderColor = borderColor ? getThemeColor(borderColor, theme) : undefined;
     const resolvedTextColor = textColor ? getThemeColor(textColor, theme) : undefined;
+    const minWidth = sizePreset ? ACTION_BUTTON_WIDTH_PRESETS[sizePreset] : undefined;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 575;
 
     const root: React.CSSProperties = {
       ...(resolvedBorderColor ? { borderColor: resolvedBorderColor, borderStyle: 'solid' } : {}),
       ...(borderWidth !== undefined ? { borderWidth, borderStyle: 'solid' } : {}),
+      ...(minWidth && !isMobile ? { minWidth: `${minWidth}px` } : {}),
+      ...(isMobile && sizePreset !== 'icon' ? { width: '100%' } : {}),
     };
 
     const label: React.CSSProperties = {
       ...(resolvedTextColor ? { color: resolvedTextColor } : {}),
+      ...(sizePreset === 'small' ? { fontSize: '17px' } : {}),
     };
 
     return {
@@ -150,7 +178,9 @@ const createActionButtonOverrideStyles = (params: {
 export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'color' | 'leftSection'> {
   /** アクションタイプ（自動的にスタイルとアイコンが適用される） */
   action: ActionType;
-  /** アイコンのサイズ（デフォルト: 18） */
+  /** サイズプリセット（icon/small/medium/large） */
+  sizePreset?: ActionButtonSizePreset;
+  /** アイコンのサイズ（デフォルト: プリセットに応じる） */
   iconSize?: number;
   /** アイコンを表示しない場合はtrue */
   hideIcon?: boolean;
@@ -197,7 +227,8 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
   (
     {
       action,
-      iconSize = 18, // Slightly larger icons for better visibility
+      sizePreset: inputSizePreset,
+      iconSize: inputIconSize,
       hideIcon = false,
       customIcon,
       children,
@@ -213,6 +244,10 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
     ref
   ) => {
     const style = ACTION_STYLES[action];
+    const resolvedSizePreset = inputSizePreset ?? style.defaultSize;
+    const presetConfig = ACTION_BUTTON_SIZE_PRESETS[resolvedSizePreset];
+    const effectiveIconSize = inputIconSize ?? presetConfig.iconSize;
+
     // customIconがReactNodeの場合はそのまま使用、コンポーネント型の場合はインスタンス化
     const Icon = typeof customIcon === 'function' && 'prototype' in customIcon 
       ? (customIcon as React.ComponentType<{ size?: number | string }>)
@@ -225,6 +260,7 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
       borderColor: effectiveBorderColor,
       borderWidth: effectiveBorderWidth,
       textColor: effectiveTextColor,
+      sizePreset: resolvedSizePreset,
     });
     const mergedStyles = mergeButtonStyles(buttonStyles, overrideStyles);
 
@@ -233,14 +269,14 @@ export const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
       ? undefined 
       : (typeof customIcon === 'object' && customIcon !== null && !('prototype' in customIcon)
           ? customIcon as React.ReactNode
-          : <Icon size={iconSize} />);
+          : <Icon size={effectiveIconSize} />);
 
     return (
       <Button
         ref={ref}
         variant={style.variant}
         color={style.color}
-        size={isSectionAction ? 'md' : (props.size || style.defaultSize)}
+        size={isSectionAction ? 'md' : (props.size || presetConfig.size)}
         leftSection={leftSection}
         styles={mergedStyles}
         loading={loading}
@@ -262,6 +298,7 @@ ActionButton.displayName = 'ActionButton';
  */
 export interface ActionIconButtonProps extends Omit<ButtonProps, 'variant' | 'color'> {
   action: ActionType;
+  sizePreset?: ActionButtonSizePreset;
   iconSize?: number;
   /** カスタムアイコン（コンポーネント型、ReactNode、または関数） */
   customIcon?: React.ComponentType<{ size?: number | string }> | React.ReactNode | (() => React.ReactNode);
@@ -279,7 +316,8 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
   (
     {
       action,
-      iconSize = 16,
+      sizePreset = 'icon',
+      iconSize: inputIconSize,
       customIcon,
       borderColor,
       borderWidth,
@@ -291,6 +329,9 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
     ref
   ) => {
     const style = ACTION_STYLES[action];
+    const presetConfig = ACTION_BUTTON_SIZE_PRESETS[sizePreset];
+    const effectiveIconSize = inputIconSize ?? presetConfig.iconSize;
+
     // customIconの型に応じて適切に処理
     let iconContent: React.ReactNode;
     if (typeof customIcon === 'function') {
@@ -298,7 +339,7 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
       if ('prototype' in customIcon) {
         // コンポーネント型
         const Icon = customIcon as React.ComponentType<{ size?: number | string }>;
-        iconContent = <Icon size={iconSize} />;
+        iconContent = <Icon size={effectiveIconSize} />;
       } else {
         // 関数として実行（型アサーションで明示的に型を指定）
         iconContent = (customIcon as () => React.ReactNode)();
@@ -309,7 +350,7 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
     } else {
       // デフォルトアイコン
       const Icon = style.icon;
-      iconContent = <Icon size={iconSize} />;
+      iconContent = <Icon size={effectiveIconSize} />;
     }
 
     const effectiveBorderColor = borderColor ?? style.borderColor;
@@ -317,6 +358,7 @@ export const ActionIconButton = forwardRef<HTMLButtonElement, ActionIconButtonPr
     const overrideStyles = createActionButtonOverrideStyles({
       borderColor: effectiveBorderColor,
       borderWidth: effectiveBorderWidth,
+      sizePreset,
     });
     const mergedStyles = mergeButtonStyles(buttonStyles, overrideStyles);
 

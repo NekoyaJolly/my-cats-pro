@@ -59,7 +59,7 @@ export default function PedigreesPage() {
       <Tabs value={tabParam} onChange={handleTabChange} mt="md">
         <Tabs.List grow>
           <Tabs.Tab value="register" leftSection={<IconPlus size={14} />}>
-            新規登録
+            作成
           </Tabs.Tab>
           <Tabs.Tab value="list" leftSection={<IconList size={14} />}>
             データ管理

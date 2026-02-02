@@ -288,6 +288,106 @@ export default function ActionButtonDemoPage() {
           </Stack>
         </Card>
 
+        {/* サイズプリセット */}
+        <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Title order={3} mb="md">
+            サイズプリセット（icon / small / medium / large）
+          </Title>
+          <Text size="sm" c="dimmed" mb="lg">
+            sizePreset パラメータで統一されたサイズを選択できます。デフォルトは 'small' です。
+          </Text>
+          <Stack gap="lg">
+            <div>
+              <Text size="sm" fw={500} mb="xs">
+                アイコンプリセット（icon）
+              </Text>
+              <Text size="xs" c="dimmed" mb="xs">
+                最小限のサイズ。テーブルヘッダーやインラインアクション用。
+              </Text>
+              <Group>
+                <ActionButton action="create" sizePreset="icon">
+                  作成
+                </ActionButton>
+                <ActionButton action="edit" sizePreset="icon">
+                  編集
+                </ActionButton>
+                <ActionButton action="delete" sizePreset="icon">
+                  削除
+                </ActionButton>
+              </Group>
+            </div>
+
+            <div>
+              <Text size="sm" fw={500} mb="xs">
+                小プリセット（small）- デフォルト
+              </Text>
+              <Text size="xs" c="dimmed" mb="xs">
+                フォームやダイアログで推奨。コンパクトながら操作しやすい。
+              </Text>
+              <Group>
+                <ActionButton action="create" sizePreset="small">
+                  作成
+                </ActionButton>
+                <ActionButton action="edit" sizePreset="small">
+                  編集
+                </ActionButton>
+                <ActionButton action="delete" sizePreset="small">
+                  削除
+                </ActionButton>
+              </Group>
+            </div>
+
+            <div>
+              <Text size="sm" fw={500} mb="xs">
+                中プリセット（medium）
+              </Text>
+              <Text size="xs" c="dimmed" mb="xs">
+                セクション内の主要アクション用。より視認性が高い。
+              </Text>
+              <Group>
+                <ActionButton action="create" sizePreset="medium">
+                  作成
+                </ActionButton>
+                <ActionButton action="edit" sizePreset="medium">
+                  編集
+                </ActionButton>
+                <ActionButton action="delete" sizePreset="medium">
+                  削除
+                </ActionButton>
+              </Group>
+            </div>
+
+            <div>
+              <Text size="sm" fw={500} mb="xs">
+                大プリセット（large）
+              </Text>
+              <Text size="xs" c="dimmed" mb="xs">
+                主要な CTA（Call To Action）用。最大限の視認性。
+              </Text>
+              <Group>
+                <ActionButton action="create" sizePreset="large">
+                  作成
+                </ActionButton>
+                <ActionButton action="edit" sizePreset="large">
+                  編集
+                </ActionButton>
+                <ActionButton action="delete" sizePreset="large">
+                  削除
+                </ActionButton>
+              </Group>
+            </div>
+
+            <Paper bg="gray.0" p="xs">
+              <Code block>
+                {`<ActionButton action="create" sizePreset="icon">作成</ActionButton>
+<ActionButton action="create" sizePreset="small">作成</ActionButton>
+<ActionButton action="create" sizePreset="medium">作成</ActionButton>
+<ActionButton action="create" sizePreset="large">作成</ActionButton>`}
+              </Code>
+            </Paper>
+          </Stack>
+        </Card>
+
         {/* カスタマイズ例 */}
         <Card shadow="sm" padding="lg" radius="md" withBorder>
           <Title order={3} mb="md">
