@@ -61,9 +61,9 @@ async function renamePedigreeCsvFields() {
   }
 
   try {
-  console.log("🔄 CSVファイルを読み込み中...");
-  console.log(`📂 入力パス: ${csvPath}`);
-  console.log(`📂 出力パス: ${outputPath}`);
+    console.log("🔄 CSVファイルを読み込み中...");
+    console.log(`📂 入力パス: ${csvPath}`);
+    console.log(`📂 出力パス: ${outputPath}`);
     const content = await fs.readFile(csvPath, "utf-8");
     const lines = content.split("\n");
 
@@ -89,18 +89,18 @@ async function renamePedigreeCsvFields() {
     console.log("🔄 フィールド名をリネーム中...");
     console.log(`📝 リネーム後: ${renamedHeader.substring(0, 100)}...`);
 
-  // ヘッダー行以外のデータを結合（headerIndexより前をスキップ）
-  const newContent = [renamedHeader, ...lines.slice(dataStart)].join("\n");
+    // ヘッダー行以外のデータを結合（headerIndexより前をスキップ）
+    const newContent = [renamedHeader, ...lines.slice(dataStart)].join("\n");
 
     // 新しいファイルに保存
-  await fs.writeFile(outputPath, newContent, "utf-8");
+    await fs.writeFile(outputPath, newContent, "utf-8");
 
     console.log("✅ CSVファイルのリネームが完了しました");
     console.log(`📁 出力ファイル: ${outputPath}`);
-  console.log(`📊 新しい総行数: ${newContent.split("\n").length}`);
+    console.log(`📊 新しい総行数: ${newContent.split("\n").length}`);
 
     // 結果の確認
-  const newLines = newContent.split("\n");
+    const newLines = newContent.split("\n");
     console.log(`📝 新しいヘッダー: ${newLines[0].substring(0, 150)}...`);
     console.log(`📝 最初のデータ行: ${newLines[1].substring(0, 100)}...`);
   } catch (error) {
@@ -117,109 +117,115 @@ function renameFields(headerLine: string): string {
   const originalSet = new Set(fields.map((f) => f.trim()));
   const used = new Set<string>();
 
-  // フィールド名のマッピング（祖父母世代以降をF/M略称に変更）
+  // フィールド名のマッピング（PrismaスキーマのcamelCase形式に準拠）
   const fieldMapping: { [key: string]: string } = {
-    // 基本情報（そのまま）
-    PedigreeID: "PedigreeID",
-    Title: "Title",
-    CatteryName: "CatName",
-    CatName: "CatName2",
-    BreedCode: "BreedCode",
-    Gender: "Gender",
-    EyeColor: "EyeColor",
-    CoatColorCode: "CoatColorCode",
-    BirthDate: "BirthDate",
-    BreederName: "BreederName",
-    OwnerName: "OwnerName",
-    RegistrationDate: "RegistrationDate",
-    BrotherCount: "BrotherCount",
-    SisterCount: "SisterCount",
-    Notes: "Notes",
-    Notes2: "Notes2",
-    OtherNo: "OtherNo",
+    // 基本情報（Prismaスキーマ準拠: camelCase）
+    PedigreeID: "pedigreeId",
+    ChampionFlag: "championFlag",
+    Title: "title",
+    CatName: "catName",
+    CatName2: "catName2",
+    BreedCode: "breedCode",
+    Gender: "genderCode",
+    EyeColor: "eyeColor",
+    CoatColorCode: "coatColorCode",
+    BirthDate: "birthDate",
+    BreederName: "breederName",
+    OwnerName: "ownerName",
+    RegistrationDate: "registrationDate",
+    BrotherCount: "brotherCount",
+    SisterCount: "sisterCount",
+    Notes: "notes",
+    Notes2: "notes2",
+    OtherNo: "otherNo",
 
-    // 父母情報（そのまま）
-    FatherTitle: "FatherTitle",
-    FatherCatteryName: "FatherCatName",
-    FatherCatName: "FatherCatName2",
-    FatherCoatColor: "FatherCoatColor",
-    FatherEyeColor: "FatherEyeColor",
-    FatherJCU: "FatherJCU",
-    FatherOtherCode: "FatherOtherCode",
-    MotherTitle: "MotherTitle",
-    MotherCatteryName: "MotherCatName",
-  MotherCatName: "MotherCatName2",
-    MotherCoatColor: "MotherCoatColor",
-    MotherEyeColor: "MotherEyeColor",
-    MotherJCU: "MotherJCU",
-    MotherOtherCode: "MotherOtherCode",
+    // 父母情報（Prismaスキーマ準拠）
+    // 注意: 元CSVではCatteryNameに猫名、CatNameにキャッテリー名が入っている
+    FatherChampionFlag: "fatherChampionFlag",
+    FatherTitle: "fatherTitle",
+    FatherCatteryName: "fatherCatName",
+    FatherCatName: "fatherCatName2",
+    FatherCoatColor: "fatherCoatColor",
+    FatherEyeColor: "fatherEyeColor",
+    FatherJCU: "fatherJCU",
+    FatherOtherCode: "fatherOtherCode",
+    MotherChampionFlag: "motherChampionFlag",
+    MotherTitle: "motherTitle",
+    MotherCatteryName: "motherCatName",
+    MotherCatName: "motherCatName2",
+    MotherCoatColor: "motherCoatColor",
+    MotherEyeColor: "motherEyeColor",
+    MotherJCU: "motherJCU",
+    MotherOtherCode: "motherOtherCode",
 
-  // 祖父母世代（F/M略称に変更） 
-    PatGrandFatherTitle: "FFTitle",
-    PatGrandFatherCatteryName: "FFCatName",
-    PatGrandFatherCatName: "FFCatName2",
-    PatGrandFatherJCU: "FFJCU",
-    PatGrandMotherTitle: "FMTitle",
-    PatGrandMotherCatteryName: "FMCatName",
-    PatGrandMotherCatName: "FMCatName2",
-    PatGrandMotherJCU: "FMJCU",
-  PatGrandFatherChampionFlag: "FFChampionFlag",
-  PatGrandMotherChampionFlag: "FMChampionFlag",
-  MatGrandFatherChampionFlag: "MFChampionFlag",
-  MatGrandFatherTitle: "MFTitle",
-  MatGrandFatherCatteryName: "MFCatName",
-  MatGrandFatherCatName: "MFCatName2",
-  MatGrandFatherJCU: "MFJCU",
-  MatGrandMotherChampionFlag: "MMChampionFlag",
-  MatGrandMotherTitle: "MMTitle",
-  MatGrandMotherCatteryName: "MMCatName",
-  MatGrandMotherCatName: "MMCatName2",
-  MatGrandMotherJCU: "MMJCU",
+    // 祖父母世代（Prismaスキーマ準拠: ff, fm, mf, mm）
+    // 注意: 元CSVではCatteryNameに猫名、CatNameに毛色が入っている
+    PatGrandFatherChampionFlag: "ffChampionFlag",
+    PatGrandFatherTitle: "ffTitle",
+    PatGrandFatherCatteryName: "ffCatName",
+    PatGrandFatherCatName: "ffCatColor",
+    PatGrandFatherJCU: "ffjcu",
+    PatGrandMotherChampionFlag: "fmChampionFlag",
+    PatGrandMotherTitle: "fmTitle",
+    PatGrandMotherCatteryName: "fmCatName",
+    PatGrandMotherCatName: "fmCatColor",
+    PatGrandMotherJCU: "fmjcu",
+    MatGrandFatherChampionFlag: "mfChampionFlag",
+    MatGrandFatherTitle: "mfTitle",
+    MatGrandFatherCatteryName: "mfCatName",
+    MatGrandFatherCatName: "mfCatColor",
+    MatGrandFatherJCU: "mfjcu",
+    MatGrandMotherChampionFlag: "mmChampionFlag",
+    MatGrandMotherTitle: "mmTitle",
+    MatGrandMotherCatteryName: "mmCatName",
+    MatGrandMotherCatName: "mmCatColor",
+    MatGrandMotherJCU: "mmjcu",
 
-    // 曾祖父母世代（FF, FM, MF, MM + F/M）
-    PatGreatGrandFatherChampionFlag: "FFFChampionFlag",
-    PatGreatGrandFatherTitle: "FFFTitle",
-    PatGreatGrandFatherCatteryName: "FFFCatteryName",
-    PatGreatGrandFatherCatName: "FFFCatName",
-    PatGreatGrandFatherJCU: "FFFJCU",
-    PatGreatGrandMotherChampionFlag: "FFMChampionFlag",
-    PatGreatGrandMotherTitle: "FFMTitle",
-    PatGreatGrandMotherCatteryName: "FFMCatteryName",
-    PatGreatGrandMotherCatName: "FFMCatName",
-    PatGreatGrandMotherJCU: "FFMJCU",
-    PatGreatGrandFatherMatChampionFlag: "FMFChampionFlag",
-    PatGreatGrandFatherMatTitle: "FMFTitle",
-    PatGreatGrandFatherMatCatteryName: "FMFCatteryName",
-    PatGreatGrandFatherMatCatName: "FMFCatName",
-    PatGreatGrandFatherMatJCU: "FMFJCU",
-    PatGreatGrandMotherMatChampionFlag: "FMMChampionFlag",
-    PatGreatGrandMotherMatTitle: "FMMTitle",
-    PatGreatGrandMotherMatCatteryName: "FMMCatteryName",
-    PatGreatGrandMotherMatCatName: "FMMCatName",
-    PatGreatGrandMotherMatJCU: "FMMJCU",
-    MatGreatGrandFatherChampionFlag: "MFFChampionFlag",
-    MatGreatGrandFatherTitle: "MFFTitle",
-    MatGreatGrandFatherCatteryName: "MFFCatteryName",
-    MatGreatGrandFatherCatName: "MFFCatName",
-    MatGreatGrandFatherJCU: "MFFJCU",
-    MatGreatGrandMotherChampionFlag: "MFMChampionFlag",
-    MatGreatGrandMotherTitle: "MFMTitle",
-    MatGreatGrandMotherCatteryName: "MFMCatteryName",
-    MatGreatGrandMotherCatName: "MFMCatName",
-    MatGreatGrandMotherJCU: "MFMJCU",
-    MatGreatGrandFatherMatChampionFlag: "MMFChampionFlag",
-    MatGreatGrandFatherMatTitle: "MMFTitle",
-    MatGreatGrandFatherMatCatteryName: "MMFCatteryName",
-    MatGreatGrandFatherMatCatName: "MMFCatName",
-    MatGreatGrandFatherMatJCU: "MMFJCU",
-    MatGreatGrandMotherMatChampionFlag: "MMMChampionFlag",
-    MatGreatGrandMotherMatTitle: "MMMTitle",
-    MatGreatGrandMotherMatCatteryName: "MMMCatteryName",
-    MatGreatGrandMotherMatCatName: "MMMCatName",
-    MatGreatGrandMotherMatJCU: "MMMJCU",
+    // 曾祖父母世代（Prismaスキーマ準拠: fff, ffm, fmf, fmm, mff, mfm, mmf, mmm）
+    // 注意: 元CSVではCatteryNameに猫名、CatNameに毛色が入っている
+    PatGreatGrandFatherChampionFlag: "fffChampionFlag",
+    PatGreatGrandFatherTitle: "fffTitle",
+    PatGreatGrandFatherCatteryName: "fffCatName",
+    PatGreatGrandFatherCatName: "fffCatColor",
+    PatGreatGrandFatherJCU: "fffjcu",
+    PatGreatGrandMotherChampionFlag: "ffmChampionFlag",
+    PatGreatGrandMotherTitle: "ffmTitle",
+    PatGreatGrandMotherCatteryName: "ffmCatName",
+    PatGreatGrandMotherCatName: "ffmCatColor",
+    PatGreatGrandMotherJCU: "ffmjcu",
+    PatGreatGrandFatherMatChampionFlag: "fmfChampionFlag",
+    PatGreatGrandFatherMatTitle: "fmfTitle",
+    PatGreatGrandFatherMatCatteryName: "fmfCatName",
+    PatGreatGrandFatherMatCatName: "fmfCatColor",
+    PatGreatGrandFatherMatJCU: "fmfjcu",
+    PatGreatGrandMotherMatChampionFlag: "fmmChampionFlag",
+    PatGreatGrandMotherMatTitle: "fmmTitle",
+    PatGreatGrandMotherMatCatteryName: "fmmCatName",
+    PatGreatGrandMotherMatCatName: "fmmCatColor",
+    PatGreatGrandMotherMatJCU: "fmmjcu",
+    MatGreatGrandFatherChampionFlag: "mffChampionFlag",
+    MatGreatGrandFatherTitle: "mffTitle",
+    MatGreatGrandFatherCatteryName: "mffCatName",
+    MatGreatGrandFatherCatName: "mffCatColor",
+    MatGreatGrandFatherJCU: "mffjcu",
+    MatGreatGrandMotherChampionFlag: "mfmChampionFlag",
+    MatGreatGrandMotherTitle: "mfmTitle",
+    MatGreatGrandMotherCatteryName: "mfmCatName",
+    MatGreatGrandMotherCatName: "mfmCatColor",
+    MatGreatGrandMotherJCU: "mfmjcu",
+    MatGreatGrandFatherMatChampionFlag: "mmfChampionFlag",
+    MatGreatGrandFatherMatTitle: "mmfTitle",
+    MatGreatGrandFatherMatCatteryName: "mmfCatName",
+    MatGreatGrandFatherMatCatName: "mmfCatColor",
+    MatGreatGrandFatherMatJCU: "mmfjcu",
+    MatGreatGrandMotherMatChampionFlag: "mmmChampionFlag",
+    MatGreatGrandMotherMatTitle: "mmmTitle",
+    MatGreatGrandMotherMatCatteryName: "mmmCatName",
+    MatGreatGrandMotherMatCatName: "mmmCatColor",
+    MatGreatGrandMotherMatJCU: "mmmjcu",
 
     // その他
-    OldCode: "OldCode",
+    OldCode: "oldCode",
   };
 
   // フィールド名をマッピングに従って変更

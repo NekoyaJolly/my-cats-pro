@@ -5,93 +5,110 @@ import { parse } from 'csv-parse/sync';
 
 const prisma = new PrismaClient();
 
-// CSVのヘッダー名（PascalCase）に合わせたインターフェース
+// CSVのヘッダー名（Prismaスキーマ準拠のcamelCase）に合わせたインターフェース
 interface PedigreeCsvRecord {
-  PedigreeID: string;
-  Title: string;
-  CatName: string;
-  CatName2: string; // CSVにない場合はundefinedになる
-  BreedCode: string; // CSVでは数値だがパース時は文字列
-  Gender: string; // CSVでは数値（1, 2）
-  EyeColor: string;
-  CoatColorCode: string;
-  BirthDate: string;
-  BreederName: string;
-  OwnerName: string;
-  RegistrationDate: string;
-  BrotherCount: string;
-  SisterCount: string;
-  Notes: string;
-  Notes2: string;
-  OtherNo: string;
-  FatherTitle: string;
-  FatherCatName: string;
-  FatherCatName2: string;
-  FatherCoatColor: string;
-  FatherEyeColor: string;
-  FatherJCU: string;
-  FatherOtherCode: string;
-  MotherTitle: string;
-  MotherCatName: string;
-  MotherCatName2: string;
-  MotherCoatColor: string;
-  MotherEyeColor: string;
-  MotherJCU: string;
-  MotherOtherCode: string;
+  pedigreeId: string;
+  championFlag: string;
+  title: string;
+  catName: string;
+  catName2: string;
+  breedCode: string;
+  genderCode: string;
+  eyeColor: string;
+  coatColorCode: string;
+  birthDate: string;
+  breederName: string;
+  ownerName: string;
+  registrationDate: string;
+  brotherCount: string;
+  sisterCount: string;
+  notes: string;
+  notes2: string;
+  otherNo: string;
+
+  // 両親
+  fatherChampionFlag: string;
+  fatherTitle: string;
+  fatherCatName: string;
+  fatherCatName2: string;
+  fatherCoatColor: string;
+  fatherEyeColor: string;
+  fatherJCU: string;
+  fatherOtherCode: string;
+  motherChampionFlag: string;
+  motherTitle: string;
+  motherCatName: string;
+  motherCatName2: string;
+  motherCoatColor: string;
+  motherEyeColor: string;
+  motherJCU: string;
+  motherOtherCode: string;
 
   // 祖父母
-  PatGrandFatherTitle: string;
-  PatGrandFatherCatName: string;
-  PatGrandFatherCatteryName: string; // CSV独自カラム?
-  PatGrandFatherJCU: string;
-  PatGrandMotherTitle: string;
-  PatGrandMotherCatName: string;
-  PatGrandMotherCatteryName: string;
-  PatGrandMotherJCU: string;
-  MatGrandFatherTitle: string;
-  MatGrandFatherCatName: string;
-  MatGrandFatherCatteryName: string;
-  MatGrandFatherJCU: string;
-  MatGrandMotherTitle: string;
-  MatGrandMotherCatName: string;
-  MatGrandMotherCatteryName: string;
-  MatGrandMotherJCU: string;
+  ffChampionFlag: string;
+  ffTitle: string;
+  ffCatName: string;
+  ffCatColor: string;
+  ffjcu: string;
+  fmChampionFlag: string;
+  fmTitle: string;
+  fmCatName: string;
+  fmCatColor: string;
+  fmjcu: string;
+  mfChampionFlag: string;
+  mfTitle: string;
+  mfCatName: string;
+  mfCatColor: string;
+  mfjcu: string;
+  mmChampionFlag: string;
+  mmTitle: string;
+  mmCatName: string;
+  mmCatColor: string;
+  mmjcu: string;
 
-  // 曾祖父母 (CSV独自のカラム名に注意)
-  PatGreatGrandFatherTitle: string;
-  PatGreatGrandFatherCatName: string;
-  PatGreatGrandFatherJCU: string;
-  PatGreatGrandMotherTitle: string;
-  PatGreatGrandMotherCatName: string;
-  PatGreatGrandMotherJCU: string;
+  // 曾祖父母
+  fffChampionFlag: string;
+  fffTitle: string;
+  fffCatName: string;
+  fffCatColor: string;
+  fffjcu: string;
+  ffmChampionFlag: string;
+  ffmTitle: string;
+  ffmCatName: string;
+  ffmCatColor: string;
+  ffmjcu: string;
+  fmfChampionFlag: string;
+  fmfTitle: string;
+  fmfCatName: string;
+  fmfCatColor: string;
+  fmfjcu: string;
+  fmmChampionFlag: string;
+  fmmTitle: string;
+  fmmCatName: string;
+  fmmCatColor: string;
+  fmmjcu: string;
+  mffChampionFlag: string;
+  mffTitle: string;
+  mffCatName: string;
+  mffCatColor: string;
+  mffjcu: string;
+  mfmChampionFlag: string;
+  mfmTitle: string;
+  mfmCatName: string;
+  mfmCatColor: string;
+  mfmjcu: string;
+  mmfChampionFlag: string;
+  mmfTitle: string;
+  mmfCatName: string;
+  mmfCatColor: string;
+  mmfjcu: string;
+  mmmChampionFlag: string;
+  mmmTitle: string;
+  mmmCatName: string;
+  mmmCatColor: string;
+  mmmjcu: string;
 
-  // ... (他の曾祖父母フィールドもCSVヘッダーに合わせて追加する必要があるが、
-  // 提供されたCSVヘッダーを見ると:
-  // PatGreatGrandFatherMatTitle, PatGreatGrandFatherMatCatName... などとなっている)
-
-  // CSVヘッダーの完全なリストに基づきマッピング
-  PatGreatGrandFatherMatTitle: string;
-  PatGreatGrandFatherMatCatName: string;
-  PatGreatGrandFatherMatJCU: string;
-  PatGreatGrandMotherMatTitle: string;
-  PatGreatGrandMotherMatCatName: string;
-  PatGreatGrandMotherMatJCU: string;
-
-  MatGreatGrandFatherTitle: string;
-  MatGreatGrandFatherCatName: string;
-  MatGreatGrandFatherJCU: string;
-  MatGreatGrandMotherTitle: string;
-  MatGreatGrandMotherCatName: string;
-  MatGreatGrandMotherJCU: string;
-
-  MatGreatGrandFatherMatTitle: string;
-  MatGreatGrandFatherMatCatName: string;
-  MatGreatGrandFatherMatJCU: string;
-  MatGreatGrandMotherMatTitle: string;
-  MatGreatGrandMotherMatCatName: string;
-  MatGreatGrandMotherMatJCU: string;
-
-  OldCode: string;
+  oldCode: string;
 }
 
 // 数値フィールドの変換（空文字列はnullに）
@@ -119,15 +136,13 @@ async function main() {
 
   const fileContent = fs.readFileSync(csvFilePath, 'utf-8');
 
-  // 日付フィールドの変換 (removed)
-
   // CSVをパース
   const records = parse(fileContent, {
     columns: true,
     skip_empty_lines: true,
     trim: true,
     bom: true, // UTF-8 BOM対応
-  } as any) as PedigreeCsvRecord[];
+  }) as PedigreeCsvRecord[];
 
   console.log(`Found ${records.length} records to import`);
 
@@ -135,7 +150,7 @@ async function main() {
   if (records.length > 0) {
     const firstRecord = records[0];
     console.log('First record keys:', Object.keys(firstRecord));
-    console.log('First record PedigreeID:', firstRecord['PedigreeID']);
+    console.log('First record pedigreeId:', firstRecord['pedigreeId']);
   }
 
   let successCount = 0;
@@ -143,164 +158,186 @@ async function main() {
 
   for (const record of records) {
     try {
-      // PedigreeIDを取得
-      const recordAny = record as any;
-      const pedigreeIdValue = recordAny.PedigreeID;
+      const pedigreeIdValue = record.pedigreeId;
 
       if (!pedigreeIdValue) {
-        console.error('Skipping record with missing PedigreeID');
+        console.error('Skipping record with missing pedigreeId');
         errorCount++;
         continue;
       }
 
-      // console.log(`About to insert: pedigreeId="${pedigreeIdValue}"`);
-
-      // データのマッピング (PascalCase -> Prisma Model fields)
-      // 注意: CSVのカラム名とPrismaのフィールド名のマッピングを慎重に行う
-      // 特に祖父母・曾祖父母のプレフィックス (ff, fm, mf, mm...)
-
+      // データのマッピング (CSVヘッダーがPrismaスキーマと一致するため直接マッピング)
       await prisma.pedigree.upsert({
         where: { pedigreeId: pedigreeIdValue },
         update: {
-          title: parseStringOrUndefined(recordAny.Title),
-          catName: parseStringOrUndefined(recordAny.CatName),     // CatName column -> DB catName
-          catName2: parseStringOrUndefined(recordAny.CatName2),   // CatName2 column -> DB catName2
-          breedCode: parseIntOrNull(recordAny.BreedCode) ?? undefined,
-          genderCode: parseIntOrNull(recordAny.Gender) ?? undefined,
-          eyeColor: parseStringOrUndefined(recordAny.EyeColor),
-          // Update other fields as well... to ensure data is fresh
-          // For brevity in this diff, I'll copy the create object to update
-          // In a real scenario, we might want to be selective, but here we want to overwrite
-          coatColorCode: parseIntOrNull(recordAny.CoatColorCode) ?? undefined,
-          birthDate: parseStringOrUndefined(recordAny.BirthDate),
-          breederName: parseStringOrUndefined(recordAny.BreederName),
-          ownerName: parseStringOrUndefined(recordAny.OwnerName),
-          registrationDate: parseStringOrUndefined(recordAny.RegistrationDate),
-          // ... (rest of fields)
+          title: parseStringOrUndefined(record.title),
+          catName: parseStringOrUndefined(record.catName),
+          catName2: parseStringOrUndefined(record.catName2),
+          breedCode: parseIntOrNull(record.breedCode) ?? undefined,
+          genderCode: parseIntOrNull(record.genderCode) ?? undefined,
+          eyeColor: parseStringOrUndefined(record.eyeColor),
+          coatColorCode: parseIntOrNull(record.coatColorCode) ?? undefined,
+          birthDate: parseStringOrUndefined(record.birthDate),
+          breederName: parseStringOrUndefined(record.breederName),
+          ownerName: parseStringOrUndefined(record.ownerName),
+          registrationDate: parseStringOrUndefined(record.registrationDate),
+          brotherCount: parseIntOrNull(record.brotherCount) ?? undefined,
+          sisterCount: parseIntOrNull(record.sisterCount) ?? undefined,
+          notes: parseStringOrUndefined(record.notes),
+          notes2: parseStringOrUndefined(record.notes2),
+          otherNo: parseStringOrUndefined(record.otherNo),
+          // Generation 1 (両親)
+          fatherTitle: parseStringOrUndefined(record.fatherTitle),
+          fatherCatName: parseStringOrUndefined(record.fatherCatName),
+          fatherCatName2: parseStringOrUndefined(record.fatherCatName2),
+          fatherCoatColor: parseStringOrUndefined(record.fatherCoatColor),
+          fatherEyeColor: parseStringOrUndefined(record.fatherEyeColor),
+          fatherJCU: parseStringOrUndefined(record.fatherJCU),
+          fatherOtherCode: parseStringOrUndefined(record.fatherOtherCode),
+          motherTitle: parseStringOrUndefined(record.motherTitle),
+          motherCatName: parseStringOrUndefined(record.motherCatName),
+          motherCatName2: parseStringOrUndefined(record.motherCatName2),
+          motherCoatColor: parseStringOrUndefined(record.motherCoatColor),
+          motherEyeColor: parseStringOrUndefined(record.motherEyeColor),
+          motherJCU: parseStringOrUndefined(record.motherJCU),
+          motherOtherCode: parseStringOrUndefined(record.motherOtherCode),
+          // Generation 2 (祖父母)
+          ffTitle: parseStringOrUndefined(record.ffTitle),
+          ffCatName: parseStringOrUndefined(record.ffCatName),
+          ffCatColor: parseStringOrUndefined(record.ffCatColor),
+          ffjcu: parseStringOrUndefined(record.ffjcu),
+          fmTitle: parseStringOrUndefined(record.fmTitle),
+          fmCatName: parseStringOrUndefined(record.fmCatName),
+          fmCatColor: parseStringOrUndefined(record.fmCatColor),
+          fmjcu: parseStringOrUndefined(record.fmjcu),
+          mfTitle: parseStringOrUndefined(record.mfTitle),
+          mfCatName: parseStringOrUndefined(record.mfCatName),
+          mfCatColor: parseStringOrUndefined(record.mfCatColor),
+          mfjcu: parseStringOrUndefined(record.mfjcu),
+          mmTitle: parseStringOrUndefined(record.mmTitle),
+          mmCatName: parseStringOrUndefined(record.mmCatName),
+          mmCatColor: parseStringOrUndefined(record.mmCatColor),
+          mmjcu: parseStringOrUndefined(record.mmjcu),
+          // Generation 3 (曾祖父母)
+          fffTitle: parseStringOrUndefined(record.fffTitle),
+          fffCatName: parseStringOrUndefined(record.fffCatName),
+          fffjcu: parseStringOrUndefined(record.fffjcu),
+          ffmTitle: parseStringOrUndefined(record.ffmTitle),
+          ffmCatName: parseStringOrUndefined(record.ffmCatName),
+          ffmjcu: parseStringOrUndefined(record.ffmjcu),
+          fmfTitle: parseStringOrUndefined(record.fmfTitle),
+          fmfCatName: parseStringOrUndefined(record.fmfCatName),
+          fmfjcu: parseStringOrUndefined(record.fmfjcu),
+          fmmTitle: parseStringOrUndefined(record.fmmTitle),
+          fmmCatName: parseStringOrUndefined(record.fmmCatName),
+          fmmjcu: parseStringOrUndefined(record.fmmjcu),
+          mffTitle: parseStringOrUndefined(record.mffTitle),
+          mffCatName: parseStringOrUndefined(record.mffCatName),
+          mffjcu: parseStringOrUndefined(record.mffjcu),
+          mfmTitle: parseStringOrUndefined(record.mfmTitle),
+          mfmCatName: parseStringOrUndefined(record.mfmCatName),
+          mfmjcu: parseStringOrUndefined(record.mfmjcu),
+          mmfTitle: parseStringOrUndefined(record.mmfTitle),
+          mmfCatName: parseStringOrUndefined(record.mmfCatName),
+          mmfjcu: parseStringOrUndefined(record.mmfjcu),
+          mmmTitle: parseStringOrUndefined(record.mmmTitle),
+          mmmCatName: parseStringOrUndefined(record.mmmCatName),
+          mmmjcu: parseStringOrUndefined(record.mmmjcu),
+          oldCode: parseStringOrUndefined(record.oldCode),
         },
         create: {
           pedigreeId: pedigreeIdValue,
-          title: parseStringOrUndefined(recordAny.Title),
-          catName: parseStringOrUndefined(recordAny.CatName),     // CatName column -> DB catName
-          catName2: parseStringOrUndefined(recordAny.CatName2),   // CatName2 column -> DB catName2
-          breedCode: parseIntOrNull(recordAny.BreedCode) ?? undefined,
-          genderCode: parseIntOrNull(recordAny.Gender) ?? undefined, // CSVヘッダーは 'Gender' (数値)
-          eyeColor: parseStringOrUndefined(recordAny.EyeColor),
-          coatColorCode: parseIntOrNull(recordAny.CoatColorCode) ?? undefined,
-          birthDate: parseStringOrUndefined(recordAny.BirthDate),
-          breederName: parseStringOrUndefined(recordAny.BreederName),
-          ownerName: parseStringOrUndefined(recordAny.OwnerName),
-          registrationDate: parseStringOrUndefined(recordAny.RegistrationDate),
-          brotherCount: parseIntOrNull(recordAny.BrotherCount) ?? undefined,
-          sisterCount: parseIntOrNull(recordAny.SisterCount) ?? undefined,
-          notes: parseStringOrUndefined(recordAny.Notes),
-          notes2: parseStringOrUndefined(recordAny.Notes2),
-          otherNo: parseStringOrUndefined(recordAny.OtherNo),
-
-          // Generation 1
-          fatherTitle: parseStringOrUndefined(recordAny.FatherTitle),
-          fatherCatName: parseStringOrUndefined(recordAny.FatherCatName),
-          // fatherCatName2: CSVにない
-          fatherCoatColor: parseStringOrUndefined(recordAny.FatherCoatColor),
-          fatherEyeColor: parseStringOrUndefined(recordAny.FatherEyeColor),
-          fatherJCU: parseStringOrUndefined(recordAny.FatherJCU),
-          fatherOtherCode: parseStringOrUndefined(recordAny.FatherOtherCode),
-
-          motherTitle: parseStringOrUndefined(recordAny.MotherTitle),
-          motherCatName: parseStringOrUndefined(recordAny.MotherCatName),
-          // motherCatName2: CSVにない
-          motherCoatColor: parseStringOrUndefined(recordAny.MotherCoatColor),
-          motherEyeColor: parseStringOrUndefined(recordAny.MotherEyeColor),
-          motherJCU: parseStringOrUndefined(recordAny.MotherJCU),
-          motherOtherCode: parseStringOrUndefined(recordAny.MotherOtherCode),
-
-          // Generation 2 (Grandparents)
-          // CSVヘッダー: PatGrandFather (ff), PatGrandMother (fm), MatGrandFather (mf), MatGrandMother (mm)
-          ffTitle: parseStringOrUndefined(recordAny.PatGrandFatherTitle),
-          ffCatName: parseStringOrUndefined(recordAny.PatGrandFatherCatName),
-          // ffCatColor: CSVにはなさそうだが、FatherCoatColor等はある。CatteryNameが代わりにある？
-          // CSVヘッダー: PatGrandFatherCatteryName をどうするか。今回は無視かNotesに入れるか。
-          // 既存コードでは ffCatColor へのマッピングがあったが、今回のCSVには Color列がないかもしれない
-          // 提供されたCSVログを見ると `PatGrandFatherCatteryName` があるが Color は見当たらない
-          // -> CatteryName を使うべきではないので、Color は undefined にする
-          ffjcu: parseStringOrUndefined(recordAny.PatGrandFatherJCU),
-
-          fmTitle: parseStringOrUndefined(recordAny.PatGrandMotherTitle),
-          fmCatName: parseStringOrUndefined(recordAny.PatGrandMotherCatName),
-          fmjcu: parseStringOrUndefined(recordAny.PatGrandMotherJCU),
-
-          mfTitle: parseStringOrUndefined(recordAny.MatGrandFatherTitle),
-          mfCatName: parseStringOrUndefined(recordAny.MatGrandFatherCatName),
-          mfjcu: parseStringOrUndefined(recordAny.MatGrandFatherJCU),
-
-          mmTitle: parseStringOrUndefined(recordAny.MatGrandMotherTitle),
-          mmCatName: parseStringOrUndefined(recordAny.MatGrandMotherCatName),
-          mmjcu: parseStringOrUndefined(recordAny.MatGrandMotherJCU),
-
-          // Generation 3 (Great-Grandparents)
-          // Mapping rule:
-          // PatGreatGrandFather -> fff
-          // PatGreatGrandMother -> ffm
-          // PatGreatGrandFatherMat -> fmf (?? 父方の祖母の父？) -> 父方の祖父の母？
-          // ここはCSVのカラム名の意味を推測する必要がある。
-          // 通常:
-          // PatGrandFather (父父) -> Parents are PatGreatGrandFather (父父父) & PatGreatGrandMother (父父母)
-          // PatGrandMother (父母) -> Parents are PatGreatGrandFatherMat (?) & PatGreatGrandMotherMat (?)
-
-          // CSVヘッダーの並び順と名前から推測:
-          // PatGreatGrandFather... -> fff (父父父)
-          // PatGreatGrandMother... -> ffm (父父母)
-          // PatGreatGrandFatherMat... -> fmf (父母父)  (Mat usually means Maternal line of the previous generation?)
-          // PatGreatGrandMotherMat... -> fmm (父母母)
-
-          // MatGreatGrandFather... -> mff (母父父)
-          // MatGreatGrandMother... -> mfm (母父母)
-          // MatGreatGrandFatherMat... -> mmf (母母父)
-          // MatGreatGrandMotherMat... -> mmm (母母母)
-
-          fffTitle: parseStringOrUndefined(recordAny.PatGreatGrandFatherTitle),
-          fffCatName: parseStringOrUndefined(recordAny.PatGreatGrandFatherCatName),
-          fffjcu: parseStringOrUndefined(recordAny.PatGreatGrandFatherJCU),
-
-          ffmTitle: parseStringOrUndefined(recordAny.PatGreatGrandMotherTitle),
-          ffmCatName: parseStringOrUndefined(recordAny.PatGreatGrandMotherCatName),
-          ffmjcu: parseStringOrUndefined(recordAny.PatGreatGrandMotherJCU),
-
-          fmfTitle: parseStringOrUndefined(recordAny.PatGreatGrandFatherMatTitle),
-          fmfCatName: parseStringOrUndefined(recordAny.PatGreatGrandFatherMatCatName),
-          fmfjcu: parseStringOrUndefined(recordAny.PatGreatGrandFatherMatJCU),
-
-          fmmTitle: parseStringOrUndefined(recordAny.PatGreatGrandMotherMatTitle),
-          fmmCatName: parseStringOrUndefined(recordAny.PatGreatGrandMotherMatCatName),
-          fmmjcu: parseStringOrUndefined(recordAny.PatGreatGrandMotherMatJCU),
-
-          mffTitle: parseStringOrUndefined(recordAny.MatGreatGrandFatherTitle),
-          mffCatName: parseStringOrUndefined(recordAny.MatGreatGrandFatherCatName),
-          mffjcu: parseStringOrUndefined(recordAny.MatGreatGrandFatherJCU),
-
-          mfmTitle: parseStringOrUndefined(recordAny.MatGreatGrandMotherTitle),
-          mfmCatName: parseStringOrUndefined(recordAny.MatGreatGrandMotherCatName),
-          mfmjcu: parseStringOrUndefined(recordAny.MatGreatGrandMotherJCU),
-
-          mmfTitle: parseStringOrUndefined(recordAny.MatGreatGrandFatherMatTitle),
-          mmfCatName: parseStringOrUndefined(recordAny.MatGreatGrandFatherMatCatName),
-          mmfjcu: parseStringOrUndefined(recordAny.MatGreatGrandFatherMatJCU),
-
-          mmmTitle: parseStringOrUndefined(recordAny.MatGreatGrandMotherMatTitle),
-          mmmCatName: parseStringOrUndefined(recordAny.MatGreatGrandMotherMatCatName),
-          mmmjcu: parseStringOrUndefined(recordAny.MatGreatGrandMotherMatJCU),
-
-          oldCode: parseStringOrUndefined(recordAny.OldCode),
+          title: parseStringOrUndefined(record.title),
+          catName: parseStringOrUndefined(record.catName),
+          catName2: parseStringOrUndefined(record.catName2),
+          breedCode: parseIntOrNull(record.breedCode) ?? undefined,
+          genderCode: parseIntOrNull(record.genderCode) ?? undefined,
+          eyeColor: parseStringOrUndefined(record.eyeColor),
+          coatColorCode: parseIntOrNull(record.coatColorCode) ?? undefined,
+          birthDate: parseStringOrUndefined(record.birthDate),
+          breederName: parseStringOrUndefined(record.breederName),
+          ownerName: parseStringOrUndefined(record.ownerName),
+          registrationDate: parseStringOrUndefined(record.registrationDate),
+          brotherCount: parseIntOrNull(record.brotherCount) ?? undefined,
+          sisterCount: parseIntOrNull(record.sisterCount) ?? undefined,
+          notes: parseStringOrUndefined(record.notes),
+          notes2: parseStringOrUndefined(record.notes2),
+          otherNo: parseStringOrUndefined(record.otherNo),
+          // Generation 1 (両親)
+          fatherTitle: parseStringOrUndefined(record.fatherTitle),
+          fatherCatName: parseStringOrUndefined(record.fatherCatName),
+          fatherCatName2: parseStringOrUndefined(record.fatherCatName2),
+          fatherCoatColor: parseStringOrUndefined(record.fatherCoatColor),
+          fatherEyeColor: parseStringOrUndefined(record.fatherEyeColor),
+          fatherJCU: parseStringOrUndefined(record.fatherJCU),
+          fatherOtherCode: parseStringOrUndefined(record.fatherOtherCode),
+          motherTitle: parseStringOrUndefined(record.motherTitle),
+          motherCatName: parseStringOrUndefined(record.motherCatName),
+          motherCatName2: parseStringOrUndefined(record.motherCatName2),
+          motherCoatColor: parseStringOrUndefined(record.motherCoatColor),
+          motherEyeColor: parseStringOrUndefined(record.motherEyeColor),
+          motherJCU: parseStringOrUndefined(record.motherJCU),
+          motherOtherCode: parseStringOrUndefined(record.motherOtherCode),
+          // Generation 2 (祖父母)
+          ffTitle: parseStringOrUndefined(record.ffTitle),
+          ffCatName: parseStringOrUndefined(record.ffCatName),
+          ffCatColor: parseStringOrUndefined(record.ffCatColor),
+          ffjcu: parseStringOrUndefined(record.ffjcu),
+          fmTitle: parseStringOrUndefined(record.fmTitle),
+          fmCatName: parseStringOrUndefined(record.fmCatName),
+          fmCatColor: parseStringOrUndefined(record.fmCatColor),
+          fmjcu: parseStringOrUndefined(record.fmjcu),
+          mfTitle: parseStringOrUndefined(record.mfTitle),
+          mfCatName: parseStringOrUndefined(record.mfCatName),
+          mfCatColor: parseStringOrUndefined(record.mfCatColor),
+          mfjcu: parseStringOrUndefined(record.mfjcu),
+          mmTitle: parseStringOrUndefined(record.mmTitle),
+          mmCatName: parseStringOrUndefined(record.mmCatName),
+          mmCatColor: parseStringOrUndefined(record.mmCatColor),
+          mmjcu: parseStringOrUndefined(record.mmjcu),
+          // Generation 3 (曾祖父母)
+          fffTitle: parseStringOrUndefined(record.fffTitle),
+          fffCatName: parseStringOrUndefined(record.fffCatName),
+          fffCatColor: parseStringOrUndefined(record.fffCatColor),
+          fffjcu: parseStringOrUndefined(record.fffjcu),
+          ffmTitle: parseStringOrUndefined(record.ffmTitle),
+          ffmCatName: parseStringOrUndefined(record.ffmCatName),
+          ffmCatColor: parseStringOrUndefined(record.ffmCatColor),
+          ffmjcu: parseStringOrUndefined(record.ffmjcu),
+          fmfTitle: parseStringOrUndefined(record.fmfTitle),
+          fmfCatName: parseStringOrUndefined(record.fmfCatName),
+          fmfCatColor: parseStringOrUndefined(record.fmfCatColor),
+          fmfjcu: parseStringOrUndefined(record.fmfjcu),
+          fmmTitle: parseStringOrUndefined(record.fmmTitle),
+          fmmCatName: parseStringOrUndefined(record.fmmCatName),
+          fmmCatColor: parseStringOrUndefined(record.fmmCatColor),
+          fmmjcu: parseStringOrUndefined(record.fmmjcu),
+          mffTitle: parseStringOrUndefined(record.mffTitle),
+          mffCatName: parseStringOrUndefined(record.mffCatName),
+          mffCatColor: parseStringOrUndefined(record.mffCatColor),
+          mffjcu: parseStringOrUndefined(record.mffjcu),
+          mfmTitle: parseStringOrUndefined(record.mfmTitle),
+          mfmCatName: parseStringOrUndefined(record.mfmCatName),
+          mfmCatColor: parseStringOrUndefined(record.mfmCatColor),
+          mfmjcu: parseStringOrUndefined(record.mfmjcu),
+          mmfTitle: parseStringOrUndefined(record.mmfTitle),
+          mmfCatName: parseStringOrUndefined(record.mmfCatName),
+          mmfCatColor: parseStringOrUndefined(record.mmfCatColor),
+          mmfjcu: parseStringOrUndefined(record.mmfjcu),
+          mmmTitle: parseStringOrUndefined(record.mmmTitle),
+          mmmCatName: parseStringOrUndefined(record.mmmCatName),
+          mmmCatColor: parseStringOrUndefined(record.mmmCatColor),
+          mmmjcu: parseStringOrUndefined(record.mmmjcu),
+          oldCode: parseStringOrUndefined(record.oldCode),
         },
       });
       successCount++;
-      if (successCount % 10 === 0) {
+      if (successCount % 100 === 0) {
         console.log(`Imported ${successCount} records...`);
       }
     } catch (error) {
       errorCount++;
-      console.error(`Error importing record ${record['PedigreeID']}:`, error);
-      // 重複エラーなどを無視して続行する場合
+      console.error(`Error importing record ${record.pedigreeId}:`, error);
     }
   }
 
