@@ -216,7 +216,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                 </Table.Td>
                 <Table.Td>
                   <Text size="sm">
-                    {pedigree.coatColor?.name || pedigree.coatColorCode || '-'}
+                    {pedigree.coatColor?.name || '-'}
                   </Text>
                 </Table.Td>
                 <Table.Td>
