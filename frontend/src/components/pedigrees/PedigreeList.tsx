@@ -160,8 +160,8 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
               <Button onClick={handleSearch} leftSection={<IconSearch size={16} />}>
                 検索
               </Button>
-              <ActionIcon 
-                variant="light" 
+              <ActionIcon
+                variant="light"
                 onClick={() => refetch()}
                 size="lg"
               >
@@ -175,14 +175,15 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
       {/* 血統書リストテーブル */}
       <Paper shadow="sm" style={{ position: 'relative' }}>
         <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} />
-        
+
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>血統書番号</Table.Th>
-              <Table.Th>猫名</Table.Th>
+              <Table.Th>名前</Table.Th>
               <Table.Th>性別</Table.Th>
-              <Table.Th>品種コード</Table.Th>
+              <Table.Th>猫種</Table.Th>
+              <Table.Th>色柄</Table.Th>
               <Table.Th>生年月日</Table.Th>
               <Table.Th>繁殖者</Table.Th>
               <Table.Th>父親</Table.Th>
@@ -210,7 +211,12 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                 </Table.Td>
                 <Table.Td>
                   <Text size="sm">
-                    {pedigree.breedCode || '-'}
+                    {pedigree.breed?.name || pedigree.breedCode || '-'}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm">
+                    {pedigree.coatColor?.name || pedigree.coatColorCode || '-'}
                   </Text>
                 </Table.Td>
                 <Table.Td>
@@ -225,7 +231,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                 </Table.Td>
                 <Table.Td>
                   <Text size="sm" c="blue">
-                    {pedigree.fatherPedigree 
+                    {pedigree.fatherPedigree
                       ? `${pedigree.fatherPedigree.pedigreeId} (${pedigree.fatherPedigree.catName})`
                       : '-'
                     }
@@ -233,7 +239,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                 </Table.Td>
                 <Table.Td>
                   <Text size="sm" c="pink">
-                    {pedigree.motherPedigree 
+                    {pedigree.motherPedigree
                       ? `${pedigree.motherPedigree.pedigreeId} (${pedigree.motherPedigree.catName})`
                       : '-'
                     }
