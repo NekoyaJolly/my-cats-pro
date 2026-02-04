@@ -24,8 +24,8 @@ import {
   type PedigreeRecord,
   type UpdatePedigreeRequest,
 } from '@/lib/api/hooks/use-pedigrees';
-import { 
-  IconDeviceFloppy, 
+import {
+  IconDeviceFloppy,
   IconArrowLeft,
   IconPlus,
   IconRefresh,
@@ -34,6 +34,7 @@ import {
   IconPrinter,
 } from '@tabler/icons-react';
 import { InputWithFloatingLabel } from '../ui/InputWithFloatingLabel';
+import { SelectWithFloatingLabel } from '../ui/SelectWithFloatingLabel';
 import { apiClient, type ApiResponse } from '@/lib/api/client';
 import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
 
@@ -297,7 +298,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   const copyFromId = searchParams.get('copyFromId') || '';
 
   const normalizedPedigreeIdInput = pedigreeIdInput.trim();
-  
+
   const createMutation = useCreatePedigree();
   const updateMutationHook = useUpdatePedigree(originalId || '');
 
@@ -305,8 +306,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
     enabled: !!copyFromId,
   });
 
-  // 名称入力用のローカルステート
-  const [inputValues, setInputValues] = useState({
+  // 名称入力用のローカルステート (Select化により直接参照はしないが、状態管理用に保持)
+  const [_inputValues, setInputValues] = useState({
     breedName: '',
     genderName: '',
     coatColorName: '',
@@ -337,7 +338,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
   // デバウンス用タイムアウト
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
-  
+
   // 血統書番号入力時に既存レコードを取得
   const { data: existingPedigree, isLoading: isLoadingExisting } = useGetPedigreeByNumber(
     normalizedPedigreeIdInput,
@@ -443,103 +444,103 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   // Call ID: 血統書番号から血統情報を取得（デバウンス付き）
   const handleBothParentsCall = async (pedigreeNumber: string) => {
     if (searchTimeout) clearTimeout(searchTimeout);
-    
+
     const timeout = setTimeout(async () => {
       if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
-      
+
       try {
         const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
           pathParams: { pedigreeId: pedigreeNumber },
         });
-        
+
         if (response.success && response.data) {
           const data = response.data as PedigreeRecord;
-          
+
           // 父親情報を設定（7項目）
           updateFormData('fatherTitle', (data as PedigreeFormData).fatherTitle);
           updateFormData('fatherCatName', (data as PedigreeFormData).fatherCatName);
-        updateFormData('fatherCatName2', data.fatherCatName2);
-        updateFormData('fatherCoatColor', data.fatherCoatColor);
-        updateFormData('fatherEyeColor', data.fatherEyeColor);
-        updateFormData('fatherJCU', data.fatherJCU);
-        updateFormData('fatherOtherCode', data.fatherOtherCode);
+          updateFormData('fatherCatName2', data.fatherCatName2);
+          updateFormData('fatherCoatColor', data.fatherCoatColor);
+          updateFormData('fatherEyeColor', data.fatherEyeColor);
+          updateFormData('fatherJCU', data.fatherJCU);
+          updateFormData('fatherOtherCode', data.fatherOtherCode);
 
-        // 母親情報を設定（7項目）
-        updateFormData('motherTitle', data.motherTitle);
-        updateFormData('motherCatName', data.motherCatName);
-        updateFormData('motherCatName2', data.motherCatName2);
-        updateFormData('motherCoatColor', data.motherCoatColor);
-        updateFormData('motherEyeColor', data.motherEyeColor);
-        updateFormData('motherJCU', data.motherJCU);
-        updateFormData('motherOtherCode', data.motherOtherCode);
+          // 母親情報を設定（7項目）
+          updateFormData('motherTitle', data.motherTitle);
+          updateFormData('motherCatName', data.motherCatName);
+          updateFormData('motherCatName2', data.motherCatName2);
+          updateFormData('motherCoatColor', data.motherCoatColor);
+          updateFormData('motherEyeColor', data.motherEyeColor);
+          updateFormData('motherJCU', data.motherJCU);
+          updateFormData('motherOtherCode', data.motherOtherCode);
 
-        // 祖父母情報を設定（16項目）
-        updateFormData('ffTitle', data.ffTitle);
-        updateFormData('ffCatName', data.ffCatName);
-        updateFormData('ffCatColor', data.ffCatColor);
-        updateFormData('ffjcu', data.ffjcu);
+          // 祖父母情報を設定（16項目）
+          updateFormData('ffTitle', data.ffTitle);
+          updateFormData('ffCatName', data.ffCatName);
+          updateFormData('ffCatColor', data.ffCatColor);
+          updateFormData('ffjcu', data.ffjcu);
 
-        updateFormData('fmTitle', data.fmTitle);
-        updateFormData('fmCatName', data.fmCatName);
-        updateFormData('fmCatColor', data.fmCatColor);
-        updateFormData('fmjcu', data.fmjcu);
+          updateFormData('fmTitle', data.fmTitle);
+          updateFormData('fmCatName', data.fmCatName);
+          updateFormData('fmCatColor', data.fmCatColor);
+          updateFormData('fmjcu', data.fmjcu);
 
-        updateFormData('mfTitle', data.mfTitle);
-        updateFormData('mfCatName', data.mfCatName);
-        updateFormData('mfCatColor', data.mfCatColor);
-        updateFormData('mfjcu', data.mfjcu);
+          updateFormData('mfTitle', data.mfTitle);
+          updateFormData('mfCatName', data.mfCatName);
+          updateFormData('mfCatColor', data.mfCatColor);
+          updateFormData('mfjcu', data.mfjcu);
 
-        updateFormData('mmTitle', data.mmTitle);
-        updateFormData('mmCatName', data.mmCatName);
-        updateFormData('mmCatColor', data.mmCatColor);
-        updateFormData('mmjcu', data.mmjcu);
+          updateFormData('mmTitle', data.mmTitle);
+          updateFormData('mmCatName', data.mmCatName);
+          updateFormData('mmCatColor', data.mmCatColor);
+          updateFormData('mmjcu', data.mmjcu);
 
-        // 曾祖父母情報を設定（32項目）
-        updateFormData('fffTitle', data.fffTitle);
-        updateFormData('fffCatName', data.fffCatName);
-        updateFormData('fffCatColor', data.fffCatColor);
-        updateFormData('fffjcu', data.fffjcu);
+          // 曾祖父母情報を設定（32項目）
+          updateFormData('fffTitle', data.fffTitle);
+          updateFormData('fffCatName', data.fffCatName);
+          updateFormData('fffCatColor', data.fffCatColor);
+          updateFormData('fffjcu', data.fffjcu);
 
-        updateFormData('ffmTitle', data.ffmTitle);
-        updateFormData('ffmCatName', data.ffmCatName);
-        updateFormData('ffmCatColor', data.ffmCatColor);
-        updateFormData('ffmjcu', data.ffmjcu);
+          updateFormData('ffmTitle', data.ffmTitle);
+          updateFormData('ffmCatName', data.ffmCatName);
+          updateFormData('ffmCatColor', data.ffmCatColor);
+          updateFormData('ffmjcu', data.ffmjcu);
 
-        updateFormData('fmfTitle', data.fmfTitle);
-        updateFormData('fmfCatName', data.fmfCatName);
-        updateFormData('fmfCatColor', data.fmfCatColor);
-        updateFormData('fmfjcu', data.fmfjcu);
+          updateFormData('fmfTitle', data.fmfTitle);
+          updateFormData('fmfCatName', data.fmfCatName);
+          updateFormData('fmfCatColor', data.fmfCatColor);
+          updateFormData('fmfjcu', data.fmfjcu);
 
-        updateFormData('fmmTitle', data.fmmTitle);
-        updateFormData('fmmCatName', data.fmmCatName);
-        updateFormData('fmmCatColor', data.fmmCatColor);
-        updateFormData('fmmjcu', data.fmmjcu);
+          updateFormData('fmmTitle', data.fmmTitle);
+          updateFormData('fmmCatName', data.fmmCatName);
+          updateFormData('fmmCatColor', data.fmmCatColor);
+          updateFormData('fmmjcu', data.fmmjcu);
 
-        updateFormData('mffTitle', data.mffTitle);
-        updateFormData('mffCatName', data.mffCatName);
-        updateFormData('mffCatColor', data.mffCatColor);
-        updateFormData('mffjcu', data.mffjcu);
+          updateFormData('mffTitle', data.mffTitle);
+          updateFormData('mffCatName', data.mffCatName);
+          updateFormData('mffCatColor', data.mffCatColor);
+          updateFormData('mffjcu', data.mffjcu);
 
-        updateFormData('mfmTitle', data.mfmTitle);
-        updateFormData('mfmCatName', data.mfmCatName);
-        updateFormData('mfmCatColor', data.mfmCatColor);
-        updateFormData('mfmjcu', data.mfmjcu);
+          updateFormData('mfmTitle', data.mfmTitle);
+          updateFormData('mfmCatName', data.mfmCatName);
+          updateFormData('mfmCatColor', data.mfmCatColor);
+          updateFormData('mfmjcu', data.mfmjcu);
 
-        updateFormData('mmfTitle', data.mmfTitle);
-        updateFormData('mmfCatName', data.mmfCatName);
-        updateFormData('mmfCatColor', data.mmfCatColor);
-        updateFormData('mmfjcu', data.mmfjcu);
+          updateFormData('mmfTitle', data.mmfTitle);
+          updateFormData('mmfCatName', data.mmfCatName);
+          updateFormData('mmfCatColor', data.mmfCatColor);
+          updateFormData('mmfjcu', data.mmfjcu);
 
-        updateFormData('mmmTitle', data.mmmTitle);
-        updateFormData('mmmCatName', data.mmmCatName);
-        updateFormData('mmmCatColor', data.mmmCatColor);
-        updateFormData('mmmjcu', data.mmmjcu);
+          updateFormData('mmmTitle', data.mmmTitle);
+          updateFormData('mmmCatName', data.mmmCatName);
+          updateFormData('mmmCatColor', data.mmmCatColor);
+          updateFormData('mmmjcu', data.mmmjcu);
 
-        notifications.show({
-          title: '両親血統情報取得',
-          message: `${data.catName}の血統情報を一括取得しました（62項目）`,
-          color: 'green',
-        });
+          notifications.show({
+            title: '両親血統情報取得',
+            message: `${data.catName}の血統情報を一括取得しました（62項目）`,
+            color: 'green',
+          });
         } else {
           notifications.show({
             title: '検索結果なし',
@@ -563,18 +564,18 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   // Call ID: 父猫IDから取得（父+祖父母16項目）
   const handleFatherCall = async (pedigreeNumber: string) => {
     if (searchTimeout) clearTimeout(searchTimeout);
-    
+
     const timeout = setTimeout(async () => {
       if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
-      
+
       try {
         const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
           pathParams: { pedigreeId: pedigreeNumber },
         });
-        
+
         if (response.success && response.data) {
           const data = response.data as PedigreeRecord;
-          
+
           // 父親情報（7項目）
           updateFormData('fatherTitle', data.title);
           updateFormData('fatherCatName', data.catName);
@@ -612,18 +613,18 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
   // Call ID: 母猫IDから取得（母+祖父母16項目）
   const handleMotherCall = async (pedigreeNumber: string) => {
     if (searchTimeout) clearTimeout(searchTimeout);
-    
+
     const timeout = setTimeout(async () => {
       if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
-      
+
       try {
         const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
           pathParams: { pedigreeId: pedigreeNumber },
         });
-        
+
         if (response.success && response.data) {
           const data = response.data as PedigreeRecord;
-          
+
           // 母親情報（7項目）
           updateFormData('motherTitle', data.title);
           updateFormData('motherCatName', data.catName);
@@ -676,7 +677,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
       // 新規登録
       await createMutation.mutateAsync(formData as Parameters<typeof createMutation.mutateAsync>[0]);
-      
+
       if (onSuccess) {
         onSuccess();
       } else {
@@ -707,7 +708,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
       // UpdatePedigreeRequestは血統書番号を除く全フィールド
       const { pedigreeId: _pedigreeId, ...updateData } = formData;
       await updateMutationHook.mutateAsync(updateData as UpdatePedigreeRequest);
-      
+
       if (onSuccess) {
         onSuccess();
       } else {
@@ -757,57 +758,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
     }
   };
 
-  // コードと名称の同期ロジック
-  const handleCodeChange = (type: 'breed' | 'gender' | 'coatColor', codeStr: string) => {
-    const code = parseInt(codeStr);
-    
-    if (type === 'breed') {
-      if (isNaN(code)) {
-        updateFormData('breedCode', undefined);
-        setInputValues(prev => ({ ...prev, breedName: '' }));
-      } else {
-        updateFormData('breedCode', code);
-        const found = breeds.find(b => b.code === code);
-        if (found) setInputValues(prev => ({ ...prev, breedName: found.name }));
-      }
-    } else if (type === 'gender') {
-      if (isNaN(code)) {
-        updateFormData('genderCode', undefined);
-        setInputValues(prev => ({ ...prev, genderName: '' }));
-      } else {
-        updateFormData('genderCode', code);
-        const found = genders.find(g => g.code === code);
-        if (found) setInputValues(prev => ({ ...prev, genderName: found.name }));
-      }
-    } else if (type === 'coatColor') {
-      if (isNaN(code)) {
-        updateFormData('coatColorCode', undefined);
-        setInputValues(prev => ({ ...prev, coatColorName: '' }));
-      } else {
-        updateFormData('coatColorCode', code);
-        const found = coatColors.find(c => c.code === code);
-        if (found) setInputValues(prev => ({ ...prev, coatColorName: found.name }));
-      }
-    }
-  };
-
-  const handleNameChange = (type: 'breed' | 'gender' | 'coatColor', name: string) => {
-    const normalizedName = name.trim().toLowerCase();
-    
-    if (type === 'breed') {
-      setInputValues(prev => ({ ...prev, breedName: name }));
-      const found = breeds.find(b => b.name.toLowerCase() === normalizedName);
-      if (found) updateFormData('breedCode', found.code);
-    } else if (type === 'gender') {
-      setInputValues(prev => ({ ...prev, genderName: name }));
-      const found = genders.find(g => g.name.toLowerCase() === normalizedName);
-      if (found) updateFormData('genderCode', found.code);
-    } else if (type === 'coatColor') {
-      setInputValues(prev => ({ ...prev, coatColorName: name }));
-      const found = coatColors.find(c => c.name.toLowerCase() === normalizedName);
-      if (found) updateFormData('coatColorCode', found.code);
-    }
-  };
+  // コードと名称の同期ロジック (Select化により不要になったため削除済み)
 
   // 名称解決ヘルパー (削除予定だが、他の箇所で使われている可能性があるため確認)
   // const getBreedName = ... 
@@ -877,54 +828,69 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
                 />
               </Grid.Col>
 
-              {/* Row 3: 品種コード, 品種名（2列） */}
-              <Grid.Col span={{ base: 3, md: 1 }}>
-                <InputWithFloatingLabel
-                  label="品種コード"
-                  value={formData.breedCode?.toString()}
-                  onChange={(e) => handleCodeChange('breed', e.target.value)}
-                  styles={{ input: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip' } }}
+              {/* Row 3: 品種（コード+名前統合）、毛色（コード+名前統合） - 2カラムレスポンシブ */}
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <SelectWithFloatingLabel
+                  label="品種を選択"
+                  data={breeds.map(b => ({ value: b.code.toString(), label: `${b.code} - ${b.name}` }))}
+                  value={formData.breedCode?.toString() || null}
+                  onChange={(value) => {
+                    if (value) {
+                      const code = parseInt(value, 10);
+                      updateFormData('breedCode', code);
+                      const found = breeds.find(b => b.code === code);
+                      setInputValues(prev => ({ ...prev, breedName: found?.name || '' }));
+                    } else {
+                      updateFormData('breedCode', undefined);
+                      setInputValues(prev => ({ ...prev, breedName: '' }));
+                    }
+                  }}
+                  searchable
+                  clearable
+                  nothingFoundMessage="該当する品種がありません"
                 />
               </Grid.Col>
-              <Grid.Col span={{ base: 9, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="品種名"
-                  value={inputValues.breedName}
-                  onChange={(e) => handleNameChange('breed', e.target.value)}
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <SelectWithFloatingLabel
+                  label="毛色を選択"
+                  data={coatColors.map(c => ({ value: c.code.toString(), label: `${c.code} - ${c.name}` }))}
+                  value={formData.coatColorCode?.toString() || null}
+                  onChange={(value) => {
+                    if (value) {
+                      const code = parseInt(value, 10);
+                      updateFormData('coatColorCode', code);
+                      const found = coatColors.find(c => c.code === code);
+                      setInputValues(prev => ({ ...prev, coatColorName: found?.name || '' }));
+                    } else {
+                      updateFormData('coatColorCode', undefined);
+                      setInputValues(prev => ({ ...prev, coatColorName: '' }));
+                    }
+                  }}
+                  searchable
+                  clearable
+                  nothingFoundMessage="該当する毛色がありません"
                 />
               </Grid.Col>
 
-              {/* Row 4: 毛色コード, 毛色名称（2列） */}
-              <Grid.Col span={{ base: 3, md: 1 }}>
-                <InputWithFloatingLabel
-                  label="毛色コード"
-                  value={formData.coatColorCode?.toString()}
-                  onChange={(e) => handleCodeChange('coatColor', e.target.value)}
-                  styles={{ input: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 9, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="毛色"
-                  value={inputValues.coatColorName}
-                  onChange={(e) => handleNameChange('coatColor', e.target.value)}
-                />
-              </Grid.Col>
-
-              {/* Row 5: 性別コード, 性別名称（2列） */}
-              <Grid.Col span={{ base: 3, md: 1 }}>
-                <InputWithFloatingLabel
-                  label="性別コード"
-                  value={formData.genderCode?.toString()}
-                  onChange={(e) => handleCodeChange('gender', e.target.value)}
-                  styles={{ input: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 9, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="性別"
-                  value={inputValues.genderName}
-                  onChange={(e) => handleNameChange('gender', e.target.value)}
+              {/* Row 4: 性別（コード+名前統合）、目の色 - 2カラムレスポンシブ */}
+              <Grid.Col span={{ base: 6, sm: 4, md: 2 }}>
+                <SelectWithFloatingLabel
+                  label="性別を選択"
+                  data={genders.map(g => ({ value: g.code.toString(), label: `${g.code} - ${g.name}` }))}
+                  value={formData.genderCode?.toString() || null}
+                  onChange={(value) => {
+                    if (value) {
+                      const code = parseInt(value, 10);
+                      updateFormData('genderCode', code);
+                      const found = genders.find(g => g.code === code);
+                      setInputValues(prev => ({ ...prev, genderName: found?.name || '' }));
+                    } else {
+                      updateFormData('genderCode', undefined);
+                      setInputValues(prev => ({ ...prev, genderName: '' }));
+                    }
+                  }}
+                  clearable
+                  nothingFoundMessage="該当する性別がありません"
                 />
               </Grid.Col>
 
@@ -1210,9 +1176,9 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
             </Button>
             <Menu shadow="md" width={200}>
               <Menu.Target>
-                <Button 
-                  loading={loading} 
-                  leftSection={<IconDeviceFloppy size={16} />} 
+                <Button
+                  loading={loading}
+                  leftSection={<IconDeviceFloppy size={16} />}
                   rightSection={<IconChevronDown size={16} />}
                   size="lg"
                 >
