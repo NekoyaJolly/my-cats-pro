@@ -91,8 +91,10 @@
 
 ### データベース・インフラ
 
-- **データベース**: PostgreSQL 15+
+- **データベース**: PostgreSQL 15+ または Supabase (推奨)
 - **ORM**: Prisma 6.14.0
+- **接続管理**: Supabase Transaction Pooler 対応 (port 6543)
+  - 詳細は [Supabase 接続設定ガイド](docs/SUPABASE_CONNECTION_GUIDE.md) を参照
 - **キャッシュ**: Redis (予定)
 - **Node.js**: 20.x (推奨)
 - **コンテナ**: Docker + Alpine Linux 3.22 (node:20-alpine3.22 ベース)
