@@ -120,6 +120,10 @@ RegsyDatabase.ini
 
 # Personal/temp files
 Applications/
+
+# Google Drive Integration (credentials)
+gdrive-credentials.json
+.folder_id
 Desktop/
 Documents/
 Downloads/
