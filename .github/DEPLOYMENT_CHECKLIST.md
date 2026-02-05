@@ -20,7 +20,8 @@
   ```
 
 - [ ] Secret Manager でシークレットが適切に管理されている
-  - DATABASE_URL
+  - DATABASE_URL (Supabase Transaction Pooler, port 6543)
+  - DIRECT_URL (Supabase Direct Connection, port 5432)
   - JWT_SECRET
   - JWT_REFRESH_SECRET
 

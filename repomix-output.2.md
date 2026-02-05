@@ -1,9 +1,9 @@
-This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
 
 # File Summary
 
 ## Purpose
-This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+This file contains a packed representation of the entire repository's contents.
 It is designed to be easily consumable by AI systems for analysis, code review,
 or other automated processes.
 
@@ -28,7 +28,6 @@ The content is organized as follows:
 ## Notes
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: **/node_modules/**, **/dist/**, **/*.png, **/*.jpg
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Files are sorted by Git change count (files with more changes are at the bottom)
@@ -84,6 +83,16 @@ The content is organized as follows:
   DEPLOYMENT_SECRETS_SETUP.md
   staged-verification.md
   user-feedback-priority.md
+.playwright-mcp/
+  cats-new.png
+  kitten-disposition-all-types-success.png
+  kittens-page-disposition-display-success.png
+  kittens-page-showing-grace-kittens.png
+  ng-rule-generation-limit-created.png
+  ng-rule-individual-prohibition-created.png
+  ng-rule-tag-combination-created.png
+  ng-rules-all-5-rules-complete.png
+  ng-rules-modal-initial.png
 backend/
   prisma/
     migrations/
@@ -179,6 +188,7 @@ backend/
     ensure-dev-build.mjs
     export-cats-seed.ts
     generate-secrets.mjs
+    migrate_csv_to_supabase.ts
   src/
     auth/
       dto/
@@ -384,6 +394,7 @@ backend/
         pedigree-pdf.service.ts
         positions.json
         print-settings.service.ts
+        血統書見本.png
       types/
         pedigree.types.ts
       pedigree.controller.spec.ts
@@ -596,7 +607,6 @@ frontend/
           useBreedingSchedule.ts
           useNgPairing.ts
         page.tsx
-        page.tsx.backup
         types.ts
         utils.ts
       care/
@@ -608,7 +618,6 @@ frontend/
             page.tsx
           pedigree/
             client.tsx
-            page_new.tsx
             page.tsx
           client.tsx
           layout.tsx
@@ -641,7 +650,6 @@ frontend/
       import/
         page.tsx
       kittens/
-        page_new.tsx
         page.tsx
       login/
         page.tsx
@@ -650,7 +658,7 @@ frontend/
       more/
         page.tsx
       pedigrees/
-        _id_disabled/
+        [id]/
           family-tree/
             client.tsx
             page.tsx
@@ -906,6 +914,9 @@ scripts/
   stop-dev.sh
   test-session-persistence.sh
   validate-deployment-config.sh
+supabase/
+  .gitignore
+  config.toml
 .dockerignore
 .env.development.example
 .env.docker.example
@@ -921,9 +932,11 @@ Dockerfile.backend
 Dockerfile.frontend
 eslint.config.mjs
 gcp_verification_results.md
+GEMINI.md
 IMPLEMENTATION_COMPLETE.md
 init_database.sql
 package.json
+pip_Image.png
 pnpm-workspace.yaml
 README.md
 seed_data.sql
@@ -2129,1746 +2142,6 @@ export function useNgPairing({
 }
 ````
 
-## File: frontend/src/app/breeding/page.tsx.backup
-````
-'use client';
-
-import { useEffect, useState, ChangeEvent, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  Box,
-  Container,
-  Text,
-  Button,
-  Card,
-  Group,
-  Stack,
-  Flex,
-  Badge,
-  MultiSelect,
-  Tabs,
-  Table,
-  Modal,
-  Select,
-  ActionIcon,
-  ScrollArea,
-  TextInput,
-  Checkbox,
-  NumberInput,
-  Radio,
-} from '@mantine/core';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
-import { useDisclosure } from '@mantine/hooks';
-import { 
-  IconPlus, 
-  IconHeart, 
-  IconCalendar,
-  IconPaw,
-  IconArrowLeft,
-  IconCheck,
-  IconX,
-  IconMaximize,
-  IconMinimize,
-  IconSettings,
-  IconTrash,
-  IconEdit,
-  IconBabyCarriage,
-  IconRainbow,
-} from '@tabler/icons-react';
-
-import {
-  useGetBreedingNgRules,
-  useCreateBreedingNgRule,
-  useUpdateBreedingNgRule,
-  useDeleteBreedingNgRule,
-  type BreedingNgRuleType,
-  type CreateBreedingNgRuleRequest,
-  useGetPregnancyChecks,
-  useCreatePregnancyCheck,
-  useDeletePregnancyCheck,
-  type PregnancyCheck,
-  type PregnancyStatus,
-  type CreatePregnancyCheckRequest,
-  useGetBirthPlans,
-  useCreateBirthPlan,
-  useUpdateBirthPlan,
-  useDeleteBirthPlan,
-  type BirthPlan,
-  type BirthStatus,
-  type CreateBirthPlanRequest,
-} from '@/lib/api/hooks/use-breeding';
-import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
-
-// 型定義
-type NgRuleType = BreedingNgRuleType;
-
-interface NgPairingRule {
-  id: string;
-  name: string;
-  type: NgRuleType;
-  maleConditions?: string[];
-  femaleConditions?: string[];
-  maleNames?: string[];
-  femaleNames?: string[];
-  generationLimit?: number | null;
-  description?: string | null;
-  active: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface NewRuleState {
-  name: string;
-  type: NgRuleType;
-  maleConditions: string[];
-  femaleConditions: string[];
-  maleNames: string[];
-  femaleNames: string[];
-  generationLimit: number | null;
-  description: string;
-}
-
-interface BreedingCat extends Cat {
-  lastMating?: string | null;
-}
-
-interface BreedingScheduleEntry {
-  maleId: string;
-  maleName: string;
-  femaleId: string;
-  femaleName: string;
-  date: string;
-  duration: number;
-  dayIndex: number;
-  isHistory: boolean;
-  result?: string;
-}
-
-interface PregnancyCheckItem {
-  id: string;
-  maleName: string;
-  femaleName: string;
-  matingDate: string;
-  checkDate: string;
-  status: string;
-}
-
-// 猫データ（繁殖用）- APIから取得するため削除
-
-// NGペアルール
-const initialNgPairingRules: NgPairingRule[] = [];
-
-// 現在の日付から1ヶ月のカレンダーを生成
-const generateMonthDates = (year: number, month: number) => {
-  const dates = [];
-  const daysInMonth = new Date(year, month, 0).getDate();
-  
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month - 1, day);
-    dates.push({
-      date: day,
-      dateString: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-      dayOfWeek: date.getDay(),
-    });
-  }
-  return dates;
-};
-
-// 年齢を月単位で計算
-const calculateAgeInMonths = (birthDate: string): number => {
-  if (!birthDate) return 0;
-  const birth = new Date(birthDate);
-  const now = new Date();
-  
-  let months = (now.getFullYear() - birth.getFullYear()) * 12;
-  months += now.getMonth() - birth.getMonth();
-  
-  // もし今月の日付が誕生日の日付より前なら、1ヶ月引く
-  if (now.getDate() < birth.getDate()) {
-    months--;
-  }
-  
-  return Math.max(0, months);
-};
-
-export default function BreedingPage() {`n  const { setPageHeader } = usePageHeader();
-  // hydration guard: 初回マウント時に localStorage から読み込むまで保存を抑制
-  const hydratedRef = useRef(false);
-  const mountCountRef = useRef(0);
-
-  const [activeTab, setActiveTab] = useState('schedule');
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 現在の月
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // 現在の年
-  const [breedingSchedule, setBreedingSchedule] = useState<Record<string, BreedingScheduleEntry>>({});
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [selectedMaleForEdit, setSelectedMaleForEdit] = useState<string | null>(null);
-  const [activeMales, setActiveMales] = useState<Cat[]>([]); // 最初は空
-
-  const [selectedMale, setSelectedMale] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedDuration, setSelectedDuration] = useState<number>(1); // 交配期間（日数）
-  const [defaultDuration, setDefaultDuration] = useState<number>(1); // デフォルト交配期間
-  const [availableFemales, setAvailableFemales] = useState<Cat[]>([]);
-  const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
-  const [maleModalOpened, { open: openMaleModal, close: closeMaleModal }] = useDisclosure(false);
-  const [rulesModalOpened, { open: openRulesModal, close: closeRulesModal }] = useDisclosure(false);
-  const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
-  const [birthInfoModalOpened, { open: openBirthInfoModal, close: closeBirthInfoModal }] = useDisclosure(false);
-
-  // 交配チェック記録管理 - キー: "オスID-メスID-日付", 値: チェック回数
-  const [matingChecks, setMatingChecks] = useState<{[key: string]: number}>({});
-
-  // 出産情報モーダルの状態
-  const [selectedBirthPlan, setSelectedBirthPlan] = useState<BirthPlan | null>(null);
-  const [birthCount, setBirthCount] = useState<number>(0);
-  const [deathCount, setDeathCount] = useState<number>(0);
-
-  const [ngPairingRules, setNgPairingRules] = useState<NgPairingRule[]>(initialNgPairingRules);
-  const [rulesError, setRulesError] = useState<string | null>(null);
-  const [newRule, setNewRule] = useState<NewRuleState>({
-    name: '',
-    type: 'TAG_COMBINATION',
-    maleNames: [],
-    femaleNames: [],
-    maleConditions: [],
-    femaleConditions: [],
-    generationLimit: 3,
-    description: '',
-  });
-
-  // localStorageキー
-  const STORAGE_KEYS = {
-    ACTIVE_MALES: 'breeding_active_males',
-    DEFAULT_DURATION: 'breeding_default_duration',
-    SELECTED_YEAR: 'breeding_selected_year',
-    SELECTED_MONTH: 'breeding_selected_month',
-    BREEDING_SCHEDULE: 'breeding_schedule',
-    MATING_CHECKS: 'breeding_mating_checks',
-  };
-
-  console.log(`BreedingPage component rendered (mount count: ${mountCountRef.current}) - breedingSchedule:`, breedingSchedule);
-  console.log('BreedingPage component rendered - localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
-
-  // localStorageからデータを読み込む
-  useEffect(() => {
-    console.log(`Loading data from localStorage (mount count: ${mountCountRef.current})...`);
-    const loadFromStorage = () => {
-      try {
-        const storedActiveMales = localStorage.getItem(STORAGE_KEYS.ACTIVE_MALES);
-        if (storedActiveMales) {
-          const parsed = JSON.parse(storedActiveMales);
-          console.log('Loaded activeMales:', parsed);
-          setActiveMales(parsed);
-        }
-
-        const storedDefaultDuration = localStorage.getItem(STORAGE_KEYS.DEFAULT_DURATION);
-        if (storedDefaultDuration) {
-          const parsed = parseInt(storedDefaultDuration, 10);
-          console.log('Loaded defaultDuration:', parsed);
-          setDefaultDuration(parsed);
-        }
-
-        const storedYear = localStorage.getItem(STORAGE_KEYS.SELECTED_YEAR);
-        if (storedYear) {
-          const parsed = parseInt(storedYear, 10);
-          console.log('Loaded selectedYear:', parsed);
-          setSelectedYear(parsed);
-        }
-
-        const storedMonth = localStorage.getItem(STORAGE_KEYS.SELECTED_MONTH);
-        if (storedMonth) {
-          const parsed = parseInt(storedMonth, 10);
-          console.log('Loaded selectedMonth:', parsed);
-          setSelectedMonth(parsed);
-        }
-
-        const storedBreedingSchedule = localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE);
-        if (storedBreedingSchedule) {
-          const parsed = JSON.parse(storedBreedingSchedule);
-          console.log('Loading breeding schedule from localStorage:', parsed);
-          setBreedingSchedule(parsed);
-          // すぐにlocalStorageを更新して同期を取る
-          localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, storedBreedingSchedule);
-        }
-
-        const storedMatingChecks = localStorage.getItem(STORAGE_KEYS.MATING_CHECKS);
-        if (storedMatingChecks) {
-          const parsed = JSON.parse(storedMatingChecks);
-          console.log('Loading mating checks from localStorage:', parsed);
-          setMatingChecks(parsed);
-          // すぐにlocalStorageを更新
-          localStorage.setItem(STORAGE_KEYS.MATING_CHECKS, storedMatingChecks);
-        }
-      } catch (error) {
-        console.warn('Failed to load breeding data from localStorage:', error);
-      }
-    };
-
-    loadFromStorage();
-    
-    // setTimeoutでhydratedRefをtrueにする
-    setTimeout(() => {
-      hydratedRef.current = true;
-    }, 0);
-  }, []);  // localStorageにデータを保存する
-  
-  // デバッグ用: breedingSchedule の変更を監視
-  useEffect(() => {
-    console.log(`breedingSchedule state changed (mount count: ${mountCountRef.current}):`, breedingSchedule);
-    console.log('Current localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
-  }, [breedingSchedule]);
-
-  // コンポーネントのマウント/アンマウントを追跡
-  useEffect(() => {
-    mountCountRef.current += 1;
-    console.log(`BreedingPage component mounted (count: ${mountCountRef.current})`);
-    return () => {
-      console.log('BreedingPage component unmounted');
-      hydratedRef.current = false; // reset hydrated state on unmount
-    };
-  }, []);
-  
-
-  useEffect(() => {
-    console.log(`Saving data to localStorage (mount count: ${mountCountRef.current})...`);
-    const saveToStorage = () => {
-      // don't persist before we've hydrated from storage
-      if (!hydratedRef.current) return;
-
-      try {
-        localStorage.setItem(STORAGE_KEYS.ACTIVE_MALES, JSON.stringify(activeMales));
-        localStorage.setItem(STORAGE_KEYS.DEFAULT_DURATION, defaultDuration.toString());
-        localStorage.setItem(STORAGE_KEYS.SELECTED_YEAR, selectedYear.toString());
-        localStorage.setItem(STORAGE_KEYS.SELECTED_MONTH, selectedMonth.toString());
-        // breedingScheduleが空でない場合のみ保存
-        if (Object.keys(breedingSchedule).length > 0) {
-          localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, JSON.stringify(breedingSchedule));
-        }
-        localStorage.setItem(STORAGE_KEYS.MATING_CHECKS, JSON.stringify(matingChecks));
-        console.log('Saved to localStorage:', {
-          breedingSchedule,
-          matingChecks,
-          activeMales,
-          defaultDuration,
-          selectedYear,
-          selectedMonth
-        });
-      } catch (error) {
-        console.warn('Failed to save breeding data to localStorage:', error);
-      }
-    };
-
-    saveToStorage();
-  }, [activeMales, defaultDuration, selectedYear, selectedMonth, breedingSchedule, matingChecks]);
-
-  const catsQuery = useGetCats({ limit: 1000 }, { enabled: true });
-  const { data: catsResponse } = catsQuery;
-  const ngRulesQuery = useGetBreedingNgRules();
-  const { data: ngRulesResponse, isLoading: isNgRulesLoading, isFetching: isNgRulesFetching, error: ngRulesError } = ngRulesQuery;
-
-  // Pregnancy Check hooks
-  const pregnancyChecksQuery = useGetPregnancyChecks();
-  const { data: pregnancyChecksResponse } = pregnancyChecksQuery;
-  const createPregnancyCheckMutation = useCreatePregnancyCheck();
-  const deletePregnancyCheckMutation = useDeletePregnancyCheck();
-
-  // Birth Plan hooks
-  const birthPlansQuery = useGetBirthPlans();
-  const { data: birthPlansResponse } = birthPlansQuery;
-  const createBirthPlanMutation = useCreateBirthPlan();
-  const updateBirthPlanMutation = useUpdateBirthPlan();
-  const deleteBirthPlanMutation = useDeleteBirthPlan();
-
-  useEffect(() => {
-    if (!ngRulesResponse) {
-      return;
-    }
-
-  const remoteRules = (ngRulesResponse.data ?? []) as NgPairingRule[];
-  setNgPairingRules(remoteRules.map(rule => ({ ...rule })));
-  }, [ngRulesResponse]);
-
-  useEffect(() => {
-    if (ngRulesError) {
-      setRulesError(ngRulesError instanceof Error ? ngRulesError.message : 'NGルールの取得に失敗しました');
-    } else {
-      setRulesError(null);
-    }
-  }, [ngRulesError]);
-  const createNgRuleMutation = useCreateBreedingNgRule();
-  const updateNgRuleMutation = useUpdateBreedingNgRule();
-  const deleteNgRuleMutation = useDeleteBreedingNgRule();
-
-  // 次のルール番号を生成する関数
-  const getNextRuleName = () => {
-    const existingNumbers = ngPairingRules
-      .map((rule: NgPairingRule) => {
-        const match = rule.name.match(/^NG(\d+)$/);
-        return match ? parseInt(match[1]) : 0;
-      })
-      .filter((num: number) => num > 0);
-    
-    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
-    return `NG${maxNumber + 1}`;
-  };
-  
-  const availableTags: string[] = [...new Set(
-    (catsResponse?.data ?? [])
-      .flatMap((cat: Cat) => cat.tags?.map((catTag) => catTag.tag.name).filter((name: string) => name) ?? [])
-      .filter((name: string) => name)
-  )];
-  
-  const maleCats = (catsResponse?.data ?? []).filter((cat: Cat) => cat.gender === 'MALE');
-  const femaleCats = (catsResponse?.data ?? []).filter((cat: Cat) => cat.gender === 'FEMALE');
-  
-  const router = useRouter();
-
-  const monthDates = generateMonthDates(selectedYear, selectedMonth);
-
-  // NGペアチェック関数
-  const isNGPairing = (maleId: string, femaleId: string) => {
-    const male = activeMales.find((m: Cat) => m.id === maleId);
-    const female = catsResponse?.data?.find((f: Cat) => f.id === femaleId);
-    
-    if (!male || !female) return false;
-    
-    const maleTags = male.tags?.map((catTag) => catTag.tag.name) ?? [];
-    const femaleTags = female.tags?.map((catTag) => catTag.tag.name) ?? [];
-    
-    return ngPairingRules.some((rule: NgPairingRule) => {
-      if (!rule.active) return false;
-      
-      if (rule.type === 'TAG_COMBINATION' && rule.maleConditions && rule.femaleConditions) {
-        const maleMatches = rule.maleConditions.some((condition: string) => maleTags.includes(condition));
-        const femaleMatches = rule.femaleConditions.some((condition: string) => femaleTags.includes(condition));
-        return maleMatches && femaleMatches;
-      }
-      
-      if (rule.type === 'INDIVIDUAL_PROHIBITION' && rule.maleNames && rule.femaleNames) {
-        return rule.maleNames.includes(male.name) && rule.femaleNames.includes(female.name);
-      }
-      
-      // generation_limit の実装（将来的にpedigree機能連携）
-      if (rule.type === 'GENERATION_LIMIT') {
-        // 血統データとの連携は将来実装予定
-        return false;
-      }
-      
-      return false;
-    });
-  };
-
-  // フルスクリーン切り替え
-  const toggleFullscreen = () => {
-    if (!isFullscreen) {
-      document.documentElement.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
-    setIsFullscreen(!isFullscreen);
-  };
-
-  // オス猫追加
-  const handleAddMale = (maleData: Cat) => {
-    setActiveMales((prev: Cat[]) => [...prev, maleData]);
-    closeMaleModal();
-  };
-
-  // オス猫削除
-  const handleRemoveMale = (maleId: string) => {
-    setActiveMales((prev: Cat[]) => prev.filter((m: Cat) => m.id !== maleId));
-    setSelectedMaleForEdit(null);
-  };
-
-  // オス猫選択時に交配可能メス一覧を表示
-  const handleMaleSelect = (maleId: string, date: string) => {
-    setSelectedMale(maleId);
-    setSelectedDate(date);
-    setSelectedDuration(defaultDuration); // デフォルト期間を使用
-    
-    // 交配可能なメス猫をフィルタリング（生後11ヶ月以上、最新出産日から65日以上経過、FEMALE、在舎）
-    // TODO: 最新出産日から65日以上経過のチェックを実装（breeding history APIが必要）
-    const available = (catsResponse?.data ?? []).filter((cat: Cat) => 
-      cat.gender === 'FEMALE' &&
-      cat.isInHouse &&
-      calculateAgeInMonths(cat.birthDate) >= 11
-    );    setAvailableFemales(available);
-    openModal();
-  };
-
-  // デフォルト期間を更新
-  const handleSetDefaultDuration = (duration: number, setAsDefault: boolean) => {
-    if (setAsDefault) {
-      setDefaultDuration(duration);
-    }
-  };
-
-  // 交配結果処理
-  const handleMatingResult = (maleId: string, femaleId: string, femaleName: string, matingDate: string, result: 'success' | 'failure') => {
-    const male = activeMales.find((m: Cat) => m.id === maleId);
-    
-    if (result === 'success') {
-      // ○ボタン：妊娠確認中リストに追加
-      const checkDate = new Date();
-      checkDate.setDate(checkDate.getDate() + 21); // 21日後に妊娠確認
-      
-      createPregnancyCheckMutation.mutate({
-        motherId: femaleId,
-        fatherId: maleId,
-        matingDate: matingDate,
-        checkDate: checkDate.toISOString().split('T')[0],
-        status: 'SUSPECTED',
-        notes: `${male?.name || ''}との交配による妊娠疑い`,
-      });
-    }
-    
-    // 交配スケジュールを履歴として残す（○×どちらも）
-    setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
-      const newSchedule = { ...prev };
-      Object.keys(newSchedule).forEach(key => {
-        if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
-          newSchedule[key] = {
-            ...newSchedule[key],
-            isHistory: true,
-            result: '' // 成功・失敗問わず結果表示なし
-          };
-        }
-      });
-      return newSchedule;
-    });
-  };
-
-  // 交配チェックを追加
-  const handleMatingCheck = (maleId: string, femaleId: string, date: string) => {
-    const key = `${maleId}-${femaleId}-${date}`;
-    setMatingChecks((prev: {[key: string]: number}) => ({
-      ...prev,
-      [key]: (prev[key] || 0) + 1
-    }));
-  };
-
-  // その日のチェック回数を取得
-  const getMatingCheckCount = (maleId: string, femaleId: string, date: string): number => {
-    const key = `${maleId}-${femaleId}-${date}`;
-    return matingChecks[key] || 0;
-  };
-
-  // オス猫名クリック時の編集モード
-  const handleMaleNameClick = (maleId: string) => {
-    setSelectedMaleForEdit(selectedMaleForEdit === maleId ? null : maleId);
-  };
-
-  // メス猫をスケジュールに追加
-  const handleAddFemaleToSchedule = (femaleId: string) => {
-    const female = catsResponse?.data?.find((f: Cat) => f.id === femaleId);
-    const male = activeMales.find((m: Cat) => m.id === selectedMale);
-    
-    if (female && male && selectedDate && selectedMale) {
-      // メス猫の重複チェック
-      const startDate = new Date(selectedDate);
-      const scheduleDates: string[] = [];
-      for (let i = 0; i < selectedDuration; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        scheduleDates.push(date.toISOString().split('T')[0]);
-      }
-      
-      // 他のオス猫のスケジュールで同じメス猫が同じ日付に入っているかチェック
-      const duplicateMales: string[] = [];
-      activeMales.forEach((otherMale: Cat) => {
-        if (otherMale.id === selectedMale) return; // 同じオスはスキップ
-        
-        scheduleDates.forEach(dateStr => {
-          const scheduleKey = `${otherMale.id}-${dateStr}`;
-          const schedule = breedingSchedule[scheduleKey];
-          if (schedule && schedule.femaleId === femaleId && !schedule.isHistory) {
-            if (!duplicateMales.includes(otherMale.name)) {
-              duplicateMales.push(otherMale.name);
-            }
-          }
-        });
-      });
-      
-      if (duplicateMales.length > 0) {
-        const confirmed = window.confirm(
-          `警告: ${female.name}は既に以下のオス猫のスケジュールに入っています：\n${duplicateMales.join(', ')}\n\n本当にこのメス猫を追加しますか？`
-        );
-        
-        if (!confirmed) {
-          closeModal();
-          return;
-        }
-      }
-      
-      // NGペアチェック
-      if (isNGPairing(selectedMale, femaleId)) {
-        const ngRule = ngPairingRules.find((rule: NgPairingRule) => {
-          if (!rule.active) return false;
-          
-          if (rule.type === 'TAG_COMBINATION' && rule.maleConditions && rule.femaleConditions) {
-            const maleTags = male.tags?.map((catTag) => catTag.tag.name) ?? [];
-            const femaleTags = female.tags?.map((catTag) => catTag.tag.name) ?? [];
-            const maleMatches = rule.maleConditions.some(condition => maleTags.includes(condition));
-            const femaleMatches = rule.femaleConditions.some(condition => femaleTags.includes(condition));
-            return maleMatches && femaleMatches;
-          }
-          
-          if (rule.type === 'INDIVIDUAL_PROHIBITION' && rule.maleNames && rule.femaleNames) {
-            return rule.maleNames.includes(male.name) && rule.femaleNames.includes(female.name);
-          }
-          
-          return false;
-        });
-        
-        const confirmed = window.confirm(
-          `警告: このペアは「${ngRule?.name}」ルールに該当します。\n${ngRule?.description ?? '詳細が設定されていません。'}\n\n本当に交配を予定しますか？`
-        );
-        
-        if (!confirmed) {
-          closeModal();
-          return;
-        }
-      }
-      
-      // 各日付にスケジュールを追加
-      const newSchedules: Record<string, BreedingScheduleEntry> = {};
-      scheduleDates.forEach((dateStr, index) => {
-        const scheduleKey = `${selectedMale}-${dateStr}`;
-        
-        // 前回のペアがある場合、成功/失敗の確認
-        const existingPair = breedingSchedule[scheduleKey];
-        if (existingPair && index === 0) { // 初日のみチェック
-          const success = window.confirm(`前回のペア（${male.name} × ${existingPair.femaleName}）は成功しましたか？`);
-          
-          if (success) {
-            // 成功：妊娠確認中リストに追加
-            const checkDate = new Date(selectedDate);
-            checkDate.setDate(checkDate.getDate() + 21); // 21日後に妊娠確認
-            
-            createPregnancyCheckMutation.mutate({
-              motherId: femaleId,
-              checkDate: checkDate.toISOString().split('T')[0],
-              status: 'SUSPECTED',
-              notes: `${male.name}との交配による妊娠疑い`,
-            });
-          }
-          
-          // 成功・失敗に関わらず、既存のペアをテキスト記録に変更
-          newSchedules[scheduleKey] = {
-            ...existingPair,
-            isHistory: true,
-            result: success ? '成功' : '失敗',
-          };
-        } else if (!existingPair) {
-          // 新しいペアを追加
-          newSchedules[scheduleKey] = {
-            maleId: selectedMale,
-            maleName: male.name,
-            femaleId: femaleId,
-            femaleName: female.name,
-            date: dateStr,
-            duration: selectedDuration,
-            dayIndex: index, // 0: 初日, 1: 2日目, 2: 3日目...
-            isHistory: false,
-          };
-        }
-      });
-      
-      setBreedingSchedule(prev => ({ ...prev, ...newSchedules }));
-    }
-    
-    closeModal();
-  };
-
-  // 妊娠確認
-  const handlePregnancyCheck = (checkItem: PregnancyCheck, isPregnant: boolean) => {
-    if (isPregnant) {
-      // 妊娠の場合：出産予定リストに追加
-      const expectedDate = new Date(checkItem.checkDate);
-      expectedDate.setDate(expectedDate.getDate() + 45); // 妊娠確認から約45日後に出産予定
-      
-      createBirthPlanMutation.mutate({
-        motherId: checkItem.motherId,
-        fatherId: checkItem.fatherId ?? undefined,
-        matingDate: checkItem.matingDate ?? undefined,
-        expectedBirthDate: expectedDate.toISOString().split('T')[0],
-        status: 'EXPECTED',
-        notes: '妊娠確認による出産予定',
-      }, {
-        onSuccess: () => {
-          // 出産予定作成成功後、妊娠確認中から削除
-          deletePregnancyCheckMutation.mutate(checkItem.id);
-        }
-      });
-    } else {
-      // 非妊娠の場合：妊娠チェックを削除
-      deletePregnancyCheckMutation.mutate(checkItem.id);
-    }
-  };
-
-  // NGルール管理機能
-  const addNewRule = () => {
-    if (createNgRuleMutation.isPending) {
-      return;
-    }
-
-    const payload: CreateBreedingNgRuleRequest = {
-      name: newRule.name,
-      description: newRule.description.trim() ? newRule.description.trim() : undefined,
-      type: newRule.type,
-      active: true,
-    };
-
-    if (newRule.type === 'TAG_COMBINATION') {
-      payload.maleConditions = newRule.maleConditions;
-      payload.femaleConditions = newRule.femaleConditions;
-    } else if (newRule.type === 'INDIVIDUAL_PROHIBITION') {
-      payload.maleNames = newRule.maleNames;
-      payload.femaleNames = newRule.femaleNames;
-    } else if (newRule.type === 'GENERATION_LIMIT' && newRule.generationLimit) {
-      payload.generationLimit = newRule.generationLimit;
-    }
-
-    setRulesError(null);
-    createNgRuleMutation.mutate(payload, {
-      onSuccess: () => {
-        resetNewRuleForm();
-        closeNewRuleModal();
-      },
-      onError: (error: unknown) => {
-        setRulesError(error instanceof Error ? error.message : 'NGルールの登録に失敗しました');
-      },
-    });
-  };
-
-  const resetNewRuleForm = () => {
-    setNewRule({
-      name: getNextRuleName(),
-      type: 'TAG_COMBINATION',
-      maleNames: [],
-      femaleNames: [],
-      maleConditions: [],
-      femaleConditions: [],
-      generationLimit: 3,
-      description: '',
-    });
-  };
-
-  // 新規ルールモーダルを開く時にルール名を自動生成
-  const openNewRuleModalWithName = () => {
-    setNewRule((prev: NewRuleState) => ({
-      ...prev,
-      name: getNextRuleName()
-    }));
-    openNewRuleModal();
-  };
-
-  // 新規ルールのバリデーション
-  const isNewRuleValid = () => {
-    // ルール名は必須
-    if (!newRule.name.trim()) {
-      return false;
-    }
-
-    // ルールタイプ別のバリデーション
-    if (newRule.type === 'TAG_COMBINATION') {
-      return newRule.maleConditions.length > 0 && newRule.femaleConditions.length > 0;
-    } else if (newRule.type === 'INDIVIDUAL_PROHIBITION') {
-      return newRule.maleNames.length > 0 && newRule.femaleNames.length > 0;
-    } else if (newRule.type === 'GENERATION_LIMIT') {
-      return (newRule.generationLimit ?? 0) > 0;
-    }
-
-    return false;
-  };
-
-  const deleteRule = (ruleId: string) => {
-    const previousRules = [...ngPairingRules];
-    setRulesError(null);
-    setNgPairingRules((prev: NgPairingRule[]) => prev.filter((rule: NgPairingRule) => rule.id !== ruleId));
-    deleteNgRuleMutation.mutate(ruleId, {
-      onError: (error: unknown) => {
-        setRulesError(error instanceof Error ? error.message : 'NGルールの削除に失敗しました');
-        setNgPairingRules(previousRules);
-      },
-    });
-  };
-
-  const toggleRule = (ruleId: string) => {
-    const previousRules = ngPairingRules.map((rule: NgPairingRule) => ({ ...rule }));
-    const target = previousRules.find((rule: NgPairingRule) => rule.id === ruleId);
-    if (!target) return;
-
-    const nextActive = !target.active;
-    setRulesError(null);
-    setNgPairingRules((prev: NgPairingRule[]) =>
-      prev.map((rule: NgPairingRule) => (rule.id === ruleId ? { ...rule, active: nextActive } : rule)),
-    );
-
-    updateNgRuleMutation.mutate(
-      { id: ruleId, payload: { active: nextActive } },
-      {
-        onError: (error: unknown) => {
-          setRulesError(error instanceof Error ? error.message : 'NGルールの更新に失敗しました');
-          setNgPairingRules(previousRules);
-        },
-      },
-    );
-  };
-
-  return (
-    <Box 
-      style={{ 
-        minHeight: '100vh', 
-  backgroundColor: 'var(--background-base)',
-        position: isFullscreen ? 'fixed' : 'relative',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: isFullscreen ? 9999 : 'auto',
-        overflow: isFullscreen ? 'hidden' : 'auto',
-      }}
-    >
-      {/* ヘッダー */}
-      <Box
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderBottom: '1px solid var(--border-subtle)',
-          padding: '1rem 0',
-          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
-        }}
-      >
-        <Container size="xl">
-          <Flex align="center" gap="md">
-            <ActionIcon
-              variant="subtle"
-              size="lg"
-              onClick={() => router.push('/')}
-            >
-              <IconArrowLeft size={20} />
-            </ActionIcon>
-            <PageTitle style={{ color: 'var(--text-primary)' }}>繁殖管理</PageTitle>
-            <Group gap="sm" ml="auto">
-              <Button
-                variant="light"
-                onClick={openRulesModal}
-                leftSection={<IconSettings size={16} />}
-                size="sm"
-              >
-                NG設定
-              </Button>
-              <ActionIcon
-                variant="light"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? 'フルスクリーン終了' : 'フルスクリーン'}
-              >
-                {isFullscreen ? <IconMinimize size={18} /> : <IconMaximize size={18} />}
-              </ActionIcon>
-            </Group>
-          </Flex>
-        </Container>
-      </Box>
-
-      {/* メインコンテンツ */}
-      <Container 
-        size={isFullscreen ? "100%" : "xl"} 
-        style={{ 
-          paddingTop: '1rem',
-          height: isFullscreen ? 'calc(100vh - 80px)' : 'auto',
-          overflow: isFullscreen ? 'hidden' : 'visible',
-        }}
-      >
-        <PageTitle withMarginBottom={true} style={{ fontSize: 18 }}>
-          交配スケジュール管理
-        </PageTitle>
-
-        {/* タブ */}
-        <Tabs value={activeTab} onChange={(value: string | null) => setActiveTab(value || 'schedule')} mb="md">
-          <Tabs.List>
-            <Tabs.Tab value="schedule" leftSection={<IconCalendar size={16} />}>
-              交配管理表
-            </Tabs.Tab>
-            <Tabs.Tab value="pregnancy" leftSection={<IconHeart size={16} />}>
-              妊娠確認中 ({pregnancyChecksResponse?.data?.length || 0})
-            </Tabs.Tab>
-            <Tabs.Tab value="birth" leftSection={<IconPaw size={16} />}>
-              出産予定一覧 ({birthPlansResponse?.data?.length || 0})
-            </Tabs.Tab>
-          </Tabs.List>
-
-          {/* 交配管理表タブ */}
-          <Tabs.Panel value="schedule" pt="md">
-            <Card 
-              shadow="sm" 
-              padding={isFullscreen ? "xs" : "md"} 
-              radius="md" 
-              withBorder 
-              mb="md"
-              style={{ height: isFullscreen ? 'calc(100vh - 180px)' : 'auto' }}
-            >
-              <Group gap="md" mb="md">
-                <Select
-                  label="年"
-                  value={selectedYear.toString()}
-                  onChange={(value: string | null) => setSelectedYear(parseInt(value || '2024'))}
-                  data={['2024', '2025', '2026'].map(year => ({ value: year, label: year + '年' }))}
-                  size={isFullscreen ? "xs" : "sm"}
-                />
-                <Select
-                  label="月"
-                  value={selectedMonth.toString()}
-                  onChange={(value: string | null) => setSelectedMonth(parseInt(value || '8'))}
-                  data={Array.from({ length: 12 }, (_, i) => ({
-                    value: (i + 1).toString(),
-                    label: (i + 1) + '月'
-                  }))}
-                  size={isFullscreen ? "xs" : "sm"}
-                />
-              </Group>
-              
-              <ScrollArea 
-                style={{ 
-                  height: isFullscreen ? 'calc(100% - 80px)' : '600px',
-                  width: '100%'
-                }}
-              >
-                <Table
-                  style={{ 
-                    fontSize: isFullscreen ? '11px' : '14px',
-                    minWidth: isFullscreen ? '1200px' : '800px',
-                    position: 'relative'
-                  }}
-                >
-                  <Table.Thead 
-                    style={{ 
-                      position: 'sticky',
-                      top: 0,
-                      backgroundColor: 'var(--surface)',
-                      zIndex: 10,
-                      borderBottom: '2px solid var(--border-subtle)'
-                    }}
-                  >
-                    <Table.Tr>
-                      <Table.Th 
-                        style={{ 
-                          minWidth: isFullscreen ? 60 : 80,
-                          position: 'sticky',
-                          left: 0,
-                          backgroundColor: 'var(--surface)',
-                          zIndex: 11,
-                          borderRight: '2px solid var(--border-subtle)'
-                        }}
-                      >
-                        <Flex align="center" gap={4} justify="center">
-                          <Text size={isFullscreen ? "xs" : "sm"} fw={600}>
-                            日付
-                          </Text>
-                        </Flex>
-                      </Table.Th>
-                      {activeMales.map((male: Cat) => (
-                        <Table.Th 
-                          key={male.id} 
-                          style={{ 
-                            minWidth: isFullscreen ? 100 : 120,
-                            borderRight: '1px solid var(--border-subtle)' // オス名の境界線
-                          }}
-                        >
-                          <Box
-                            onClick={() => handleMaleNameClick(male.id)}
-                            style={{ cursor: 'pointer', position: 'relative' }}
-                          >
-                            <Text fw={600} size={isFullscreen ? "xs" : "sm"} ta="center">
-                              {male.name}
-                            </Text>
-                          </Box>
-                          {selectedMaleForEdit === male.id && (
-                            <Group gap="xs" justify="center" mt="xs">
-                              <Button
-                                size="xs"
-                                color="red"
-                                onClick={() => handleRemoveMale(male.id)}
-                              >
-                                削除
-                              </Button>
-                              <Button
-                                size="xs"
-                                onClick={() => setSelectedMaleForEdit(null)}
-                              >
-                                保存
-                              </Button>
-                            </Group>
-                          )}
-                        </Table.Th>
-                      ))}
-                      <Table.Th style={{ minWidth: isFullscreen ? 60 : 80 }}>
-                        <ActionIcon
-                          variant="light"
-                          onClick={openMaleModal}
-                          title="オス猫追加"
-                        >
-                          <IconPlus size={isFullscreen ? 14 : 16} />
-                        </ActionIcon>
-                      </Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {monthDates.map(({ date, dateString, dayOfWeek }: { date: number; dateString: string; dayOfWeek: number }) => (
-                      <Table.Tr key={date}>
-                        <Table.Td
-                          style={{
-                            position: 'sticky',
-                            left: 0,
-                            backgroundColor: 'var(--surface)',
-                            zIndex: 5,
-                            borderRight: '1px solid var(--border-subtle)'
-                          }}
-                        >
-                          <Flex align="center" gap={4} justify="center">
-                            <Text 
-                              size={isFullscreen ? "xs" : "sm"} 
-                              fw={dayOfWeek === 0 || dayOfWeek === 6 ? 600 : 400}
-                              c={dayOfWeek === 0 ? 'red' : dayOfWeek === 6 ? 'blue' : undefined}
-                            >
-                              {date}日
-                            </Text>
-                            <Text 
-                              size={isFullscreen ? "8px" : "xs"} 
-                              c={dayOfWeek === 0 ? 'red' : dayOfWeek === 6 ? 'blue' : 'dimmed'}
-                            >
-                              ({['日', '月', '火', '水', '木', '金', '土'][dayOfWeek]})
-                            </Text>
-                          </Flex>
-                        </Table.Td>
-                        {activeMales.map((male: Cat) => {
-                          const scheduleKey = `${male.id}-${dateString}`;
-                          const schedule = breedingSchedule[scheduleKey];
-                          
-                          // 次の日も同じ交配期間かチェック
-                          const nextDate = new Date(selectedYear, selectedMonth, date + 1);
-                          const nextDateString = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
-                          const nextScheduleKey = `${male.id}-${nextDateString}`;
-                          const nextSchedule = breedingSchedule[nextScheduleKey];
-                          const hasNextSameMating = schedule && nextSchedule && 
-                            schedule.femaleName === nextSchedule.femaleName && 
-                            !schedule.isHistory && !nextSchedule.isHistory;
-                          
-                          return (
-                            <Table.Td 
-                              key={male.id} 
-                              style={{ 
-                                textAlign: 'center',
-                                // 交配期間中で次の日も同じ交配の場合は境界線を消す
-                                borderRight: hasNextSameMating ? 'none' : '1px solid var(--border-subtle)',
-                                // 交配期間中は薄い黄色の背景
-                                backgroundColor: schedule && !schedule.isHistory ? '#fffacd' : 'transparent'
-                              }}
-                            >
-                              {schedule ? (
-                                schedule.isHistory ? (
-                                  // 履歴：名前とチェックマークを一行表示
-                                  <Box style={{ position: 'relative', width: '100%', height: '100%', minHeight: isFullscreen ? '28px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', opacity: 0.6 }}>
-                                    <Flex align="center" gap={4} style={{ minHeight: isFullscreen ? '24px' : '28px' }}>
-                                      {/* 履歴のメス名表示（初日と最終日） */}
-                                      {(schedule.dayIndex === 0 || schedule.dayIndex === schedule.duration - 1) && (
-                                        <Badge size={isFullscreen ? "xs" : "sm"} color="gray" variant="light">
-                                          {schedule.femaleName}
-                                        </Badge>
-                                      )}
-                                      
-                                      {/* 履歴のチェックマーク表示エリア */}
-                                      <Box
-                                        style={{
-                                          flex: 1,
-                                          minHeight: isFullscreen ? '20px' : '24px',
-                                          padding: '2px 4px',
-                                          borderRadius: '3px',
-                                          border: '1px dashed #d3d3d3',
-                                          backgroundColor: getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? '#f8f8f8' : 'transparent',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center'
-                                        }}
-                                      >
-                                        {getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? (
-                                          <Text size={isFullscreen ? "8px" : "xs"} c="dimmed" ta="center" lh={1}>
-                                            {'✓'.repeat(getMatingCheckCount(male.id, schedule.femaleId, dateString))}
-                                          </Text>
-                                        ) : (
-                                          <Text size="8px" c="dimmed" ta="center" style={{ opacity: 0.3 }} lh={1}>
-                                            -
-                                          </Text>
-                                        )}
-                                      </Box>
-                                    </Flex>
-                                  </Box>
-                                ) : (
-                                  <Box style={{ position: 'relative', width: '100%', height: '100%', minHeight: isFullscreen ? '28px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                    {/* 一行表示：メス名バッジ（初日と最終日）とチェックエリア */}
-                                    <Flex align="center" gap={4} style={{ minHeight: isFullscreen ? '24px' : '28px' }}>
-                                      {/* メス名表示（初日と最終日） */}
-                                      {(schedule.dayIndex === 0 || schedule.dayIndex === schedule.duration - 1) && (
-                                        <Badge size={isFullscreen ? "xs" : "sm"} color="pink">
-                                          {schedule.femaleName}
-                                        </Badge>
-                                      )}
-                                      
-                                      {/* チェックマーク表示エリアまたは最終日のボタン */}
-                                      {schedule.dayIndex === schedule.duration - 1 ? (
-                                        /* 最終日：○×ボタン */
-                                        <Group gap={2}>
-                                          <ActionIcon
-                                            size={isFullscreen ? "xs" : "sm"}
-                                            variant="light"
-                                            color="green"
-                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, schedule.date, 'success')}
-                                            title="交配成功"
-                                          >
-                                            ○
-                                          </ActionIcon>
-                                          <ActionIcon
-                                            size={isFullscreen ? "xs" : "sm"}
-                                            variant="light"
-                                            color="red"
-                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, schedule.date, 'failure')}
-                                            title="交配失敗"
-                                          >
-                                            ×
-                                          </ActionIcon>
-                                        </Group>
-                                      ) : (
-                                        /* 初日・中間日：チェックマーク表示エリア */
-                                        <Box
-                                          style={{
-                                            flex: 1,
-                                            minHeight: isFullscreen ? '16px' : '18px',
-                                            cursor: 'pointer',
-                                            padding: '1px 4px',
-                                            borderRadius: '3px',
-                                            border: '1px dashed var(--border-subtle)',
-                                            backgroundColor: getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? '#f0f9f0' : 'transparent',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                          }}
-                                          onClick={() => handleMatingCheck(male.id, schedule.femaleId, dateString)}
-                                          title="クリックして交配記録を追加"
-                                        >
-                                          {getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? (
-                                            <Text size={isFullscreen ? "8px" : "xs"} c="green" ta="center" lh={1}>
-                                              {'✓'.repeat(getMatingCheckCount(male.id, schedule.femaleId, dateString))}
-                                            </Text>
-                                          ) : (
-                                            <Text size="8px" c="dimmed" ta="center" style={{ opacity: 0.5 }} lh={1}>
-                                              +
-                                            </Text>
-                                          )}
-                                        </Box>
-                                      )}
-                                    </Flex>
-                                  </Box>
-                                )
-                              ) : (
-                                <Button
-                                  variant="subtle"
-                                  size={isFullscreen ? "xs" : "sm"}
-                                  onClick={() => handleMaleSelect(male.id, dateString)}
-                                  style={{ 
-                                    width: '100%',
-                                    height: isFullscreen ? '24px' : '32px'
-                                  }}
-                                >
-                                  +
-                                </Button>
-                              )}
-                            </Table.Td>
-                          );
-                        })}
-                        <Table.Td></Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </ScrollArea>
-            </Card>
-          </Tabs.Panel>
-
-          {/* 妊娠確認中タブ */}
-          <Tabs.Panel value="pregnancy" pt="md">
-            <Stack gap="sm">
-              {pregnancyChecksResponse?.data?.map((item: PregnancyCheck) => {
-                // 父猫の名前を取得（fatherIdから）
-                const fatherName = item.fatherId 
-                  ? catsResponse?.data?.find((cat: Cat) => cat.id === item.fatherId)?.name || '不明'
-                  : '不明';
-                
-                // 確認予定日を計算（交配確認日の27日後）
-                const scheduledCheckDate = item.matingDate 
-                  ? (() => {
-                      const date = new Date(item.matingDate);
-                      date.setDate(date.getDate() + 27);
-                      return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
-                    })()
-                  : '不明';
-                
-                return (
-                  <Card key={item.id} shadow="sm" padding="sm" radius="md" withBorder>
-                    <Flex justify="space-between" align="center" wrap="nowrap">
-                      <Group gap="md" wrap="nowrap">
-                        <Text fw={600} size="sm">
-                          {item.mother?.name || '不明'} ({fatherName})
-                        </Text>
-                        <Group gap={4} wrap="nowrap">
-                          <Text size="sm" c="dimmed">
-                            交配確認日: {item.matingDate ? new Date(item.matingDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '不明'}
-                          </Text>
-                          <Text size="sm" c="dimmed">
-                            確認予定日: {scheduledCheckDate}
-                          </Text>
-                        </Group>
-                      </Group>
-                      <Group gap="xs" wrap="nowrap">
-                        <ActionIcon
-                          color="green"
-                          variant="light"
-                          size="md"
-                          onClick={() => handlePregnancyCheck(item, true)}
-                          title="妊娠確定"
-                        >
-                          ○
-                        </ActionIcon>
-                        <ActionIcon
-                          color="red"
-                          variant="light"
-                          size="md"
-                          onClick={() => handlePregnancyCheck(item, false)}
-                          title="非妊娠"
-                        >
-                          ×
-                        </ActionIcon>
-                      </Group>
-                    </Flex>
-                  </Card>
-                );
-              })}
-            </Stack>
-          </Tabs.Panel>
-
-          {/* 出産予定一覧タブ */}
-          <Tabs.Panel value="birth" pt="md">
-            <Stack gap="sm">
-              {birthPlansResponse?.data?.map((item: BirthPlan) => {
-                // 父猫の名前を取得（fatherIdから）
-                const fatherName = item.fatherId 
-                  ? catsResponse?.data?.find((cat: Cat) => cat.id === item.fatherId)?.name || '不明'
-                  : '不明';
-                
-                return (
-                  <Card key={item.id} shadow="sm" padding="sm" radius="md" withBorder>
-                    <Flex justify="space-between" align="center" wrap="nowrap">
-                      <Group gap="md" wrap="nowrap">
-                        <Text fw={600} size="sm">
-                          {item.mother?.name || '不明'} ({fatherName})
-                        </Text>
-                        <Group gap={4} wrap="nowrap">
-                          <Text size="sm" c="dimmed">
-                            交配日: {item.matingDate ? new Date(item.matingDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '不明'}
-                          </Text>
-                          <Text size="sm" c="dimmed">
-                            出産予定日: {new Date(item.expectedBirthDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
-                          </Text>
-                        </Group>
-                      </Group>
-                      <Group gap="xs" wrap="nowrap">
-                        <ActionIcon
-                          color="green"
-                          variant="light"
-                          size="md"
-                          onClick={() => {
-                            setSelectedBirthPlan(item);
-                            setBirthCount(0);
-                            setDeathCount(0);
-                            openBirthInfoModal();
-                          }}
-                          title="出産確認"
-                        >
-                          ○
-                        </ActionIcon>
-                        <ActionIcon
-                          color="red"
-                          variant="light"
-                          size="md"
-                          onClick={() => {
-                            // 出産計画を削除して交配管理表に戻す
-                            deleteBirthPlanMutation.mutate(item.id);
-                          }}
-                          title="出産なし"
-                        >
-                          ×
-                        </ActionIcon>
-                      </Group>
-                    </Flex>
-                  </Card>
-                );
-              })}
-            </Stack>
-          </Tabs.Panel>
-        </Tabs>
-      </Container>
-
-      {/* メス猫選択モーダル */}
-      <Modal
-        opened={modalOpened}
-        onClose={closeModal}
-        title="交配するメス猫を選択"
-        size="md"
-      >
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">
-            {selectedMale && activeMales.find((m: Cat) => m.id === selectedMale)?.name} との交配相手を選択してください
-          </Text>
-          
-          <Stack gap="xs">
-            <NumberInput
-              label="交配期間"
-              description="交配を行う日数を設定してください"
-              value={selectedDuration}
-              onChange={(value: string | number) => setSelectedDuration(typeof value === 'number' ? value : 1)}
-              min={1}
-              max={7}
-              suffix="日間"
-            />
-            <Checkbox
-              label="この期間をデフォルトに設定"
-              size="sm"
-              onChange={(event: ChangeEvent<HTMLInputElement>) => handleSetDefaultDuration(selectedDuration, event.currentTarget.checked)}
-            />
-          </Stack>
-
-          {availableFemales.map((female: Cat) => {
-            const isNG = selectedMale ? isNGPairing(selectedMale, female.id) : false;
-            return (
-              <Card 
-                key={female.id} 
-                shadow="sm" 
-                padding="sm" 
-                radius="md" 
-                withBorder
-                style={{ borderColor: isNG ? '#ff6b6b' : undefined }}
-              >
-                <Flex justify="space-between" align="center">
-                  <Box>
-                    <Group gap="xs">
-                      <Text fw={600}>{female.name}</Text>
-                      {isNG && <Badge color="red" size="xs">NG</Badge>}
-                    </Group>
-                    <Text size="sm" c="dimmed">{female.breed?.name ?? '不明'}</Text>
-                    <Group gap="xs">
-                      {female.tags?.map((catTag) => (
-                        <Badge key={catTag.tag.id} variant="outline" size="xs">
-                          {catTag.tag.name}
-                        </Badge>
-                      )) ?? []}
-                    </Group>
-                  </Box>
-                  <Button
-                    size="sm"
-                    color={isNG ? "red" : undefined}
-                    variant={isNG ? "outline" : "filled"}
-                    onClick={() => handleAddFemaleToSchedule(female.id)}
-                  >
-                    {isNG ? '警告選択' : '選択'}
-                  </Button>
-                </Flex>
-              </Card>
-            );
-          })}
-          {availableFemales.length === 0 && (
-            <Text ta="center" c="dimmed">
-              現在交配可能なメス猫がいません
-            </Text>
-          )}
-        </Stack>
-      </Modal>
-
-      {/* オス猫追加モーダル */}
-      <Modal
-        opened={maleModalOpened}
-        onClose={closeMaleModal}
-        title="オス猫をスケジュールに追加"
-        size="md"
-      >
-        <Stack gap="sm">
-          <Text size="sm" c="dimmed">
-            スケジュールに追加するオス猫を選択してください
-          </Text>
-          
-          {(catsResponse?.data ?? []).filter((cat: Cat) => 
-            cat.gender === 'MALE' && 
-            cat.isInHouse && 
-            calculateAgeInMonths(cat.birthDate) >= 10 &&
-            !activeMales.some((am: Cat) => am.id === cat.id)
-          ).map((male: Cat) => (
-            <Card key={male.id} shadow="sm" padding="sm" radius="md" withBorder>
-              <Flex justify="space-between" align="center">
-                <Box>
-                  <Text fw={600}>{male.name}</Text>
-                  <Text size="sm" c="dimmed">{male.breed?.name ?? '不明'}</Text>
-                  <Group gap="xs">
-                    {male.tags?.map((catTag, index) => (
-                      <Badge key={`${catTag.tag.id}-${index}`} variant="outline" size="xs">
-                        {catTag.tag.name}
-                      </Badge>
-                    )) ?? []}
-                  </Group>
-                </Box>
-                <Button
-                  size="sm"
-                  onClick={() => handleAddMale(male)}
-                >
-                  追加
-                </Button>
-              </Flex>
-            </Card>
-          ))}
-          {(catsResponse?.data ?? []).filter((cat: Cat) => 
-            cat.gender === 'MALE' && 
-            cat.isInHouse && 
-            calculateAgeInMonths(cat.birthDate) >= 10 &&
-            !activeMales.some((am: Cat) => am.id === cat.id)
-          ).length === 0 && (
-            <Text ta="center" c="dimmed">
-              追加可能なオス猫がいません
-            </Text>
-          )}
-        </Stack>
-      </Modal>
-
-      {/* NGペアルール設定モーダル */}
-      <Modal
-        opened={rulesModalOpened}
-        onClose={closeRulesModal}
-        title="NGペアルール設定"
-        size="lg"
-      >
-        <Stack gap="md">
-          <Group justify="space-between">
-            <Text size="sm" c="dimmed">
-              交配時に警告を表示するルールを設定できます
-            </Text>
-            <Button
-              leftSection={<IconPlus size={16} />}
-              onClick={openNewRuleModalWithName}
-              size="sm"
-            >
-              新規ルール作成
-            </Button>
-          </Group>
-
-          {(isNgRulesLoading || isNgRulesFetching) && (
-            <Text size="sm" c="dimmed">
-              NGルールを読み込み中です...
-            </Text>
-          )}
-
-          {rulesError && (
-            <Text size="sm" c="red">
-              {rulesError}
-            </Text>
-          )}
-
-          {ngPairingRules.map((rule: NgPairingRule) => (
-            <Card key={rule.id} shadow="sm" padding="md" radius="md" withBorder>
-              <Group justify="space-between" mb="xs">
-                <Text fw={600}>{rule.name}</Text>
-                <Group gap="xs">
-                  <Badge color={rule.active ? 'green' : 'gray'}>
-                    {rule.active ? '有効' : '無効'}
-                  </Badge>
-                  <ActionIcon
-                    variant="light"
-                    color="blue"
-                    size="sm"
-                    onClick={() => toggleRule(rule.id)}
-                  >
-                    <IconEdit size={14} />
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="light"
-                    color="red"
-                    size="sm"
-                    onClick={() => deleteRule(rule.id)}
-                  >
-                    <IconTrash size={14} />
-                  </ActionIcon>
-                </Group>
-              </Group>
-              <Text size="sm" c="dimmed" mb="xs">
-                {rule.description ?? '説明が設定されていません'}
-              </Text>
-
-              {/* ルールタイプ別の詳細表示 */}
-              {rule.type === 'TAG_COMBINATION' && rule.maleConditions && rule.femaleConditions && (
-                <Group gap="xs">
-                  <Text size="xs">オス条件:</Text>
-                  {rule.maleConditions.map((condition: string) => (
-                    <Badge key={condition} variant="outline" size="xs" color="blue">
-                      {condition}
-                    </Badge>
-                  ))}
-                  <Text size="xs">メス条件:</Text>
-                  {rule.femaleConditions.map((condition: string) => (
-                    <Badge key={condition} variant="outline" size="xs" color="pink">
-                      {condition}
-                    </Badge>
-                  ))}
-                </Group>
-              )}
-
-              {rule.type === 'INDIVIDUAL_PROHIBITION' && rule.maleNames && rule.femaleNames && (
-                <Group gap="xs">
-                  <Text size="xs">禁止ペア:</Text>
-                  {rule.maleNames.map((maleName: string, _index: number) => 
-                    rule.femaleNames!.map((femaleName: string) => (
-                      <Badge key={`${maleName}-${femaleName}`} variant="outline" size="xs" color="red">
-                        {maleName} × {femaleName}
-                      </Badge>
-                    ))
-                  )}
-                </Group>
-              )}
-
-              {rule.type === 'GENERATION_LIMIT' && (
-                <Text size="xs" c="dimmed">
-                  近親係数制限: {rule.generationLimit}親等まで禁止
-                </Text>
-              )}
-            </Card>
-          ))}
-
-          {ngPairingRules.length === 0 && (
-            <Text ta="center" c="dimmed" py="md">
-              NGルールが設定されていません
-            </Text>
-          )}
-        </Stack>
-      </Modal>
-
-      {/* 新規ルール作成モーダル */}
-      <Modal
-        opened={newRuleModalOpened}
-        onClose={closeNewRuleModal}
-        title="NGルール新規作成"
-        size="lg"
-      >
-        <Stack gap="md">
-          <TextInput
-            label="ルール名"
-            placeholder="例: 大型×小型禁止"
-            value={newRule.name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewRule((prev: NewRuleState) => ({ ...prev, name: e.target.value }))}
-            required
-          />
-
-          <Radio.Group
-            label="ルールタイプ"
-            value={newRule.type}
-            onChange={(value: string) =>
-              setNewRule((prev: NewRuleState) => ({ ...prev, type: (value as NgRuleType) ?? prev.type }))
-            }
-            required
-          >
-            <Stack gap="xs">
-              <Radio value="TAG_COMBINATION" label="タグ組み合わせ禁止" />
-              <Radio value="INDIVIDUAL_PROHIBITION" label="個別ペア禁止" />
-              <Radio value="GENERATION_LIMIT" label="近親係数制限" />
-            </Stack>
-          </Radio.Group>
-
-          {newRule.type === 'TAG_COMBINATION' && (
-            <>
-              <MultiSelect
-                label="オス猫の条件タグ"
-                data={availableTags.length > 0 ? availableTags : []}
-                value={newRule.maleConditions}
-                onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, maleConditions: value }))}
-                placeholder="禁止するオス猫のタグを選択"
-                required
-              />
-              <MultiSelect
-                label="メス猫の条件タグ"
-                data={availableTags.length > 0 ? availableTags : []}
-                value={newRule.femaleConditions}
-                onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, femaleConditions: value }))}
-                placeholder="禁止するメス猫のタグを選択"
-                required
-              />
-            </>
-          )}
-
-          {newRule.type === 'INDIVIDUAL_PROHIBITION' && (
-            <>
-              <MultiSelect
-                label="禁止するオス猫"
-                data={maleCats.filter((cat: Cat) => cat.name).map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
-                value={newRule.maleNames}
-                onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, maleNames: value }))}
-                placeholder="禁止するオス猫を選択"
-                required
-              />
-              <MultiSelect
-                label="禁止するメス猫"
-                data={femaleCats.filter((cat: Cat) => cat.name).map((cat: Cat) => ({ value: cat.name, label: cat.name }))}
-                value={newRule.femaleNames}
-                onChange={(value: string[]) => setNewRule((prev: NewRuleState) => ({ ...prev, femaleNames: value }))}
-                placeholder="禁止するメス猫を選択"
-                required
-              />
-            </>
-          )}
-
-          {newRule.type === 'GENERATION_LIMIT' && (
-            <NumberInput
-              label="親等制限"
-              description="指定した親等以内の近親交配を禁止します"
-              value={newRule.generationLimit ?? 3}
-              onChange={(value: string | number) =>
-                setNewRule((prev: NewRuleState) => ({
-                  ...prev,
-                  generationLimit: typeof value === 'number' ? value : prev.generationLimit,
-                }))
-              }
-              min={1}
-              max={10}
-              suffix="親等"
-              required
-            />
-          )}
-
-          <TextInput
-            label="説明"
-            placeholder="このルールの詳細説明（任意）"
-            value={newRule.description}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewRule((prev: NewRuleState) => ({ ...prev, description: e.target.value }))}
-          />
-
-          <Group justify="flex-end" gap="sm">
-            <Button variant="outline" onClick={closeNewRuleModal}>
-              キャンセル
-            </Button>
-            <Button 
-              onClick={addNewRule}
-              disabled={!isNewRuleValid() || createNgRuleMutation.isPending}
-            >
-              {createNgRuleMutation.isPending ? '作成中…' : 'ルール作成'}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
-
-      {/* 出産情報入力モーダル */}
-      <Modal
-        opened={birthInfoModalOpened}
-        onClose={() => {
-          closeBirthInfoModal();
-          setSelectedBirthPlan(null);
-          setBirthCount(0);
-          setDeathCount(0);
-        }}
-        title="出産情報の入力"
-        size="md"
-      >
-        <Stack gap="md">
-          {/* 両親の名前 */}
-          <TextInput
-            label="両親"
-            value={selectedBirthPlan ? `${selectedBirthPlan.mother?.name || '不明'} (${
-              selectedBirthPlan.fatherId 
-                ? catsResponse?.data?.find((cat: Cat) => cat.id === selectedBirthPlan.fatherId)?.name || '不明'
-                : '不明'
-            })` : ''}
-            readOnly
-          />
-
-          {/* 出産頭数 */}
-          <Group gap="sm" align="flex-end">
-            <NumberInput
-              label="出産頭数"
-              value={birthCount}
-              onChange={(value: string | number) => setBirthCount(typeof value === 'number' ? value : 0)}
-              min={0}
-              style={{ flex: 1 }}
-            />
-            <ActionIcon
-              size="lg"
-              variant="light"
-              color="blue"
-              onClick={() => setBirthCount(prev => prev + 1)}
-              title="1頭追加"
-            >
-              <IconBabyCarriage size={20} />
-            </ActionIcon>
-          </Group>
-
-          {/* 死亡数 */}
-          <Group gap="sm" align="flex-end">
-            <NumberInput
-              label="死亡数"
-              value={deathCount}
-              onChange={(value: string | number) => setDeathCount(typeof value === 'number' ? value : 0)}
-              min={0}
-              style={{ flex: 1 }}
-            />
-            <ActionIcon
-              size="lg"
-              variant="light"
-              color="grape"
-              onClick={() => setDeathCount(prev => prev + 1)}
-              title="1頭追加"
-            >
-              <IconRainbow size={20} />
-            </ActionIcon>
-          </Group>
-
-          {/* アクションボタン */}
-          <Group justify="flex-end" gap="sm" mt="md">
-            <Button
-              variant="outline"
-              onClick={() => {
-                // TODO: 子猫管理ページの子猫登録モーダルを開く
-                console.log('詳細登録:', {
-                  birthPlan: selectedBirthPlan,
-                  birthCount,
-                  deathCount,
-                });
-              }}
-            >
-              詳細登録
-            </Button>
-            <Button
-              onClick={() => {
-                // TODO: 情報を保存して子猫管理ページへデータを移す
-                console.log('登録:', {
-                  birthPlan: selectedBirthPlan,
-                  birthCount,
-                  deathCount,
-                });
-                closeBirthInfoModal();
-                setSelectedBirthPlan(null);
-                setBirthCount(0);
-                setDeathCount(0);
-              }}
-            >
-              登録
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
-    </Box>
-  );
-}
-````
-
 ## File: frontend/src/app/breeding/types.ts
 ````typescript
 /**
@@ -4494,207 +2767,6 @@ export default function PedigreeClient() {
       </Container>
     </Box>
   );
-}
-````
-
-## File: frontend/src/app/cats/[id]/pedigree/page_new.tsx
-````typescript
-'use client';
-
-import { useRouter } from 'next/navigation';
-import {
-  Box,
-  Button,
-  Card,
-  Container,
-  Group,
-  Stack,
-  Title,
-  Text,
-  Flex,
-  Grid,
-} from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
-import { useParams } from 'next/navigation';
-
-// ダミーデータ
-const pedigreeData = {
-  id: '1',
-  name: 'レオ',
-  generation1: { // 親
-    father: { name: 'パパ猫', color: '茶トラ' },
-    mother: { name: 'ママ猫', color: '三毛' }
-  },
-  generation2: { // 祖父母
-    paternalGrandfather: { name: '祖父1', color: '茶トラ' },
-    paternalGrandmother: { name: '祖母1', color: '白' },
-    maternalGrandfather: { name: '祖父2', color: '黒' },
-    maternalGrandmother: { name: '祖母2', color: '三毛' }
-  },
-  generation3: { // 曾祖父母
-    ppgf: { name: '曾祖父1', color: '茶トラ' }, // paternal paternal grandfather
-    ppgm: { name: '曾祖母1', color: '白' },     // paternal paternal grandmother
-    pmgf: { name: '曾祖父2', color: '茶' },     // paternal maternal grandfather
-    pmgm: { name: '曾祖母2', color: '白' },     // paternal maternal grandmother
-    mpgf: { name: '曾祖父3', color: '黒' },     // maternal paternal grandfather
-    mpgm: { name: '曾祖母3', color: '灰' },     // maternal paternal grandmother
-    mmgf: { name: '曾祖父4', color: '三毛' },   // maternal maternal grandfather
-    mmgm: { name: '曾祖母4', color: '茶' }      // maternal maternal grandmother
-  }
-};
-
-const CatCard = ({ cat, level = 0 }: { cat: { name: string; color: string } | null; level?: number }) => {
-  if (!cat) {
-    return (
-      <Card shadow="sm" padding="sm" radius="md" withBorder style={{ minHeight: 60, opacity: 0.3 }}>
-        <Text size="sm" c="dimmed">不明</Text>
-      </Card>
-    );
-  }
-
-  const colors = {
-    0: '#e3f2fd', // 本人: ライトブルー
-    1: '#f3e5f5', // 親: ライトパープル
-    2: '#e8f5e8', // 祖父母: ライトグリーン
-    3: '#fff3e0'  // 曾祖父母: ライトオレンジ
-  };
-
-  return (
-    <Card 
-      shadow="sm" 
-      padding="sm" 
-      radius="md" 
-      withBorder 
-      style={{ 
-        backgroundColor: colors[level as keyof typeof colors] || '#f5f5f5',
-        minHeight: 60 
-      }}
-    >
-      <Stack gap="xs">
-        <Text fw={600} size="sm">{cat.name}</Text>
-        <Text size="xs" c="dimmed">{cat.color}</Text>
-      </Stack>
-    </Card>
-  );
-};
-
-export default function PedigreePage() {
-  const router = useRouter();
-  const params = useParams();
-
-  return (
-  <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
-      {/* ヘッダー */}
-      <Box
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderBottom: '1px solid var(--border-subtle)',
-          padding: '1rem 0',
-          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
-        }}
-      >
-        <Container size="xl">
-          <Flex justify="space-between" align="center">
-            <Button
-              variant="light"
-              leftSection={<IconArrowLeft size={16} />}
-              onClick={() => router.back()}
-            >
-              戻る
-            </Button>
-          </Flex>
-        </Container>
-      </Box>
-
-      <Container size="xl" style={{ paddingTop: '2rem' }}>
-        <Title order={1} mb="lg" ta="center">
-          {pedigreeData.name}の血統表（4世代）
-        </Title>
-
-        {/* 血統表グリッド */}
-        <Box style={{ overflowX: 'auto' }}>
-          <Grid style={{ minWidth: '1200px' }}>
-            {/* 第1列: 本人 */}
-            <Grid.Col span={3}>
-              <Stack gap="md" style={{ height: '100%', justifyContent: 'center' }}>
-                <CatCard cat={{ name: pedigreeData.name, color: '茶トラ' }} level={0} />
-              </Stack>
-            </Grid.Col>
-
-            {/* 第2列: 親 */}
-            <Grid.Col span={3}>
-              <Stack gap="md" style={{ height: '100%' }}>
-                <CatCard cat={pedigreeData.generation1.father} level={1} />
-                <CatCard cat={pedigreeData.generation1.mother} level={1} />
-              </Stack>
-            </Grid.Col>
-
-            {/* 第3列: 祖父母 */}
-            <Grid.Col span={3}>
-              <Stack gap="md" style={{ height: '100%' }}>
-                <CatCard cat={pedigreeData.generation2.paternalGrandfather} level={2} />
-                <CatCard cat={pedigreeData.generation2.paternalGrandmother} level={2} />
-                <CatCard cat={pedigreeData.generation2.maternalGrandfather} level={2} />
-                <CatCard cat={pedigreeData.generation2.maternalGrandmother} level={2} />
-              </Stack>
-            </Grid.Col>
-
-            {/* 第4列: 曾祖父母 */}
-            <Grid.Col span={3}>
-              <Stack gap="md" style={{ height: '100%' }}>
-                <CatCard cat={pedigreeData.generation3.ppgf} level={3} />
-                <CatCard cat={pedigreeData.generation3.ppgm} level={3} />
-                <CatCard cat={pedigreeData.generation3.pmgf} level={3} />
-                <CatCard cat={pedigreeData.generation3.pmgm} level={3} />
-                <CatCard cat={pedigreeData.generation3.mpgf} level={3} />
-                <CatCard cat={pedigreeData.generation3.mpgm} level={3} />
-                <CatCard cat={pedigreeData.generation3.mmgf} level={3} />
-                <CatCard cat={pedigreeData.generation3.mmgm} level={3} />
-              </Stack>
-            </Grid.Col>
-          </Grid>
-        </Box>
-
-        {/* 世代ラベル */}
-        <Box mt="xl">
-          <Grid>
-            <Grid.Col span={3}>
-              <Text ta="center" fw={600} c="blue">本人</Text>
-            </Grid.Col>
-            <Grid.Col span={3}>
-              <Text ta="center" fw={600} c="purple">親（第1世代）</Text>
-            </Grid.Col>
-            <Grid.Col span={3}>
-              <Text ta="center" fw={600} c="green">祖父母（第2世代）</Text>
-            </Grid.Col>
-            <Grid.Col span={3}>
-              <Text ta="center" fw={600} c="orange">曾祖父母（第3世代）</Text>
-            </Grid.Col>
-          </Grid>
-        </Box>
-
-        {/* 注意書き */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder mt="xl">
-          <Title order={3} mb="md">血統表について</Title>
-          <Stack gap="sm">
-            <Text size="sm">• この血統表は4世代（本人 + 親、祖父母、曾祖父母）を表示しています</Text>
-            <Text size="sm">• 各世代は色分けされており、世代が古くなるほど薄い色になります</Text>
-            <Text size="sm">• 不明な個体は「不明」と表示されます</Text>
-            <Text size="sm">• より詳細な血統情報が必要な場合は、個別にお問い合わせください</Text>
-          </Stack>
-        </Card>
-      </Container>
-    </Box>
-  );
-}
-````
-
-## File: frontend/src/app/cats/[id]/pedigree/page.tsx
-````typescript
-import PedigreeClient from './client';
-
-export default function PedigreePage() {
-  return <PedigreeClient />;
 }
 ````
 
@@ -6977,22 +5049,6 @@ export function useGalleryPagination() {
 }
 ````
 
-## File: frontend/src/app/kittens/page_new.tsx
-````typescript
-'use client';
-
-import { Box, Title, Text } from '@mantine/core';
-
-export default function KittensPage() {
-  return (
-  <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)', padding: '2rem' }}>
-      <Title order={1} c="blue" mb="md">子猫管理</Title>
-      <Text>生まれた子猫の記録や管理を行うページです（今後実装予定）。</Text>
-    </Box>
-  );
-}
-````
-
 ## File: frontend/src/app/login/page.tsx
 ````typescript
 /**
@@ -7388,40 +5444,6 @@ export default function MorePage() {
       </SimpleGrid>
     </Container>
   );
-}
-````
-
-## File: frontend/src/app/pedigrees/_id_disabled/family-tree/page.tsx
-````typescript
-import FamilyTreeClient from './client';
-
-export default function FamilyTreePage() {
-  return <FamilyTreeClient />;
-}
-````
-
-## File: frontend/src/app/pedigrees/_id_disabled/layout.tsx
-````typescript
-// Static export support - return empty array for dynamic routes
-export function generateStaticParams() {
-  return [];
-}
-
-export default function PedigreeLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
-}
-````
-
-## File: frontend/src/app/pedigrees/_id_disabled/page.tsx
-````typescript
-import PedigreeDetailClient from './client';
-
-export default function PedigreeDetailPage() {
-  return <PedigreeDetailClient />;
 }
 ````
 
@@ -18015,1263 +16037,6 @@ describe('PrintSettingsEditor', () => {
     }
   }, 20000);
 });
-````
-
-## File: frontend/src/components/pedigrees/PedigreeRegistrationForm.tsx
-````typescript
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Button,
-  Group,
-  Stack,
-  Grid,
-  Text,
-  Box,
-  Paper,
-  Divider,
-  ActionIcon,
-  Tooltip,
-  Menu,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import {
-  useCreatePedigree,
-  useUpdatePedigree,
-  useGetPedigree,
-  useGetPedigreeByNumber,
-  type PedigreeRecord,
-  type UpdatePedigreeRequest,
-} from '@/lib/api/hooks/use-pedigrees';
-import { 
-  IconDeviceFloppy, 
-  IconArrowLeft,
-  IconPlus,
-  IconRefresh,
-  IconTrash,
-  IconChevronDown,
-  IconPrinter,
-} from '@tabler/icons-react';
-import { InputWithFloatingLabel } from '../ui/InputWithFloatingLabel';
-import { apiClient, type ApiResponse } from '@/lib/api/client';
-import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
-
-// API レスポンスの型定義
-type BreedsResponse = Breed[];
-
-type CoatColorsResponse = CoatColor[];
-
-type GendersResponse = Gender[];
-
-// 型安全なAPIヘルパー関数（マスタデータ取得用）
-const getBreeds = async (params?: { limit?: string }): Promise<ApiResponse<BreedsResponse>> => {
-  // @ts-expect-error - OpenAPI型定義が未生成
-  return apiClient.get('/breeds', params ? { query: params } : undefined);
-};
-
-const getCoatColors = async (params?: { limit?: string }): Promise<ApiResponse<CoatColorsResponse>> => {
-  // @ts-expect-error - OpenAPI型定義が未生成
-  return apiClient.get('/coat-colors', params ? { query: params } : undefined);
-};
-
-const getGenders = async (): Promise<ApiResponse<GendersResponse>> => {
-  // @ts-expect-error - OpenAPI型定義が未生成
-  return apiClient.get('/master/genders');
-};
-
-const getNextPedigreeId = async (): Promise<ApiResponse<{ nextId: string }>> => {
-  // @ts-expect-error - OpenAPI型定義が未生成
-  return apiClient.get('/pedigrees/next-id');
-};
-
-interface Breed {
-  id: string;
-  code: number;
-  name: string;
-}
-
-interface CoatColor {
-  id: string;
-  code: number;
-  name: string;
-}
-
-interface Gender {
-  id: string;
-  code: number;
-  name: string;
-}
-
-// Access設計準拠: 基本情報17項目 + 血統情報62項目
-interface PedigreeFormData {
-  // ========== 基本情報（17項目）==========
-  pedigreeId: string;
-  title?: string;
-  catName?: string;
-  catName2?: string;
-  breedCode?: number;
-  genderCode?: number;
-  eyeColor?: string;
-  coatColorCode?: number;
-  birthDate?: string;
-  breederName?: string;
-  ownerName?: string;
-  registrationDate?: string;
-  brotherCount?: number;
-  sisterCount?: number;
-  notes?: string;
-  notes2?: string;
-  otherNo?: string;
-
-  // ========== 血統情報（62項目）==========
-  // 第1世代: 父親（7項目）
-  fatherTitle?: string;
-  fatherCatName?: string;
-  fatherCatName2?: string;
-  fatherCoatColor?: string;
-  fatherEyeColor?: string;
-  fatherJCU?: string;
-  fatherOtherCode?: string;
-
-  // 第1世代: 母親（7項目）
-  motherTitle?: string;
-  motherCatName?: string;
-  motherCatName2?: string;
-  motherCoatColor?: string;
-  motherEyeColor?: string;
-  motherJCU?: string;
-  motherOtherCode?: string;
-
-  // 第2世代: 祖父母（16項目 = 4名 × 4項目）
-  ffTitle?: string;
-  ffCatName?: string;
-  ffCatColor?: string;
-  ffjcu?: string;
-
-  fmTitle?: string;
-  fmCatName?: string;
-  fmCatColor?: string;
-  fmjcu?: string;
-
-  mfTitle?: string;
-  mfCatName?: string;
-  mfCatColor?: string;
-  mfjcu?: string;
-
-  mmTitle?: string;
-  mmCatName?: string;
-  mmCatColor?: string;
-  mmjcu?: string;
-
-  // 第3世代: 曾祖父母（32項目 = 8名 × 4項目）
-  fffTitle?: string;
-  fffCatName?: string;
-  fffCatColor?: string;
-  fffjcu?: string;
-
-  ffmTitle?: string;
-  ffmCatName?: string;
-  ffmCatColor?: string;
-  ffmjcu?: string;
-
-  fmfTitle?: string;
-  fmfCatName?: string;
-  fmfCatColor?: string;
-  fmfjcu?: string;
-
-  fmmTitle?: string;
-  fmmCatName?: string;
-  fmmCatColor?: string;
-  fmmjcu?: string;
-
-  mffTitle?: string;
-  mffCatName?: string;
-  mffCatColor?: string;
-  mffjcu?: string;
-
-  mfmTitle?: string;
-  mfmCatName?: string;
-  mfmCatColor?: string;
-  mfmjcu?: string;
-
-  mmfTitle?: string;
-  mmfCatName?: string;
-  mmfCatColor?: string;
-  mmfjcu?: string;
-
-  mmmTitle?: string;
-  mmmCatName?: string;
-  mmmCatColor?: string;
-  mmmjcu?: string;
-
-  oldCode?: string;
-}
-
-interface PedigreeRegistrationFormProps {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-}
-
-function mapPedigreeRecordToFormData(record: PedigreeRecord, fallbackPedigreeId: string): PedigreeFormData {
-  return {
-    pedigreeId: record.pedigreeId || fallbackPedigreeId,
-    title: record.title || undefined,
-    catName: record.catName || undefined,
-    catName2: (record as PedigreeFormData).catName2 || undefined,
-    breedCode: record.breedCode || undefined,
-    genderCode: record.genderCode || undefined,
-    eyeColor: record.eyeColor || undefined,
-    coatColorCode: record.coatColorCode || undefined,
-    birthDate: record.birthDate || undefined,
-    breederName: record.breederName || undefined,
-    ownerName: record.ownerName || undefined,
-    registrationDate: record.registrationDate || undefined,
-    brotherCount: (record as PedigreeFormData).brotherCount || undefined,
-    sisterCount: (record as PedigreeFormData).sisterCount || undefined,
-    notes: (record as PedigreeFormData).notes || undefined,
-    notes2: (record as PedigreeFormData).notes2 || undefined,
-    otherNo: (record as PedigreeFormData).otherNo || undefined,
-    fatherTitle: (record as PedigreeFormData).fatherTitle || undefined,
-    fatherCatName: (record as PedigreeFormData).fatherCatName || undefined,
-    fatherCatName2: (record as PedigreeFormData).fatherCatName2 || undefined,
-    fatherCoatColor: (record as PedigreeFormData).fatherCoatColor || undefined,
-    fatherEyeColor: (record as PedigreeFormData).fatherEyeColor || undefined,
-    fatherJCU: (record as PedigreeFormData).fatherJCU || undefined,
-    fatherOtherCode: (record as PedigreeFormData).fatherOtherCode || undefined,
-    motherTitle: (record as PedigreeFormData).motherTitle || undefined,
-    motherCatName: (record as PedigreeFormData).motherCatName || undefined,
-    motherCatName2: (record as PedigreeFormData).motherCatName2 || undefined,
-    motherCoatColor: (record as PedigreeFormData).motherCoatColor || undefined,
-    motherEyeColor: (record as PedigreeFormData).motherEyeColor || undefined,
-    motherJCU: (record as PedigreeFormData).motherJCU || undefined,
-    motherOtherCode: (record as PedigreeFormData).motherOtherCode || undefined,
-    ffTitle: (record as PedigreeFormData).ffTitle || undefined,
-    ffCatName: (record as PedigreeFormData).ffCatName || undefined,
-    ffCatColor: (record as PedigreeFormData).ffCatColor || undefined,
-    ffjcu: (record as PedigreeFormData).ffjcu || undefined,
-    fmTitle: (record as PedigreeFormData).fmTitle || undefined,
-    fmCatName: (record as PedigreeFormData).fmCatName || undefined,
-    fmCatColor: (record as PedigreeFormData).fmCatColor || undefined,
-    fmjcu: (record as PedigreeFormData).fmjcu || undefined,
-    mfTitle: (record as PedigreeFormData).mfTitle || undefined,
-    mfCatName: (record as PedigreeFormData).mfCatName || undefined,
-    mfCatColor: (record as PedigreeFormData).mfCatColor || undefined,
-    mfjcu: (record as PedigreeFormData).mfjcu || undefined,
-    mmTitle: (record as PedigreeFormData).mmTitle || undefined,
-    mmCatName: (record as PedigreeFormData).mmCatName || undefined,
-    mmCatColor: (record as PedigreeFormData).mmCatColor || undefined,
-    mmjcu: (record as PedigreeFormData).mmjcu || undefined,
-    fffTitle: (record as PedigreeFormData).fffTitle || undefined,
-    fffCatName: (record as PedigreeFormData).fffCatName || undefined,
-    fffCatColor: (record as PedigreeFormData).fffCatColor || undefined,
-    fffjcu: (record as PedigreeFormData).fffjcu || undefined,
-    ffmTitle: (record as PedigreeFormData).ffmTitle || undefined,
-    ffmCatName: (record as PedigreeFormData).ffmCatName || undefined,
-    ffmCatColor: (record as PedigreeFormData).ffmCatColor || undefined,
-    ffmjcu: (record as PedigreeFormData).ffmjcu || undefined,
-    fmfTitle: (record as PedigreeFormData).fmfTitle || undefined,
-    fmfCatName: (record as PedigreeFormData).fmfCatName || undefined,
-    fmfCatColor: (record as PedigreeFormData).fmfCatColor || undefined,
-    fmfjcu: (record as PedigreeFormData).fmfjcu || undefined,
-    fmmTitle: (record as PedigreeFormData).fmmTitle || undefined,
-    fmmCatName: (record as PedigreeFormData).fmmCatName || undefined,
-    fmmCatColor: (record as PedigreeFormData).fmmCatColor || undefined,
-    fmmjcu: (record as PedigreeFormData).fmmjcu || undefined,
-    mffTitle: (record as PedigreeFormData).mffTitle || undefined,
-    mffCatName: (record as PedigreeFormData).mffCatName || undefined,
-    mffCatColor: (record as PedigreeFormData).mffCatColor || undefined,
-    mffjcu: (record as PedigreeFormData).mffjcu || undefined,
-    mfmTitle: (record as PedigreeFormData).mfmTitle || undefined,
-    mfmCatName: (record as PedigreeFormData).mfmCatName || undefined,
-    mfmCatColor: (record as PedigreeFormData).mfmCatColor || undefined,
-    mfmjcu: (record as PedigreeFormData).mfmjcu || undefined,
-    mmfTitle: (record as PedigreeFormData).mmfTitle || undefined,
-    mmfCatName: (record as PedigreeFormData).mmfCatName || undefined,
-    mmfCatColor: (record as PedigreeFormData).mmfCatColor || undefined,
-    mmfjcu: (record as PedigreeFormData).mmfjcu || undefined,
-    mmmTitle: (record as PedigreeFormData).mmmTitle || undefined,
-    mmmCatName: (record as PedigreeFormData).mmmCatName || undefined,
-    mmmCatColor: (record as PedigreeFormData).mmmCatColor || undefined,
-    mmmjcu: (record as PedigreeFormData).mmmjcu || undefined,
-    oldCode: (record as PedigreeFormData).oldCode || undefined,
-  };
-}
-
-export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegistrationFormProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const apiBaseUrl = getPublicApiBaseUrl();
-  const [mounted, setMounted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [breeds, setBreeds] = useState<Breed[]>([]);
-  const [coatColors, setCoatColors] = useState<CoatColor[]>([]);
-  const [genders, setGenders] = useState<Gender[]>([]);
-  const [formData, setFormData] = useState<PedigreeFormData>({
-    pedigreeId: '',
-  });
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [originalId, setOriginalId] = useState<string | null>(null);
-  const [pedigreeIdInput, setPedigreeIdInput] = useState('');
-
-  const copyFromId = searchParams.get('copyFromId') || '';
-
-  const normalizedPedigreeIdInput = pedigreeIdInput.trim();
-  
-  const createMutation = useCreatePedigree();
-  const updateMutationHook = useUpdatePedigree(originalId || '');
-
-  const { data: copySourcePedigree } = useGetPedigree(copyFromId, {
-    enabled: !!copyFromId,
-  });
-
-  // 名称入力用のローカルステート
-  const [inputValues, setInputValues] = useState({
-    breedName: '',
-    genderName: '',
-    coatColorName: '',
-  });
-
-  // コード変更時に名称を同期
-  useEffect(() => {
-    if (formData.breedCode !== undefined) {
-      const found = breeds.find(b => b.code === formData.breedCode);
-      if (found) setInputValues(prev => ({ ...prev, breedName: found.name }));
-    }
-    if (formData.genderCode !== undefined) {
-      const found = genders.find(g => g.code === formData.genderCode);
-      if (found) setInputValues(prev => ({ ...prev, genderName: found.name }));
-    }
-    if (formData.coatColorCode !== undefined) {
-      const found = coatColors.find(c => c.code === formData.coatColorCode);
-      if (found) setInputValues(prev => ({ ...prev, coatColorName: found.name }));
-    }
-  }, [formData.breedCode, formData.genderCode, formData.coatColorCode, breeds, genders, coatColors]);
-
-  // Call ID用の状態
-  const [callId, setCallId] = useState({
-    both: '',
-    father: '',
-    mother: '',
-  });
-
-  // デバウンス用タイムアウト
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
-  
-  // 血統書番号入力時に既存レコードを取得
-  const { data: existingPedigree, isLoading: isLoadingExisting } = useGetPedigreeByNumber(
-    normalizedPedigreeIdInput,
-    { enabled: normalizedPedigreeIdInput.length >= 5 }
-  );
-
-  // 既存レコードが見つかった場合、全フィールドをセット
-  useEffect(() => {
-    if (existingPedigree && pedigreeIdInput) {
-      const record = existingPedigree as PedigreeRecord;
-      setFormData(mapPedigreeRecordToFormData(record, pedigreeIdInput));
-      setIsEditMode(true);
-      setOriginalId(record.id);
-      notifications.show({
-        title: '既存レコードを読み込みました',
-        message: `血統書番号 ${record.pedigreeId} のデータを編集できます`,
-        color: 'blue',
-      });
-    }
-  }, [existingPedigree, pedigreeIdInput]);
-
-  // 一覧から「新規登録にコピー」された場合、血統書番号と猫名以外をコピーして新規登録モードにする
-  useEffect(() => {
-    if (!copyFromId) return;
-    if (!copySourcePedigree) return;
-
-    const record = copySourcePedigree as PedigreeRecord;
-    const copied = mapPedigreeRecordToFormData(record, '');
-
-    setFormData({
-      ...copied,
-      pedigreeId: '',
-      catName: undefined,
-      catName2: undefined,
-    });
-
-    setPedigreeIdInput('');
-    setIsEditMode(false);
-    setOriginalId(null);
-    setCallId({ both: '', father: '', mother: '' });
-    setInputValues({ breedName: '', genderName: '', coatColorName: '' });
-
-    notifications.show({
-      title: '新規登録にコピーしました',
-      message: '血統書番号と猫名以外の項目をコピーしました。血統書番号と猫名を入力して登録してください。',
-      color: 'teal',
-    });
-  }, [copyFromId, copySourcePedigree]);
-
-  // +ボタンクリック時に最新血統書番号+1を取得
-  const handleGetNextId = async () => {
-    try {
-      const response = await getNextPedigreeId();
-      if (response.success && response.data?.nextId) {
-        const nextId = response.data.nextId;
-        setPedigreeIdInput(nextId);
-        setFormData(prev => ({ ...prev, pedigreeId: nextId }));
-        notifications.show({
-          title: '最新血統書番号を取得しました',
-          message: `次の番号: ${nextId}`,
-          color: 'teal',
-        });
-      }
-    } catch (error: unknown) {
-      console.error('最新血統書番号の取得に失敗:', error);
-      notifications.show({
-        title: 'エラー',
-        message: '最新血統書番号の取得に失敗しました',
-        color: 'red',
-      });
-    }
-  };
-
-  useEffect(() => {
-    setMounted(true);
-    fetchMasterData();
-  }, []);
-
-  const fetchMasterData = async () => {
-    try {
-      // 品種
-      const breedsRes = await getBreeds({ limit: '1000' });
-      if (breedsRes.success && breedsRes.data) {
-        setBreeds(breedsRes.data || []);
-      }
-
-      // 毛色
-      const colorsRes = await getCoatColors({ limit: '1000' });
-      if (colorsRes.success && colorsRes.data) {
-        setCoatColors(colorsRes.data || []);
-      }
-
-      // 性別
-      const gendersRes = await getGenders();
-      if (gendersRes.success && gendersRes.data) {
-        setGenders(gendersRes.data || []);
-      }
-    } catch (error) {
-      console.error('マスターデータの取得に失敗:', error);
-    }
-  };
-
-  // Call ID: 血統書番号から血統情報を取得（デバウンス付き）
-  const handleBothParentsCall = async (pedigreeNumber: string) => {
-    if (searchTimeout) clearTimeout(searchTimeout);
-    
-    const timeout = setTimeout(async () => {
-      if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
-      
-      try {
-        const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
-          pathParams: { pedigreeId: pedigreeNumber },
-        });
-        
-        if (response.success && response.data) {
-          const data = response.data as PedigreeRecord;
-          
-          // 父親情報を設定（7項目）
-          updateFormData('fatherTitle', (data as PedigreeFormData).fatherTitle);
-          updateFormData('fatherCatName', (data as PedigreeFormData).fatherCatName);
-        updateFormData('fatherCatName2', data.fatherCatName2);
-        updateFormData('fatherCoatColor', data.fatherCoatColor);
-        updateFormData('fatherEyeColor', data.fatherEyeColor);
-        updateFormData('fatherJCU', data.fatherJCU);
-        updateFormData('fatherOtherCode', data.fatherOtherCode);
-
-        // 母親情報を設定（7項目）
-        updateFormData('motherTitle', data.motherTitle);
-        updateFormData('motherCatName', data.motherCatName);
-        updateFormData('motherCatName2', data.motherCatName2);
-        updateFormData('motherCoatColor', data.motherCoatColor);
-        updateFormData('motherEyeColor', data.motherEyeColor);
-        updateFormData('motherJCU', data.motherJCU);
-        updateFormData('motherOtherCode', data.motherOtherCode);
-
-        // 祖父母情報を設定（16項目）
-        updateFormData('ffTitle', data.ffTitle);
-        updateFormData('ffCatName', data.ffCatName);
-        updateFormData('ffCatColor', data.ffCatColor);
-        updateFormData('ffjcu', data.ffjcu);
-
-        updateFormData('fmTitle', data.fmTitle);
-        updateFormData('fmCatName', data.fmCatName);
-        updateFormData('fmCatColor', data.fmCatColor);
-        updateFormData('fmjcu', data.fmjcu);
-
-        updateFormData('mfTitle', data.mfTitle);
-        updateFormData('mfCatName', data.mfCatName);
-        updateFormData('mfCatColor', data.mfCatColor);
-        updateFormData('mfjcu', data.mfjcu);
-
-        updateFormData('mmTitle', data.mmTitle);
-        updateFormData('mmCatName', data.mmCatName);
-        updateFormData('mmCatColor', data.mmCatColor);
-        updateFormData('mmjcu', data.mmjcu);
-
-        // 曾祖父母情報を設定（32項目）
-        updateFormData('fffTitle', data.fffTitle);
-        updateFormData('fffCatName', data.fffCatName);
-        updateFormData('fffCatColor', data.fffCatColor);
-        updateFormData('fffjcu', data.fffjcu);
-
-        updateFormData('ffmTitle', data.ffmTitle);
-        updateFormData('ffmCatName', data.ffmCatName);
-        updateFormData('ffmCatColor', data.ffmCatColor);
-        updateFormData('ffmjcu', data.ffmjcu);
-
-        updateFormData('fmfTitle', data.fmfTitle);
-        updateFormData('fmfCatName', data.fmfCatName);
-        updateFormData('fmfCatColor', data.fmfCatColor);
-        updateFormData('fmfjcu', data.fmfjcu);
-
-        updateFormData('fmmTitle', data.fmmTitle);
-        updateFormData('fmmCatName', data.fmmCatName);
-        updateFormData('fmmCatColor', data.fmmCatColor);
-        updateFormData('fmmjcu', data.fmmjcu);
-
-        updateFormData('mffTitle', data.mffTitle);
-        updateFormData('mffCatName', data.mffCatName);
-        updateFormData('mffCatColor', data.mffCatColor);
-        updateFormData('mffjcu', data.mffjcu);
-
-        updateFormData('mfmTitle', data.mfmTitle);
-        updateFormData('mfmCatName', data.mfmCatName);
-        updateFormData('mfmCatColor', data.mfmCatColor);
-        updateFormData('mfmjcu', data.mfmjcu);
-
-        updateFormData('mmfTitle', data.mmfTitle);
-        updateFormData('mmfCatName', data.mmfCatName);
-        updateFormData('mmfCatColor', data.mmfCatColor);
-        updateFormData('mmfjcu', data.mmfjcu);
-
-        updateFormData('mmmTitle', data.mmmTitle);
-        updateFormData('mmmCatName', data.mmmCatName);
-        updateFormData('mmmCatColor', data.mmmCatColor);
-        updateFormData('mmmjcu', data.mmmjcu);
-
-        notifications.show({
-          title: '両親血統情報取得',
-          message: `${data.catName}の血統情報を一括取得しました（62項目）`,
-          color: 'green',
-        });
-        } else {
-          notifications.show({
-            title: '検索結果なし',
-            message: `血統書番号 ${pedigreeNumber} が見つかりませんでした`,
-            color: 'yellow',
-          });
-        }
-      } catch (error) {
-        console.error('両親血統情報の取得に失敗:', error);
-        notifications.show({
-          title: 'エラー',
-          message: '血統情報の取得に失敗しました',
-          color: 'red',
-        });
-      }
-    }, 800);
-
-    setSearchTimeout(timeout);
-  };
-
-  // Call ID: 父猫IDから取得（父+祖父母16項目）
-  const handleFatherCall = async (pedigreeNumber: string) => {
-    if (searchTimeout) clearTimeout(searchTimeout);
-    
-    const timeout = setTimeout(async () => {
-      if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
-      
-      try {
-        const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
-          pathParams: { pedigreeId: pedigreeNumber },
-        });
-        
-        if (response.success && response.data) {
-          const data = response.data as PedigreeRecord;
-          
-          // 父親情報（7項目）
-          updateFormData('fatherTitle', data.title);
-          updateFormData('fatherCatName', data.catName);
-          updateFormData('fatherCatName2', data.catName2);
-          updateFormData('fatherCoatColor', data.coatColorCode?.toString());
-          updateFormData('fatherEyeColor', data.eyeColor);
-          updateFormData('fatherJCU', data.pedigreeId);
-          updateFormData('fatherOtherCode', data.otherNo);
-
-          // 父方祖父母（8項目）
-          updateFormData('ffTitle', (data as PedigreeFormData).fatherTitle);
-          updateFormData('ffCatName', (data as PedigreeFormData).fatherCatName);
-          updateFormData('ffCatColor', (data as PedigreeFormData).fatherCoatColor);
-          updateFormData('ffjcu', (data as PedigreeFormData).fatherJCU);
-
-          updateFormData('fmTitle', (data as PedigreeFormData).motherTitle);
-          updateFormData('fmCatName', (data as PedigreeFormData).motherCatName);
-          updateFormData('fmCatColor', (data as PedigreeFormData).motherCoatColor);
-          updateFormData('fmjcu', (data as PedigreeFormData).motherJCU);
-
-          notifications.show({
-            title: '父猫血統情報取得',
-            message: `${data.catName}の血統情報を取得しました`,
-            color: 'blue',
-          });
-        }
-      } catch (error) {
-        console.error('父猫血統情報の取得に失敗:', error);
-      }
-    }, 800);
-
-    setSearchTimeout(timeout);
-  };
-
-  // Call ID: 母猫IDから取得（母+祖父母16項目）
-  const handleMotherCall = async (pedigreeNumber: string) => {
-    if (searchTimeout) clearTimeout(searchTimeout);
-    
-    const timeout = setTimeout(async () => {
-      if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
-      
-      try {
-        const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
-          pathParams: { pedigreeId: pedigreeNumber },
-        });
-        
-        if (response.success && response.data) {
-          const data = response.data as PedigreeRecord;
-          
-          // 母親情報（7項目）
-          updateFormData('motherTitle', data.title);
-          updateFormData('motherCatName', data.catName);
-          updateFormData('motherCatName2', data.catName2);
-          updateFormData('motherCoatColor', data.coatColorCode?.toString());
-          updateFormData('motherEyeColor', data.eyeColor);
-          updateFormData('motherJCU', data.pedigreeId);
-          updateFormData('motherOtherCode', data.otherNo);
-
-          // 母方祖父母（8項目）
-          updateFormData('mfTitle', (data as PedigreeFormData).fatherTitle);
-          updateFormData('mfCatName', (data as PedigreeFormData).fatherCatName);
-          updateFormData('mfCatColor', (data as PedigreeFormData).fatherCoatColor);
-          updateFormData('mfjcu', (data as PedigreeFormData).fatherJCU);
-
-          updateFormData('mmTitle', (data as PedigreeFormData).motherTitle);
-          updateFormData('mmCatName', (data as PedigreeFormData).motherCatName);
-          updateFormData('mmCatColor', (data as PedigreeFormData).motherCoatColor);
-          updateFormData('mmjcu', (data as PedigreeFormData).motherJCU);
-
-          notifications.show({
-            title: '母猫血統情報取得',
-            message: `${data.catName}の血統情報を取得しました`,
-            color: 'pink',
-          });
-        }
-      } catch (error) {
-        console.error('母猫血統情報の取得に失敗:', error);
-      }
-    }, 800);
-
-    setSearchTimeout(timeout);
-  };
-
-  // フォーム送信（新規登録）
-  const handleCreate = async () => {
-    setLoading(true);
-
-    try {
-      // 必須チェック
-      if (!formData.pedigreeId.trim()) {
-        notifications.show({
-          title: 'バリデーションエラー',
-          message: '血統書番号は必須です',
-          color: 'red',
-        });
-        setLoading(false);
-        return;
-      }
-
-      // 新規登録
-      await createMutation.mutateAsync(formData as Parameters<typeof createMutation.mutateAsync>[0]);
-      
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push('/pedigrees?tab=list');
-      }
-    } catch (error) {
-      console.error('登録エラー:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // フォーム送信（更新）
-  const handleUpdate = async () => {
-    setLoading(true);
-
-    try {
-      if (!originalId) {
-        notifications.show({
-          title: 'エラー',
-          message: '更新対象のIDが見つかりません',
-          color: 'red',
-        });
-        setLoading(false);
-        return;
-      }
-
-      // UpdatePedigreeRequestは血統書番号を除く全フィールド
-      const { pedigreeId: _pedigreeId, ...updateData } = formData;
-      await updateMutationHook.mutateAsync(updateData as UpdatePedigreeRequest);
-      
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push('/pedigrees?tab=list');
-      }
-    } catch (error: unknown) {
-      console.error('更新エラー:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // フォームクリア
-  const handleClear = () => {
-    setFormData({ pedigreeId: '' });
-    setPedigreeIdInput('');
-    setIsEditMode(false);
-    setOriginalId(null);
-    setCallId({ both: '', father: '', mother: '' });
-    setInputValues({ breedName: '', genderName: '', coatColorName: '' });
-    notifications.show({
-      title: 'フォームをクリアしました',
-      message: '新規登録モードに戻りました',
-      color: 'blue',
-    });
-  };
-
-  // フォーム送信（旧実装との互換性維持）
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isEditMode) {
-      await handleUpdate();
-    } else {
-      await handleCreate();
-    }
-  };
-
-  const updateFormData = (field: keyof PedigreeFormData, value: unknown) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const openPedigreePdf = (pedigreeId: string) => {
-    const pdfUrl = `${apiBaseUrl}/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
-    const newTab = window.open(pdfUrl, '_blank');
-    if (!newTab) {
-      window.location.assign(pdfUrl);
-    }
-  };
-
-  // コードと名称の同期ロジック
-  const handleCodeChange = (type: 'breed' | 'gender' | 'coatColor', codeStr: string) => {
-    const code = parseInt(codeStr);
-    
-    if (type === 'breed') {
-      if (isNaN(code)) {
-        updateFormData('breedCode', undefined);
-        setInputValues(prev => ({ ...prev, breedName: '' }));
-      } else {
-        updateFormData('breedCode', code);
-        const found = breeds.find(b => b.code === code);
-        if (found) setInputValues(prev => ({ ...prev, breedName: found.name }));
-      }
-    } else if (type === 'gender') {
-      if (isNaN(code)) {
-        updateFormData('genderCode', undefined);
-        setInputValues(prev => ({ ...prev, genderName: '' }));
-      } else {
-        updateFormData('genderCode', code);
-        const found = genders.find(g => g.code === code);
-        if (found) setInputValues(prev => ({ ...prev, genderName: found.name }));
-      }
-    } else if (type === 'coatColor') {
-      if (isNaN(code)) {
-        updateFormData('coatColorCode', undefined);
-        setInputValues(prev => ({ ...prev, coatColorName: '' }));
-      } else {
-        updateFormData('coatColorCode', code);
-        const found = coatColors.find(c => c.code === code);
-        if (found) setInputValues(prev => ({ ...prev, coatColorName: found.name }));
-      }
-    }
-  };
-
-  const handleNameChange = (type: 'breed' | 'gender' | 'coatColor', name: string) => {
-    const normalizedName = name.trim().toLowerCase();
-    
-    if (type === 'breed') {
-      setInputValues(prev => ({ ...prev, breedName: name }));
-      const found = breeds.find(b => b.name.toLowerCase() === normalizedName);
-      if (found) updateFormData('breedCode', found.code);
-    } else if (type === 'gender') {
-      setInputValues(prev => ({ ...prev, genderName: name }));
-      const found = genders.find(g => g.name.toLowerCase() === normalizedName);
-      if (found) updateFormData('genderCode', found.code);
-    } else if (type === 'coatColor') {
-      setInputValues(prev => ({ ...prev, coatColorName: name }));
-      const found = coatColors.find(c => c.name.toLowerCase() === normalizedName);
-      if (found) updateFormData('coatColorCode', found.code);
-    }
-  };
-
-  // 名称解決ヘルパー (削除予定だが、他の箇所で使われている可能性があるため確認)
-  // const getBreedName = ... 
-  // 今回の改修で inputValues に置き換わったため削除します。
-
-  if (!mounted) return null;
-
-  return (
-    <Box>
-      <form onSubmit={handleSubmit}>
-        <Stack gap="lg">
-          {/* 基本情報（17項目）*/}
-          <Paper p="lg" withBorder>
-            <Grid gutter={10}>
-              {/* Row 1: +ボタン, 血統書番号（2列） */}
-              <Grid.Col span={12}>
-                <Group wrap="nowrap" gap="xs">
-                  <Tooltip label="次の血統書番号を自動取得">
-                    <ActionIcon variant="filled" color="blue" size="lg" onClick={handleGetNextId} style={{ height: 36 }}>
-                      <IconPlus size={18} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Tooltip label={isEditMode ? '血統書PDFを印刷' : '登録済みデータを読み込むと印刷できます'}>
-                    <ActionIcon
-                      variant="light"
-                      color="orange"
-                      size="lg"
-                      disabled={!isEditMode || !formData.pedigreeId.trim()}
-                      onClick={() => {
-                        if (!isEditMode) return;
-                        const id = formData.pedigreeId.trim();
-                        if (!id) return;
-                        openPedigreePdf(id);
-                      }}
-                      style={{ height: 36 }}
-                    >
-                      <IconPrinter size={18} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <InputWithFloatingLabel
-                    label="血統書番号"
-                    required
-                    value={pedigreeIdInput}
-                    onChange={(e) => {
-                      setPedigreeIdInput(e.target.value);
-                      updateFormData('pedigreeId', e.target.value);
-                    }}
-                    rightSection={isLoadingExisting ? <Text size="xs">読込中...</Text> : undefined}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-              </Grid.Col>
-
-              {/* Row 2: キャッテリー名, 猫の名前（2列） */}
-              <Grid.Col span={{ base: 6, md: 4 }}>
-                <InputWithFloatingLabel
-                  label="キャッテリー名"
-                  value={formData.catName2}
-                  onChange={(e) => updateFormData('catName2', e.target.value)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 6, md: 4 }}>
-                <InputWithFloatingLabel
-                  label="猫の名前"
-                  value={formData.catName}
-                  onChange={(e) => updateFormData('catName', e.target.value)}
-                />
-              </Grid.Col>
-
-              {/* Row 3: 品種コード, 品種名（2列） */}
-              <Grid.Col span={{ base: 3, md: 1 }}>
-                <InputWithFloatingLabel
-                  label="品種コード"
-                  value={formData.breedCode?.toString()}
-                  onChange={(e) => handleCodeChange('breed', e.target.value)}
-                  styles={{ input: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 9, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="品種名"
-                  value={inputValues.breedName}
-                  onChange={(e) => handleNameChange('breed', e.target.value)}
-                />
-              </Grid.Col>
-
-              {/* Row 4: 毛色コード, 毛色名称（2列） */}
-              <Grid.Col span={{ base: 3, md: 1 }}>
-                <InputWithFloatingLabel
-                  label="毛色コード"
-                  value={formData.coatColorCode?.toString()}
-                  onChange={(e) => handleCodeChange('coatColor', e.target.value)}
-                  styles={{ input: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 9, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="毛色"
-                  value={inputValues.coatColorName}
-                  onChange={(e) => handleNameChange('coatColor', e.target.value)}
-                />
-              </Grid.Col>
-
-              {/* Row 5: 性別コード, 性別名称（2列） */}
-              <Grid.Col span={{ base: 3, md: 1 }}>
-                <InputWithFloatingLabel
-                  label="性別コード"
-                  value={formData.genderCode?.toString()}
-                  onChange={(e) => handleCodeChange('gender', e.target.value)}
-                  styles={{ input: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 9, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="性別"
-                  value={inputValues.genderName}
-                  onChange={(e) => handleNameChange('gender', e.target.value)}
-                />
-              </Grid.Col>
-
-              {/* Row 6: 目の色, 生年月日, 登録年月日（3列均等） */}
-              <Grid.Col span={{ base: 4, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="目の色"
-                  value={formData.eyeColor}
-                  onChange={(e) => updateFormData('eyeColor', e.target.value)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 4, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="生年月日"
-                  value={formData.birthDate}
-                  onChange={(e) => updateFormData('birthDate', e.target.value)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 4, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="登録年月日"
-                  value={formData.registrationDate}
-                  onChange={(e) => updateFormData('registrationDate', e.target.value)}
-                />
-              </Grid.Col>
-
-              {/* Row 7: ブリーダー名, オーナー名（2列） */}
-              <Grid.Col span={{ base: 6, md: 4 }}>
-                <InputWithFloatingLabel
-                  label="ブリーダー名"
-                  value={formData.breederName}
-                  onChange={(e) => updateFormData('breederName', e.target.value)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 6, md: 4 }}>
-                <InputWithFloatingLabel
-                  label="オーナー名"
-                  value={formData.ownerName}
-                  onChange={(e) => updateFormData('ownerName', e.target.value)}
-                />
-              </Grid.Col>
-
-              {/* Row 8: 兄弟, 姉妹, タイトル, 他団体No（4列） */}
-              <Grid.Col span={{ base: 3, md: 1 }}>
-                <InputWithFloatingLabel
-                  label="兄弟"
-                  type="number"
-                  value={formData.brotherCount?.toString()}
-                  onChange={(e) => updateFormData('brotherCount', parseInt(e.target.value) || undefined)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 3, md: 1 }}>
-                <InputWithFloatingLabel
-                  label="姉妹"
-                  type="number"
-                  value={formData.sisterCount?.toString()}
-                  onChange={(e) => updateFormData('sisterCount', parseInt(e.target.value) || undefined)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 3, md: 3 }}>
-                <InputWithFloatingLabel
-                  label="タイトル"
-                  value={formData.title}
-                  onChange={(e) => updateFormData('title', e.target.value)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 3, md: 4 }}>
-                <InputWithFloatingLabel
-                  label="他団体No"
-                  value={formData.otherNo}
-                  onChange={(e) => updateFormData('otherNo', e.target.value)}
-                />
-              </Grid.Col>
-
-              {/* Row 9: 備考, 備考2（2列） */}
-              <Grid.Col span={{ base: 6, md: 5 }}>
-                <InputWithFloatingLabel
-                  label="備考"
-                  value={formData.notes}
-                  onChange={(e) => updateFormData('notes', e.target.value)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 6, md: 5 }}>
-                <InputWithFloatingLabel
-                  label="備考２"
-                  value={formData.notes2}
-                  onChange={(e) => updateFormData('notes2', e.target.value)}
-                />
-              </Grid.Col>
-            </Grid>
-          </Paper>
-
-          {/* Call ID */}
-          <Paper p="lg" withBorder>
-            <Grid gutter={10}>
-              <Grid.Col span={12}><Divider label="Call ID" /></Grid.Col>
-              <Grid.Col span={{ base: 12, md: 4 }}>
-                <InputWithFloatingLabel
-                  label="両親ID"
-                  value={callId.both}
-                  onChange={(e) => {
-                    setCallId(prev => ({ ...prev, both: e.target.value }));
-                    handleBothParentsCall(e.target.value);
-                  }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 4 }}>
-                <InputWithFloatingLabel
-                  label="父猫ID"
-                  value={callId.father}
-                  onChange={(e) => {
-                    setCallId(prev => ({ ...prev, father: e.target.value }));
-                    handleFatherCall(e.target.value);
-                  }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 4 }}>
-                <InputWithFloatingLabel
-                  label="母猫ID"
-                  value={callId.mother}
-                  onChange={(e) => {
-                    setCallId(prev => ({ ...prev, mother: e.target.value }));
-                    handleMotherCall(e.target.value);
-                  }}
-                />
-              </Grid.Col>
-            </Grid>
-          </Paper>
-
-          {/* 血統情報（62項目）*/}
-          <Paper p="lg" withBorder>
-            <Stack gap="lg">
-              {/* 第1世代: 両親（14項目）*/}
-              <Box>
-                <Divider label="第1世代: 両親（14項目）" mb="md" />
-                <Grid gutter={10}>
-                  <Grid.Col span={12}><Divider label="父親（7項目）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="父親タイトル" value={formData.fatherTitle} onChange={(e) => updateFormData('fatherTitle', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="父親名" value={formData.fatherCatName} onChange={(e) => updateFormData('fatherCatName', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="父親キャッテリー名" value={formData.fatherCatName2} onChange={(e) => updateFormData('fatherCatName2', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="父親毛色" value={formData.fatherCoatColor} onChange={(e) => updateFormData('fatherCoatColor', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="父親目の色" value={formData.fatherEyeColor} onChange={(e) => updateFormData('fatherEyeColor', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="父親JCU" value={formData.fatherJCU} onChange={(e) => updateFormData('fatherJCU', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="父親他団体コード" value={formData.fatherOtherCode} onChange={(e) => updateFormData('fatherOtherCode', e.target.value)} />
-                  </Grid.Col>
-
-                  <Grid.Col span={12}><Divider label="母親（7項目）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="母親タイトル" value={formData.motherTitle} onChange={(e) => updateFormData('motherTitle', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="母親名" value={formData.motherCatName} onChange={(e) => updateFormData('motherCatName', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="母親キャッテリー名" value={formData.motherCatName2} onChange={(e) => updateFormData('motherCatName2', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="母親毛色" value={formData.motherCoatColor} onChange={(e) => updateFormData('motherCoatColor', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="母親目の色" value={formData.motherEyeColor} onChange={(e) => updateFormData('motherEyeColor', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="母親JCU" value={formData.motherJCU} onChange={(e) => updateFormData('motherJCU', e.target.value)} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}>
-                    <InputWithFloatingLabel label="母親他団体コード" value={formData.motherOtherCode} onChange={(e) => updateFormData('motherOtherCode', e.target.value)} />
-                  </Grid.Col>
-                </Grid>
-              </Box>
-
-              {/* 第2世代: 祖父母（16項目）*/}
-              <Box>
-                <Divider label="第2世代: 祖父母（16項目）" mb="md" />
-                <Grid gutter={10}>
-                  <Grid.Col span={12}><Divider label="父方祖父（4項目）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFタイトル" value={formData.ffTitle} onChange={(e) => updateFormData('ffTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FF名前" value={formData.ffCatName} onChange={(e) => updateFormData('ffCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FF色柄" value={formData.ffCatColor} onChange={(e) => updateFormData('ffCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFナンバー" value={formData.ffjcu} onChange={(e) => updateFormData('ffjcu', e.target.value)} /></Grid.Col>
-
-                  <Grid.Col span={12}><Divider label="父方祖母（4項目）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMタイトル" value={formData.fmTitle} onChange={(e) => updateFormData('fmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FM名前" value={formData.fmCatName} onChange={(e) => updateFormData('fmCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FM色柄" value={formData.fmCatColor} onChange={(e) => updateFormData('fmCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMナンバー" value={formData.fmjcu} onChange={(e) => updateFormData('fmjcu', e.target.value)} /></Grid.Col>
-
-                  <Grid.Col span={12}><Divider label="母方祖父（4項目）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFタイトル" value={formData.mfTitle} onChange={(e) => updateFormData('mfTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MF名前" value={formData.mfCatName} onChange={(e) => updateFormData('mfCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MF色柄" value={formData.mfCatColor} onChange={(e) => updateFormData('mfCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFナンバー" value={formData.mfjcu} onChange={(e) => updateFormData('mfjcu', e.target.value)} /></Grid.Col>
-
-                  <Grid.Col span={12}><Divider label="母方祖母（4項目）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMタイトル" value={formData.mmTitle} onChange={(e) => updateFormData('mmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MM名前" value={formData.mmCatName} onChange={(e) => updateFormData('mmCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MM色柄" value={formData.mmCatColor} onChange={(e) => updateFormData('mmCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMナンバー" value={formData.mmjcu} onChange={(e) => updateFormData('mmjcu', e.target.value)} /></Grid.Col>
-                </Grid>
-              </Box>
-
-              {/* 第3世代: 曾祖父母（32項目）*/}
-              <Box>
-                <Divider label="第3世代: 曾祖父母（32項目）" mb="md" />
-                <Grid gutter={10}>
-                  {/* FFF */}
-                  <Grid.Col span={12}><Divider label="父父父（FFF）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFFタイトル" value={formData.fffTitle} onChange={(e) => updateFormData('fffTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFF名前" value={formData.fffCatName} onChange={(e) => updateFormData('fffCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFF色柄" value={formData.fffCatColor} onChange={(e) => updateFormData('fffCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFFナンバー" value={formData.fffjcu} onChange={(e) => updateFormData('fffjcu', e.target.value)} /></Grid.Col>
-
-                  {/* FFM */}
-                  <Grid.Col span={12}><Divider label="父父母（FFM）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFMタイトル" value={formData.ffmTitle} onChange={(e) => updateFormData('ffmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFM名前" value={formData.ffmCatName} onChange={(e) => updateFormData('ffmCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFM色柄" value={formData.ffmCatColor} onChange={(e) => updateFormData('ffmCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFMナンバー" value={formData.ffmjcu} onChange={(e) => updateFormData('ffmjcu', e.target.value)} /></Grid.Col>
-
-                  {/* FMF */}
-                  <Grid.Col span={12}><Divider label="父母父（FMF）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMFタイトル" value={formData.fmfTitle} onChange={(e) => updateFormData('fmfTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMF名前" value={formData.fmfCatName} onChange={(e) => updateFormData('fmfCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMF色柄" value={formData.fmfCatColor} onChange={(e) => updateFormData('fmfCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMFナンバー" value={formData.fmfjcu} onChange={(e) => updateFormData('fmfjcu', e.target.value)} /></Grid.Col>
-
-                  {/* FMM */}
-                  <Grid.Col span={12}><Divider label="父母母（FMM）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMMタイトル" value={formData.fmmTitle} onChange={(e) => updateFormData('fmmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMM名前" value={formData.fmmCatName} onChange={(e) => updateFormData('fmmCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMM色柄" value={formData.fmmCatColor} onChange={(e) => updateFormData('fmmCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMMナンバー" value={formData.fmmjcu} onChange={(e) => updateFormData('fmmjcu', e.target.value)} /></Grid.Col>
-
-                  {/* MFF */}
-                  <Grid.Col span={12}><Divider label="母父父（MFF）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFFタイトル" value={formData.mffTitle} onChange={(e) => updateFormData('mffTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFF名前" value={formData.mffCatName} onChange={(e) => updateFormData('mffCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFF色柄" value={formData.mffCatColor} onChange={(e) => updateFormData('mffCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFFナンバー" value={formData.mffjcu} onChange={(e) => updateFormData('mffjcu', e.target.value)} /></Grid.Col>
-
-                  {/* MFM */}
-                  <Grid.Col span={12}><Divider label="母父母（MFM）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFMタイトル" value={formData.mfmTitle} onChange={(e) => updateFormData('mfmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFM名前" value={formData.mfmCatName} onChange={(e) => updateFormData('mfmCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFM色柄" value={formData.mfmCatColor} onChange={(e) => updateFormData('mfmCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFMナンバー" value={formData.mfmjcu} onChange={(e) => updateFormData('mfmjcu', e.target.value)} /></Grid.Col>
-
-                  {/* MMF */}
-                  <Grid.Col span={12}><Divider label="母母父（MMF）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMFタイトル" value={formData.mmfTitle} onChange={(e) => updateFormData('mmfTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMF名前" value={formData.mmfCatName} onChange={(e) => updateFormData('mmfCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMF色柄" value={formData.mmfCatColor} onChange={(e) => updateFormData('mmfCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMFナンバー" value={formData.mmfjcu} onChange={(e) => updateFormData('mmfjcu', e.target.value)} /></Grid.Col>
-
-                  {/* MMM */}
-                  <Grid.Col span={12}><Divider label="母母母（MMM）" /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMMタイトル" value={formData.mmmTitle} onChange={(e) => updateFormData('mmmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMM名前" value={formData.mmmCatName} onChange={(e) => updateFormData('mmmCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMM色柄" value={formData.mmmCatColor} onChange={(e) => updateFormData('mmmCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMMナンバー" value={formData.mmmjcu} onChange={(e) => updateFormData('mmmjcu', e.target.value)} /></Grid.Col>
-                </Grid>
-              </Box>
-            </Stack>
-          </Paper>
-
-          {/* 送信ボタン */}
-          <Group justify="space-between" pt="md">
-            <Button variant="subtle" leftSection={<IconArrowLeft size={16} />} onClick={() => onCancel ? onCancel() : router.back()}>
-              キャンセル
-            </Button>
-            <Menu shadow="md" width={200}>
-              <Menu.Target>
-                <Button 
-                  loading={loading} 
-                  leftSection={<IconDeviceFloppy size={16} />} 
-                  rightSection={<IconChevronDown size={16} />}
-                  size="lg"
-                >
-                  {isEditMode ? '血統書を更新' : '血統書を登録'}
-                </Button>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  onClick={handleCreate}
-                  disabled={loading}
-                >
-                  新規登録
-                </Menu.Item>
-                <Menu.Item
-                  leftSection={<IconRefresh size={16} />}
-                  onClick={handleUpdate}
-                  disabled={loading || !isEditMode}
-                >
-                  更新
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item
-                  leftSection={<IconTrash size={16} />}
-                  color="red"
-                  onClick={handleClear}
-                  disabled={loading}
-                >
-                  クリア
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </Group>
-        </Stack>
-      </form>
-    </Box>
-  );
-}
 ````
 
 ## File: frontend/src/components/print-templates/index.ts
@@ -35718,6 +32483,406 @@ VALUES
 ON CONFLICT ("catId", "tagId") DO NOTHING;
 ````
 
+## File: supabase/.gitignore
+````
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+````
+
+## File: supabase/config.toml
+````toml
+# For detailed configuration reference documentation, visit:
+# https://supabase.com/docs/guides/local-development/cli/config
+# A string used to distinguish different Supabase projects on the same host. Defaults to the
+# working directory name when running `supabase init`.
+project_id = "my-cats-pro"
+
+[api]
+enabled = true
+# Port to use for the API URL.
+port = 54321
+# Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
+# endpoints. `public` and `graphql_public` schemas are included by default.
+schemas = ["public", "graphql_public"]
+# Extra schemas to add to the search_path of every request.
+extra_search_path = ["public", "extensions"]
+# The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
+# for accidental or malicious requests.
+max_rows = 1000
+
+[api.tls]
+# Enable HTTPS endpoints locally using a self-signed certificate.
+enabled = false
+# Paths to self-signed certificate pair.
+# cert_path = "../certs/my-cert.pem"
+# key_path = "../certs/my-key.pem"
+
+[db]
+# Port to use for the local database URL.
+port = 54322
+# Port used by db diff command to initialize the shadow database.
+shadow_port = 54320
+# Maximum amount of time to wait for health check when starting the local database.
+health_timeout = "2m"
+# The database major version to use. This has to be the same as your remote database's. Run `SHOW
+# server_version;` on the remote database to check.
+major_version = 17
+
+[db.pooler]
+enabled = false
+# Port to use for the local connection pooler.
+port = 54329
+# Specifies when a server connection can be reused by other clients.
+# Configure one of the supported pooler modes: `transaction`, `session`.
+pool_mode = "transaction"
+# How many server connections to allow per user/database pair.
+default_pool_size = 20
+# Maximum number of client connections allowed.
+max_client_conn = 100
+
+# [db.vault]
+# secret_key = "env(SECRET_VALUE)"
+
+[db.migrations]
+# If disabled, migrations will be skipped during a db push or reset.
+enabled = true
+# Specifies an ordered list of schema files that describe your database.
+# Supports glob patterns relative to supabase directory: "./schemas/*.sql"
+schema_paths = []
+
+[db.seed]
+# If enabled, seeds the database after migrations during a db reset.
+enabled = true
+# Specifies an ordered list of seed files to load during db reset.
+# Supports glob patterns relative to supabase directory: "./seeds/*.sql"
+sql_paths = ["./seed.sql"]
+
+[db.network_restrictions]
+# Enable management of network restrictions.
+enabled = false
+# List of IPv4 CIDR blocks allowed to connect to the database.
+# Defaults to allow all IPv4 connections. Set empty array to block all IPs.
+allowed_cidrs = ["0.0.0.0/0"]
+# List of IPv6 CIDR blocks allowed to connect to the database.
+# Defaults to allow all IPv6 connections. Set empty array to block all IPs.
+allowed_cidrs_v6 = ["::/0"]
+
+[realtime]
+enabled = true
+# Bind realtime via either IPv4 or IPv6. (default: IPv4)
+# ip_version = "IPv6"
+# The maximum length in bytes of HTTP request headers. (default: 4096)
+# max_header_length = 4096
+
+[studio]
+enabled = true
+# Port to use for Supabase Studio.
+port = 54323
+# External URL of the API server that frontend connects to.
+api_url = "http://127.0.0.1"
+# OpenAI API Key to use for Supabase AI in the Supabase Studio.
+openai_api_key = "env(OPENAI_API_KEY)"
+
+# Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
+# are monitored, and you can view the emails that would have been sent from the web interface.
+[inbucket]
+enabled = true
+# Port to use for the email testing server web interface.
+port = 54324
+# Uncomment to expose additional ports for testing user applications that send emails.
+# smtp_port = 54325
+# pop3_port = 54326
+# admin_email = "admin@email.com"
+# sender_name = "Admin"
+
+[storage]
+enabled = true
+# The maximum file size allowed (e.g. "5MB", "500KB").
+file_size_limit = "50MiB"
+
+# Uncomment to configure local storage buckets
+# [storage.buckets.images]
+# public = false
+# file_size_limit = "50MiB"
+# allowed_mime_types = ["image/png", "image/jpeg"]
+# objects_path = "./images"
+
+# Allow connections via S3 compatible clients
+[storage.s3_protocol]
+enabled = true
+
+# Image transformation API is available to Supabase Pro plan.
+# [storage.image_transformation]
+# enabled = true
+
+# Store analytical data in S3 for running ETL jobs over Iceberg Catalog
+# This feature is only available on the hosted platform.
+[storage.analytics]
+enabled = false
+max_namespaces = 5
+max_tables = 10
+max_catalogs = 2
+
+# Analytics Buckets is available to Supabase Pro plan.
+# [storage.analytics.buckets.my-warehouse]
+
+# Store vector embeddings in S3 for large and durable datasets
+# This feature is only available on the hosted platform.
+[storage.vector]
+enabled = false
+max_buckets = 10
+max_indexes = 5
+
+# Vector Buckets is available to Supabase Pro plan.
+# [storage.vector.buckets.documents-openai]
+
+[auth]
+enabled = true
+# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
+# in emails.
+site_url = "http://127.0.0.1:3000"
+# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
+additional_redirect_urls = ["https://127.0.0.1:3000"]
+# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
+jwt_expiry = 3600
+# JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
+# jwt_issuer = ""
+# Path to JWT signing key. DO NOT commit your signing keys file to git.
+# signing_keys_path = "./signing_keys.json"
+# If disabled, the refresh token will never expire.
+enable_refresh_token_rotation = true
+# Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
+# Requires enable_refresh_token_rotation = true.
+refresh_token_reuse_interval = 10
+# Allow/disallow new user signups to your project.
+enable_signup = true
+# Allow/disallow anonymous sign-ins to your project.
+enable_anonymous_sign_ins = false
+# Allow/disallow testing manual linking of accounts
+enable_manual_linking = false
+# Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
+minimum_password_length = 6
+# Passwords that do not meet the following requirements will be rejected as weak. Supported values
+# are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
+password_requirements = ""
+
+[auth.rate_limit]
+# Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
+email_sent = 2
+# Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
+sms_sent = 30
+# Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
+anonymous_users = 30
+# Number of sessions that can be refreshed in a 5 minute interval per IP address.
+token_refresh = 150
+# Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
+sign_in_sign_ups = 30
+# Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
+token_verifications = 30
+# Number of Web3 logins that can be made in a 5 minute interval per IP address.
+web3 = 30
+
+# Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
+# [auth.captcha]
+# enabled = true
+# provider = "hcaptcha"
+# secret = ""
+
+[auth.email]
+# Allow/disallow new user signups via email to your project.
+enable_signup = true
+# If enabled, a user will be required to confirm any email change on both the old, and new email
+# addresses. If disabled, only the new email is required to confirm.
+double_confirm_changes = true
+# If enabled, users need to confirm their email address before signing in.
+enable_confirmations = false
+# If enabled, users will need to reauthenticate or have logged in recently to change their password.
+secure_password_change = false
+# Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
+max_frequency = "1s"
+# Number of characters used in the email OTP.
+otp_length = 6
+# Number of seconds before the email OTP expires (defaults to 1 hour).
+otp_expiry = 3600
+
+# Use a production-ready SMTP server
+# [auth.email.smtp]
+# enabled = true
+# host = "smtp.sendgrid.net"
+# port = 587
+# user = "apikey"
+# pass = "env(SENDGRID_API_KEY)"
+# admin_email = "admin@email.com"
+# sender_name = "Admin"
+
+# Uncomment to customize email template
+# [auth.email.template.invite]
+# subject = "You have been invited"
+# content_path = "./supabase/templates/invite.html"
+
+# Uncomment to customize notification email template
+# [auth.email.notification.password_changed]
+# enabled = true
+# subject = "Your password has been changed"
+# content_path = "./templates/password_changed_notification.html"
+
+[auth.sms]
+# Allow/disallow new user signups via SMS to your project.
+enable_signup = false
+# If enabled, users need to confirm their phone number before signing in.
+enable_confirmations = false
+# Template for sending OTP to users
+template = "Your code is {{ .Code }}"
+# Controls the minimum amount of time that must pass before sending another sms otp.
+max_frequency = "5s"
+
+# Use pre-defined map of phone number to OTP for testing.
+# [auth.sms.test_otp]
+# 4152127777 = "123456"
+
+# Configure logged in session timeouts.
+# [auth.sessions]
+# Force log out after the specified duration.
+# timebox = "24h"
+# Force log out if the user has been inactive longer than the specified duration.
+# inactivity_timeout = "8h"
+
+# This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
+# [auth.hook.before_user_created]
+# enabled = true
+# uri = "pg-functions://postgres/auth/before-user-created-hook"
+
+# This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
+# [auth.hook.custom_access_token]
+# enabled = true
+# uri = "pg-functions://<database>/<schema>/<hook_name>"
+
+# Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+[auth.sms.twilio]
+enabled = false
+account_sid = ""
+message_service_sid = ""
+# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+
+# Multi-factor-authentication is available to Supabase Pro plan.
+[auth.mfa]
+# Control how many MFA factors can be enrolled at once per user.
+max_enrolled_factors = 10
+
+# Control MFA via App Authenticator (TOTP)
+[auth.mfa.totp]
+enroll_enabled = false
+verify_enabled = false
+
+# Configure MFA via Phone Messaging
+[auth.mfa.phone]
+enroll_enabled = false
+verify_enabled = false
+otp_length = 6
+template = "Your code is {{ .Code }}"
+max_frequency = "5s"
+
+# Configure MFA via WebAuthn
+# [auth.mfa.web_authn]
+# enroll_enabled = true
+# verify_enabled = true
+
+# Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
+# `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
+# `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
+[auth.external.apple]
+enabled = false
+client_id = ""
+# DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# or any other third-party OIDC providers.
+url = ""
+# If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
+skip_nonce_check = false
+# If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
+email_optional = false
+
+# Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
+# You can configure "web3" rate limit in the [auth.rate_limit] section and set up [auth.captcha] if self-hosting.
+[auth.web3.solana]
+enabled = false
+
+# Use Firebase Auth as a third-party provider alongside Supabase Auth.
+[auth.third_party.firebase]
+enabled = false
+# project_id = "my-firebase-project"
+
+# Use Auth0 as a third-party provider alongside Supabase Auth.
+[auth.third_party.auth0]
+enabled = false
+# tenant = "my-auth0-tenant"
+# tenant_region = "us"
+
+# Use AWS Cognito (Amplify) as a third-party provider alongside Supabase Auth.
+[auth.third_party.aws_cognito]
+enabled = false
+# user_pool_id = "my-user-pool-id"
+# user_pool_region = "us-east-1"
+
+# Use Clerk as a third-party provider alongside Supabase Auth.
+[auth.third_party.clerk]
+enabled = false
+# Obtain from https://clerk.com/setup/supabase
+# domain = "example.clerk.accounts.dev"
+
+# OAuth server configuration
+[auth.oauth_server]
+# Enable OAuth server functionality
+enabled = false
+# Path for OAuth consent flow UI
+authorization_url_path = "/oauth/consent"
+# Allow dynamic client registration
+allow_dynamic_registration = false
+
+[edge_runtime]
+enabled = true
+# Supported request policies: `oneshot`, `per_worker`.
+# `per_worker` (default) — enables hot reload during local development.
+# `oneshot` — fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
+policy = "per_worker"
+# Port to attach the Chrome inspector for debugging edge functions.
+inspector_port = 8083
+# The Deno major version to use.
+deno_version = 2
+
+# [edge_runtime.secrets]
+# secret_key = "env(SECRET_VALUE)"
+
+[analytics]
+enabled = true
+port = 54327
+# Configure one of the supported backends: `postgres`, `bigquery`.
+backend = "postgres"
+
+# Experimental features may be deprecated any time
+[experimental]
+# Configures Postgres storage engine to use OrioleDB (S3)
+orioledb_version = ""
+# Configures S3 bucket URL, eg. <bucket_name>.s3-<region>.amazonaws.com
+s3_host = "env(S3_HOST)"
+# Configures S3 bucket region, eg. us-east-1
+s3_region = "env(S3_REGION)"
+# Configures AWS_ACCESS_KEY_ID for S3 bucket
+s3_access_key = "env(S3_ACCESS_KEY)"
+# Configures AWS_SECRET_ACCESS_KEY for S3 bucket
+s3_secret_key = "env(S3_SECRET_KEY)"
+````
+
 ## File: frontend/src/app/breeding/components/BirthPlanTab.tsx
 ````typescript
 'use client';
@@ -36548,6 +33713,196 @@ export function WeightTab({
         onSuccess={onRefetch}
       />
     </>
+  );
+}
+````
+
+## File: frontend/src/app/cats/[id]/pedigree/page.tsx
+````typescript
+'use client';
+
+import { useRouter } from 'next/navigation';
+import {
+  Box,
+  Button,
+  Card,
+  Container,
+  Stack,
+  Title,
+  Text,
+  Flex,
+  Grid,
+} from '@mantine/core';
+import { IconArrowLeft } from '@tabler/icons-react';
+
+// ダミーデータ
+const pedigreeData = {
+  id: '1',
+  name: 'レオ',
+  generation1: { // 親
+    father: { name: 'パパ猫', color: '茶トラ' },
+    mother: { name: 'ママ猫', color: '三毛' }
+  },
+  generation2: { // 祖父母
+    paternalGrandfather: { name: '祖父1', color: '茶トラ' },
+    paternalGrandmother: { name: '祖母1', color: '白' },
+    maternalGrandfather: { name: '祖父2', color: '黒' },
+    maternalGrandmother: { name: '祖母2', color: '三毛' }
+  },
+  generation3: { // 曾祖父母
+    ppgf: { name: '曾祖父1', color: '茶トラ' }, // paternal paternal grandfather
+    ppgm: { name: '曾祖母1', color: '白' },     // paternal paternal grandmother
+    pmgf: { name: '曾祖父2', color: '茶' },     // paternal maternal grandfather
+    pmgm: { name: '曾祖母2', color: '白' },     // paternal maternal grandmother
+    mpgf: { name: '曾祖父3', color: '黒' },     // maternal paternal grandfather
+    mpgm: { name: '曾祖母3', color: '灰' },     // maternal paternal grandmother
+    mmgf: { name: '曾祖父4', color: '三毛' },   // maternal maternal grandfather
+    mmgm: { name: '曾祖母4', color: '茶' }      // maternal maternal grandmother
+  }
+};
+
+const CatCard = ({ cat, level = 0 }: { cat: { name: string; color: string } | null; level?: number }) => {
+  if (!cat) {
+    return (
+      <Card shadow="sm" padding="sm" radius="md" withBorder style={{ minHeight: 60, opacity: 0.3 }}>
+        <Text size="sm" c="dimmed">不明</Text>
+      </Card>
+    );
+  }
+
+  const colors = {
+    0: '#e3f2fd', // 本人: ライトブルー
+    1: '#f3e5f5', // 親: ライトパープル
+    2: '#e8f5e8', // 祖父母: ライトグリーン
+    3: '#fff3e0'  // 曾祖父母: ライトオレンジ
+  };
+
+  return (
+    <Card
+      shadow="sm"
+      padding="sm"
+      radius="md"
+      withBorder
+      style={{
+        backgroundColor: colors[level as keyof typeof colors] || '#f5f5f5',
+        minHeight: 60
+      }}
+    >
+      <Stack gap="xs">
+        <Text fw={600} size="sm">{cat.name}</Text>
+        <Text size="xs" c="dimmed">{cat.color}</Text>
+      </Stack>
+    </Card>
+  );
+};
+
+export default function PedigreePage() {
+  const router = useRouter();
+  // const params = useParams();
+
+  return (
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
+      {/* ヘッダー */}
+      <Box
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderBottom: '1px solid var(--border-subtle)',
+          padding: '1rem 0',
+          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
+        }}
+      >
+        <Container size="xl">
+          <Flex justify="space-between" align="center">
+            <Button
+              variant="light"
+              leftSection={<IconArrowLeft size={16} />}
+              onClick={() => router.back()}
+            >
+              戻る
+            </Button>
+          </Flex>
+        </Container>
+      </Box>
+
+      <Container size="xl" style={{ paddingTop: '2rem' }}>
+        <Title order={1} mb="lg" ta="center">
+          {pedigreeData.name}の血統表（4世代）
+        </Title>
+
+        {/* 血統表グリッド */}
+        <Box style={{ overflowX: 'auto' }}>
+          <Grid style={{ minWidth: '1200px' }}>
+            {/* 第1列: 本人 */}
+            <Grid.Col span={3}>
+              <Stack gap="md" style={{ height: '100%', justifyContent: 'center' }}>
+                <CatCard cat={{ name: pedigreeData.name, color: '茶トラ' }} level={0} />
+              </Stack>
+            </Grid.Col>
+
+            {/* 第2列: 親 */}
+            <Grid.Col span={3}>
+              <Stack gap="md" style={{ height: '100%' }}>
+                <CatCard cat={pedigreeData.generation1.father} level={1} />
+                <CatCard cat={pedigreeData.generation1.mother} level={1} />
+              </Stack>
+            </Grid.Col>
+
+            {/* 第3列: 祖父母 */}
+            <Grid.Col span={3}>
+              <Stack gap="md" style={{ height: '100%' }}>
+                <CatCard cat={pedigreeData.generation2.paternalGrandfather} level={2} />
+                <CatCard cat={pedigreeData.generation2.paternalGrandmother} level={2} />
+                <CatCard cat={pedigreeData.generation2.maternalGrandfather} level={2} />
+                <CatCard cat={pedigreeData.generation2.maternalGrandmother} level={2} />
+              </Stack>
+            </Grid.Col>
+
+            {/* 第4列: 曾祖父母 */}
+            <Grid.Col span={3}>
+              <Stack gap="md" style={{ height: '100%' }}>
+                <CatCard cat={pedigreeData.generation3.ppgf} level={3} />
+                <CatCard cat={pedigreeData.generation3.ppgm} level={3} />
+                <CatCard cat={pedigreeData.generation3.pmgf} level={3} />
+                <CatCard cat={pedigreeData.generation3.pmgm} level={3} />
+                <CatCard cat={pedigreeData.generation3.mpgf} level={3} />
+                <CatCard cat={pedigreeData.generation3.mpgm} level={3} />
+                <CatCard cat={pedigreeData.generation3.mmgf} level={3} />
+                <CatCard cat={pedigreeData.generation3.mmgm} level={3} />
+              </Stack>
+            </Grid.Col>
+          </Grid>
+        </Box>
+
+        {/* 世代ラベル */}
+        <Box mt="xl">
+          <Grid>
+            <Grid.Col span={3}>
+              <Text ta="center" fw={600} c="blue">本人</Text>
+            </Grid.Col>
+            <Grid.Col span={3}>
+              <Text ta="center" fw={600} c="purple">親（第1世代）</Text>
+            </Grid.Col>
+            <Grid.Col span={3}>
+              <Text ta="center" fw={600} c="green">祖父母（第2世代）</Text>
+            </Grid.Col>
+            <Grid.Col span={3}>
+              <Text ta="center" fw={600} c="orange">曾祖父母（第3世代）</Text>
+            </Grid.Col>
+          </Grid>
+        </Box>
+
+        {/* 注意書き */}
+        <Card shadow="sm" padding="lg" radius="md" withBorder mt="xl">
+          <Title order={3} mb="md">血統表について</Title>
+          <Stack gap="sm">
+            <Text size="sm">• この血統表は4世代（本人 + 親、祖父母、曾祖父母）を表示しています</Text>
+            <Text size="sm">• 各世代は色分けされており、世代が古くなるほど薄い色になります</Text>
+            <Text size="sm">• 不明な個体は「不明」と表示されます</Text>
+            <Text size="sm">• より詳細な血統情報が必要な場合は、個別にお問い合わせください</Text>
+          </Stack>
+        </Card>
+      </Container>
+    </Box>
   );
 }
 ````
@@ -38743,7 +36098,7 @@ export default function ImportPage() {
 }
 ````
 
-## File: frontend/src/app/pedigrees/_id_disabled/family-tree/client.tsx
+## File: frontend/src/app/pedigrees/[id]/family-tree/client.tsx
 ````typescript
 'use client'
 
@@ -39061,7 +36416,16 @@ export default function FamilyTreeClient() {
 }
 ````
 
-## File: frontend/src/app/pedigrees/_id_disabled/client.tsx
+## File: frontend/src/app/pedigrees/[id]/family-tree/page.tsx
+````typescript
+import FamilyTreeClient from './client';
+
+export default function FamilyTreePage() {
+  return <FamilyTreeClient />;
+}
+````
+
+## File: frontend/src/app/pedigrees/[id]/client.tsx
 ````typescript
 'use client'
 
@@ -39496,6 +36860,31 @@ export default function PedigreeDetailClient() {
       </Stack>
     </Container>
   );
+}
+````
+
+## File: frontend/src/app/pedigrees/[id]/layout.tsx
+````typescript
+// Static export support - return empty array for dynamic routes
+export function generateStaticParams() {
+  return [];
+}
+
+export default function PedigreeLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+}
+````
+
+## File: frontend/src/app/pedigrees/[id]/page.tsx
+````typescript
+import PedigreeDetailClient from './client';
+
+export default function PedigreeDetailPage() {
+  return <PedigreeDetailClient />;
 }
 ````
 
@@ -44373,318 +41762,6 @@ export function PedigreeFamilyTree({ pedigreeId }: PedigreeFamilyTreeProps) {
 }
 ````
 
-## File: frontend/src/components/pedigrees/PedigreeList.tsx
-````typescript
-'use client';
-
-import { useState } from 'react';
-import {
-  Paper,
-  TextInput,
-  Select,
-  Button,
-  Table,
-  Pagination,
-  Badge,
-  Group,
-  Stack,
-  Text,
-  Card,
-  Grid,
-  ActionIcon,
-  Tooltip,
-  LoadingOverlay,
-} from '@mantine/core';
-import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter, IconCopy } from '@tabler/icons-react';
-import { useRouter } from 'next/navigation';
-import { useGetPedigrees } from '@/lib/api/hooks/use-pedigrees';
-import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
-
-interface PedigreeData {
-  id: string;
-  pedigreeId: string;
-  catName: string;
-  breedCode: number | null;
-  genderCode: number | null;
-  gender?: { code: number; name: string } | null;
-  breed?: { code: number; name: string } | null;
-  coatColor?: { code: number; name: string } | null;
-  birthDate: string | null;
-  breederName: string | null;
-  ownerName: string | null;
-  registrationDate: string | null;
-  notes: string | null;
-  fatherPedigree?: { pedigreeId: string; catName: string } | null;
-  motherPedigree?: { pedigreeId: string; catName: string } | null;
-}
-
-interface PedigreeListProps {
-  onSelectFamilyTree?: (id: string) => void;
-}
-
-export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
-  const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [genderFilter, setGenderFilter] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const apiBaseUrl = getPublicApiBaseUrl();
-
-  const genderOptions = [
-    { value: '', label: '全て' },
-    { value: '1', label: '雄' },
-    { value: '2', label: '雌' },
-  ];
-
-  // React Query フックでデータ取得
-  const { data, isLoading, refetch } = useGetPedigrees({
-    page: currentPage,
-    limit: 20,
-    search: searchTerm || undefined,
-    gender: genderFilter || undefined,
-  });
-
-  const pedigrees = (data?.data || []) as unknown as PedigreeData[];
-  const total = data?.meta?.total || 0;
-  const totalPages = data?.meta?.totalPages || 1;
-
-  const handleSearch = () => {
-    setCurrentPage(1);
-    refetch();
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '不明';
-    return new Date(dateString).toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatGender = (pedigree: PedigreeData) => {
-    if (pedigree.gender?.name) {
-      return pedigree.gender.name;
-    }
-    switch (pedigree.genderCode) {
-      case 1: return 'Male';
-      case 2: return 'Female';
-      case 3: return 'Neuter';
-      case 4: return 'Spay';
-      default: return 'Unknown';
-    }
-  };
-
-  const getGenderColor = (pedigree: PedigreeData) => {
-    const code = pedigree.gender?.code ?? pedigree.genderCode;
-    switch (code) {
-      case 1: return 'blue';
-      case 2: return 'pink';
-      case 3: return 'cyan';
-      case 4: return 'violet';
-      default: return 'gray';
-    }
-  };
-
-  const openPedigreePdf = (pedigreeId: string) => {
-    const pdfUrl = `${apiBaseUrl}/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
-
-    const newTab = window.open(pdfUrl, '_blank');
-    if (!newTab) {
-      // ポップアップがブロックされた場合は同一タブで開く
-      window.location.assign(pdfUrl);
-    }
-  };
-
-  return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Group>
-          <Badge size="lg" color="blue">
-            総計: {total}件
-          </Badge>
-        </Group>
-      </Group>
-
-      {/* フィルター・検索セクション */}
-      <Paper p="md" shadow="sm">
-        <Grid>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <TextInput
-              placeholder="猫名、繁殖者名で検索..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              leftSection={<IconSearch size={16} />}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 3 }}>
-            <Select
-              placeholder="性別で絞り込み"
-              data={genderOptions}
-              value={genderFilter}
-              onChange={setGenderFilter}
-              leftSection={<IconFilter size={16} />}
-              clearable
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 3 }}>
-            <Group>
-              <Button onClick={handleSearch} leftSection={<IconSearch size={16} />}>
-                検索
-              </Button>
-              <ActionIcon 
-                variant="light" 
-                onClick={() => refetch()}
-                size="lg"
-              >
-                <IconRefresh size={16} />
-              </ActionIcon>
-            </Group>
-          </Grid.Col>
-        </Grid>
-      </Paper>
-
-      {/* 血統書リストテーブル */}
-      <Paper shadow="sm" style={{ position: 'relative' }}>
-        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} />
-        
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>血統書番号</Table.Th>
-              <Table.Th>猫名</Table.Th>
-              <Table.Th>性別</Table.Th>
-              <Table.Th>品種コード</Table.Th>
-              <Table.Th>生年月日</Table.Th>
-              <Table.Th>繁殖者</Table.Th>
-              <Table.Th>父親</Table.Th>
-              <Table.Th>母親</Table.Th>
-              <Table.Th>操作</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {pedigrees.map((pedigree) => (
-              <Table.Tr key={pedigree.id}>
-                <Table.Td>
-                  <Text fw={600} size="sm">
-                    {pedigree.pedigreeId}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text fw={500}>
-                    {pedigree.catName || '名前なし'}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Badge color={getGenderColor(pedigree)} size="sm" tt="none">
-                    {formatGender(pedigree)}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">
-                    {pedigree.breedCode || '-'}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">
-                    {formatDate(pedigree.birthDate)}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm" c="dimmed">
-                    {pedigree.breederName || '-'}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm" c="blue">
-                    {pedigree.fatherPedigree 
-                      ? `${pedigree.fatherPedigree.pedigreeId} (${pedigree.fatherPedigree.catName})`
-                      : '-'
-                    }
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm" c="pink">
-                    {pedigree.motherPedigree 
-                      ? `${pedigree.motherPedigree.pedigreeId} (${pedigree.motherPedigree.catName})`
-                      : '-'
-                    }
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Group gap="xs">
-                    <Tooltip label="家系図を見る">
-                      <ActionIcon
-                        variant="light"
-                        color="green"
-                        aria-label="家系図を見る"
-                        onClick={() => onSelectFamilyTree ? onSelectFamilyTree(pedigree.id) : router.push(`/pedigrees?tab=tree&id=${pedigree.id}`)}
-                      >
-                        <IconFileText size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="新規登録にコピー">
-                      <ActionIcon
-                        variant="light"
-                        color="blue"
-                        aria-label="新規登録にコピー"
-                        onClick={() => router.push(`/pedigrees?tab=register&copyFromId=${encodeURIComponent(pedigree.id)}`)}
-                      >
-                        <IconCopy size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="血統書PDFを印刷">
-                      <ActionIcon
-                        variant="light"
-                        color="orange"
-                        aria-label="血統書PDFを印刷"
-                        onClick={() => {
-                          openPedigreePdf(pedigree.pedigreeId);
-                        }}
-                      >
-                        <IconPrinter size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-
-        {pedigrees.length === 0 && !isLoading && (
-          <Card mt="md" p="xl" style={{ textAlign: 'center' }}>
-            <Text size="lg" c="dimmed">
-              血統書データが見つかりませんでした
-            </Text>
-            <Text size="sm" c="dimmed" mt="xs">
-              検索条件を変更してお試しください
-            </Text>
-          </Card>
-        )}
-      </Paper>
-
-      {/* ページネーション */}
-      {totalPages > 1 && (
-        <Group justify="center">
-          <Pagination
-            value={currentPage}
-            onChange={handlePageChange}
-            total={totalPages}
-            size="md"
-          />
-        </Group>
-      )}
-    </Stack>
-  );
-}
-````
-
 ## File: frontend/src/components/pedigrees/PrintSettingsEditor.tsx
 ````typescript
 'use client';
@@ -47494,6 +44571,137 @@ export default bundleAnalyzer(nextConfig);
 2. **回避策**: パスワードリセットが必要なユーザーには管理者が手動でパスワードをリセットする運用で対応可能
 
 上記の問題が修正されれば、本番リリースに問題はありません。
+````
+
+## File: GEMINI.md
+````markdown
+# GEMINI.md
+
+このファイルは、Google Geminiが`my-cats-pro`プロジェクト（Nekoya Management System）のコードベースを理解し、開発を支援するための**Project Context & System Instructions**です。
+
+Geminiはこのファイルを「唯一の真実」として参照し、以下のペルソナ、技術スタック、ルールに従って振る舞ってください。
+
+---
+
+## 1. Role & Persona (役割と振る舞い)
+
+あなたは**Nekoya co.ltdの専属シニア・フルスタックエンジニア**であり、同時にユーザー（CEO）の「Vibe Coding」パートナーです。
+
+* **Vibe Coding Partner**: ユーザーはコードを読み書きしません。あなたの仕事は、技術的な詳細を長々と説明することではなく、「ユーザーが実現したいこと」を**動くコード**として提供することです。
+* **Expert Architect**: フロントエンド(Next.js)からバックエンド(NestJS)、インフラ(GCP)までを完璧に把握し、部分最適ではなく全体最適を考慮した提案を行います。
+* **Domain Expert**: 猫の繁殖、血統書、健康管理に関する業務知識を深く理解し、単なるデータ管理ではなく「猫のための(All Four Cats)」システムを構築します。
+
+## 2. User & Interaction Rules (対話ルール)
+
+1.  **NO Placeholders (省略禁止)**
+    * ユーザーはコードを編集できません。`// ... existing code` や `// ... (省略)` といった省略は**厳禁**です。
+    * 修正を含むファイルは、必ず**ファイルの先頭から末尾までの完全なコード**を出力してください。
+
+2.  **No Regression (既存機能の破壊禁止)**
+    * 新しい機能を追加する際、既存の機能（特にタグ自動化や血統書生成）を壊さないことを最優先してください。
+    * 変更が他の部分に影響を与える可能性がある場合は、事前にリスクを警告してください。
+
+3.  **Communication Style**
+    * **言語**: 日本語 (Japanese)
+    * **トーン**: プロフェッショナルだが親しみやすく。過度な謝罪（「申し訳ありません」）は不要です。即座に修正案を提示してください。
+    * **説明**: 技術用語を並べるのではなく、「何ができるようになるか」「どう変わるか」をビジネス視点で説明してください。
+    - 本プロジェクトは **日本語 UI / ドキュメント** を前提とし、やり取りも日本語で統一。
+    - チャット、レビュー、PR 説明: すべて日本語で回答。
+    - コードコメント / README / 設計資料: 日本語で記述。
+    - エラーメッセージ: 可能な限り日本語で表示し、開発者向けログも日本語コメントを添付。
+    - 変数名 / 関数名 / 型名は国際慣習に従い英語で統一。
+    - 機械翻訳感を避け、簡潔で実務的な日本語を心掛ける。
+
+## 3. Tech Stack (技術スタック)
+
+このプロジェクトの技術的な「真実」です。これ以外のライブラリを提案する際は慎重に行ってください。
+
+### Frontend
+* **Framework**: Next.js 15+ (App Router)
+* **Language**: TypeScript
+* **Styling**: Tailwind CSS (Mobile First)
+* **UI Components**: Headless UI, Heroicons, Custom "Mochi-UI" (Rounded, Soft, Pink/White theme)
+* **State Management**: React Query (Server State), Zustand (Client State)
+* **Key Patterns**:
+    * `UnifiedModal` (全てのモーダルは `src/components/common/UnifiedModal.tsx` を使用)
+    * Server Actions (API通信のラップ)
+
+### Backend
+* **Framework**: NestJS (Monorepo structure)
+* **Language**: TypeScript
+* **Database**: PostgreSQL
+* **ORM**: Prisma (Schema located at `backend/prisma/schema.prisma`)
+* **API**: RESTful API (Standard Controllers)
+* **Auth**: JWT based (SuperAdmin, TenantAdmin, Staff)
+
+### Infrastructure
+* **Container**: Docker (Development & Production)
+* **Cloud**: Google Cloud Platform (Cloud Run, Cloud Build, Cloud SQL)
+
+## 4. Coding Standards & Guidelines
+
+### A. "Unified Modal" Protocol
+このプロジェクトでは、モーダル実装に厳格なルールがあります。
+* **禁止**: 新しいモーダルコンポーネントをゼロから作ること。
+* **強制**: 必ず `UnifiedModal` コンポーネントを使用し、`UNIFIED_MODAL_SECTIONS` 定義に従ってセクションを構成すること。
+* **目的**: モバイル端末での操作性統一と、メンテナンス性の向上。
+
+### B. Prisma & Database
+* **Schema First**: データベースの変更は必ず `schema.prisma` の変更から始め、マイグレーションファイル (`migration.sql`) を生成してください。
+* **Multi-tenancy**: ほぼ全てのテーブルは `tenantId` を持ち、テナント間のデータ分離を厳守する必要があります。
+
+### C. 型安全ポリシー（厳格版）
+
+- `any` / `unknown` の使用は禁止。ライブラリの制約で不可避な場合のみ、**該当行に理由コメントを記載**し、型ガードやジェネリクスで露出を局所化する。
+
+### C-1. any / unknown 例外条件（すべて必須）
+
+1. 外部ライブラリの型定義が実態と異なり修正不能
+2. 以下の代替案をすべて試行し失敗:
+   - 型ガード
+   - Partial / Pick / Omit
+   - ジェネリクス
+   - 型アサーション
+   - ライブラリ更新・代替検討
+3. 該当行に以下を必ず記載:
+   - 試行した代替案と結果
+   - any 使用理由
+   - 影響範囲最小化方法
+
+- 非 null アサーション（`!`）は禁止。nullable を扱う際はガードや `if (!value) return` で安全に扱う。
+- 乱暴な二段キャスト（`value as unknown as X`, `as any`）は禁止。必要な場合は型ガード・判定ロジックを実装。
+- `// eslint-disable` / `@ts-ignore` は原則禁止。やむを得ない場合は 1 行限定 + 理由コメント。
+- ESLint / tsconfig の設定で型エラーを黙殺することは禁止。エラー原因をコードで解決する。
+- すべての公開関数・クラスは引数・戻り値を完全に型定義。`Promise` 関数は `Promise<ResultType>` を明示。
+- 分岐は可能な限り **exhaustiveness check** を実施（`switch` + `never`）。
+- API 入出力は既存 DTO / Prisma 型 / 共通 `types/` を再利用。重複定義を避け、型が足りない場合は共通場所に追加してから使用する  
+
+### D. "Vibe" Aesthetics (UI/UX)
+* デザインは「機能的」かつ「シンプル」だけど、ちょっとだけ「かわいい」を目指します。
+
+## 5. Directory Structure Map
+
+重要なディレクトリの役割です。探索の参考にしてください。
+
+* `frontend/src/app`: Next.js App Router Pages
+* `frontend/src/components/common`: UnifiedModalなどの共通コンポーネント
+* `frontend/src/lib/api`: APIクライアントとReact Query Hooks
+* `backend/src/breeding`: 繁殖、交配計画、出産管理ロジック
+* `backend/src/pedigree`: 血統書生成、PDF出力ロジック
+* `backend/src/tags`: タグ自動化システム（非常に重要）
+* `docs/`: プロジェクトの詳細ドキュメント（困ったらここを探す）
+
+## 6. Project Specific Knowledge (ドメイン知識)
+
+* **Tag Automation**: 猫の月齢や状態（妊娠中など）に応じて、タグを自動的に付与・削除するバッチ処理があります。手動でのタグ操作と競合しないよう注意が必要です。
+* **Pedigree Logic**: 本猫から3代前まで遡る血統書データ構造は複雑です。変更する際は、無限ループやパフォーマンス低下に細心の注意を払ってください。
+* **Shift Management**: スタッフのシフト管理は、猫の世話（Care Schedule）と連動しています。
+
+---
+
+**Mission Statement:**
+全ては猫のために（All Four Cats）。
+私たちは、ブリーダーが猫のケアに集中できる、最高の管理システムを作ります。
 ````
 
 ## File: IMPLEMENTATION_COMPLETE.md
@@ -52416,6 +49624,1428 @@ function MiniWeightChange({ change }: { change: number }) {
 }
 
 export default WeightRecordTable;
+````
+
+## File: frontend/src/components/pedigrees/PedigreeRegistrationForm.tsx
+````typescript
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  Button,
+  Group,
+  Stack,
+  Grid,
+  Text,
+  Box,
+  Paper,
+  Divider,
+  ActionIcon,
+  Tooltip,
+  Menu,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import {
+  useCreatePedigree,
+  useUpdatePedigree,
+  useGetPedigree,
+  useGetPedigreeByNumber,
+  type PedigreeRecord,
+  type UpdatePedigreeRequest,
+} from '@/lib/api/hooks/use-pedigrees';
+import {
+  IconDeviceFloppy,
+  IconArrowLeft,
+  IconPlus,
+  IconRefresh,
+  IconTrash,
+  IconChevronDown,
+  IconPrinter,
+} from '@tabler/icons-react';
+import { InputWithFloatingLabel } from '../ui/InputWithFloatingLabel';
+import { SelectWithFloatingLabel } from '../ui/SelectWithFloatingLabel';
+import { apiClient, type ApiResponse } from '@/lib/api/client';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
+
+// API レスポンスの型定義
+type BreedsResponse = Breed[];
+
+type CoatColorsResponse = CoatColor[];
+
+type GendersResponse = Gender[];
+
+// 型安全なAPIヘルパー関数（マスタデータ取得用）
+const getBreeds = async (params?: { limit?: string }): Promise<ApiResponse<BreedsResponse>> => {
+  // @ts-expect-error - OpenAPI型定義が未生成
+  return apiClient.get('/breeds', params ? { query: params } : undefined);
+};
+
+const getCoatColors = async (params?: { limit?: string }): Promise<ApiResponse<CoatColorsResponse>> => {
+  // @ts-expect-error - OpenAPI型定義が未生成
+  return apiClient.get('/coat-colors', params ? { query: params } : undefined);
+};
+
+const getGenders = async (): Promise<ApiResponse<GendersResponse>> => {
+  // @ts-expect-error - OpenAPI型定義が未生成
+  return apiClient.get('/master/genders');
+};
+
+const getNextPedigreeId = async (): Promise<ApiResponse<{ nextId: string }>> => {
+  // @ts-expect-error - OpenAPI型定義が未生成
+  return apiClient.get('/pedigrees/next-id');
+};
+
+interface Breed {
+  id: string;
+  code: number;
+  name: string;
+}
+
+interface CoatColor {
+  id: string;
+  code: number;
+  name: string;
+}
+
+interface Gender {
+  id: string;
+  code: number;
+  name: string;
+}
+
+// Access設計準拠: 基本情報17項目 + 血統情報62項目
+interface PedigreeFormData {
+  // ========== 基本情報（17項目）==========
+  pedigreeId: string;
+  title?: string;
+  catName?: string;
+  catName2?: string;
+  breedCode?: number;
+  genderCode?: number;
+  eyeColor?: string;
+  coatColorCode?: number;
+  birthDate?: string;
+  breederName?: string;
+  ownerName?: string;
+  registrationDate?: string;
+  brotherCount?: number;
+  sisterCount?: number;
+  notes?: string;
+  notes2?: string;
+  otherNo?: string;
+
+  // ========== 血統情報（62項目）==========
+  // 第1世代: 父親（7項目）
+  fatherTitle?: string;
+  fatherCatName?: string;
+  fatherCatName2?: string;
+  fatherCoatColor?: string;
+  fatherEyeColor?: string;
+  fatherJCU?: string;
+  fatherOtherCode?: string;
+
+  // 第1世代: 母親（7項目）
+  motherTitle?: string;
+  motherCatName?: string;
+  motherCatName2?: string;
+  motherCoatColor?: string;
+  motherEyeColor?: string;
+  motherJCU?: string;
+  motherOtherCode?: string;
+
+  // 第2世代: 祖父母（16項目 = 4名 × 4項目）
+  ffTitle?: string;
+  ffCatName?: string;
+  ffCatColor?: string;
+  ffjcu?: string;
+
+  fmTitle?: string;
+  fmCatName?: string;
+  fmCatColor?: string;
+  fmjcu?: string;
+
+  mfTitle?: string;
+  mfCatName?: string;
+  mfCatColor?: string;
+  mfjcu?: string;
+
+  mmTitle?: string;
+  mmCatName?: string;
+  mmCatColor?: string;
+  mmjcu?: string;
+
+  // 第3世代: 曾祖父母（32項目 = 8名 × 4項目）
+  fffTitle?: string;
+  fffCatName?: string;
+  fffCatColor?: string;
+  fffjcu?: string;
+
+  ffmTitle?: string;
+  ffmCatName?: string;
+  ffmCatColor?: string;
+  ffmjcu?: string;
+
+  fmfTitle?: string;
+  fmfCatName?: string;
+  fmfCatColor?: string;
+  fmfjcu?: string;
+
+  fmmTitle?: string;
+  fmmCatName?: string;
+  fmmCatColor?: string;
+  fmmjcu?: string;
+
+  mffTitle?: string;
+  mffCatName?: string;
+  mffCatColor?: string;
+  mffjcu?: string;
+
+  mfmTitle?: string;
+  mfmCatName?: string;
+  mfmCatColor?: string;
+  mfmjcu?: string;
+
+  mmfTitle?: string;
+  mmfCatName?: string;
+  mmfCatColor?: string;
+  mmfjcu?: string;
+
+  mmmTitle?: string;
+  mmmCatName?: string;
+  mmmCatColor?: string;
+  mmmjcu?: string;
+
+  oldCode?: string;
+}
+
+interface PedigreeRegistrationFormProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+function mapPedigreeRecordToFormData(record: PedigreeRecord, fallbackPedigreeId: string): PedigreeFormData {
+  return {
+    pedigreeId: record.pedigreeId || fallbackPedigreeId,
+    title: record.title || undefined,
+    catName: record.catName || undefined,
+    catName2: (record as PedigreeFormData).catName2 || undefined,
+    breedCode: record.breedCode || undefined,
+    genderCode: record.genderCode || undefined,
+    eyeColor: record.eyeColor || undefined,
+    coatColorCode: record.coatColorCode || undefined,
+    birthDate: record.birthDate || undefined,
+    breederName: record.breederName || undefined,
+    ownerName: record.ownerName || undefined,
+    registrationDate: record.registrationDate || undefined,
+    brotherCount: (record as PedigreeFormData).brotherCount || undefined,
+    sisterCount: (record as PedigreeFormData).sisterCount || undefined,
+    notes: (record as PedigreeFormData).notes || undefined,
+    notes2: (record as PedigreeFormData).notes2 || undefined,
+    otherNo: (record as PedigreeFormData).otherNo || undefined,
+    fatherTitle: (record as PedigreeFormData).fatherTitle || undefined,
+    fatherCatName: (record as PedigreeFormData).fatherCatName || undefined,
+    fatherCatName2: (record as PedigreeFormData).fatherCatName2 || undefined,
+    fatherCoatColor: (record as PedigreeFormData).fatherCoatColor || undefined,
+    fatherEyeColor: (record as PedigreeFormData).fatherEyeColor || undefined,
+    fatherJCU: (record as PedigreeFormData).fatherJCU || undefined,
+    fatherOtherCode: (record as PedigreeFormData).fatherOtherCode || undefined,
+    motherTitle: (record as PedigreeFormData).motherTitle || undefined,
+    motherCatName: (record as PedigreeFormData).motherCatName || undefined,
+    motherCatName2: (record as PedigreeFormData).motherCatName2 || undefined,
+    motherCoatColor: (record as PedigreeFormData).motherCoatColor || undefined,
+    motherEyeColor: (record as PedigreeFormData).motherEyeColor || undefined,
+    motherJCU: (record as PedigreeFormData).motherJCU || undefined,
+    motherOtherCode: (record as PedigreeFormData).motherOtherCode || undefined,
+    ffTitle: (record as PedigreeFormData).ffTitle || undefined,
+    ffCatName: (record as PedigreeFormData).ffCatName || undefined,
+    ffCatColor: (record as PedigreeFormData).ffCatColor || undefined,
+    ffjcu: (record as PedigreeFormData).ffjcu || undefined,
+    fmTitle: (record as PedigreeFormData).fmTitle || undefined,
+    fmCatName: (record as PedigreeFormData).fmCatName || undefined,
+    fmCatColor: (record as PedigreeFormData).fmCatColor || undefined,
+    fmjcu: (record as PedigreeFormData).fmjcu || undefined,
+    mfTitle: (record as PedigreeFormData).mfTitle || undefined,
+    mfCatName: (record as PedigreeFormData).mfCatName || undefined,
+    mfCatColor: (record as PedigreeFormData).mfCatColor || undefined,
+    mfjcu: (record as PedigreeFormData).mfjcu || undefined,
+    mmTitle: (record as PedigreeFormData).mmTitle || undefined,
+    mmCatName: (record as PedigreeFormData).mmCatName || undefined,
+    mmCatColor: (record as PedigreeFormData).mmCatColor || undefined,
+    mmjcu: (record as PedigreeFormData).mmjcu || undefined,
+    fffTitle: (record as PedigreeFormData).fffTitle || undefined,
+    fffCatName: (record as PedigreeFormData).fffCatName || undefined,
+    fffCatColor: (record as PedigreeFormData).fffCatColor || undefined,
+    fffjcu: (record as PedigreeFormData).fffjcu || undefined,
+    ffmTitle: (record as PedigreeFormData).ffmTitle || undefined,
+    ffmCatName: (record as PedigreeFormData).ffmCatName || undefined,
+    ffmCatColor: (record as PedigreeFormData).ffmCatColor || undefined,
+    ffmjcu: (record as PedigreeFormData).ffmjcu || undefined,
+    fmfTitle: (record as PedigreeFormData).fmfTitle || undefined,
+    fmfCatName: (record as PedigreeFormData).fmfCatName || undefined,
+    fmfCatColor: (record as PedigreeFormData).fmfCatColor || undefined,
+    fmfjcu: (record as PedigreeFormData).fmfjcu || undefined,
+    fmmTitle: (record as PedigreeFormData).fmmTitle || undefined,
+    fmmCatName: (record as PedigreeFormData).fmmCatName || undefined,
+    fmmCatColor: (record as PedigreeFormData).fmmCatColor || undefined,
+    fmmjcu: (record as PedigreeFormData).fmmjcu || undefined,
+    mffTitle: (record as PedigreeFormData).mffTitle || undefined,
+    mffCatName: (record as PedigreeFormData).mffCatName || undefined,
+    mffCatColor: (record as PedigreeFormData).mffCatColor || undefined,
+    mffjcu: (record as PedigreeFormData).mffjcu || undefined,
+    mfmTitle: (record as PedigreeFormData).mfmTitle || undefined,
+    mfmCatName: (record as PedigreeFormData).mfmCatName || undefined,
+    mfmCatColor: (record as PedigreeFormData).mfmCatColor || undefined,
+    mfmjcu: (record as PedigreeFormData).mfmjcu || undefined,
+    mmfTitle: (record as PedigreeFormData).mmfTitle || undefined,
+    mmfCatName: (record as PedigreeFormData).mmfCatName || undefined,
+    mmfCatColor: (record as PedigreeFormData).mmfCatColor || undefined,
+    mmfjcu: (record as PedigreeFormData).mmfjcu || undefined,
+    mmmTitle: (record as PedigreeFormData).mmmTitle || undefined,
+    mmmCatName: (record as PedigreeFormData).mmmCatName || undefined,
+    mmmCatColor: (record as PedigreeFormData).mmmCatColor || undefined,
+    mmmjcu: (record as PedigreeFormData).mmmjcu || undefined,
+    oldCode: (record as PedigreeFormData).oldCode || undefined,
+  };
+}
+
+export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegistrationFormProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const apiBaseUrl = getPublicApiBaseUrl();
+  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [breeds, setBreeds] = useState<Breed[]>([]);
+  const [coatColors, setCoatColors] = useState<CoatColor[]>([]);
+  const [genders, setGenders] = useState<Gender[]>([]);
+  const [formData, setFormData] = useState<PedigreeFormData>({
+    pedigreeId: '',
+  });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [originalId, setOriginalId] = useState<string | null>(null);
+  const [pedigreeIdInput, setPedigreeIdInput] = useState('');
+
+  const copyFromId = searchParams.get('copyFromId') || '';
+
+  const normalizedPedigreeIdInput = pedigreeIdInput.trim();
+
+  const createMutation = useCreatePedigree();
+  const updateMutationHook = useUpdatePedigree(originalId || '');
+
+  const { data: copySourcePedigree } = useGetPedigree(copyFromId, {
+    enabled: !!copyFromId,
+  });
+
+  // 名称入力用のローカルステート (Select化により直接参照はしないが、状態管理用に保持)
+  const [_inputValues, setInputValues] = useState({
+    breedName: '',
+    genderName: '',
+    coatColorName: '',
+  });
+
+  // コード変更時に名称を同期
+  useEffect(() => {
+    if (formData.breedCode !== undefined) {
+      const found = breeds.find(b => b.code === formData.breedCode);
+      if (found) setInputValues(prev => ({ ...prev, breedName: found.name }));
+    }
+    if (formData.genderCode !== undefined) {
+      const found = genders.find(g => g.code === formData.genderCode);
+      if (found) setInputValues(prev => ({ ...prev, genderName: found.name }));
+    }
+    if (formData.coatColorCode !== undefined) {
+      const found = coatColors.find(c => c.code === formData.coatColorCode);
+      if (found) setInputValues(prev => ({ ...prev, coatColorName: found.name }));
+    }
+  }, [formData.breedCode, formData.genderCode, formData.coatColorCode, breeds, genders, coatColors]);
+
+  // Call ID用の状態
+  const [callId, setCallId] = useState({
+    both: '',
+    father: '',
+    mother: '',
+  });
+
+  // デバウンス用タイムアウト
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // 血統書番号入力時に既存レコードを取得
+  const { data: existingPedigree, isLoading: isLoadingExisting } = useGetPedigreeByNumber(
+    normalizedPedigreeIdInput,
+    { enabled: normalizedPedigreeIdInput.length >= 5 }
+  );
+
+  // 既存レコードが見つかった場合、全フィールドをセット
+  useEffect(() => {
+    if (existingPedigree && pedigreeIdInput) {
+      const record = existingPedigree as PedigreeRecord;
+      setFormData(mapPedigreeRecordToFormData(record, pedigreeIdInput));
+      setIsEditMode(true);
+      setOriginalId(record.id);
+      notifications.show({
+        title: '既存レコードを読み込みました',
+        message: `血統書番号 ${record.pedigreeId} のデータを編集できます`,
+        color: 'blue',
+      });
+    }
+  }, [existingPedigree, pedigreeIdInput]);
+
+  // 一覧から「新規登録にコピー」された場合、血統書番号と猫名以外をコピーして新規登録モードにする
+  useEffect(() => {
+    if (!copyFromId) return;
+    if (!copySourcePedigree) return;
+
+    const record = copySourcePedigree as PedigreeRecord;
+    const copied = mapPedigreeRecordToFormData(record, '');
+
+    setFormData({
+      ...copied,
+      pedigreeId: '',
+      catName: undefined,
+      catName2: undefined,
+    });
+
+    setPedigreeIdInput('');
+    setIsEditMode(false);
+    setOriginalId(null);
+    setCallId({ both: '', father: '', mother: '' });
+    setInputValues({ breedName: '', genderName: '', coatColorName: '' });
+
+    notifications.show({
+      title: '新規登録にコピーしました',
+      message: '血統書番号と猫名以外の項目をコピーしました。血統書番号と猫名を入力して登録してください。',
+      color: 'teal',
+    });
+  }, [copyFromId, copySourcePedigree]);
+
+  // +ボタンクリック時に最新血統書番号+1を取得
+  const handleGetNextId = async () => {
+    try {
+      const response = await getNextPedigreeId();
+      if (response.success && response.data?.nextId) {
+        const nextId = response.data.nextId;
+        setPedigreeIdInput(nextId);
+        setFormData(prev => ({ ...prev, pedigreeId: nextId }));
+        notifications.show({
+          title: '最新血統書番号を取得しました',
+          message: `次の番号: ${nextId}`,
+          color: 'teal',
+        });
+      }
+    } catch (error: unknown) {
+      console.error('最新血統書番号の取得に失敗:', error);
+      notifications.show({
+        title: 'エラー',
+        message: '最新血統書番号の取得に失敗しました',
+        color: 'red',
+      });
+    }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    fetchMasterData();
+  }, []);
+
+  const fetchMasterData = async () => {
+    try {
+      // 品種
+      const breedsRes = await getBreeds({ limit: '1000' });
+      if (breedsRes.success && breedsRes.data) {
+        setBreeds(breedsRes.data || []);
+      }
+
+      // 毛色
+      const colorsRes = await getCoatColors({ limit: '1000' });
+      if (colorsRes.success && colorsRes.data) {
+        setCoatColors(colorsRes.data || []);
+      }
+
+      // 性別
+      const gendersRes = await getGenders();
+      if (gendersRes.success && gendersRes.data) {
+        setGenders(gendersRes.data || []);
+      }
+    } catch (error) {
+      console.error('マスターデータの取得に失敗:', error);
+    }
+  };
+
+  // 毛色コード/文字列から毛色名を取得するヘルパー
+  const getCoatColorName = (codeOrName: number | string | undefined | null): string => {
+    if (codeOrName === undefined || codeOrName === null || codeOrName === '') return '';
+
+    // 数値または数値の文字列の場合、コードとして検索
+    const code = Number(codeOrName);
+    if (!isNaN(code)) {
+      const found = coatColors.find(c => c.code === code);
+      return found ? found.name : codeOrName.toString();
+    }
+
+    // 既に名前の場合はそのまま返す
+    return codeOrName.toString();
+  };
+
+  // Call ID: 血統書番号から血統情報を取得（デバウンス付き）
+  const handleBothParentsCall = async (pedigreeNumber: string) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    const timeout = setTimeout(async () => {
+      if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
+
+      try {
+        const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
+          pathParams: { pedigreeId: pedigreeNumber },
+        });
+
+        if (response.success && response.data) {
+          const data = response.data as PedigreeRecord;
+
+          // 父親情報を設定（7項目）
+          updateFormData('fatherTitle', (data as PedigreeFormData).fatherTitle);
+          updateFormData('fatherCatName', (data as PedigreeFormData).fatherCatName);
+          updateFormData('fatherCatName2', data.fatherCatName2);
+          updateFormData('fatherCoatColor', data.fatherCoatColor);
+          updateFormData('fatherEyeColor', data.fatherEyeColor);
+          updateFormData('fatherJCU', data.fatherJCU);
+          updateFormData('fatherOtherCode', data.fatherOtherCode);
+
+          // 母親情報を設定（7項目）
+          updateFormData('motherTitle', data.motherTitle);
+          updateFormData('motherCatName', data.motherCatName);
+          updateFormData('motherCatName2', data.motherCatName2);
+          updateFormData('motherCoatColor', data.motherCoatColor);
+          updateFormData('motherEyeColor', data.motherEyeColor);
+          updateFormData('motherJCU', data.motherJCU);
+          updateFormData('motherOtherCode', data.motherOtherCode);
+
+          // 祖父母情報を設定（16項目）
+          updateFormData('ffTitle', data.ffTitle);
+          updateFormData('ffCatName', data.ffCatName);
+          updateFormData('ffCatColor', data.ffCatColor);
+          updateFormData('ffjcu', data.ffjcu);
+
+          updateFormData('fmTitle', data.fmTitle);
+          updateFormData('fmCatName', data.fmCatName);
+          updateFormData('fmCatColor', data.fmCatColor);
+          updateFormData('fmjcu', data.fmjcu);
+
+          updateFormData('mfTitle', data.mfTitle);
+          updateFormData('mfCatName', data.mfCatName);
+          updateFormData('mfCatColor', data.mfCatColor);
+          updateFormData('mfjcu', data.mfjcu);
+
+          updateFormData('mmTitle', data.mmTitle);
+          updateFormData('mmCatName', data.mmCatName);
+          updateFormData('mmCatColor', data.mmCatColor);
+          updateFormData('mmjcu', data.mmjcu);
+
+          // 曾祖父母情報を設定（32項目）
+          updateFormData('fffTitle', data.fffTitle);
+          updateFormData('fffCatName', data.fffCatName);
+          updateFormData('fffCatColor', data.fffCatColor);
+          updateFormData('fffjcu', data.fffjcu);
+
+          updateFormData('ffmTitle', data.ffmTitle);
+          updateFormData('ffmCatName', data.ffmCatName);
+          updateFormData('ffmCatColor', data.ffmCatColor);
+          updateFormData('ffmjcu', data.ffmjcu);
+
+          updateFormData('fmfTitle', data.fmfTitle);
+          updateFormData('fmfCatName', data.fmfCatName);
+          updateFormData('fmfCatColor', data.fmfCatColor);
+          updateFormData('fmfjcu', data.fmfjcu);
+
+          updateFormData('fmmTitle', data.fmmTitle);
+          updateFormData('fmmCatName', data.fmmCatName);
+          updateFormData('fmmCatColor', data.fmmCatColor);
+          updateFormData('fmmjcu', data.fmmjcu);
+
+          updateFormData('mffTitle', data.mffTitle);
+          updateFormData('mffCatName', data.mffCatName);
+          updateFormData('mffCatColor', data.mffCatColor);
+          updateFormData('mffjcu', data.mffjcu);
+
+          updateFormData('mfmTitle', data.mfmTitle);
+          updateFormData('mfmCatName', data.mfmCatName);
+          updateFormData('mfmCatColor', data.mfmCatColor);
+          updateFormData('mfmjcu', data.mfmjcu);
+
+          updateFormData('mmfTitle', data.mmfTitle);
+          updateFormData('mmfCatName', data.mmfCatName);
+          updateFormData('mmfCatColor', data.mmfCatColor);
+          updateFormData('mmfjcu', data.mmfjcu);
+
+          updateFormData('mmmTitle', data.mmmTitle);
+          updateFormData('mmmCatName', data.mmmCatName);
+          updateFormData('mmmCatColor', data.mmmCatColor);
+          updateFormData('mmmjcu', data.mmmjcu);
+
+          notifications.show({
+            title: '両親血統情報取得',
+            message: `${data.catName}の血統情報を一括取得しました（62項目）`,
+            color: 'green',
+          });
+        } else {
+          notifications.show({
+            title: '検索結果なし',
+            message: `血統書番号 ${pedigreeNumber} が見つかりませんでした`,
+            color: 'yellow',
+          });
+        }
+      } catch (error) {
+        console.error('両親血統情報の取得に失敗:', error);
+        notifications.show({
+          title: 'エラー',
+          message: '血統情報の取得に失敗しました',
+          color: 'red',
+        });
+      }
+    }, 800);
+
+    setSearchTimeout(timeout);
+  };
+
+  // Call ID: 父猫IDから取得（父+祖父母16項目）
+  const handleFatherCall = async (pedigreeNumber: string) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    const timeout = setTimeout(async () => {
+      if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
+
+      try {
+        const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
+          pathParams: { pedigreeId: pedigreeNumber },
+        });
+
+        if (response.success && response.data) {
+          const data = response.data as PedigreeRecord;
+
+          // 取得したデータをPedigreeFormDataとしてキャスト
+          const source = data as unknown as PedigreeFormData;
+
+          setFormData(prev => ({
+            ...prev,
+            // 父親情報（7項目） <- 本人情報
+            fatherTitle: source.title,
+            fatherCatName: source.catName,
+            fatherCoatColor: getCoatColorName(source.coatColorCode),
+            fatherEyeColor: source.eyeColor,
+            fatherJCU: source.pedigreeId,
+            fatherOtherCode: source.otherNo, // PedigreeRecordにはないかもしれないがFormDataにはある可能性
+
+            // 父方祖父（FF） <- 本人の父
+            ffTitle: source.fatherTitle,
+            ffCatName: source.fatherCatName,
+            ffCatColor: getCoatColorName(source.fatherCoatColor),
+            ffjcu: source.fatherJCU,
+
+            // 父方祖母（FM） <- 本人の母
+            fmTitle: source.motherTitle,
+            fmCatName: source.motherCatName,
+            fmCatColor: getCoatColorName(source.motherCoatColor),
+            fmjcu: source.motherJCU,
+
+            // 父方曾祖父（FFF） <- 本人の父方祖父
+            fffTitle: source.ffTitle,
+            fffCatName: source.ffCatName,
+            fffCatColor: getCoatColorName(source.ffCatColor),
+            fffjcu: source.ffjcu,
+
+            // 父方曾祖母（FFM） <- 本人の父方祖母
+            ffmTitle: source.fmTitle,
+            ffmCatName: source.fmCatName,
+            ffmCatColor: getCoatColorName(source.fmCatColor),
+            ffmjcu: source.fmjcu,
+
+            // 父方母方祖父（FMF） <- 本人の母方祖父
+            fmfTitle: source.mfTitle,
+            fmfCatName: source.mfCatName,
+            fmfCatColor: getCoatColorName(source.mfCatColor),
+            fmfjcu: source.mfjcu,
+
+            // 父方母方祖母（FMM） <- 本人の母方祖母
+            fmmTitle: source.mmTitle,
+            fmmCatName: source.mmCatName,
+            fmmCatColor: getCoatColorName(source.mmCatColor),
+            fmmjcu: source.mmjcu,
+          }));
+
+          notifications.show({
+            title: '父猫血統情報取得',
+            message: `${data.catName}の血統情報を取得し、父方家系図に反映しました`,
+            color: 'blue',
+          });
+        }
+      } catch (error) {
+        console.error('父猫血統情報の取得に失敗:', error);
+      }
+    }, 800);
+
+    setSearchTimeout(timeout);
+  };
+
+  // Call ID: 母猫IDから取得（母+祖父母16項目）
+  const handleMotherCall = async (pedigreeNumber: string) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    const timeout = setTimeout(async () => {
+      if (!pedigreeNumber.trim() || pedigreeNumber.length < 5) return;
+
+      try {
+        const response = await apiClient.get('/pedigrees/pedigree-id/{pedigreeId}', {
+          pathParams: { pedigreeId: pedigreeNumber },
+        });
+
+        if (response.success && response.data) {
+          const data = response.data as PedigreeRecord;
+
+          // 取得したデータをPedigreeFormDataとしてキャスト
+          const source = data as unknown as PedigreeFormData;
+
+          setFormData(prev => ({
+            ...prev,
+            // 母親情報（7項目） <- 本人情報
+            motherTitle: source.title,
+            motherCatName: source.catName,
+            motherCoatColor: getCoatColorName(source.coatColorCode),
+            motherEyeColor: source.eyeColor,
+            motherJCU: source.pedigreeId,
+            motherOtherCode: source.otherNo, // PedigreeRecordにはないかもしれないがFormDataにはある可能性
+
+            // 母方祖父（MF） <- 本人の父
+            mfTitle: source.fatherTitle,
+            mfCatName: source.fatherCatName,
+            mfCatColor: getCoatColorName(source.fatherCoatColor),
+            mfjcu: source.fatherJCU,
+
+            // 母方祖母（MM） <- 本人の母
+            mmTitle: source.motherTitle,
+            mmCatName: source.motherCatName,
+            mmCatColor: getCoatColorName(source.motherCoatColor),
+            mmjcu: source.motherJCU,
+
+            // 母方曾祖父（MFF） <- 本人の父方祖父
+            mffTitle: source.ffTitle,
+            mffCatName: source.ffCatName,
+            mffCatColor: getCoatColorName(source.ffCatColor),
+            mffjcu: source.ffjcu,
+
+            // 母方曾祖母（MFM） <- 本人の父方祖母
+            mfmTitle: source.fmTitle,
+            mfmCatName: source.fmCatName,
+            mfmCatColor: getCoatColorName(source.fmCatColor),
+            mfmjcu: source.fmjcu,
+
+            // 母方母方祖父（MMF） <- 本人の母方祖父
+            mmfTitle: source.mfTitle,
+            mmfCatName: source.mfCatName,
+            mmfCatColor: getCoatColorName(source.mfCatColor),
+            mmfjcu: source.mfjcu,
+
+            // 母方母方祖母（MMM） <- 本人の母方祖母
+            mmmTitle: source.mmTitle,
+            mmmCatName: source.mmCatName,
+            mmmCatColor: getCoatColorName(source.mmCatColor),
+            mmmjcu: source.mmjcu,
+          }));
+
+          notifications.show({
+            title: '母猫血統情報取得',
+            message: `${data.catName}の血統情報を取得し、母方家系図に反映しました`,
+            color: 'pink',
+          });
+        }
+      } catch (error) {
+        console.error('母猫血統情報の取得に失敗:', error);
+      }
+    }, 800);
+
+    setSearchTimeout(timeout);
+  };
+
+  // フォーム送信（新規登録）
+  const handleCreate = async () => {
+    setLoading(true);
+
+    try {
+      // 必須チェック
+      if (!formData.pedigreeId.trim()) {
+        notifications.show({
+          title: 'バリデーションエラー',
+          message: '血統書番号は必須です',
+          color: 'red',
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 新規登録
+      await createMutation.mutateAsync(formData as Parameters<typeof createMutation.mutateAsync>[0]);
+
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/pedigrees?tab=list');
+      }
+    } catch (error) {
+      console.error('登録エラー:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // フォーム送信（更新）
+  const handleUpdate = async () => {
+    setLoading(true);
+
+    try {
+      if (!originalId) {
+        notifications.show({
+          title: 'エラー',
+          message: '更新対象のIDが見つかりません',
+          color: 'red',
+        });
+        setLoading(false);
+        return;
+      }
+
+      // UpdatePedigreeRequestは血統書番号を除く全フィールド
+      const { pedigreeId: _pedigreeId, ...updateData } = formData;
+      await updateMutationHook.mutateAsync(updateData as UpdatePedigreeRequest);
+
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/pedigrees?tab=list');
+      }
+    } catch (error: unknown) {
+      console.error('更新エラー:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // フォームクリア
+  const handleClear = () => {
+    setFormData({ pedigreeId: '' });
+    setPedigreeIdInput('');
+    setIsEditMode(false);
+    setOriginalId(null);
+    setCallId({ both: '', father: '', mother: '' });
+    setInputValues({ breedName: '', genderName: '', coatColorName: '' });
+    notifications.show({
+      title: 'フォームをクリアしました',
+      message: '新規登録モードに戻りました',
+      color: 'blue',
+    });
+  };
+
+  // フォーム送信（旧実装との互換性維持）
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isEditMode) {
+      await handleUpdate();
+    } else {
+      await handleCreate();
+    }
+  };
+
+  const updateFormData = (field: keyof PedigreeFormData, value: unknown) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // JCUナンバーの重複チェック
+  const duplicateJcus = useMemo(() => {
+    const jcuFields = [
+      formData.fatherJCU, formData.motherJCU,
+      formData.ffjcu, formData.fmjcu, formData.mfjcu, formData.mmjcu,
+      formData.fffjcu, formData.ffmjcu, formData.fmfjcu, formData.fmmjcu,
+      formData.mffjcu, formData.mfmjcu, formData.mmfjcu, formData.mmmjcu
+    ];
+
+    // 空文字・undefined・nullを除外して正規化
+    const normalizedJcus = jcuFields
+      .map(jcu => jcu?.trim())
+      .filter((jcu): jcu is string => !!jcu && jcu.length > 0);
+
+    const counts: Record<string, number> = {};
+    normalizedJcus.forEach(jcu => {
+      counts[jcu] = (counts[jcu] || 0) + 1;
+    });
+
+    const duplicates = new Set<string>();
+    Object.entries(counts).forEach(([jcu, count]) => {
+      if (count > 1) duplicates.add(jcu);
+    });
+
+    return duplicates;
+  }, [
+    formData.fatherJCU, formData.motherJCU,
+    formData.ffjcu, formData.fmjcu, formData.mfjcu, formData.mmjcu,
+    formData.fffjcu, formData.ffmjcu, formData.fmfjcu, formData.fmmjcu,
+    formData.mffjcu, formData.mfmjcu, formData.mmfjcu, formData.mmmjcu
+  ]);
+
+  // 重複時のスタイル定義
+  const duplicateStyle = { input: { color: '#00BFFF', fontWeight: 'bold' } };
+
+  // フィールドが重複しているか判定するヘルパー
+  const isDuplicate = (value: string | undefined) => {
+    return value && duplicateJcus.has(value.trim());
+  };
+
+  const openPedigreePdf = (pedigreeId: string) => {
+    const pdfUrl = `${apiBaseUrl}/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
+    const newTab = window.open(pdfUrl, '_blank');
+    if (!newTab) {
+      window.location.assign(pdfUrl);
+    }
+  };
+
+  // コードと名称の同期ロジック (Select化により不要になったため削除済み)
+
+  // 名称解決ヘルパー (削除予定だが、他の箇所で使われている可能性があるため確認)
+  // const getBreedName = ... 
+  // 今回の改修で inputValues に置き換わったため削除します。
+
+  if (!mounted) return null;
+
+  return (
+    <Box>
+      <form onSubmit={handleSubmit}>
+        <Stack gap="lg">
+          {/* 基本情報（17項目）*/}
+          <Paper p="lg" withBorder>
+            <Grid gutter={10}>
+              {/* Row 1: +ボタン, 血統書番号（2列） */}
+              <Grid.Col span={12}>
+                <Group wrap="nowrap" gap="xs">
+                  <Tooltip label="次の血統書番号を自動取得">
+                    <ActionIcon variant="filled" color="blue" size="lg" onClick={handleGetNextId} style={{ height: 36 }}>
+                      <IconPlus size={18} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label={isEditMode ? '血統書PDFを印刷' : '登録済みデータを読み込むと印刷できます'}>
+                    <ActionIcon
+                      variant="light"
+                      color="orange"
+                      size="lg"
+                      disabled={!isEditMode || !formData.pedigreeId.trim()}
+                      onClick={() => {
+                        if (!isEditMode) return;
+                        const id = formData.pedigreeId.trim();
+                        if (!id) return;
+                        openPedigreePdf(id);
+                      }}
+                      style={{ height: 36 }}
+                    >
+                      <IconPrinter size={18} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <InputWithFloatingLabel
+                    label="血統書番号"
+                    required
+                    value={pedigreeIdInput}
+                    onChange={(e) => {
+                      setPedigreeIdInput(e.target.value);
+                      updateFormData('pedigreeId', e.target.value);
+                    }}
+                    rightSection={isLoadingExisting ? <Text size="xs">読込中...</Text> : undefined}
+                    style={{ flex: 1 }}
+                  />
+                </Group>
+              </Grid.Col>
+
+              {/* Row 2: キャッテリー名, 猫の名前（2列） */}
+              <Grid.Col span={{ base: 6, md: 4 }}>
+                <InputWithFloatingLabel
+                  label="キャッテリー名"
+                  value={formData.catName2}
+                  onChange={(e) => updateFormData('catName2', e.target.value)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 6, md: 4 }}>
+                <InputWithFloatingLabel
+                  label="猫の名前"
+                  value={formData.catName}
+                  onChange={(e) => updateFormData('catName', e.target.value)}
+                />
+              </Grid.Col>
+
+              {/* Row 3: 品種（コード+名前統合）、毛色（コード+名前統合） - 2カラムレスポンシブ */}
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <SelectWithFloatingLabel
+                  label="品種を選択"
+                  data={breeds.map(b => ({ value: b.code.toString(), label: `${b.code} - ${b.name}` }))}
+                  value={formData.breedCode?.toString() || null}
+                  onChange={(value) => {
+                    if (value) {
+                      const code = parseInt(value, 10);
+                      updateFormData('breedCode', code);
+                      const found = breeds.find(b => b.code === code);
+                      setInputValues(prev => ({ ...prev, breedName: found?.name || '' }));
+                    } else {
+                      updateFormData('breedCode', undefined);
+                      setInputValues(prev => ({ ...prev, breedName: '' }));
+                    }
+                  }}
+                  searchable
+                  clearable
+                  nothingFoundMessage="該当する品種がありません"
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <SelectWithFloatingLabel
+                  label="毛色を選択"
+                  data={coatColors.map(c => ({ value: c.code.toString(), label: `${c.code} - ${c.name}` }))}
+                  value={formData.coatColorCode?.toString() || null}
+                  onChange={(value) => {
+                    if (value) {
+                      const code = parseInt(value, 10);
+                      updateFormData('coatColorCode', code);
+                      const found = coatColors.find(c => c.code === code);
+                      setInputValues(prev => ({ ...prev, coatColorName: found?.name || '' }));
+                    } else {
+                      updateFormData('coatColorCode', undefined);
+                      setInputValues(prev => ({ ...prev, coatColorName: '' }));
+                    }
+                  }}
+                  searchable
+                  clearable
+                  nothingFoundMessage="該当する毛色がありません"
+                />
+              </Grid.Col>
+
+              {/* Row 4: 性別（コード+名前統合）、目の色 - 2カラムレスポンシブ */}
+              <Grid.Col span={{ base: 6, sm: 4, md: 2 }}>
+                <SelectWithFloatingLabel
+                  label="性別を選択"
+                  data={genders.map(g => ({ value: g.code.toString(), label: `${g.code} - ${g.name}` }))}
+                  value={formData.genderCode?.toString() || null}
+                  onChange={(value) => {
+                    if (value) {
+                      const code = parseInt(value, 10);
+                      updateFormData('genderCode', code);
+                      const found = genders.find(g => g.code === code);
+                      setInputValues(prev => ({ ...prev, genderName: found?.name || '' }));
+                    } else {
+                      updateFormData('genderCode', undefined);
+                      setInputValues(prev => ({ ...prev, genderName: '' }));
+                    }
+                  }}
+                  clearable
+                  nothingFoundMessage="該当する性別がありません"
+                />
+              </Grid.Col>
+
+              {/* Row 6: 目の色, 生年月日, 登録年月日（3列均等） */}
+              <Grid.Col span={{ base: 4, md: 3 }}>
+                <InputWithFloatingLabel
+                  label="目の色"
+                  value={formData.eyeColor}
+                  onChange={(e) => updateFormData('eyeColor', e.target.value)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 4, md: 3 }}>
+                <InputWithFloatingLabel
+                  label="生年月日"
+                  value={formData.birthDate}
+                  onChange={(e) => updateFormData('birthDate', e.target.value)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 4, md: 3 }}>
+                <InputWithFloatingLabel
+                  label="登録年月日"
+                  value={formData.registrationDate}
+                  onChange={(e) => updateFormData('registrationDate', e.target.value)}
+                />
+              </Grid.Col>
+
+              {/* Row 7: ブリーダー名, オーナー名（2列） */}
+              <Grid.Col span={{ base: 6, md: 4 }}>
+                <InputWithFloatingLabel
+                  label="ブリーダー名"
+                  value={formData.breederName}
+                  onChange={(e) => updateFormData('breederName', e.target.value)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 6, md: 4 }}>
+                <InputWithFloatingLabel
+                  label="オーナー名"
+                  value={formData.ownerName}
+                  onChange={(e) => updateFormData('ownerName', e.target.value)}
+                />
+              </Grid.Col>
+
+              {/* Row 8: 兄弟, 姉妹, タイトル, 他団体No（4列） */}
+              <Grid.Col span={{ base: 3, md: 1 }}>
+                <InputWithFloatingLabel
+                  label="兄弟"
+                  type="number"
+                  value={formData.brotherCount?.toString()}
+                  onChange={(e) => updateFormData('brotherCount', parseInt(e.target.value) || undefined)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 3, md: 1 }}>
+                <InputWithFloatingLabel
+                  label="姉妹"
+                  type="number"
+                  value={formData.sisterCount?.toString()}
+                  onChange={(e) => updateFormData('sisterCount', parseInt(e.target.value) || undefined)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 3, md: 3 }}>
+                <InputWithFloatingLabel
+                  label="タイトル"
+                  value={formData.title}
+                  onChange={(e) => updateFormData('title', e.target.value)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 3, md: 4 }}>
+                <InputWithFloatingLabel
+                  label="他団体No"
+                  value={formData.otherNo}
+                  onChange={(e) => updateFormData('otherNo', e.target.value)}
+                />
+              </Grid.Col>
+
+              {/* Row 9: 備考, 備考2（2列） */}
+              <Grid.Col span={{ base: 6, md: 5 }}>
+                <InputWithFloatingLabel
+                  label="備考"
+                  value={formData.notes}
+                  onChange={(e) => updateFormData('notes', e.target.value)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 6, md: 5 }}>
+                <InputWithFloatingLabel
+                  label="備考２"
+                  value={formData.notes2}
+                  onChange={(e) => updateFormData('notes2', e.target.value)}
+                />
+              </Grid.Col>
+            </Grid>
+          </Paper>
+
+          {/* Call ID */}
+          <Paper p="lg" withBorder>
+            <Grid gutter={10}>
+              <Grid.Col span={12}><Divider label="Call ID" /></Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <InputWithFloatingLabel
+                  label="両親ID"
+                  value={callId.both}
+                  onChange={(e) => {
+                    setCallId(prev => ({ ...prev, both: e.target.value }));
+                    handleBothParentsCall(e.target.value);
+                  }}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <InputWithFloatingLabel
+                  label="父猫ID"
+                  value={callId.father}
+                  onChange={(e) => {
+                    setCallId(prev => ({ ...prev, father: e.target.value }));
+                    handleFatherCall(e.target.value);
+                  }}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <InputWithFloatingLabel
+                  label="母猫ID"
+                  value={callId.mother}
+                  onChange={(e) => {
+                    setCallId(prev => ({ ...prev, mother: e.target.value }));
+                    handleMotherCall(e.target.value);
+                  }}
+                />
+              </Grid.Col>
+            </Grid>
+          </Paper>
+
+          {/* 血統情報（62項目）*/}
+          <Paper p="lg" withBorder>
+            <Stack gap="lg">
+              {/* 第1世代: 両親（14項目）*/}
+              <Box>
+                <Divider label="第1世代: 両親（14項目）" mb="md" />
+                <Grid gutter={10}>
+                  <Grid.Col span={12}><Divider label="父親（7項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親タイトル" value={formData.fatherTitle} onChange={(e) => updateFormData('fatherTitle', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親名" value={formData.fatherCatName} onChange={(e) => updateFormData('fatherCatName', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親毛色" value={formData.fatherCoatColor} onChange={(e) => updateFormData('fatherCoatColor', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親目の色" value={formData.fatherEyeColor} onChange={(e) => updateFormData('fatherEyeColor', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel
+                      label="父親JCU"
+                      value={formData.fatherJCU}
+                      onChange={(e) => updateFormData('fatherJCU', e.target.value)}
+                      styles={isDuplicate(formData.fatherJCU) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="父親他団体コード" value={formData.fatherOtherCode} onChange={(e) => updateFormData('fatherOtherCode', e.target.value)} />
+                  </Grid.Col>
+
+                  <Grid.Col span={12}><Divider label="母親（7項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親タイトル" value={formData.motherTitle} onChange={(e) => updateFormData('motherTitle', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親名" value={formData.motherCatName} onChange={(e) => updateFormData('motherCatName', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親毛色" value={formData.motherCoatColor} onChange={(e) => updateFormData('motherCoatColor', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親目の色" value={formData.motherEyeColor} onChange={(e) => updateFormData('motherEyeColor', e.target.value)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel
+                      label="母親JCU"
+                      value={formData.motherJCU}
+                      onChange={(e) => updateFormData('motherJCU', e.target.value)}
+                      styles={isDuplicate(formData.motherJCU) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel label="母親他団体コード" value={formData.motherOtherCode} onChange={(e) => updateFormData('motherOtherCode', e.target.value)} />
+                  </Grid.Col>
+                </Grid>
+              </Box>
+
+              {/* 第2世代: 祖父母（16項目）*/}
+              <Box>
+                <Divider label="第2世代: 祖父母（16項目）" mb="md" />
+                <Grid gutter={10}>
+                  {/* FF */}
+                  <Grid.Col span={12}><Divider label="父方祖父（4項目）" /></Grid.Col>
+
+                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="FFタイトル" value={formData.ffTitle} onChange={(e) => updateFormData('ffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="FF名前" value={formData.ffCatName} onChange={(e) => updateFormData('ffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="FF色柄" value={formData.ffCatColor} onChange={(e) => updateFormData('ffCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 3 }}>
+                    <InputWithFloatingLabel
+                      label="FFナンバー"
+                      value={formData.ffjcu}
+                      onChange={(e) => updateFormData('ffjcu', e.target.value)}
+                      styles={isDuplicate(formData.ffjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  <Grid.Col span={12}><Divider label="父方祖母（4項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FMタイトル" value={formData.fmTitle} onChange={(e) => updateFormData('fmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FM名前" value={formData.fmCatName} onChange={(e) => updateFormData('fmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FM色柄" value={formData.fmCatColor} onChange={(e) => updateFormData('fmCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel
+                      label="FMナンバー"
+                      value={formData.fmjcu}
+                      onChange={(e) => updateFormData('fmjcu', e.target.value)}
+                      styles={isDuplicate(formData.fmjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  {/* MF */}
+                  <Grid.Col span={12}><Divider label="母方祖父（4項目）" /></Grid.Col>
+
+                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="MFタイトル" value={formData.mfTitle} onChange={(e) => updateFormData('mfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="MF名前" value={formData.mfCatName} onChange={(e) => updateFormData('mfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="MF色柄" value={formData.mfCatColor} onChange={(e) => updateFormData('mfCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 3 }}>
+                    <InputWithFloatingLabel
+                      label="MFナンバー"
+                      value={formData.mfjcu}
+                      onChange={(e) => updateFormData('mfjcu', e.target.value)}
+                      styles={isDuplicate(formData.mfjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  <Grid.Col span={12}><Divider label="母方祖母（4項目）" /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MMタイトル" value={formData.mmTitle} onChange={(e) => updateFormData('mmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MM名前" value={formData.mmCatName} onChange={(e) => updateFormData('mmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MM色柄" value={formData.mmCatColor} onChange={(e) => updateFormData('mmCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
+                    <InputWithFloatingLabel
+                      label="MMナンバー"
+                      value={formData.mmjcu}
+                      onChange={(e) => updateFormData('mmjcu', e.target.value)}
+                      styles={isDuplicate(formData.mmjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+                </Grid>
+              </Box>
+
+              {/* 第3世代: 曾祖父母（32項目）*/}
+              <Box>
+                <Divider label="第3世代: 曾祖父母（32項目）" mb="md" />
+                <Grid gutter={10}>
+                  {/* FFF */}
+                  <Grid.Col span={12}><Divider label="父父父（FFF）" /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FFFタイトル" value={formData.fffTitle} onChange={(e) => updateFormData('fffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FFF名前" value={formData.fffCatName} onChange={(e) => updateFormData('fffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <InputWithFloatingLabel
+                      label="FFFナンバー"
+                      value={formData.fffjcu}
+                      onChange={(e) => updateFormData('fffjcu', e.target.value)}
+                      styles={isDuplicate(formData.fffjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  {/* FFM */}
+                  <Grid.Col span={12}><Divider label="父父母（FFM）" /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FFMタイトル" value={formData.ffmTitle} onChange={(e) => updateFormData('ffmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FFM名前" value={formData.ffmCatName} onChange={(e) => updateFormData('ffmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <InputWithFloatingLabel
+                      label="FFMナンバー"
+                      value={formData.ffmjcu}
+                      onChange={(e) => updateFormData('ffmjcu', e.target.value)}
+                      styles={isDuplicate(formData.ffmjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  {/* FMF */}
+                  <Grid.Col span={12}><Divider label="父母父（FMF）" /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FMFタイトル" value={formData.fmfTitle} onChange={(e) => updateFormData('fmfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FMF名前" value={formData.fmfCatName} onChange={(e) => updateFormData('fmfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <InputWithFloatingLabel
+                      label="FMFナンバー"
+                      value={formData.fmfjcu}
+                      onChange={(e) => updateFormData('fmfjcu', e.target.value)}
+                      styles={isDuplicate(formData.fmfjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  {/* FMM */}
+                  <Grid.Col span={12}><Divider label="父母母（FMM）" /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FMMタイトル" value={formData.fmmTitle} onChange={(e) => updateFormData('fmmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FMM名前" value={formData.fmmCatName} onChange={(e) => updateFormData('fmmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <InputWithFloatingLabel
+                      label="FMMナンバー"
+                      value={formData.fmmjcu}
+                      onChange={(e) => updateFormData('fmmjcu', e.target.value)}
+                      styles={isDuplicate(formData.fmmjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  {/* MFF */}
+                  <Grid.Col span={12}><Divider label="母父父（MFF）" /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MFFタイトル" value={formData.mffTitle} onChange={(e) => updateFormData('mffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MFF名前" value={formData.mffCatName} onChange={(e) => updateFormData('mffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <InputWithFloatingLabel
+                      label="MFFナンバー"
+                      value={formData.mffjcu}
+                      onChange={(e) => updateFormData('mffjcu', e.target.value)}
+                      styles={isDuplicate(formData.mffjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  {/* MFM */}
+                  <Grid.Col span={12}><Divider label="母父母（MFM）" /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MFMタイトル" value={formData.mfmTitle} onChange={(e) => updateFormData('mfmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MFM名前" value={formData.mfmCatName} onChange={(e) => updateFormData('mfmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <InputWithFloatingLabel
+                      label="MFMナンバー"
+                      value={formData.mfmjcu}
+                      onChange={(e) => updateFormData('mfmjcu', e.target.value)}
+                      styles={isDuplicate(formData.mfmjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  {/* MMF */}
+                  <Grid.Col span={12}><Divider label="母母父（MMF）" /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MMFタイトル" value={formData.mmfTitle} onChange={(e) => updateFormData('mmfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MMF名前" value={formData.mmfCatName} onChange={(e) => updateFormData('mmfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <InputWithFloatingLabel
+                      label="MMFナンバー"
+                      value={formData.mmfjcu}
+                      onChange={(e) => updateFormData('mmfjcu', e.target.value)}
+                      styles={isDuplicate(formData.mmfjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+
+                  {/* MMM */}
+                  <Grid.Col span={12}><Divider label="母母母（MMM）" /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MMMタイトル" value={formData.mmmTitle} onChange={(e) => updateFormData('mmmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MMM名前" value={formData.mmmCatName} onChange={(e) => updateFormData('mmmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <InputWithFloatingLabel
+                      label="MMMナンバー"
+                      value={formData.mmmjcu}
+                      onChange={(e) => updateFormData('mmmjcu', e.target.value)}
+                      styles={isDuplicate(formData.mmmjcu) ? duplicateStyle : undefined}
+                    />
+                  </Grid.Col>
+                </Grid>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* 送信ボタン */}
+          <Group justify="space-between" pt="md">
+            <Button variant="subtle" leftSection={<IconArrowLeft size={16} />} onClick={() => onCancel ? onCancel() : router.back()}>
+              キャンセル
+            </Button>
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <Button
+                  loading={loading}
+                  leftSection={<IconDeviceFloppy size={16} />}
+                  rightSection={<IconChevronDown size={16} />}
+                  size="lg"
+                >
+                  {isEditMode ? '血統書を更新' : '血統書を登録'}
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconDeviceFloppy size={16} />}
+                  onClick={handleCreate}
+                  disabled={loading}
+                >
+                  新規登録
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconRefresh size={16} />}
+                  onClick={handleUpdate}
+                  disabled={loading || !isEditMode}
+                >
+                  更新
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={<IconTrash size={16} />}
+                  color="red"
+                  onClick={handleClear}
+                  disabled={loading}
+                >
+                  クリア
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
+        </Stack>
+      </form>
+    </Box>
+  );
+}
 ````
 
 ## File: frontend/check-syntax.js
@@ -58362,6 +56992,324 @@ export function WeightRecordModal({
 export default WeightRecordModal;
 ````
 
+## File: frontend/src/components/pedigrees/PedigreeList.tsx
+````typescript
+'use client';
+
+import { useState } from 'react';
+import {
+  Paper,
+  TextInput,
+  Select,
+  Button,
+  Table,
+  Pagination,
+  Badge,
+  Group,
+  Stack,
+  Text,
+  Card,
+  Grid,
+  ActionIcon,
+  Tooltip,
+  LoadingOverlay,
+} from '@mantine/core';
+import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter, IconCopy } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { useGetPedigrees } from '@/lib/api/hooks/use-pedigrees';
+import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
+
+interface PedigreeData {
+  id: string;
+  pedigreeId: string;
+  catName: string;
+  breedCode: number | null;
+  genderCode: number | null;
+  gender?: { code: number; name: string } | null;
+  breed?: { code: number; name: string } | null;
+  coatColor?: { code: number; name: string } | null;
+  birthDate: string | null;
+  breederName: string | null;
+  ownerName: string | null;
+  registrationDate: string | null;
+  notes: string | null;
+  fatherPedigree?: { pedigreeId: string; catName: string } | null;
+  motherPedigree?: { pedigreeId: string; catName: string } | null;
+}
+
+interface PedigreeListProps {
+  onSelectFamilyTree?: (id: string) => void;
+}
+
+export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [genderFilter, setGenderFilter] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const apiBaseUrl = getPublicApiBaseUrl();
+
+  const genderOptions = [
+    { value: '', label: '全て' },
+    { value: '1', label: '雄' },
+    { value: '2', label: '雌' },
+  ];
+
+  // React Query フックでデータ取得
+  const { data, isLoading, refetch } = useGetPedigrees({
+    page: currentPage,
+    limit: 20,
+    search: searchTerm || undefined,
+    gender: genderFilter || undefined,
+  });
+
+  const pedigrees = (data?.data || []) as unknown as PedigreeData[];
+  const total = data?.meta?.total || 0;
+  const totalPages = data?.meta?.totalPages || 1;
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    refetch();
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '不明';
+    return new Date(dateString).toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatGender = (pedigree: PedigreeData) => {
+    if (pedigree.gender?.name) {
+      return pedigree.gender.name;
+    }
+    switch (pedigree.genderCode) {
+      case 1: return 'Male';
+      case 2: return 'Female';
+      case 3: return 'Neuter';
+      case 4: return 'Spay';
+      default: return 'Unknown';
+    }
+  };
+
+  const getGenderColor = (pedigree: PedigreeData) => {
+    const code = pedigree.gender?.code ?? pedigree.genderCode;
+    switch (code) {
+      case 1: return 'blue';
+      case 2: return 'pink';
+      case 3: return 'cyan';
+      case 4: return 'violet';
+      default: return 'gray';
+    }
+  };
+
+  const openPedigreePdf = (pedigreeId: string) => {
+    const pdfUrl = `${apiBaseUrl}/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
+
+    const newTab = window.open(pdfUrl, '_blank');
+    if (!newTab) {
+      // ポップアップがブロックされた場合は同一タブで開く
+      window.location.assign(pdfUrl);
+    }
+  };
+
+  return (
+    <Stack gap="md">
+      <Group justify="space-between">
+        <Group>
+          <Badge size="lg" color="blue">
+            総計: {total}件
+          </Badge>
+        </Group>
+      </Group>
+
+      {/* フィルター・検索セクション */}
+      <Paper p="md" shadow="sm">
+        <Grid>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <TextInput
+              placeholder="猫名、繁殖者名で検索..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              leftSection={<IconSearch size={16} />}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 3 }}>
+            <Select
+              placeholder="性別で絞り込み"
+              data={genderOptions}
+              value={genderFilter}
+              onChange={setGenderFilter}
+              leftSection={<IconFilter size={16} />}
+              clearable
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 3 }}>
+            <Group>
+              <Button onClick={handleSearch} leftSection={<IconSearch size={16} />}>
+                検索
+              </Button>
+              <ActionIcon
+                variant="light"
+                onClick={() => refetch()}
+                size="lg"
+              >
+                <IconRefresh size={16} />
+              </ActionIcon>
+            </Group>
+          </Grid.Col>
+        </Grid>
+      </Paper>
+
+      {/* 血統書リストテーブル */}
+      <Paper shadow="sm" style={{ position: 'relative' }}>
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} />
+
+        <Table striped highlightOnHover>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>血統書番号</Table.Th>
+              <Table.Th>名前</Table.Th>
+              <Table.Th>性別</Table.Th>
+              <Table.Th>猫種</Table.Th>
+              <Table.Th>色柄</Table.Th>
+              <Table.Th>生年月日</Table.Th>
+              <Table.Th>繁殖者</Table.Th>
+              <Table.Th>父親</Table.Th>
+              <Table.Th>母親</Table.Th>
+              <Table.Th>操作</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {pedigrees.map((pedigree) => (
+              <Table.Tr key={pedigree.id}>
+                <Table.Td>
+                  <Text fw={600} size="sm">
+                    {pedigree.pedigreeId}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text fw={500}>
+                    {pedigree.catName || '名前なし'}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Badge color={getGenderColor(pedigree)} size="sm" tt="none">
+                    {formatGender(pedigree)}
+                  </Badge>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm">
+                    {pedigree.breed?.name || pedigree.breedCode || '-'}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm">
+                    {pedigree.coatColor?.name || '-'}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm">
+                    {formatDate(pedigree.birthDate)}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" c="dimmed">
+                    {pedigree.breederName || '-'}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" c="blue">
+                    {pedigree.fatherPedigree
+                      ? `${pedigree.fatherPedigree.pedigreeId} (${pedigree.fatherPedigree.catName})`
+                      : '-'
+                    }
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" c="pink">
+                    {pedigree.motherPedigree
+                      ? `${pedigree.motherPedigree.pedigreeId} (${pedigree.motherPedigree.catName})`
+                      : '-'
+                    }
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Group gap="xs">
+                    <Tooltip label="家系図を見る">
+                      <ActionIcon
+                        variant="light"
+                        color="green"
+                        aria-label="家系図を見る"
+                        onClick={() => onSelectFamilyTree ? onSelectFamilyTree(pedigree.id) : router.push(`/pedigrees?tab=tree&id=${pedigree.id}`)}
+                      >
+                        <IconFileText size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="新規登録にコピー">
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        aria-label="新規登録にコピー"
+                        onClick={() => router.push(`/pedigrees?tab=register&copyFromId=${encodeURIComponent(pedigree.id)}`)}
+                      >
+                        <IconCopy size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="血統書PDFを印刷">
+                      <ActionIcon
+                        variant="light"
+                        color="orange"
+                        aria-label="血統書PDFを印刷"
+                        onClick={() => {
+                          openPedigreePdf(pedigree.pedigreeId);
+                        }}
+                      >
+                        <IconPrinter size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+
+        {pedigrees.length === 0 && !isLoading && (
+          <Card mt="md" p="xl" style={{ textAlign: 'center' }}>
+            <Text size="lg" c="dimmed">
+              血統書データが見つかりませんでした
+            </Text>
+            <Text size="sm" c="dimmed" mt="xs">
+              検索条件を変更してお試しください
+            </Text>
+          </Card>
+        )}
+      </Paper>
+
+      {/* ページネーション */}
+      {totalPages > 1 && (
+        <Group justify="center">
+          <Pagination
+            value={currentPage}
+            onChange={handlePageChange}
+            total={totalPages}
+            size="md"
+          />
+        </Group>
+      )}
+    </Stack>
+  );
+}
+````
+
 ## File: frontend/src/components/print-templates/PrintTemplateManager.tsx
 ````typescript
 'use client';
@@ -62666,519 +61614,6 @@ export function TabsSection({
 }
 ````
 
-## File: frontend/src/app/kittens/page.tsx
-````typescript
-'use client';
-
-import { Fragment, useState, useEffect } from 'react';
-import {
-  Tabs,
-  Button,
-  Group,
-  Card,
-  Text,
-  Badge,
-  Stack,
-  Container,
-  Table,
-} from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import {
-  IconChevronDown,
-  IconChevronRight,
-  IconEdit,
-  IconPaw,
-  IconScale,
-} from '@tabler/icons-react';
-import { useGetKittens, useDeleteCat, type Cat, type KittenGroup } from '@/lib/api/hooks/use-cats';
-import { useGetTagCategories } from '@/lib/api/hooks/use-tags';
-import { type KittenDisposition } from '@/lib/api/hooks/use-breeding';
-import TagSelector, { TagDisplay } from '@/components/TagSelector';
-import { usePageHeader } from '@/lib/contexts/page-header-context';
-import { ContextMenuProvider, useContextMenu, OperationModalManager } from '@/components/context-menu';
-import { CatEditModal } from '@/components/cats/cat-edit-modal';
-import { KittenManagementModal } from '@/components/kittens/KittenManagementModal';
-import { WeightRecordModal } from '@/components/kittens/WeightRecordModal';
-import BulkWeightRecordModal from '@/components/kittens/BulkWeightRecordModal';
-import WeightRecordTable from '@/components/kittens/WeightRecordTable';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { GenderBadge } from '@/components/GenderBadge';
-
-import { ActionButton } from '@/components/ActionButton';
-
-// データ型定義
-interface Kitten {
-  id: string;
-  name: string;
-  color: string;
-  gender: 'オス' | 'メス';
-  weight: number;
-  birthDate: string;
-  notes?: string;
-  tags?: string[];
-  rawCat: Cat;
-  disposition?: KittenDisposition;
-}
-
-interface MotherCat {
-  id: string;
-  name: string;
-  fatherName: string;
-  kittens: Kitten[];
-  deliveryDate: string;
-  daysOld: number;
-}
-
-/**
- * KittenGroup から MotherCat 形式に変換
- */
-function convertKittenGroupToMotherCat(group: KittenGroup): MotherCat {
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const deliveryDate = group.deliveryDate ? formatDate(group.deliveryDate) : '';
-  const daysOld = group.deliveryDate
-    ? Math.floor((new Date().getTime() - new Date(group.deliveryDate).getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
-
-  return {
-    id: group.mother.id,
-    name: group.mother.name,
-    fatherName: group.father?.name ?? '不明',
-    kittens: group.kittens.map((kitten) => ({
-      id: kitten.id,
-      name: kitten.name,
-      color: kitten.coatColor?.name ?? '未確認',
-      gender: kitten.gender === 'MALE' ? 'オス' : 'メス',
-      weight: 350, // TODO: 体重記録機能実装後に実データに置き換え
-      birthDate: formatDate(kitten.birthDate),
-      notes: kitten.description ?? '',
-      tags: kitten.tags?.map((catTag) => catTag.tag.id) ?? [],
-      rawCat: kitten,
-      disposition: undefined, // TODO: 処遇データの取得方法を別途検討
-    })),
-    deliveryDate,
-    daysOld,
-  };
-}
-
-export default function KittensPage() {
-  const { setPageHeader } = usePageHeader();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  
-  // URLパラメータからタブ状態を取得（デフォルトは 'list'）
-  const tabParam = searchParams.get('tab') || 'list';
-  
-  const [motherCats, setMotherCats] = useState<MotherCat[]>([]);
-  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
-  const [filterTags, setFilterTags] = useState<string[]>([]);
-  
-  // 子猫管理モーダル
-  const [managementModalOpened, { open: openManagementModal, close: closeManagementModal }] = useDisclosure(false);
-  const [selectedMotherIdForModal, setSelectedMotherIdForModal] = useState<string | undefined>(undefined);
-  
-  // 編集モーダル
-  const [editModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
-  const [selectedKittenForEdit, setSelectedKittenForEdit] = useState<Cat | null>(null);
-
-  // 体重記録モーダル
-  const [weightModalOpened, { open: openWeightModal, close: closeWeightModal }] = useDisclosure(false);
-  const [selectedKittenForWeight, setSelectedKittenForWeight] = useState<{ id: string; name: string } | null>(null);
-
-  // 一括体重記録モーダル
-  const [bulkWeightModalOpened, { open: openBulkWeightModal, close: closeBulkWeightModal }] = useDisclosure(false);
-
-  // API hooks - 新しい子猫専用APIを使用
-  const kittensQuery = useGetKittens({ limit: 200 });
-  const deleteCatMutation = useDeleteCat();
-  const tagCategoriesQuery = useGetTagCategories();
-
-  // コンテキストメニュー
-  const {
-    currentOperation,
-    currentEntity,
-    handleAction: handleKittenContextAction,
-    openOperation,
-    closeOperation,
-  } = useContextMenu<Cat>({
-    view: (kitten) => {
-      if (kitten) {
-        router.push(`/cats/${kitten.id}`);
-      }
-    },
-    edit: (kitten) => {
-      if (kitten) {
-        setSelectedKittenForEdit(kitten);
-        openEditModal();
-      }
-    },
-    delete: (kitten) => {
-      if (kitten) {
-        openOperation('delete', kitten);
-      }
-    },
-  });
-
-  const handleOperationConfirm = () => {
-    if (currentOperation === 'delete' && currentEntity) {
-      deleteCatMutation.mutate(currentEntity.id, {
-        onSuccess: () => {
-          kittensQuery.refetch();
-          closeOperation();
-        },
-      });
-    }
-  };
-
-  // タブ切り替え時にURLパラメータを更新
-  const handleTabChange = (nextTab: string | null) => {
-    if (!nextTab) return;
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('tab', nextTab);
-    router.push(`${pathname}?${nextParams.toString()}`);
-  };
-
-  // データ読み込み - 新しい子猫専用APIを使用
-  useEffect(() => {
-    if (!kittensQuery.data?.data) return;
-
-    // サーバーサイドでグループ化済みのデータを MotherCat 形式に変換
-    const motherCatsData: MotherCat[] = kittensQuery.data.data.map(convertKittenGroupToMotherCat);
-
-    setMotherCats(motherCatsData);
-  }, [kittensQuery.data]);
-
-  // ページヘッダー設定（タブに応じてボタンを変更）
-  useEffect(() => {
-    const headerActions = (
-      <Group gap="xs">
-        {tabParam === 'weight' && motherCats.length > 0 && (
-          <ActionButton 
-            action="view"
-            customIcon={<IconScale size={18} />}
-            onClick={openBulkWeightModal}
-          >
-            一括記録
-          </ActionButton>
-        )}
-        <ActionButton 
-          action="create"
-          onClick={() => {
-            setSelectedMotherIdForModal(undefined);
-            openManagementModal();
-          }}
-        >
-          作成
-        </ActionButton>
-      </Group>
-    );
-
-    setPageHeader('子猫管理', headerActions);
-
-    return () => setPageHeader(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabParam, motherCats.length]);
-
-  const toggleExpanded = (catId: string) => {
-    const newExpanded = new Set(expandedCats);
-    if (newExpanded.has(catId)) {
-      newExpanded.delete(catId);
-    } else {
-      newExpanded.add(catId);
-    }
-    setExpandedCats(newExpanded);
-  };
-
-  // タグでフィルタリング
-  const getFilteredMotherCats = () => {
-    if (filterTags.length === 0) {
-      return motherCats;
-    }
-
-    return motherCats.map(mother => {
-      const filteredKittens = mother.kittens.filter(kitten => {
-        if (!kitten.tags || kitten.tags.length === 0) {
-          return false;
-        }
-        return filterTags.some(filterTag => (kitten.tags ?? []).includes(filterTag));
-      });
-
-      return { ...mother, kittens: filteredKittens };
-    }).filter(mother => mother.kittens.length > 0);
-  };
-
-  return (
-    <Container size="lg">
-      {/* タグフィルタ */}
-      <Card padding="md" bg="gray.0" mb="md">
-        <TagSelector 
-          selectedTags={filterTags}
-          onChange={setFilterTags}
-          label="タグでフィルタ"
-          placeholder="表示する子猫のタグを選択"
-          categories={tagCategoriesQuery.data?.data || []}
-        />
-      </Card>
-
-      {/* タブ - URLパラメータで状態を管理 */}
-      <Tabs value={tabParam} onChange={handleTabChange} mb="md">
-        <Tabs.List grow>
-          <Tabs.Tab value="list" leftSection={<IconEdit size={14} />}>
-            子猫一覧
-          </Tabs.Tab>
-          <Tabs.Tab value="weight" leftSection={<IconScale size={14} />}>
-            体重管理
-          </Tabs.Tab>
-        </Tabs.List>
-
-        {/* 子猫一覧タブ */}
-        <Tabs.Panel value="list" pt="md">
-          {filterTags.length > 0 && (
-            <Card padding="sm" bg="blue.0" radius="sm" mb="md">
-              <Group gap="xs">
-                <Text size="sm" fw={500}>フィルタ適用中:</Text>
-                <TagDisplay tagIds={filterTags} size="xs" categories={tagCategoriesQuery.data?.data || []} />
-                <Button 
-                  variant="subtle" 
-                  size="xs" 
-                  onClick={() => setFilterTags([])}
-                >
-                  クリア
-                </Button>
-              </Group>
-            </Card>
-          )}
-
-          {/* テーブル表示 */}
-          <Card padding="md" radius="md" withBorder>
-            {kittensQuery.isLoading ? (
-              <Text ta="center" c="dimmed" py="xl">
-                読み込み中...
-              </Text>
-            ) : getFilteredMotherCats().length === 0 ? (
-              <Stack gap="md" py="xl">
-                <Text ta="center" c="dimmed">
-                  表示する子猫がいません
-                </Text>
-              </Stack>
-            ) : (
-              <Table striped withTableBorder>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th style={{ width: '40px' }}></Table.Th>
-                    <Table.Th>母猫名</Table.Th>
-                    <Table.Th>父猫名</Table.Th>
-                    <Table.Th>出産日</Table.Th>
-                    <Table.Th>生後</Table.Th>
-                    <Table.Th>子猫数</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {getFilteredMotherCats().map((mother) => {
-                    const isExpanded = expandedCats.has(mother.id);
-                    return (
-                      <Fragment key={mother.id}>
-                        {/* 母猫の行 */}
-                        <Table.Tr
-                          style={{ 
-                            cursor: 'pointer', 
-                            backgroundColor: isExpanded ? 'var(--mantine-color-blue-0)' : undefined 
-                          }}
-                          onClick={() => toggleExpanded(mother.id)}
-                        >
-                          <Table.Td>
-                            {isExpanded ? (
-                              <IconChevronDown size={16} />
-                            ) : (
-                              <IconChevronRight size={16} />
-                            )}
-                          </Table.Td>
-                          <Table.Td>
-                            <Text fw={600}>{mother.name}</Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm">{mother.fatherName}</Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm">{mother.deliveryDate}</Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm">生後{mother.daysOld}日</Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Badge size="sm" variant="light">
-                              {mother.kittens.length}頭
-                            </Badge>
-                          </Table.Td>
-                        </Table.Tr>
-
-                        {/* 子猫の行 */}
-                        {isExpanded && mother.kittens.map((kitten) => {
-                          const rawCat = kitten.rawCat;
-                          if (!rawCat) {
-                            return null;
-                          }
-
-                          return (
-                            <ContextMenuProvider
-                              key={kitten.id}
-                              entity={rawCat}
-                              entityType="子猫"
-                              actions={['view', 'edit', 'delete']}
-                              onAction={handleKittenContextAction}
-                            >
-                              <Table.Tr
-                                style={{ 
-                                  cursor: 'pointer',
-                                  backgroundColor: 'var(--mantine-color-gray-0)'
-                                }}
-                                title="右クリックまたはダブルクリックで操作"
-                              >
-                                <Table.Td></Table.Td>
-                                <Table.Td colSpan={5}>
-                                  <Group gap="md" wrap="nowrap">
-                                    <IconPaw size={16} style={{ color: 'var(--mantine-color-gray-6)', flexShrink: 0 }} />
-                                    <Text fw={500} style={{ minWidth: '120px' }}>{kitten.name}</Text>
-                                    <GenderBadge gender={kitten.gender} size="sm" />
-                                    <Text size="sm" c="dimmed" style={{ minWidth: '80px' }}>{kitten.color}</Text>
-                                    {kitten.disposition ? (
-                                      <Badge 
-                                        size="sm" 
-                                        color={
-                                          kitten.disposition.disposition === 'TRAINING' ? 'blue' :
-                                          kitten.disposition.disposition === 'SALE' ? 'green' :
-                                          'gray'
-                                        }
-                                        leftSection={
-                                          kitten.disposition.disposition === 'TRAINING' ? '🎓' :
-                                          kitten.disposition.disposition === 'SALE' ? '💰' :
-                                          '🌈'
-                                        }
-                                      >
-                                        {kitten.disposition.disposition === 'TRAINING' ? '養成中' :
-                                         kitten.disposition.disposition === 'SALE' ? '出荷済' :
-                                         '死亡'}
-                                      </Badge>
-                                    ) : (
-                                      <Badge size="sm" color="gray" variant="light">
-                                        処遇未登録
-                                      </Badge>
-                                    )}
-                                    {rawCat.tags && rawCat.tags.length > 0 && (
-                                      <TagDisplay 
-                                        tagIds={rawCat.tags.map(t => t.tag.id)} 
-                                        size="xs" 
-                                        categories={tagCategoriesQuery.data?.data || []}
-                                        tagMetadata={Object.fromEntries(
-                                          rawCat.tags.map(t => [t.tag.id, t.tag.metadata || {}])
-                                        )}
-                                      />
-                                    )}
-                                  </Group>
-                                </Table.Td>
-                              </Table.Tr>
-                            </ContextMenuProvider>
-                          );
-                        })}
-                      </Fragment>
-                    );
-                  })}
-                </Table.Tbody>
-              </Table>
-            )}
-          </Card>
-        </Tabs.Panel>
-
-        {/* 体重管理タブ */}
-        <Tabs.Panel value="weight" pt="md">
-          <WeightRecordTable
-            motherCats={motherCats}
-            onRecordWeight={(kitten) => {
-              setSelectedKittenForWeight({ id: kitten.id, name: kitten.name });
-              openWeightModal();
-            }}
-            onBulkRecord={openBulkWeightModal}
-          />
-        </Tabs.Panel>
-      </Tabs>
-
-      {/* 子猫管理モーダル（統一版） */}
-      <KittenManagementModal
-        opened={managementModalOpened}
-        onClose={closeManagementModal}
-        motherId={selectedMotherIdForModal}
-        onSuccess={() => {
-          kittensQuery.refetch();
-        }}
-      />
-
-      {/* 操作確認モーダル */}
-      <OperationModalManager
-        operationType={currentOperation}
-        entity={currentEntity}
-        entityType="子猫"
-        onClose={closeOperation}
-        onConfirm={handleOperationConfirm}
-      />
-
-      {/* 子猫編集モーダル */}
-      {selectedKittenForEdit && (
-        <CatEditModal
-          opened={editModalOpened}
-          onClose={closeEditModal}
-          catId={selectedKittenForEdit.id}
-          onSuccess={() => {
-            kittensQuery.refetch();
-          }}
-        />
-      )}
-
-      {/* 体重記録モーダル */}
-      {selectedKittenForWeight && (
-        <WeightRecordModal
-          opened={weightModalOpened}
-          onClose={closeWeightModal}
-          catId={selectedKittenForWeight.id}
-          catName={selectedKittenForWeight.name}
-          onSuccess={() => {
-            // 体重記録更新後の処理（必要に応じてキャッシュ無効化）
-          }}
-        />
-      )}
-
-      {/* 一括体重記録モーダル */}
-      <BulkWeightRecordModal
-        opened={bulkWeightModalOpened}
-        onClose={closeBulkWeightModal}
-        motherGroups={motherCats.map((mother) => ({
-          motherId: mother.id,
-          motherName: mother.name,
-          fatherName: mother.fatherName,
-          deliveryDate: mother.deliveryDate,
-          kittens: mother.kittens.map((k) => ({
-            id: k.id,
-            name: k.name,
-            gender: k.gender,
-            color: k.color,
-          })),
-        }))}
-        onSuccess={() => {
-          kittensQuery.refetch();
-        }}
-      />
-    </Container>
-  );
-}
-````
-
 ## File: frontend/src/components/common/UnifiedModal.tsx
 ````typescript
 'use client';
@@ -63318,81 +61753,19 @@ export function UnifiedModal({
 }
 ````
 
-## File: frontend/package.json
-````json
-{
-  "name": "frontend",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "next build",
-    "analyze": "ANALYZE=true next build",
-    "start": "next start",
-    "lint": "eslint --max-warnings 0 .",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "type-check": "tsc --noEmit",
-    "generate:api-types": "node scripts/generate-api-types.mjs"
-  },
-  "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
-    "@fullcalendar/core": "^6.1.19",
-    "@fullcalendar/daygrid": "^6.1.19",
-    "@fullcalendar/interaction": "^6.1.19",
-    "@fullcalendar/react": "^6.1.19",
-    "@hookform/resolvers": "^3.10.0",
-    "@mantine/core": "^8.3.10",
-    "@mantine/dates": "^8.3.10",
-    "@mantine/dropzone": "^8.3.13",
-    "@mantine/form": "^8.3.10",
-    "@mantine/hooks": "^8.3.10",
-    "@mantine/modals": "^8.3.10",
-    "@mantine/notifications": "^8.3.10",
-    "@sentry/nextjs": "^8.55.0",
-    "@tabler/icons-react": "^3.34.1",
-    "@tanstack/react-query": "^5.90.12",
-    "date-fns": "^4.1.0",
-    "dayjs": "^1.11.13",
-    "framer-motion": "^12.23.26",
-    "next": "^16.1.6",
-    "openapi-typescript": "^7.9.1",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-hook-form": "^7.68.0",
-    "zod": "^3.25.76",
-    "zustand": "^5.0.9"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
-    "@next/bundle-analyzer": "^16.1.6",
-    "@next/eslint-plugin-next": "^16.1.6",
-    "@tailwindcss/postcss": "^4.1.18",
-    "@tanstack/react-query-devtools": "^5.90.12",
-    "@testing-library/jest-dom": "^6.6.4",
-    "@testing-library/react": "^16.0.1",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/jest": "^29.5.14",
-    "@types/node": "^20.19.25",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19",
-    "@typescript-eslint/eslint-plugin": "^8.49.0",
-    "@typescript-eslint/parser": "^8.49.0",
-    "eslint": "^9",
-    "eslint-config-next": "^16.1.6",
-    "eslint-config-prettier": "^9.1.2",
-    "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import-x": "^4.16.1",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "tailwindcss": "^4.1.18",
-    "typescript": "^5",
-    "typescript-eslint": "^8.49.0"
-  }
+## File: frontend/src/app/kittens/page.tsx
+````typescript
+'use client';
+
+import { Box, Title, Text } from '@mantine/core';
+
+export default function KittensPage() {
+  return (
+  <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)', padding: '2rem' }}>
+      <Title order={1} c="blue" mb="md">子猫管理</Title>
+      <Text>生まれた子猫の記録や管理を行うページです（今後実装予定）。</Text>
+    </Box>
+  );
 }
 ````
 
@@ -63708,6 +62081,84 @@ export function Providers({ children }: { children: React.ReactNode }) {
       </MantineProvider>
     </QueryClientProvider>
   )
+}
+````
+
+## File: frontend/package.json
+````json
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000 -H 0.0.0.0",
+    "build": "next build",
+    "analyze": "ANALYZE=true next build",
+    "start": "next start",
+    "lint": "eslint --max-warnings 0 .",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "type-check": "tsc --noEmit",
+    "generate:api-types": "node scripts/generate-api-types.mjs"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@fullcalendar/core": "^6.1.19",
+    "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/interaction": "^6.1.19",
+    "@fullcalendar/react": "^6.1.19",
+    "@hookform/resolvers": "^3.10.0",
+    "@mantine/core": "^8.3.10",
+    "@mantine/dates": "^8.3.10",
+    "@mantine/dropzone": "^8.3.13",
+    "@mantine/form": "^8.3.10",
+    "@mantine/hooks": "^8.3.10",
+    "@mantine/modals": "^8.3.10",
+    "@mantine/notifications": "^8.3.10",
+    "@sentry/nextjs": "^10.38.0",
+    "@tabler/icons-react": "^3.34.1",
+    "@tanstack/react-query": "^5.90.12",
+    "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
+    "framer-motion": "^12.23.26",
+    "next": "^16.1.6",
+    "openapi-typescript": "^7.9.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.68.0",
+    "zod": "^3.25.76",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@next/bundle-analyzer": "^16.1.6",
+    "@next/eslint-plugin-next": "^16.1.6",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tanstack/react-query-devtools": "^5.90.12",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.25",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
+    "eslint": "^9",
+    "eslint-config-next": "^16.1.6",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5",
+    "typescript-eslint": "^8.49.0"
+  }
 }
 ````
 
@@ -64043,13 +62494,14 @@ h1, h2, h3, h4, h5, h6 {
     "kill-port": "^2.0.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.7.4",
+    "supabase": "^2.75.4",
     "tsx": "^4.21.0",
     "typescript": "^5",
     "typescript-eslint": "^8.49.0",
     "wait-on": "^9.0.0"
   },
   "engines": {
-    "node": ">=20 <23"
+    "node": ">=20"
   },
   "private": true,
   "pnpm": {

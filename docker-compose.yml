@@ -1,24 +1,24 @@
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: mycats_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: mycats
-      POSTGRES_PASSWORD: mycats_dev_password
-      POSTGRES_DB: mycats_development
-      TZ: Asia/Tokyo
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mycats -d mycats_development"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # PostgreSQL Database - DISABLED (Using Supabase)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: mycats_postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: mycats
+  #     POSTGRES_PASSWORD: mycats_dev_password
+  #     POSTGRES_DB: mycats_development
+  #     TZ: Asia/Tokyo
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./database/init:/docker-entrypoint-initdb.d:ro
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U mycats -d mycats_development"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
   # Backend API Server
   backend:
@@ -38,9 +38,9 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     ports:
       - "3004:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    # depends_on: - DISABLED (Using Supabase)
+    #   postgres:
+    #     condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
       interval: 30s
@@ -65,21 +65,21 @@ services:
       backend:
         condition: service_healthy
 
-  # pgAdmin (Optional - Database Management UI)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: mycats_pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      - postgres
+  # pgAdmin - DISABLED (Using Supabase Dashboard)
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: mycats_pgadmin
+  #   restart: unless-stopped
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #   ports:
+  #     - "5050:80"
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   depends_on:
+  #     - postgres
 
 volumes:
   postgres_data:

@@ -1,9 +1,9 @@
-This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
 
 # File Summary
 
 ## Purpose
-This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+This file contains a packed representation of the entire repository's contents.
 It is designed to be easily consumable by AI systems for analysis, code review,
 or other automated processes.
 
@@ -28,7 +28,6 @@ The content is organized as follows:
 ## Notes
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: **/node_modules/**, **/dist/**, **/*.png, **/*.jpg
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Files are sorted by Git change count (files with more changes are at the bottom)
@@ -84,6 +83,16 @@ The content is organized as follows:
   DEPLOYMENT_SECRETS_SETUP.md
   staged-verification.md
   user-feedback-priority.md
+.playwright-mcp/
+  cats-new.png
+  kitten-disposition-all-types-success.png
+  kittens-page-disposition-display-success.png
+  kittens-page-showing-grace-kittens.png
+  ng-rule-generation-limit-created.png
+  ng-rule-individual-prohibition-created.png
+  ng-rule-tag-combination-created.png
+  ng-rules-all-5-rules-complete.png
+  ng-rules-modal-initial.png
 backend/
   prisma/
     migrations/
@@ -179,6 +188,7 @@ backend/
     ensure-dev-build.mjs
     export-cats-seed.ts
     generate-secrets.mjs
+    migrate_csv_to_supabase.ts
   src/
     auth/
       dto/
@@ -384,6 +394,7 @@ backend/
         pedigree-pdf.service.ts
         positions.json
         print-settings.service.ts
+        血統書見本.png
       types/
         pedigree.types.ts
       pedigree.controller.spec.ts
@@ -596,7 +607,6 @@ frontend/
           useBreedingSchedule.ts
           useNgPairing.ts
         page.tsx
-        page.tsx.backup
         types.ts
         utils.ts
       care/
@@ -608,7 +618,6 @@ frontend/
             page.tsx
           pedigree/
             client.tsx
-            page_new.tsx
             page.tsx
           client.tsx
           layout.tsx
@@ -641,7 +650,6 @@ frontend/
       import/
         page.tsx
       kittens/
-        page_new.tsx
         page.tsx
       login/
         page.tsx
@@ -650,7 +658,7 @@ frontend/
       more/
         page.tsx
       pedigrees/
-        _id_disabled/
+        [id]/
           family-tree/
             client.tsx
             page.tsx
@@ -906,6 +914,9 @@ scripts/
   stop-dev.sh
   test-session-persistence.sh
   validate-deployment-config.sh
+supabase/
+  .gitignore
+  config.toml
 .dockerignore
 .env.development.example
 .env.docker.example
@@ -921,9 +932,11 @@ Dockerfile.backend
 Dockerfile.frontend
 eslint.config.mjs
 gcp_verification_results.md
+GEMINI.md
 IMPLEMENTATION_COMPLETE.md
 init_database.sql
 package.json
+pip_Image.png
 pnpm-workspace.yaml
 README.md
 seed_data.sql
@@ -8014,257 +8027,6 @@ importGenders()
   });
 `````
 
-## File: backend/prisma/seed/import-pedigrees.ts
-`````typescript
-import { PrismaClient } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
-import { parse } from 'csv-parse/sync';
-
-const prisma = new PrismaClient();
-
-interface PedigreeRecord {
-  pedigree_id: string;
-  title: string;
-  cat_name: string;
-  cat_name2: string;
-  breed_code: string;
-  gender_code: string;
-  eye_color: string;
-  coat_color_code: string;
-  birth_date: string;
-  breeder_name: string;
-  owner_name: string;
-  registration_date: string;
-  brother_count: string;
-  sister_count: string;
-  notes: string;
-  notes2: string;
-  other_no: string;
-  father_title: string;
-  father_cat_name: string;
-  father_cat_name2: string;
-  father_coat_color: string;
-  father_eye_color: string;
-  father_jcu: string;
-  father_other_code: string;
-  mother_title: string;
-  mother_cat_name: string;
-  mother_cat_name2: string;
-  mother_coat_color: string;
-  mother_eye_color: string;
-  mother_jcu: string;
-  mother_other_code: string;
-  ff_title: string;
-  ff_cat_name: string;
-  ff_cat_color: string;
-  ffjcu: string;
-  fm_title: string;
-  fm_cat_name: string;
-  fm_cat_color: string;
-  fmjcu: string;
-  mf_title: string;
-  mf_cat_name: string;
-  mf_cat_color: string;
-  mfjcu: string;
-  mm_title: string;
-  mm_cat_name: string;
-  mm_cat_color: string;
-  mmjcu: string;
-  fff_title: string;
-  fff_cat_name: string;
-  fff_cat_color: string;
-  fffjcu: string;
-  ffm_title: string;
-  ffm_cat_name: string;
-  ffm_cat_color: string;
-  ffmjcu: string;
-  fmf_title: string;
-  fmf_cat_name: string;
-  fmf_cat_color: string;
-  fmfjcu: string;
-  fmm_title: string;
-  fmm_cat_name: string;
-  fmm_cat_color: string;
-  fmmjcu: string;
-  mff_title: string;
-  mff_cat_name: string;
-  mff_cat_color: string;
-  mffjcu: string;
-  mfm_title: string;
-  mfm_cat_name: string;
-  mfm_cat_color: string;
-  mfmjcu: string;
-  mmf_title: string;
-  mmf_cat_name: string;
-  mmf_cat_color: string;
-  mmfjcu: string;
-  mmm_title: string;
-  mmm_cat_name: string;
-  mmm_cat_color: string;
-  mmmjcu: string;
-  old_code: string;
-}
-
-// 数値フィールドの変換（空文字列はnullに）
-const parseIntOrNull = (value: string) => {
-  if (!value || value.trim() === '') return null;
-  const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? null : parsed;
-};
-
-// 文字列フィールドの変換（空文字列はundefinedに）
-const parseStringOrUndefined = (value: string) => {
-  if (!value || value.trim() === '') return undefined;
-  return value;
-};
-
-async function main() {
-  const csvFilePath = path.join(__dirname, 'testdatepedigrees100_snake.csv');
-  const fileContent = fs.readFileSync(csvFilePath, 'utf-8');
-
-  // CSVをパース
-  const records = parse(fileContent, {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-  }) as PedigreeRecord[];
-
-  console.log(`Found ${records.length} records to import`);
-  
-  // デバッグ: 最初のレコードを確認
-  if (records.length > 0) {
-    const firstRecord = records[0] as any;
-    console.log('First record keys:', Object.keys(firstRecord));
-    console.log('First record pedigree_id:', firstRecord['pedigree_id']);
-  }
-
-  let successCount = 0;
-  let errorCount = 0;
-
-  for (const record of records) {
-    try {
-      // pedigree_idを取得
-      const recordAny = record as any;
-      const pedigreeIdValue = recordAny.pedigree_id || recordAny['pedigree_id'];
-      
-      if (!pedigreeIdValue) {
-        console.error('Skipping record with missing pedigree_id');
-        errorCount++;
-        continue;
-      }
-
-      console.log(`About to insert: pedigreeId="${pedigreeIdValue}", type=${typeof pedigreeIdValue}, length=${pedigreeIdValue.length}`);
-
-      await prisma.pedigree.create({
-        data: {
-          pedigreeId: pedigreeIdValue,
-          title: parseStringOrUndefined(recordAny.title),
-          catName: parseStringOrUndefined(recordAny.cat_name),
-          catName2: parseStringOrUndefined(recordAny.cat_name2),
-          breedCode: parseIntOrNull(recordAny.breed_code) ?? undefined,
-          genderCode: parseIntOrNull(recordAny.gender_code) ?? undefined,
-          eyeColor: parseStringOrUndefined(recordAny.eye_color),
-          coatColorCode: parseIntOrNull(recordAny.coat_color_code) ?? undefined,
-          birthDate: parseStringOrUndefined(recordAny.birth_date),
-          breederName: parseStringOrUndefined(recordAny.breeder_name),
-          ownerName: parseStringOrUndefined(recordAny.owner_name),
-          registrationDate: parseStringOrUndefined(recordAny.registration_date),
-          brotherCount: parseIntOrNull(recordAny.brother_count) ?? undefined,
-          sisterCount: parseIntOrNull(recordAny.sister_count) ?? undefined,
-          notes: parseStringOrUndefined(recordAny.notes),
-          notes2: parseStringOrUndefined(recordAny.notes2),
-          otherNo: parseStringOrUndefined(recordAny.other_no),
-          fatherTitle: parseStringOrUndefined(recordAny.father_title),
-          fatherCatName: parseStringOrUndefined(recordAny.father_cat_name),
-          fatherCatName2: parseStringOrUndefined(recordAny.father_cat_name2),
-          fatherCoatColor: parseStringOrUndefined(recordAny.father_coat_color),
-          fatherEyeColor: parseStringOrUndefined(recordAny.father_eye_color),
-          fatherJCU: parseStringOrUndefined(recordAny.father_jcu),
-          fatherOtherCode: parseStringOrUndefined(recordAny.father_other_code),
-          motherTitle: parseStringOrUndefined(recordAny.mother_title),
-          motherCatName: parseStringOrUndefined(recordAny.mother_cat_name),
-          motherCatName2: parseStringOrUndefined(recordAny.mother_cat_name2),
-          motherCoatColor: parseStringOrUndefined(recordAny.mother_coat_color),
-          motherEyeColor: parseStringOrUndefined(recordAny.mother_eye_color),
-          motherJCU: parseStringOrUndefined(recordAny.mother_jcu),
-          motherOtherCode: parseStringOrUndefined(recordAny.mother_other_code),
-          ffTitle: parseStringOrUndefined(recordAny.ff_title),
-          ffCatName: parseStringOrUndefined(recordAny.ff_cat_name),
-          ffCatColor: parseStringOrUndefined(recordAny.ff_cat_color),
-          ffjcu: parseStringOrUndefined(recordAny.ffjcu),
-          fmTitle: parseStringOrUndefined(recordAny.fm_title),
-          fmCatName: parseStringOrUndefined(recordAny.fm_cat_name),
-          fmCatColor: parseStringOrUndefined(recordAny.fm_cat_color),
-          fmjcu: parseStringOrUndefined(recordAny.fmjcu),
-          mfTitle: parseStringOrUndefined(recordAny.mf_title),
-          mfCatName: parseStringOrUndefined(recordAny.mf_cat_name),
-          mfCatColor: parseStringOrUndefined(recordAny.mf_cat_color),
-          mfjcu: parseStringOrUndefined(recordAny.mfjcu),
-          mmTitle: parseStringOrUndefined(recordAny.mm_title),
-          mmCatName: parseStringOrUndefined(recordAny.mm_cat_name),
-          mmCatColor: parseStringOrUndefined(recordAny.mm_cat_color),
-          mmjcu: parseStringOrUndefined(recordAny.mmjcu),
-          fffTitle: parseStringOrUndefined(recordAny.fff_title),
-          fffCatName: parseStringOrUndefined(recordAny.fff_cat_name),
-          fffCatColor: parseStringOrUndefined(recordAny.fff_cat_color),
-          fffjcu: parseStringOrUndefined(recordAny.fffjcu),
-          ffmTitle: parseStringOrUndefined(recordAny.ffm_title),
-          ffmCatName: parseStringOrUndefined(recordAny.ffm_cat_name),
-          ffmCatColor: parseStringOrUndefined(recordAny.ffm_cat_color),
-          ffmjcu: parseStringOrUndefined(recordAny.ffmjcu),
-          fmfTitle: parseStringOrUndefined(recordAny.fmf_title),
-          fmfCatName: parseStringOrUndefined(recordAny.fmf_cat_name),
-          fmfCatColor: parseStringOrUndefined(recordAny.fmf_cat_color),
-          fmfjcu: parseStringOrUndefined(recordAny.fmfjcu),
-          fmmTitle: parseStringOrUndefined(recordAny.fmm_title),
-          fmmCatName: parseStringOrUndefined(recordAny.fmm_cat_name),
-          fmmCatColor: parseStringOrUndefined(recordAny.fmm_cat_color),
-          fmmjcu: parseStringOrUndefined(recordAny.fmmjcu),
-          mffTitle: parseStringOrUndefined(recordAny.mff_title),
-          mffCatName: parseStringOrUndefined(recordAny.mff_cat_name),
-          mffCatColor: parseStringOrUndefined(recordAny.mff_cat_color),
-          mffjcu: parseStringOrUndefined(recordAny.mffjcu),
-          mfmTitle: parseStringOrUndefined(recordAny.mfm_title),
-          mfmCatName: parseStringOrUndefined(recordAny.mfm_cat_name),
-          mfmCatColor: parseStringOrUndefined(recordAny.mfm_cat_color),
-          mfmjcu: parseStringOrUndefined(recordAny.mfmjcu),
-          mmfTitle: parseStringOrUndefined(recordAny.mmf_title),
-          mmfCatName: parseStringOrUndefined(recordAny.mmf_cat_name),
-          mmfCatColor: parseStringOrUndefined(recordAny.mmf_cat_color),
-          mmfjcu: parseStringOrUndefined(recordAny.mmfjcu),
-          mmmTitle: parseStringOrUndefined(recordAny.mmm_title),
-          mmmCatName: parseStringOrUndefined(recordAny.mmm_cat_name),
-          mmmCatColor: parseStringOrUndefined(recordAny.mmm_cat_color),
-          mmmjcu: parseStringOrUndefined(recordAny.mmmjcu),
-          oldCode: parseStringOrUndefined(recordAny.old_code),
-        },
-      });
-      successCount++;
-      if (successCount % 10 === 0) {
-        console.log(`Imported ${successCount} records...`);
-      }
-    } catch (error) {
-      errorCount++;
-      console.error(`Error importing record ${record.pedigree_id}:`, error);
-    }
-  }
-
-  console.log(`\nImport completed!`);
-  console.log(`Success: ${successCount}`);
-  console.log(`Errors: ${errorCount}`);
-}
-
-main()
-  .catch((e) => {
-    console.error('Fatal error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-`````
-
 ## File: backend/prisma/seed/seed-staff-shifts.ts
 `````typescript
 import { PrismaClient } from '@prisma/client';
@@ -8512,8 +8274,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Tenant {
@@ -10435,6 +10198,318 @@ if (execution.error) {
 }
 
 process.exit(execution.status ?? 0);
+`````
+
+## File: backend/scripts/migrate_csv_to_supabase.ts
+`````typescript
+/**
+ * 血統書データCSVをSupabase (PostgreSQL) のPedigreeテーブルへインポートする
+ * 移行スクリプト
+ *
+ * 使用方法:
+ *   cd backend
+ *   pnpm exec dotenv -e ./.env -- tsx scripts/migrate_csv_to_supabase.ts
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+interface CsvRow {
+  pedigreeId: string;
+  championFlag: string;
+  title: string;
+  catName: string;
+  catName2: string;
+  breedCode: string;
+  genderCode: string;
+  eyeColor: string;
+  coatColorCode: string;
+  birthDate: string;
+  breederName: string;
+  ownerName: string;
+  registrationDate: string;
+  brotherCount: string;
+  sisterCount: string;
+  notes: string;
+  notes2: string;
+  otherNo: string;
+  fatherChampionFlag: string;
+  fatherTitle: string;
+  fatherCatName: string;
+  fatherCatName2: string;
+  fatherCoatColor: string;
+  fatherEyeColor: string;
+  fatherJCU: string;
+  fatherOtherCode: string;
+  motherChampionFlag: string;
+  motherTitle: string;
+  motherCatName: string;
+  motherCatName2: string;
+  motherCoatColor: string;
+  motherEyeColor: string;
+  motherJCU: string;
+  motherOtherCode: string;
+  ffChampionFlag: string;
+  ffTitle: string;
+  ffCatName: string;
+  ffCatColor: string;
+  ffjcu: string;
+  fmChampionFlag: string;
+  fmTitle: string;
+  fmCatName: string;
+  fmCatColor: string;
+  fmjcu: string;
+  mfChampionFlag: string;
+  mfTitle: string;
+  mfCatName: string;
+  mfCatColor: string;
+  mfjcu: string;
+  mmChampionFlag: string;
+  mmTitle: string;
+  mmCatName: string;
+  mmCatColor: string;
+  mmjcu: string;
+  fffChampionFlag: string;
+  fffTitle: string;
+  fffCatName: string;
+  fffCatColor: string;
+  fffjcu: string;
+  ffmChampionFlag: string;
+  ffmTitle: string;
+  ffmCatName: string;
+  ffmCatColor: string;
+  ffmjcu: string;
+  fmfChampionFlag: string;
+  fmfTitle: string;
+  fmfCatName: string;
+  fmfCatColor: string;
+  fmfjcu: string;
+  fmmChampionFlag: string;
+  fmmTitle: string;
+  fmmCatName: string;
+  fmmCatColor: string;
+  fmmjcu: string;
+  mffChampionFlag: string;
+  mffTitle: string;
+  mffCatName: string;
+  mffCatColor: string;
+  mffjcu: string;
+  mfmChampionFlag: string;
+  mfmTitle: string;
+  mfmCatName: string;
+  mfmCatColor: string;
+  mfmjcu: string;
+  mmfChampionFlag: string;
+  mmfTitle: string;
+  mmfCatName: string;
+  mmfCatColor: string;
+  mmfjcu: string;
+  mmmChampionFlag: string;
+  mmmTitle: string;
+  mmmCatName: string;
+  mmmCatColor: string;
+  mmmjcu: string;
+  oldCode: string;
+}
+
+/**
+ * CSVをパースする簡易関数（ダブルクォート対応）
+ */
+function parseCsv(content: string): CsvRow[] {
+  const lines = content.split('\n');
+  const headers = lines[0].split(',').map((h) => h.trim());
+
+  const rows: CsvRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // CSV行をパース（シンプルなカンマ分割）
+    const values = line.split(',');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CSV parsing requires dynamic key assignment
+    const row: Record<string, string> = {};
+    for (let j = 0; j < headers.length && j < values.length; j++) {
+      row[headers[j]] = values[j]?.trim() ?? '';
+    }
+    rows.push(row as unknown as CsvRow);
+  }
+  return rows;
+}
+
+/**
+ * 文字列を整数に変換（空文字やNaNの場合はnull）
+ */
+function toIntOrNull(value: string | undefined): number | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (trimmed === '') return null;
+  const num = parseInt(trimmed, 10);
+  return isNaN(num) ? null : num;
+}
+
+/**
+ * 空文字をnullに変換
+ */
+function toStringOrNull(value: string | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
+async function main() {
+  console.log('🚀 血統書データ移行スクリプトを開始します...');
+
+  // CSVファイルを読み込み
+  const csvPath = path.join(
+    __dirname,
+    '../src/pedigree/血統書データUTF8Ver.csv',
+  );
+  console.log(`📄 CSVファイル読み込み中: ${csvPath}`);
+
+  if (!fs.existsSync(csvPath)) {
+    console.error(`❌ CSVファイルが見つかりません: ${csvPath}`);
+    process.exit(1);
+  }
+
+  const csvContent = fs.readFileSync(csvPath, 'utf-8');
+  const rows = parseCsv(csvContent);
+  console.log(`📊 ${rows.length} 行のデータを読み込みました`);
+
+  // 既存データをクリア（オプション）
+  console.log('🗑️  既存のPedigreeデータを削除中...');
+  await prisma.pedigree.deleteMany({});
+
+  // データを挿入
+  let successCount = 0;
+  let errorCount = 0;
+  const batchSize = 100;
+
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const pedigreeData = batch.map((row) => ({
+      pedigreeId: row.pedigreeId?.trim() || `UNKNOWN-${i}`,
+      title: toStringOrNull(row.title),
+      catName: toStringOrNull(row.catName),
+      catName2: toStringOrNull(row.catName2),
+      breedCode: toIntOrNull(row.breedCode),
+      genderCode: toIntOrNull(row.genderCode),
+      eyeColor: toStringOrNull(row.eyeColor),
+      coatColorCode: toIntOrNull(row.coatColorCode),
+      birthDate: toStringOrNull(row.birthDate),
+      breederName: toStringOrNull(row.breederName),
+      ownerName: toStringOrNull(row.ownerName),
+      registrationDate: toStringOrNull(row.registrationDate),
+      brotherCount: toIntOrNull(row.brotherCount),
+      sisterCount: toIntOrNull(row.sisterCount),
+      notes: toStringOrNull(row.notes),
+      notes2: toStringOrNull(row.notes2),
+      otherNo: toStringOrNull(row.otherNo),
+      fatherTitle: toStringOrNull(row.fatherTitle),
+      fatherCatName: toStringOrNull(row.fatherCatName),
+      fatherCatName2: toStringOrNull(row.fatherCatName2),
+      fatherCoatColor: toStringOrNull(row.fatherCoatColor),
+      fatherEyeColor: toStringOrNull(row.fatherEyeColor),
+      fatherJCU: toStringOrNull(row.fatherJCU),
+      fatherOtherCode: toStringOrNull(row.fatherOtherCode),
+      motherTitle: toStringOrNull(row.motherTitle),
+      motherCatName: toStringOrNull(row.motherCatName),
+      motherCatName2: toStringOrNull(row.motherCatName2),
+      motherCoatColor: toStringOrNull(row.motherCoatColor),
+      motherEyeColor: toStringOrNull(row.motherEyeColor),
+      motherJCU: toStringOrNull(row.motherJCU),
+      motherOtherCode: toStringOrNull(row.motherOtherCode),
+      ffTitle: toStringOrNull(row.ffTitle),
+      ffCatName: toStringOrNull(row.ffCatName),
+      ffCatColor: toStringOrNull(row.ffCatColor),
+      ffjcu: toStringOrNull(row.ffjcu),
+      fmTitle: toStringOrNull(row.fmTitle),
+      fmCatName: toStringOrNull(row.fmCatName),
+      fmCatColor: toStringOrNull(row.fmCatColor),
+      fmjcu: toStringOrNull(row.fmjcu),
+      mfTitle: toStringOrNull(row.mfTitle),
+      mfCatName: toStringOrNull(row.mfCatName),
+      mfCatColor: toStringOrNull(row.mfCatColor),
+      mfjcu: toStringOrNull(row.mfjcu),
+      mmTitle: toStringOrNull(row.mmTitle),
+      mmCatName: toStringOrNull(row.mmCatName),
+      mmCatColor: toStringOrNull(row.mmCatColor),
+      mmjcu: toStringOrNull(row.mmjcu),
+      fffTitle: toStringOrNull(row.fffTitle),
+      fffCatName: toStringOrNull(row.fffCatName),
+      fffCatColor: toStringOrNull(row.fffCatColor),
+      fffjcu: toStringOrNull(row.fffjcu),
+      ffmTitle: toStringOrNull(row.ffmTitle),
+      ffmCatName: toStringOrNull(row.ffmCatName),
+      ffmCatColor: toStringOrNull(row.ffmCatColor),
+      ffmjcu: toStringOrNull(row.ffmjcu),
+      fmfTitle: toStringOrNull(row.fmfTitle),
+      fmfCatName: toStringOrNull(row.fmfCatName),
+      fmfCatColor: toStringOrNull(row.fmfCatColor),
+      fmfjcu: toStringOrNull(row.fmfjcu),
+      fmmTitle: toStringOrNull(row.fmmTitle),
+      fmmCatName: toStringOrNull(row.fmmCatName),
+      fmmCatColor: toStringOrNull(row.fmmCatColor),
+      fmmjcu: toStringOrNull(row.fmmjcu),
+      mffTitle: toStringOrNull(row.mffTitle),
+      mffCatName: toStringOrNull(row.mffCatName),
+      mffCatColor: toStringOrNull(row.mffCatColor),
+      mffjcu: toStringOrNull(row.mffjcu),
+      mfmTitle: toStringOrNull(row.mfmTitle),
+      mfmCatName: toStringOrNull(row.mfmCatName),
+      mfmCatColor: toStringOrNull(row.mfmCatColor),
+      mfmjcu: toStringOrNull(row.mfmjcu),
+      mmfTitle: toStringOrNull(row.mmfTitle),
+      mmfCatName: toStringOrNull(row.mmfCatName),
+      mmfCatColor: toStringOrNull(row.mmfCatColor),
+      mmfjcu: toStringOrNull(row.mmfjcu),
+      mmmTitle: toStringOrNull(row.mmmTitle),
+      mmmCatName: toStringOrNull(row.mmmCatName),
+      mmmCatColor: toStringOrNull(row.mmmCatColor),
+      mmmjcu: toStringOrNull(row.mmmjcu),
+      oldCode: toStringOrNull(row.oldCode),
+    }));
+
+    try {
+      await prisma.pedigree.createMany({
+        data: pedigreeData,
+        skipDuplicates: true,
+      });
+      successCount += batch.length;
+      console.log(
+        `✅ バッチ ${Math.floor(i / batchSize) + 1}: ${batch.length} 件挿入完了`,
+      );
+    } catch (error) {
+      errorCount += batch.length;
+      console.error(
+        `❌ バッチ ${Math.floor(i / batchSize) + 1} でエラー:`,
+        error,
+      );
+    }
+  }
+
+  console.log('');
+  console.log('='.repeat(50));
+  console.log('📈 移行結果:');
+  console.log(`  ✅ 成功: ${successCount} 件`);
+  console.log(`  ❌ 失敗: ${errorCount} 件`);
+  console.log('='.repeat(50));
+
+  // 投入後の件数確認
+  const finalCount = await prisma.pedigree.count();
+  console.log(`📊 Pedigreeテーブルの最終レコード数: ${finalCount}`);
+
+  await prisma.$disconnect();
+  console.log('🎉 移行完了！');
+}
+
+main().catch((e) => {
+  console.error('移行中にエラーが発生しました:', e);
+  prisma.$disconnect();
+  process.exit(1);
+});
 `````
 
 ## File: backend/src/auth/dto/change-password.dto.ts
@@ -34037,273 +34112,6 @@ main().catch((error) => {
 });
 `````
 
-## File: backend/src/scripts/rename-pedigree-csv.ts
-`````typescript
-import * as fsSync from "fs";
-import { promises as fs } from "fs";
-import * as path from "path";
-
-/**
- * 血統書CSVのフィールド名をリネームして、1行目を削除するスクリプト
- *
- * 変更内容:
- * 1. 1行目（日本語ヘッダー）を削除
- * 2. 祖父母世代以降のフィールド名をF/M略称に変更
- * 3. 必須フィールド: PedigreeID, Gender
- * 4. その他のフィールドはNull可
- */
-
-function parseArgs(argv: string[]) {
-  const args: Record<string, string> = {};
-  for (let i = 2; i < argv.length; i++) {
-    const a = argv[i];
-    if (a.startsWith("--")) {
-      const [k, v] = a.replace(/^--/, "").split("=");
-      if (k) args[k] = v ?? "";
-    }
-  }
-  return args;
-}
-
-function detectInputPath(): string {
-  const candidates = [
-    path.join(__dirname, "../../NewPedigree/血統書データUTF8Ver.csv"),
-    path.join(__dirname, "../../NewPedigree/血統書データUTFVer.csv"),
-    path.join(__dirname, "../../NewPedigree/testdatepedigrees100.csv"),
-  ];
-  for (const p of candidates) {
-    if (fsSync.existsSync(p)) return p;
-  }
-  // 最後の候補をデフォルトとして返し（存在しない場合は呼び出し側でエラーに）
-  return candidates[candidates.length - 1];
-}
-
-async function renamePedigreeCsvFields() {
-  const args = parseArgs(process.argv);
-  // ユーザー指定のパスはカレントディレクトリ(process.cwd())基準で解決する。
-  // 未指定時のみ、スクリプト位置(__dirname)基準の自動検出/デフォルトを使う。
-  const csvPath = args.in
-    ? path.isAbsolute(args.in)
-      ? args.in
-      : path.resolve(process.cwd(), args.in)
-    : detectInputPath();
-  const outputPath = args.out
-    ? path.isAbsolute(args.out)
-      ? args.out
-      : path.resolve(process.cwd(), args.out)
-    : path.join(__dirname, "../../NewPedigree/血統書データRenamed.csv");
-
-  // ファイルの存在確認
-  if (!fsSync.existsSync(csvPath)) {
-    console.log(`⚠️  入力ファイルが見つかりません: ${csvPath}`);
-    console.log('   データファイルを配置してから実行してください。');
-    console.log('   使用方法: npm run pedigree:rename -- --in /path/to/input.csv');
-    return;
-  }
-
-  try {
-  console.log("🔄 CSVファイルを読み込み中...");
-  console.log(`📂 入力パス: ${csvPath}`);
-  console.log(`📂 出力パス: ${outputPath}`);
-    const content = await fs.readFile(csvPath, "utf-8");
-    const lines = content.split("\n");
-
-    if (lines.length < 2) {
-      throw new Error("CSVファイルが正しい形式ではありません（2行未満）");
-    }
-
-    console.log(`📊 総行数: ${lines.length}`);
-    // 1行目/2行目のどちらがヘッダーかを簡易判定
-    const looksLikeHeader = (s: string) => /PedigreeID|Title|Breed|Gender|Date|Name|Color/i.test(s);
-    const headerIndex = looksLikeHeader(lines[0]) ? 0 : looksLikeHeader(lines[1]) ? 1 : 0;
-    const dataStart = headerIndex + 1;
-
-    console.log(`📝 ヘッダー候補(${headerIndex + 1}行目): ${lines[headerIndex].substring(0, 120)}...`);
-    if (headerIndex === 1) {
-      console.log(`📝 1行目 (削除想定): ${lines[0].substring(0, 100)}...`);
-    }
-
-    // ヘッダーを取得してリネーム
-    const originalHeader = lines[headerIndex];
-    const renamedHeader = renameFields(originalHeader);
-
-    console.log("🔄 フィールド名をリネーム中...");
-    console.log(`📝 リネーム後: ${renamedHeader.substring(0, 100)}...`);
-
-  // ヘッダー行以外のデータを結合（headerIndexより前をスキップ）
-  const newContent = [renamedHeader, ...lines.slice(dataStart)].join("\n");
-
-    // 新しいファイルに保存
-  await fs.writeFile(outputPath, newContent, "utf-8");
-
-    console.log("✅ CSVファイルのリネームが完了しました");
-    console.log(`📁 出力ファイル: ${outputPath}`);
-  console.log(`📊 新しい総行数: ${newContent.split("\n").length}`);
-
-    // 結果の確認
-  const newLines = newContent.split("\n");
-    console.log(`📝 新しいヘッダー: ${newLines[0].substring(0, 150)}...`);
-    console.log(`📝 最初のデータ行: ${newLines[1].substring(0, 100)}...`);
-  } catch (error) {
-    console.error("❌ エラーが発生しました:", error);
-    throw error;
-  }
-}
-
-/**
- * フィールド名をリネームする関数
- */
-function renameFields(headerLine: string): string {
-  const fields = headerLine.split(",");
-  const originalSet = new Set(fields.map((f) => f.trim()));
-  const used = new Set<string>();
-
-  // フィールド名のマッピング（祖父母世代以降をF/M略称に変更）
-  const fieldMapping: { [key: string]: string } = {
-    // 基本情報（そのまま）
-    PedigreeID: "PedigreeID",
-    Title: "Title",
-    CatteryName: "CatName",
-    CatName: "CatName2",
-    BreedCode: "BreedCode",
-    Gender: "Gender",
-    EyeColor: "EyeColor",
-    CoatColorCode: "CoatColorCode",
-    BirthDate: "BirthDate",
-    BreederName: "BreederName",
-    OwnerName: "OwnerName",
-    RegistrationDate: "RegistrationDate",
-    BrotherCount: "BrotherCount",
-    SisterCount: "SisterCount",
-    Notes: "Notes",
-    Notes2: "Notes2",
-    OtherNo: "OtherNo",
-
-    // 父母情報（そのまま）
-    FatherTitle: "FatherTitle",
-    FatherCatteryName: "FatherCatName",
-    FatherCatName: "FatherCatName2",
-    FatherCoatColor: "FatherCoatColor",
-    FatherEyeColor: "FatherEyeColor",
-    FatherJCU: "FatherJCU",
-    FatherOtherCode: "FatherOtherCode",
-    MotherTitle: "MotherTitle",
-    MotherCatteryName: "MotherCatName",
-  MotherCatName: "MotherCatName2",
-    MotherCoatColor: "MotherCoatColor",
-    MotherEyeColor: "MotherEyeColor",
-    MotherJCU: "MotherJCU",
-    MotherOtherCode: "MotherOtherCode",
-
-  // 祖父母世代（F/M略称に変更） 
-    PatGrandFatherTitle: "FFTitle",
-    PatGrandFatherCatteryName: "FFCatName",
-    PatGrandFatherCatName: "FFCatName2",
-    PatGrandFatherJCU: "FFJCU",
-    PatGrandMotherTitle: "FMTitle",
-    PatGrandMotherCatteryName: "FMCatName",
-    PatGrandMotherCatName: "FMCatName2",
-    PatGrandMotherJCU: "FMJCU",
-  PatGrandFatherChampionFlag: "FFChampionFlag",
-  PatGrandMotherChampionFlag: "FMChampionFlag",
-  MatGrandFatherChampionFlag: "MFChampionFlag",
-  MatGrandFatherTitle: "MFTitle",
-  MatGrandFatherCatteryName: "MFCatName",
-  MatGrandFatherCatName: "MFCatName2",
-  MatGrandFatherJCU: "MFJCU",
-  MatGrandMotherChampionFlag: "MMChampionFlag",
-  MatGrandMotherTitle: "MMTitle",
-  MatGrandMotherCatteryName: "MMCatName",
-  MatGrandMotherCatName: "MMCatName2",
-  MatGrandMotherJCU: "MMJCU",
-
-    // 曾祖父母世代（FF, FM, MF, MM + F/M）
-    PatGreatGrandFatherChampionFlag: "FFFChampionFlag",
-    PatGreatGrandFatherTitle: "FFFTitle",
-    PatGreatGrandFatherCatteryName: "FFFCatteryName",
-    PatGreatGrandFatherCatName: "FFFCatName",
-    PatGreatGrandFatherJCU: "FFFJCU",
-    PatGreatGrandMotherChampionFlag: "FFMChampionFlag",
-    PatGreatGrandMotherTitle: "FFMTitle",
-    PatGreatGrandMotherCatteryName: "FFMCatteryName",
-    PatGreatGrandMotherCatName: "FFMCatName",
-    PatGreatGrandMotherJCU: "FFMJCU",
-    PatGreatGrandFatherMatChampionFlag: "FMFChampionFlag",
-    PatGreatGrandFatherMatTitle: "FMFTitle",
-    PatGreatGrandFatherMatCatteryName: "FMFCatteryName",
-    PatGreatGrandFatherMatCatName: "FMFCatName",
-    PatGreatGrandFatherMatJCU: "FMFJCU",
-    PatGreatGrandMotherMatChampionFlag: "FMMChampionFlag",
-    PatGreatGrandMotherMatTitle: "FMMTitle",
-    PatGreatGrandMotherMatCatteryName: "FMMCatteryName",
-    PatGreatGrandMotherMatCatName: "FMMCatName",
-    PatGreatGrandMotherMatJCU: "FMMJCU",
-    MatGreatGrandFatherChampionFlag: "MFFChampionFlag",
-    MatGreatGrandFatherTitle: "MFFTitle",
-    MatGreatGrandFatherCatteryName: "MFFCatteryName",
-    MatGreatGrandFatherCatName: "MFFCatName",
-    MatGreatGrandFatherJCU: "MFFJCU",
-    MatGreatGrandMotherChampionFlag: "MFMChampionFlag",
-    MatGreatGrandMotherTitle: "MFMTitle",
-    MatGreatGrandMotherCatteryName: "MFMCatteryName",
-    MatGreatGrandMotherCatName: "MFMCatName",
-    MatGreatGrandMotherJCU: "MFMJCU",
-    MatGreatGrandFatherMatChampionFlag: "MMFChampionFlag",
-    MatGreatGrandFatherMatTitle: "MMFTitle",
-    MatGreatGrandFatherMatCatteryName: "MMFCatteryName",
-    MatGreatGrandFatherMatCatName: "MMFCatName",
-    MatGreatGrandFatherMatJCU: "MMFJCU",
-    MatGreatGrandMotherMatChampionFlag: "MMMChampionFlag",
-    MatGreatGrandMotherMatTitle: "MMMTitle",
-    MatGreatGrandMotherMatCatteryName: "MMMCatteryName",
-    MatGreatGrandMotherMatCatName: "MMMCatName",
-    MatGreatGrandMotherMatJCU: "MMMJCU",
-
-    // その他
-    OldCode: "OldCode",
-  };
-
-  // フィールド名をマッピングに従って変更
-  const renamedFields = fields.map((field) => {
-    const trimmedField = field.trim();
-    let target = fieldMapping[trimmedField] || trimmedField;
-
-    // 既に「*2」列が存在する場合、同じ「*2」へのリネームはスキップして重複を回避
-    if (target !== trimmedField && originalSet.has(target) && /2$/.test(target)) {
-      target = trimmedField; // 末尾2が既にあるので、この列は元のままにする
-    }
-
-    // 同一実行中の重複も回避（例えば前列のリネーム結果と衝突した場合）
-    if (used.has(target) && target !== trimmedField) {
-      // 衝突時はオリジナル名を維持
-      target = trimmedField;
-    }
-
-    used.add(target);
-    return target;
-  });
-
-  return renamedFields.join(",");
-}
-
-// スクリプト実行
-if (require.main === module) {
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  (async () => {
-    try {
-      await renamePedigreeCsvFields();
-      console.log("🎉 血統書CSVのリネームが完了しました！");
-      process.exit(0);
-    } catch (error) {
-      console.error("💥 リネーム処理でエラーが発生しました:", error);
-      process.exit(1);
-    }
-  })();
-}
-
-export { renamePedigreeCsvFields };
-`````
-
 ## File: backend/src/scripts/selective-csv-import.ts
 `````typescript
 import * as fs from "fs";
@@ -43185,6 +42993,321 @@ export class AppController {
     };
   }
 }
+`````
+
+## File: backend/src/main.ts
+`````typescript
+import { existsSync, statSync } from 'fs';
+import { resolve } from 'path';
+
+import { ValidationPipe, Logger } from "@nestjs/common";
+import { NestFactory } from "@nestjs/core";
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import cookieParser from 'cookie-parser';
+import { config as loadEnv } from 'dotenv';
+import { json, urlencoded, Request, Response, NextFunction } from 'express';
+import helmet from 'helmet';
+import { Logger as PinoLogger } from 'nestjs-pino';
+
+
+import { AppModule } from "./app.module";
+import { validateProductionEnvironment, logEnvironmentInfo } from "./common/config/env.validation";
+import { EnhancedGlobalExceptionFilter } from "./common/filters/enhanced-global-exception.filter";
+import { PerformanceMonitoringInterceptor } from "./common/interceptors/performance-monitoring.interceptor";
+import { TransformResponseInterceptor } from "./common/interceptors/transform-response.interceptor";
+
+const candidateEnvFiles: Array<{ file: string; override: boolean }> = [
+  { file: resolve(__dirname, "..", ".env"), override: false },
+  { file: resolve(__dirname, "..", ".env.example"), override: false },
+  { file: resolve(__dirname, "..", ".env.local"), override: true },
+];
+
+for (const candidate of candidateEnvFiles) {
+  if (existsSync(candidate.file) && statSync(candidate.file).size > 0) {
+    loadEnv({ path: candidate.file, override: candidate.override });
+  }
+}
+
+async function bootstrap() {
+  const logger = new Logger("Bootstrap");
+
+  try {
+    // Starting the application server
+    logger.log("Starting Cat Management System API...");
+
+    // Validate environment configuration
+    const isProdLikeEnv = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging";
+
+    if (isProdLikeEnv) {
+      validateProductionEnvironment();
+      logger.log(`✅ ${process.env.NODE_ENV} environment validation passed`);
+    }
+    
+    logEnvironmentInfo();
+
+    const app = await NestFactory.create(AppModule, {
+      bufferLogs: true,
+      cors: {
+        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+          const allowedOrigins =
+            (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
+              ? (process.env.CORS_ORIGIN || '').split(',').map((o: string) => o.trim()).filter(Boolean)
+              : [
+                  'http://localhost:3000',
+                  'http://localhost:3002',
+                  'http://localhost:3003',
+                  'http://localhost:3005',
+                ];
+
+          if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') && (!process.env.CORS_ORIGIN || allowedOrigins.length === 0)) {
+            return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
+          }
+
+          const isAllowed = allowedOrigins.some((allowedOrigin) => {
+            if (typeof allowedOrigin === 'string') {
+              return allowedOrigin === origin;
+            }
+            return false;
+          });
+
+          if (isAllowed || !origin) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'), false);
+          }
+        },
+        credentials: true,
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cookie'],
+        exposedHeaders: ['Content-Length', 'Content-Type', 'Set-Cookie'],
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
+      },
+    });
+
+  // Body parser limit を拡張（Base64画像対応：最大50MB）
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
+
+  // Pino logger
+  app.useLogger(app.get(PinoLogger));
+
+    // Security: Helmet middleware for security headers
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
+      },
+      hsts: {
+        maxAge: 31536000, // 1 year in seconds
+        includeSubDomains: true,
+        preload: true,
+      },
+      referrerPolicy: {
+        policy: 'strict-origin-when-cross-origin',
+      },
+      noSniff: true,
+      xssFilter: true,
+    }),
+  );
+
+  // Sentry (条件付き)
+  if (process.env.SENTRY_DSN) {
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || 'development',
+      tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
+      profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 0.1),
+      integrations: [nodeProfilingIntegration()],
+      beforeSend(event) {
+        // Redact sensitive headers before sending to Sentry
+        if (event.request?.headers) {
+          const headers = event.request.headers as Record<string, string>;
+          if (headers.authorization) {
+            headers.authorization = '[REDACTED]';
+          }
+          if (headers.cookie) {
+            headers.cookie = '[REDACTED]';
+          }
+          if (headers.Authorization) {
+            headers.Authorization = '[REDACTED]';
+          }
+          if (headers.Cookie) {
+            headers.Cookie = '[REDACTED]';
+          }
+        }
+        return event;
+      },
+    });
+    logger.log('Sentry initialized with security redaction');
+  }
+
+  // Cookie parser (for refresh token, etc.)
+  app.use(cookieParser());
+
+  // Debug middleware for pregnancy-checks (development only)
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/v1/breeding/pregnancy-checks', (req: Request, res: Response, next: NextFunction) => {
+      if (req.method === 'POST') {
+        const body = req.body as Record<string, unknown>;
+        console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(body, null, 2));
+        console.log('[DEBUG MIDDLEWARE] motherId type:', typeof body?.motherId, 'value:', body?.motherId);
+        console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof body?.fatherId, 'value:', body?.fatherId);
+      }
+      next();
+    });
+  }
+
+    // Global validation pipe
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );    // Global response interceptor
+    app.useGlobalInterceptors(new TransformResponseInterceptor());
+
+    // Performance monitoring interceptor
+    app.useGlobalInterceptors(new PerformanceMonitoringInterceptor());
+
+    // Global exception filter (enhanced version)
+    app.useGlobalFilters(new EnhancedGlobalExceptionFilter());
+
+    // API prefix
+    app.setGlobalPrefix("api/v1");
+
+    // Root endpoint
+    app.getHttpAdapter().get("/", (req: unknown, res: { json: (data: unknown) => void }) => {
+      res.json({
+        success: true,
+        data: {
+          message: "🐱 Cat Management System API",
+          version: "1.0.0",
+          documentation: "/api/docs",
+          health: "/health",
+          timestamp: new Date().toISOString(),
+          endpoints: {
+            cats: "/api/v1/cats",
+            pedigrees: "/api/v1/pedigrees",
+            breeds: "/api/v1/breeds",
+            coatColors: "/api/v1/coat-colors",
+          },
+        },
+      });
+    });
+
+    // Enhanced health check endpoint
+    app.getHttpAdapter().get("/health", async (req: unknown, res: { status: (code: number) => { json: (data: unknown) => void } }) => {
+      const health: {
+        success: boolean;
+        data: {
+          status: string;
+          timestamp: string;
+          service: string;
+          version: string;
+          environment?: string;
+          uptime: number;
+          memory: {
+            used: number;
+            total: number;
+          };
+          database?: string;
+          error?: string;
+        };
+      } = {
+        success: true,
+        data: {
+          status: "ok",
+          timestamp: new Date().toISOString(),
+          service: "Cat Management System API",
+          version: "1.0.0",
+          environment: process.env.NODE_ENV,
+          uptime: process.uptime(),
+          memory: {
+            used: Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100,
+            total: Math.round((process.memoryUsage().heapTotal / 1024 / 1024) * 100) / 100,
+          },
+        },
+      };
+
+      try {
+        // Database health check (if enabled)
+        if (process.env.HEALTH_CHECK_DATABASE === "true") {
+          const { PrismaClient } = await import("@prisma/client");
+          const prisma = new PrismaClient();
+          await prisma.$queryRaw`SELECT 1`;
+          await prisma.$disconnect();
+          health.data.database = "ok";
+        }
+      } catch (error) {
+        health.success = false;
+        health.data.status = "error";
+        health.data.database = "error";
+        health.data.error = error instanceof Error ? error.message : "Unknown error";
+      }
+
+      res.status(health.success ? 200 : 503).json(health);
+    });    // Swagger documentation
+    if (process.env.NODE_ENV !== "production") {
+      const config = new DocumentBuilder()
+        .setTitle("Cat Management System API")
+        .setDescription("API for managing cat breeding and care records")
+        .setVersion("1.0")
+        .addBearerAuth()
+        .build();
+
+      const document = SwaggerModule.createDocument(app, config);
+      SwaggerModule.setup("api/docs", app, document);
+    }
+
+  if (!process.env.PORT && process.env.NODE_ENV === 'production') {
+    throw new Error('PORT environment variable is not set in production environment.');
+  }
+  const port = process.env.PORT || 3004;
+  await app.listen(port, '0.0.0.0');
+
+    // Graceful shutdown
+    const gracefulShutdown = (signal: string) => {
+      logger.log(`🚨 Received ${signal}. Starting graceful shutdown...`);
+      app.close().then(() => {
+        logger.log("✅ Application closed successfully");
+        process.exit(0);
+      }).catch((error) => {
+        logger.error("❌ Error during shutdown:", error);
+        process.exit(1);
+      });
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+    logger.log(`🚀 Application is running on: http://localhost:${port}`);
+    logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+    logger.log(`❤️  Health Check: http://localhost:${port}/health`);
+  } catch (error) {
+    logger.error("Failed to start application:", error);
+    process.exit(1);
+  }
+}
+
+bootstrap().catch((error) => {
+  const logger = new Logger("Bootstrap");
+  logger.error("Unhandled error during bootstrap:", error);
+  process.exit(1);
+});
 `````
 
 ## File: backend/test/utils/create-test-app.ts
@@ -60456,6 +60579,279 @@ export class ImportService {
 }
 `````
 
+## File: backend/src/scripts/rename-pedigree-csv.ts
+`````typescript
+import * as fsSync from "fs";
+import { promises as fs } from "fs";
+import * as path from "path";
+
+/**
+ * 血統書CSVのフィールド名をリネームして、1行目を削除するスクリプト
+ *
+ * 変更内容:
+ * 1. 1行目（日本語ヘッダー）を削除
+ * 2. 祖父母世代以降のフィールド名をF/M略称に変更
+ * 3. 必須フィールド: PedigreeID, Gender
+ * 4. その他のフィールドはNull可
+ */
+
+function parseArgs(argv: string[]) {
+  const args: Record<string, string> = {};
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith("--")) {
+      const [k, v] = a.replace(/^--/, "").split("=");
+      if (k) args[k] = v ?? "";
+    }
+  }
+  return args;
+}
+
+function detectInputPath(): string {
+  const candidates = [
+    path.join(__dirname, "../../NewPedigree/血統書データUTF8Ver.csv"),
+    path.join(__dirname, "../../NewPedigree/血統書データUTFVer.csv"),
+    path.join(__dirname, "../../NewPedigree/testdatepedigrees100.csv"),
+  ];
+  for (const p of candidates) {
+    if (fsSync.existsSync(p)) return p;
+  }
+  // 最後の候補をデフォルトとして返し（存在しない場合は呼び出し側でエラーに）
+  return candidates[candidates.length - 1];
+}
+
+async function renamePedigreeCsvFields() {
+  const args = parseArgs(process.argv);
+  // ユーザー指定のパスはカレントディレクトリ(process.cwd())基準で解決する。
+  // 未指定時のみ、スクリプト位置(__dirname)基準の自動検出/デフォルトを使う。
+  const csvPath = args.in
+    ? path.isAbsolute(args.in)
+      ? args.in
+      : path.resolve(process.cwd(), args.in)
+    : detectInputPath();
+  const outputPath = args.out
+    ? path.isAbsolute(args.out)
+      ? args.out
+      : path.resolve(process.cwd(), args.out)
+    : path.join(__dirname, "../../NewPedigree/血統書データRenamed.csv");
+
+  // ファイルの存在確認
+  if (!fsSync.existsSync(csvPath)) {
+    console.log(`⚠️  入力ファイルが見つかりません: ${csvPath}`);
+    console.log('   データファイルを配置してから実行してください。');
+    console.log('   使用方法: npm run pedigree:rename -- --in /path/to/input.csv');
+    return;
+  }
+
+  try {
+    console.log("🔄 CSVファイルを読み込み中...");
+    console.log(`📂 入力パス: ${csvPath}`);
+    console.log(`📂 出力パス: ${outputPath}`);
+    const content = await fs.readFile(csvPath, "utf-8");
+    const lines = content.split("\n");
+
+    if (lines.length < 2) {
+      throw new Error("CSVファイルが正しい形式ではありません（2行未満）");
+    }
+
+    console.log(`📊 総行数: ${lines.length}`);
+    // 1行目/2行目のどちらがヘッダーかを簡易判定
+    const looksLikeHeader = (s: string) => /PedigreeID|Title|Breed|Gender|Date|Name|Color/i.test(s);
+    const headerIndex = looksLikeHeader(lines[0]) ? 0 : looksLikeHeader(lines[1]) ? 1 : 0;
+    const dataStart = headerIndex + 1;
+
+    console.log(`📝 ヘッダー候補(${headerIndex + 1}行目): ${lines[headerIndex].substring(0, 120)}...`);
+    if (headerIndex === 1) {
+      console.log(`📝 1行目 (削除想定): ${lines[0].substring(0, 100)}...`);
+    }
+
+    // ヘッダーを取得してリネーム
+    const originalHeader = lines[headerIndex];
+    const renamedHeader = renameFields(originalHeader);
+
+    console.log("🔄 フィールド名をリネーム中...");
+    console.log(`📝 リネーム後: ${renamedHeader.substring(0, 100)}...`);
+
+    // ヘッダー行以外のデータを結合（headerIndexより前をスキップ）
+    const newContent = [renamedHeader, ...lines.slice(dataStart)].join("\n");
+
+    // 新しいファイルに保存
+    await fs.writeFile(outputPath, newContent, "utf-8");
+
+    console.log("✅ CSVファイルのリネームが完了しました");
+    console.log(`📁 出力ファイル: ${outputPath}`);
+    console.log(`📊 新しい総行数: ${newContent.split("\n").length}`);
+
+    // 結果の確認
+    const newLines = newContent.split("\n");
+    console.log(`📝 新しいヘッダー: ${newLines[0].substring(0, 150)}...`);
+    console.log(`📝 最初のデータ行: ${newLines[1].substring(0, 100)}...`);
+  } catch (error) {
+    console.error("❌ エラーが発生しました:", error);
+    throw error;
+  }
+}
+
+/**
+ * フィールド名をリネームする関数
+ */
+function renameFields(headerLine: string): string {
+  const fields = headerLine.split(",");
+  const originalSet = new Set(fields.map((f) => f.trim()));
+  const used = new Set<string>();
+
+  // フィールド名のマッピング（PrismaスキーマのcamelCase形式に準拠）
+  const fieldMapping: { [key: string]: string } = {
+    // 基本情報（Prismaスキーマ準拠: camelCase）
+    PedigreeID: "pedigreeId",
+    ChampionFlag: "championFlag",
+    Title: "title",
+    CatName: "catName",
+    CatName2: "catName2",
+    BreedCode: "breedCode",
+    Gender: "genderCode",
+    EyeColor: "eyeColor",
+    CoatColorCode: "coatColorCode",
+    BirthDate: "birthDate",
+    BreederName: "breederName",
+    OwnerName: "ownerName",
+    RegistrationDate: "registrationDate",
+    BrotherCount: "brotherCount",
+    SisterCount: "sisterCount",
+    Notes: "notes",
+    Notes2: "notes2",
+    OtherNo: "otherNo",
+
+    // 父母情報（Prismaスキーマ準拠）
+    // 注意: 元CSVではCatteryNameに猫名、CatNameにキャッテリー名が入っている
+    FatherChampionFlag: "fatherChampionFlag",
+    FatherTitle: "fatherTitle",
+    FatherCatteryName: "fatherCatName",
+    FatherCatName: "fatherCatName2",
+    FatherCoatColor: "fatherCoatColor",
+    FatherEyeColor: "fatherEyeColor",
+    FatherJCU: "fatherJCU",
+    FatherOtherCode: "fatherOtherCode",
+    MotherChampionFlag: "motherChampionFlag",
+    MotherTitle: "motherTitle",
+    MotherCatteryName: "motherCatName",
+    MotherCatName: "motherCatName2",
+    MotherCoatColor: "motherCoatColor",
+    MotherEyeColor: "motherEyeColor",
+    MotherJCU: "motherJCU",
+    MotherOtherCode: "motherOtherCode",
+
+    // 祖父母世代（Prismaスキーマ準拠: ff, fm, mf, mm）
+    // 注意: 元CSVではCatteryNameに猫名、CatNameに毛色が入っている
+    PatGrandFatherChampionFlag: "ffChampionFlag",
+    PatGrandFatherTitle: "ffTitle",
+    PatGrandFatherCatteryName: "ffCatName",
+    PatGrandFatherCatName: "ffCatColor",
+    PatGrandFatherJCU: "ffjcu",
+    PatGrandMotherChampionFlag: "fmChampionFlag",
+    PatGrandMotherTitle: "fmTitle",
+    PatGrandMotherCatteryName: "fmCatName",
+    PatGrandMotherCatName: "fmCatColor",
+    PatGrandMotherJCU: "fmjcu",
+    MatGrandFatherChampionFlag: "mfChampionFlag",
+    MatGrandFatherTitle: "mfTitle",
+    MatGrandFatherCatteryName: "mfCatName",
+    MatGrandFatherCatName: "mfCatColor",
+    MatGrandFatherJCU: "mfjcu",
+    MatGrandMotherChampionFlag: "mmChampionFlag",
+    MatGrandMotherTitle: "mmTitle",
+    MatGrandMotherCatteryName: "mmCatName",
+    MatGrandMotherCatName: "mmCatColor",
+    MatGrandMotherJCU: "mmjcu",
+
+    // 曾祖父母世代（Prismaスキーマ準拠: fff, ffm, fmf, fmm, mff, mfm, mmf, mmm）
+    // 注意: 元CSVではCatteryNameに猫名、CatNameに毛色が入っている
+    PatGreatGrandFatherChampionFlag: "fffChampionFlag",
+    PatGreatGrandFatherTitle: "fffTitle",
+    PatGreatGrandFatherCatteryName: "fffCatName",
+    PatGreatGrandFatherCatName: "fffCatColor",
+    PatGreatGrandFatherJCU: "fffjcu",
+    PatGreatGrandMotherChampionFlag: "ffmChampionFlag",
+    PatGreatGrandMotherTitle: "ffmTitle",
+    PatGreatGrandMotherCatteryName: "ffmCatName",
+    PatGreatGrandMotherCatName: "ffmCatColor",
+    PatGreatGrandMotherJCU: "ffmjcu",
+    PatGreatGrandFatherMatChampionFlag: "fmfChampionFlag",
+    PatGreatGrandFatherMatTitle: "fmfTitle",
+    PatGreatGrandFatherMatCatteryName: "fmfCatName",
+    PatGreatGrandFatherMatCatName: "fmfCatColor",
+    PatGreatGrandFatherMatJCU: "fmfjcu",
+    PatGreatGrandMotherMatChampionFlag: "fmmChampionFlag",
+    PatGreatGrandMotherMatTitle: "fmmTitle",
+    PatGreatGrandMotherMatCatteryName: "fmmCatName",
+    PatGreatGrandMotherMatCatName: "fmmCatColor",
+    PatGreatGrandMotherMatJCU: "fmmjcu",
+    MatGreatGrandFatherChampionFlag: "mffChampionFlag",
+    MatGreatGrandFatherTitle: "mffTitle",
+    MatGreatGrandFatherCatteryName: "mffCatName",
+    MatGreatGrandFatherCatName: "mffCatColor",
+    MatGreatGrandFatherJCU: "mffjcu",
+    MatGreatGrandMotherChampionFlag: "mfmChampionFlag",
+    MatGreatGrandMotherTitle: "mfmTitle",
+    MatGreatGrandMotherCatteryName: "mfmCatName",
+    MatGreatGrandMotherCatName: "mfmCatColor",
+    MatGreatGrandMotherJCU: "mfmjcu",
+    MatGreatGrandFatherMatChampionFlag: "mmfChampionFlag",
+    MatGreatGrandFatherMatTitle: "mmfTitle",
+    MatGreatGrandFatherMatCatteryName: "mmfCatName",
+    MatGreatGrandFatherMatCatName: "mmfCatColor",
+    MatGreatGrandFatherMatJCU: "mmfjcu",
+    MatGreatGrandMotherMatChampionFlag: "mmmChampionFlag",
+    MatGreatGrandMotherMatTitle: "mmmTitle",
+    MatGreatGrandMotherMatCatteryName: "mmmCatName",
+    MatGreatGrandMotherMatCatName: "mmmCatColor",
+    MatGreatGrandMotherMatJCU: "mmmjcu",
+
+    // その他
+    OldCode: "oldCode",
+  };
+
+  // フィールド名をマッピングに従って変更
+  const renamedFields = fields.map((field) => {
+    const trimmedField = field.trim();
+    let target = fieldMapping[trimmedField] || trimmedField;
+
+    // 既に「*2」列が存在する場合、同じ「*2」へのリネームはスキップして重複を回避
+    if (target !== trimmedField && originalSet.has(target) && /2$/.test(target)) {
+      target = trimmedField; // 末尾2が既にあるので、この列は元のままにする
+    }
+
+    // 同一実行中の重複も回避（例えば前列のリネーム結果と衝突した場合）
+    if (used.has(target) && target !== trimmedField) {
+      // 衝突時はオリジナル名を維持
+      target = trimmedField;
+    }
+
+    used.add(target);
+    return target;
+  });
+
+  return renamedFields.join(",");
+}
+
+// スクリプト実行
+if (require.main === module) {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      await renamePedigreeCsvFields();
+      console.log("🎉 血統書CSVのリネームが完了しました！");
+      process.exit(0);
+    } catch (error) {
+      console.error("💥 リネーム処理でエラーが発生しました:", error);
+      process.exit(1);
+    }
+  })();
+}
+
+export { renamePedigreeCsvFields };
+`````
+
 ## File: backend/test/export.e2e-spec.ts
 `````typescript
 import { INestApplication } from '@nestjs/common';
@@ -60991,434 +61387,364 @@ EXPOSE 8080
 CMD ["pnpm", "start"]
 `````
 
-## File: backend/src/main.ts
+## File: backend/prisma/seed/import-pedigrees.ts
 `````typescript
-import { existsSync, statSync } from 'fs';
-import { resolve } from 'path';
+import { PrismaClient } from '@prisma/client';
+import * as fs from 'fs';
+import * as path from 'path';
+import { parse } from 'csv-parse/sync';
 
-import { ValidationPipe, Logger } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
-import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
-import cookieParser from 'cookie-parser';
-import { config as loadEnv } from 'dotenv';
-import { json, urlencoded, Request, Response, NextFunction } from 'express';
-import helmet from 'helmet';
-import { Logger as PinoLogger } from 'nestjs-pino';
+const prisma = new PrismaClient();
 
+// CSVのヘッダー名（Prismaスキーマ準拠のcamelCase）に合わせたインターフェース
+interface PedigreeCsvRecord {
+  pedigreeId: string;
+  championFlag: string;
+  title: string;
+  catName: string;
+  catName2: string;
+  breedCode: string;
+  genderCode: string;
+  eyeColor: string;
+  coatColorCode: string;
+  birthDate: string;
+  breederName: string;
+  ownerName: string;
+  registrationDate: string;
+  brotherCount: string;
+  sisterCount: string;
+  notes: string;
+  notes2: string;
+  otherNo: string;
 
-import { AppModule } from "./app.module";
-import { validateProductionEnvironment, logEnvironmentInfo } from "./common/config/env.validation";
-import { EnhancedGlobalExceptionFilter } from "./common/filters/enhanced-global-exception.filter";
-import { PerformanceMonitoringInterceptor } from "./common/interceptors/performance-monitoring.interceptor";
-import { TransformResponseInterceptor } from "./common/interceptors/transform-response.interceptor";
+  // 両親
+  fatherChampionFlag: string;
+  fatherTitle: string;
+  fatherCatName: string;
+  fatherCatName2: string;
+  fatherCoatColor: string;
+  fatherEyeColor: string;
+  fatherJCU: string;
+  fatherOtherCode: string;
+  motherChampionFlag: string;
+  motherTitle: string;
+  motherCatName: string;
+  motherCatName2: string;
+  motherCoatColor: string;
+  motherEyeColor: string;
+  motherJCU: string;
+  motherOtherCode: string;
 
-const candidateEnvFiles: Array<{ file: string; override: boolean }> = [
-  { file: resolve(__dirname, "..", ".env"), override: false },
-  { file: resolve(__dirname, "..", ".env.example"), override: false },
-  { file: resolve(__dirname, "..", ".env.local"), override: true },
-];
+  // 祖父母
+  ffChampionFlag: string;
+  ffTitle: string;
+  ffCatName: string;
+  ffCatColor: string;
+  ffjcu: string;
+  fmChampionFlag: string;
+  fmTitle: string;
+  fmCatName: string;
+  fmCatColor: string;
+  fmjcu: string;
+  mfChampionFlag: string;
+  mfTitle: string;
+  mfCatName: string;
+  mfCatColor: string;
+  mfjcu: string;
+  mmChampionFlag: string;
+  mmTitle: string;
+  mmCatName: string;
+  mmCatColor: string;
+  mmjcu: string;
 
-for (const candidate of candidateEnvFiles) {
-  if (existsSync(candidate.file) && statSync(candidate.file).size > 0) {
-    loadEnv({ path: candidate.file, override: candidate.override });
-  }
+  // 曾祖父母
+  fffChampionFlag: string;
+  fffTitle: string;
+  fffCatName: string;
+  fffCatColor: string;
+  fffjcu: string;
+  ffmChampionFlag: string;
+  ffmTitle: string;
+  ffmCatName: string;
+  ffmCatColor: string;
+  ffmjcu: string;
+  fmfChampionFlag: string;
+  fmfTitle: string;
+  fmfCatName: string;
+  fmfCatColor: string;
+  fmfjcu: string;
+  fmmChampionFlag: string;
+  fmmTitle: string;
+  fmmCatName: string;
+  fmmCatColor: string;
+  fmmjcu: string;
+  mffChampionFlag: string;
+  mffTitle: string;
+  mffCatName: string;
+  mffCatColor: string;
+  mffjcu: string;
+  mfmChampionFlag: string;
+  mfmTitle: string;
+  mfmCatName: string;
+  mfmCatColor: string;
+  mfmjcu: string;
+  mmfChampionFlag: string;
+  mmfTitle: string;
+  mmfCatName: string;
+  mmfCatColor: string;
+  mmfjcu: string;
+  mmmChampionFlag: string;
+  mmmTitle: string;
+  mmmCatName: string;
+  mmmCatColor: string;
+  mmmjcu: string;
+
+  oldCode: string;
 }
 
-async function bootstrap() {
-  const logger = new Logger("Bootstrap");
+// 数値フィールドの変換（空文字列はnullに）
+const parseIntOrNull = (value: string | undefined) => {
+  if (!value || value.trim() === '') return null;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? null : parsed;
+};
 
-  try {
-    // Starting the application server
-    logger.log("Starting Cat Management System API...");
+// 文字列フィールドの変換（空文字列はundefinedに）
+const parseStringOrUndefined = (value: string | undefined) => {
+  if (!value || value.trim() === '') return undefined;
+  return value;
+};
 
-    // Validate environment configuration
-    const isProdLikeEnv = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging";
+async function main() {
+  // CSVファイルのパスを更新
+  const csvFilePath = path.join(process.cwd(), 'src/pedigree/血統書データUTF8Ver.csv');
+  console.log(`Reading CSV from: ${csvFilePath}`);
 
-    if (isProdLikeEnv) {
-      validateProductionEnvironment();
-      logger.log(`✅ ${process.env.NODE_ENV} environment validation passed`);
-    }
-    
-    logEnvironmentInfo();
-
-    const app = await NestFactory.create(AppModule, {
-      bufferLogs: true,
-      cors: {
-        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-          const allowedOrigins =
-            (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
-              ? (process.env.CORS_ORIGIN || '').split(',').map((o: string) => o.trim()).filter(Boolean)
-              : [
-                  'http://localhost:3000',
-                  'http://localhost:3002',
-                  'http://localhost:3003',
-                  'http://localhost:3005',
-                ];
-
-          if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') && (!process.env.CORS_ORIGIN || allowedOrigins.length === 0)) {
-            return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
-          }
-
-          const isAllowed = allowedOrigins.some((allowedOrigin) => {
-            if (typeof allowedOrigin === 'string') {
-              return allowedOrigin === origin;
-            }
-            return false;
-          });
-
-          if (isAllowed || !origin) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'), false);
-          }
-        },
-        credentials: true,
-        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cookie'],
-        exposedHeaders: ['Content-Length', 'Content-Type', 'Set-Cookie'],
-        preflightContinue: false,
-        optionsSuccessStatus: 204,
-      },
-    });
-
-  // Body parser limit を拡張（Base64画像対応：最大50MB）
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ extended: true, limit: '50mb' }));
-
-  // Pino logger
-  app.useLogger(app.get(PinoLogger));
-
-    // Security: Helmet middleware for security headers
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          imgSrc: ["'self'", "data:", "https:"],
-          connectSrc: ["'self'"],
-          fontSrc: ["'self'"],
-          objectSrc: ["'none'"],
-          mediaSrc: ["'self'"],
-          frameSrc: ["'none'"],
-        },
-      },
-      hsts: {
-        maxAge: 31536000, // 1 year in seconds
-        includeSubDomains: true,
-        preload: true,
-      },
-      referrerPolicy: {
-        policy: 'strict-origin-when-cross-origin',
-      },
-      noSniff: true,
-      xssFilter: true,
-    }),
-  );
-
-  // Sentry (条件付き)
-  if (process.env.SENTRY_DSN) {
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      environment: process.env.NODE_ENV || 'development',
-      tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
-      profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 0.1),
-      integrations: [nodeProfilingIntegration()],
-      beforeSend(event) {
-        // Redact sensitive headers before sending to Sentry
-        if (event.request?.headers) {
-          const headers = event.request.headers as Record<string, string>;
-          if (headers.authorization) {
-            headers.authorization = '[REDACTED]';
-          }
-          if (headers.cookie) {
-            headers.cookie = '[REDACTED]';
-          }
-          if (headers.Authorization) {
-            headers.Authorization = '[REDACTED]';
-          }
-          if (headers.Cookie) {
-            headers.Cookie = '[REDACTED]';
-          }
-        }
-        return event;
-      },
-    });
-    logger.log('Sentry initialized with security redaction');
-  }
-
-  // Cookie parser (for refresh token, etc.)
-  app.use(cookieParser());
-
-  // Debug middleware for pregnancy-checks (development only)
-  if (process.env.NODE_ENV !== 'production') {
-    app.use('/api/v1/breeding/pregnancy-checks', (req: Request, res: Response, next: NextFunction) => {
-      if (req.method === 'POST') {
-        const body = req.body as Record<string, unknown>;
-        console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(body, null, 2));
-        console.log('[DEBUG MIDDLEWARE] motherId type:', typeof body?.motherId, 'value:', body?.motherId);
-        console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof body?.fatherId, 'value:', body?.fatherId);
-      }
-      next();
-    });
-  }
-
-    // Global validation pipe
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );    // Global response interceptor
-    app.useGlobalInterceptors(new TransformResponseInterceptor());
-
-    // Performance monitoring interceptor
-    app.useGlobalInterceptors(new PerformanceMonitoringInterceptor());
-
-    // Global exception filter (enhanced version)
-    app.useGlobalFilters(new EnhancedGlobalExceptionFilter());
-
-    // API prefix
-    app.setGlobalPrefix("api/v1");
-
-    // Root endpoint
-    app.getHttpAdapter().get("/", (req: unknown, res: { json: (data: unknown) => void }) => {
-      res.json({
-        success: true,
-        data: {
-          message: "🐱 Cat Management System API",
-          version: "1.0.0",
-          documentation: "/api/docs",
-          health: "/health",
-          timestamp: new Date().toISOString(),
-          endpoints: {
-            cats: "/api/v1/cats",
-            pedigrees: "/api/v1/pedigrees",
-            breeds: "/api/v1/breeds",
-            coatColors: "/api/v1/coat-colors",
-          },
-        },
-      });
-    });
-
-    // Enhanced health check endpoint
-    app.getHttpAdapter().get("/health", async (req: unknown, res: { status: (code: number) => { json: (data: unknown) => void } }) => {
-      const health: {
-        success: boolean;
-        data: {
-          status: string;
-          timestamp: string;
-          service: string;
-          version: string;
-          environment?: string;
-          uptime: number;
-          memory: {
-            used: number;
-            total: number;
-          };
-          database?: string;
-          error?: string;
-        };
-      } = {
-        success: true,
-        data: {
-          status: "ok",
-          timestamp: new Date().toISOString(),
-          service: "Cat Management System API",
-          version: "1.0.0",
-          environment: process.env.NODE_ENV,
-          uptime: process.uptime(),
-          memory: {
-            used: Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100,
-            total: Math.round((process.memoryUsage().heapTotal / 1024 / 1024) * 100) / 100,
-          },
-        },
-      };
-
-      try {
-        // Database health check (if enabled)
-        if (process.env.HEALTH_CHECK_DATABASE === "true") {
-          const { PrismaClient } = await import("@prisma/client");
-          const prisma = new PrismaClient();
-          await prisma.$queryRaw`SELECT 1`;
-          await prisma.$disconnect();
-          health.data.database = "ok";
-        }
-      } catch (error) {
-        health.success = false;
-        health.data.status = "error";
-        health.data.database = "error";
-        health.data.error = error instanceof Error ? error.message : "Unknown error";
-      }
-
-      res.status(health.success ? 200 : 503).json(health);
-    });    // Swagger documentation
-    if (process.env.NODE_ENV !== "production") {
-      const config = new DocumentBuilder()
-        .setTitle("Cat Management System API")
-        .setDescription("API for managing cat breeding and care records")
-        .setVersion("1.0")
-        .addBearerAuth()
-        .build();
-
-      const document = SwaggerModule.createDocument(app, config);
-      SwaggerModule.setup("api/docs", app, document);
-    }
-
-  if (!process.env.PORT && process.env.NODE_ENV === 'production') {
-    throw new Error('PORT environment variable is not set in production environment.');
-  }
-  const port = process.env.PORT || 3004;
-  await app.listen(port, '0.0.0.0');
-
-    // Graceful shutdown
-    const gracefulShutdown = (signal: string) => {
-      logger.log(`🚨 Received ${signal}. Starting graceful shutdown...`);
-      app.close().then(() => {
-        logger.log("✅ Application closed successfully");
-        process.exit(0);
-      }).catch((error) => {
-        logger.error("❌ Error during shutdown:", error);
-        process.exit(1);
-      });
-    };
-
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-    logger.log(`🚀 Application is running on: http://localhost:${port}`);
-    logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
-    logger.log(`❤️  Health Check: http://localhost:${port}/health`);
-  } catch (error) {
-    logger.error("Failed to start application:", error);
+  if (!fs.existsSync(csvFilePath)) {
+    console.error(`CSV file not found at ${csvFilePath}`);
     process.exit(1);
   }
+
+  const fileContent = fs.readFileSync(csvFilePath, 'utf-8');
+
+  // CSVをパース
+  const records = parse(fileContent, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+    bom: true, // UTF-8 BOM対応
+  }) as PedigreeCsvRecord[];
+
+  console.log(`Found ${records.length} records to import`);
+
+  // デバッグ: 最初のレコードを確認
+  if (records.length > 0) {
+    const firstRecord = records[0];
+    console.log('First record keys:', Object.keys(firstRecord));
+    console.log('First record pedigreeId:', firstRecord['pedigreeId']);
+  }
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const record of records) {
+    try {
+      const pedigreeIdValue = record.pedigreeId;
+
+      if (!pedigreeIdValue) {
+        console.error('Skipping record with missing pedigreeId');
+        errorCount++;
+        continue;
+      }
+
+      // データのマッピング (CSVヘッダーがPrismaスキーマと一致するため直接マッピング)
+      await prisma.pedigree.upsert({
+        where: { pedigreeId: pedigreeIdValue },
+        update: {
+          title: parseStringOrUndefined(record.title),
+          catName: parseStringOrUndefined(record.catName),
+          catName2: parseStringOrUndefined(record.catName2),
+          breedCode: parseIntOrNull(record.breedCode) ?? undefined,
+          genderCode: parseIntOrNull(record.genderCode) ?? undefined,
+          eyeColor: parseStringOrUndefined(record.eyeColor),
+          coatColorCode: parseIntOrNull(record.coatColorCode) ?? undefined,
+          birthDate: parseStringOrUndefined(record.birthDate),
+          breederName: parseStringOrUndefined(record.breederName),
+          ownerName: parseStringOrUndefined(record.ownerName),
+          registrationDate: parseStringOrUndefined(record.registrationDate),
+          brotherCount: parseIntOrNull(record.brotherCount) ?? undefined,
+          sisterCount: parseIntOrNull(record.sisterCount) ?? undefined,
+          notes: parseStringOrUndefined(record.notes),
+          notes2: parseStringOrUndefined(record.notes2),
+          otherNo: parseStringOrUndefined(record.otherNo),
+          // Generation 1 (両親)
+          fatherTitle: parseStringOrUndefined(record.fatherTitle),
+          fatherCatName: parseStringOrUndefined(record.fatherCatName),
+          fatherCatName2: parseStringOrUndefined(record.fatherCatName2),
+          fatherCoatColor: parseStringOrUndefined(record.fatherCoatColor),
+          fatherEyeColor: parseStringOrUndefined(record.fatherEyeColor),
+          fatherJCU: parseStringOrUndefined(record.fatherJCU),
+          fatherOtherCode: parseStringOrUndefined(record.fatherOtherCode),
+          motherTitle: parseStringOrUndefined(record.motherTitle),
+          motherCatName: parseStringOrUndefined(record.motherCatName),
+          motherCatName2: parseStringOrUndefined(record.motherCatName2),
+          motherCoatColor: parseStringOrUndefined(record.motherCoatColor),
+          motherEyeColor: parseStringOrUndefined(record.motherEyeColor),
+          motherJCU: parseStringOrUndefined(record.motherJCU),
+          motherOtherCode: parseStringOrUndefined(record.motherOtherCode),
+          // Generation 2 (祖父母)
+          ffTitle: parseStringOrUndefined(record.ffTitle),
+          ffCatName: parseStringOrUndefined(record.ffCatName),
+          ffCatColor: parseStringOrUndefined(record.ffCatColor),
+          ffjcu: parseStringOrUndefined(record.ffjcu),
+          fmTitle: parseStringOrUndefined(record.fmTitle),
+          fmCatName: parseStringOrUndefined(record.fmCatName),
+          fmCatColor: parseStringOrUndefined(record.fmCatColor),
+          fmjcu: parseStringOrUndefined(record.fmjcu),
+          mfTitle: parseStringOrUndefined(record.mfTitle),
+          mfCatName: parseStringOrUndefined(record.mfCatName),
+          mfCatColor: parseStringOrUndefined(record.mfCatColor),
+          mfjcu: parseStringOrUndefined(record.mfjcu),
+          mmTitle: parseStringOrUndefined(record.mmTitle),
+          mmCatName: parseStringOrUndefined(record.mmCatName),
+          mmCatColor: parseStringOrUndefined(record.mmCatColor),
+          mmjcu: parseStringOrUndefined(record.mmjcu),
+          // Generation 3 (曾祖父母)
+          fffTitle: parseStringOrUndefined(record.fffTitle),
+          fffCatName: parseStringOrUndefined(record.fffCatName),
+          fffjcu: parseStringOrUndefined(record.fffjcu),
+          ffmTitle: parseStringOrUndefined(record.ffmTitle),
+          ffmCatName: parseStringOrUndefined(record.ffmCatName),
+          ffmjcu: parseStringOrUndefined(record.ffmjcu),
+          fmfTitle: parseStringOrUndefined(record.fmfTitle),
+          fmfCatName: parseStringOrUndefined(record.fmfCatName),
+          fmfjcu: parseStringOrUndefined(record.fmfjcu),
+          fmmTitle: parseStringOrUndefined(record.fmmTitle),
+          fmmCatName: parseStringOrUndefined(record.fmmCatName),
+          fmmjcu: parseStringOrUndefined(record.fmmjcu),
+          mffTitle: parseStringOrUndefined(record.mffTitle),
+          mffCatName: parseStringOrUndefined(record.mffCatName),
+          mffjcu: parseStringOrUndefined(record.mffjcu),
+          mfmTitle: parseStringOrUndefined(record.mfmTitle),
+          mfmCatName: parseStringOrUndefined(record.mfmCatName),
+          mfmjcu: parseStringOrUndefined(record.mfmjcu),
+          mmfTitle: parseStringOrUndefined(record.mmfTitle),
+          mmfCatName: parseStringOrUndefined(record.mmfCatName),
+          mmfjcu: parseStringOrUndefined(record.mmfjcu),
+          mmmTitle: parseStringOrUndefined(record.mmmTitle),
+          mmmCatName: parseStringOrUndefined(record.mmmCatName),
+          mmmjcu: parseStringOrUndefined(record.mmmjcu),
+          oldCode: parseStringOrUndefined(record.oldCode),
+        },
+        create: {
+          pedigreeId: pedigreeIdValue,
+          title: parseStringOrUndefined(record.title),
+          catName: parseStringOrUndefined(record.catName),
+          catName2: parseStringOrUndefined(record.catName2),
+          breedCode: parseIntOrNull(record.breedCode) ?? undefined,
+          genderCode: parseIntOrNull(record.genderCode) ?? undefined,
+          eyeColor: parseStringOrUndefined(record.eyeColor),
+          coatColorCode: parseIntOrNull(record.coatColorCode) ?? undefined,
+          birthDate: parseStringOrUndefined(record.birthDate),
+          breederName: parseStringOrUndefined(record.breederName),
+          ownerName: parseStringOrUndefined(record.ownerName),
+          registrationDate: parseStringOrUndefined(record.registrationDate),
+          brotherCount: parseIntOrNull(record.brotherCount) ?? undefined,
+          sisterCount: parseIntOrNull(record.sisterCount) ?? undefined,
+          notes: parseStringOrUndefined(record.notes),
+          notes2: parseStringOrUndefined(record.notes2),
+          otherNo: parseStringOrUndefined(record.otherNo),
+          // Generation 1 (両親)
+          fatherTitle: parseStringOrUndefined(record.fatherTitle),
+          fatherCatName: parseStringOrUndefined(record.fatherCatName),
+          fatherCatName2: parseStringOrUndefined(record.fatherCatName2),
+          fatherCoatColor: parseStringOrUndefined(record.fatherCoatColor),
+          fatherEyeColor: parseStringOrUndefined(record.fatherEyeColor),
+          fatherJCU: parseStringOrUndefined(record.fatherJCU),
+          fatherOtherCode: parseStringOrUndefined(record.fatherOtherCode),
+          motherTitle: parseStringOrUndefined(record.motherTitle),
+          motherCatName: parseStringOrUndefined(record.motherCatName),
+          motherCatName2: parseStringOrUndefined(record.motherCatName2),
+          motherCoatColor: parseStringOrUndefined(record.motherCoatColor),
+          motherEyeColor: parseStringOrUndefined(record.motherEyeColor),
+          motherJCU: parseStringOrUndefined(record.motherJCU),
+          motherOtherCode: parseStringOrUndefined(record.motherOtherCode),
+          // Generation 2 (祖父母)
+          ffTitle: parseStringOrUndefined(record.ffTitle),
+          ffCatName: parseStringOrUndefined(record.ffCatName),
+          ffCatColor: parseStringOrUndefined(record.ffCatColor),
+          ffjcu: parseStringOrUndefined(record.ffjcu),
+          fmTitle: parseStringOrUndefined(record.fmTitle),
+          fmCatName: parseStringOrUndefined(record.fmCatName),
+          fmCatColor: parseStringOrUndefined(record.fmCatColor),
+          fmjcu: parseStringOrUndefined(record.fmjcu),
+          mfTitle: parseStringOrUndefined(record.mfTitle),
+          mfCatName: parseStringOrUndefined(record.mfCatName),
+          mfCatColor: parseStringOrUndefined(record.mfCatColor),
+          mfjcu: parseStringOrUndefined(record.mfjcu),
+          mmTitle: parseStringOrUndefined(record.mmTitle),
+          mmCatName: parseStringOrUndefined(record.mmCatName),
+          mmCatColor: parseStringOrUndefined(record.mmCatColor),
+          mmjcu: parseStringOrUndefined(record.mmjcu),
+          // Generation 3 (曾祖父母)
+          fffTitle: parseStringOrUndefined(record.fffTitle),
+          fffCatName: parseStringOrUndefined(record.fffCatName),
+          fffCatColor: parseStringOrUndefined(record.fffCatColor),
+          fffjcu: parseStringOrUndefined(record.fffjcu),
+          ffmTitle: parseStringOrUndefined(record.ffmTitle),
+          ffmCatName: parseStringOrUndefined(record.ffmCatName),
+          ffmCatColor: parseStringOrUndefined(record.ffmCatColor),
+          ffmjcu: parseStringOrUndefined(record.ffmjcu),
+          fmfTitle: parseStringOrUndefined(record.fmfTitle),
+          fmfCatName: parseStringOrUndefined(record.fmfCatName),
+          fmfCatColor: parseStringOrUndefined(record.fmfCatColor),
+          fmfjcu: parseStringOrUndefined(record.fmfjcu),
+          fmmTitle: parseStringOrUndefined(record.fmmTitle),
+          fmmCatName: parseStringOrUndefined(record.fmmCatName),
+          fmmCatColor: parseStringOrUndefined(record.fmmCatColor),
+          fmmjcu: parseStringOrUndefined(record.fmmjcu),
+          mffTitle: parseStringOrUndefined(record.mffTitle),
+          mffCatName: parseStringOrUndefined(record.mffCatName),
+          mffCatColor: parseStringOrUndefined(record.mffCatColor),
+          mffjcu: parseStringOrUndefined(record.mffjcu),
+          mfmTitle: parseStringOrUndefined(record.mfmTitle),
+          mfmCatName: parseStringOrUndefined(record.mfmCatName),
+          mfmCatColor: parseStringOrUndefined(record.mfmCatColor),
+          mfmjcu: parseStringOrUndefined(record.mfmjcu),
+          mmfTitle: parseStringOrUndefined(record.mmfTitle),
+          mmfCatName: parseStringOrUndefined(record.mmfCatName),
+          mmfCatColor: parseStringOrUndefined(record.mmfCatColor),
+          mmfjcu: parseStringOrUndefined(record.mmfjcu),
+          mmmTitle: parseStringOrUndefined(record.mmmTitle),
+          mmmCatName: parseStringOrUndefined(record.mmmCatName),
+          mmmCatColor: parseStringOrUndefined(record.mmmCatColor),
+          mmmjcu: parseStringOrUndefined(record.mmmjcu),
+          oldCode: parseStringOrUndefined(record.oldCode),
+        },
+      });
+      successCount++;
+      if (successCount % 100 === 0) {
+        console.log(`Imported ${successCount} records...`);
+      }
+    } catch (error) {
+      errorCount++;
+      console.error(`Error importing record ${record.pedigreeId}:`, error);
+    }
+  }
+
+  console.log(`\nImport completed!`);
+  console.log(`Success: ${successCount}`);
+  console.log(`Errors: ${errorCount}`);
 }
 
-bootstrap().catch((error) => {
-  const logger = new Logger("Bootstrap");
-  logger.error("Unhandled error during bootstrap:", error);
-  process.exit(1);
-});
-`````
-
-## File: backend/test/jest-e2e.json
-`````json
-{
-  "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": "..",
-  "testRegex": ".*\\.e2e-spec\\.ts$",
-  "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
-  },
-  "collectCoverageFrom": [
-    "src/**/*.(t|j)s",
-    "!src/scripts/**",
-    "!src/**/*.spec.ts"
-  ],
-  "coverageDirectory": "../coverage-e2e",
-  "testEnvironment": "node",
-  "maxWorkers": 1,
-  "setupFiles": ["<rootDir>/test/setup-e2e.ts"]
-}
-`````
-
-## File: Dockerfile.backend
-`````
-# ---- Base Stage ----
-FROM node:20-alpine3.22 AS base
-WORKDIR /app
-RUN npm install -g pnpm@10.18.1
-
-# ---- Development Stage ----
-FROM base AS development
-# 開発モード: ホットリロード対応
-# ソースコードはボリュームマウントされるため、COPY は最小限にとどめる
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY backend/package.json ./backend/
-# pnpm workspace の依存関係解決に必要（frontend への参照がある場合に備える）
-COPY frontend/package.json ./frontend/
-COPY backend/prisma ./backend/prisma
-
-# 開発依存関係を含む全依存関係をインストール
-RUN pnpm install --frozen-lockfile --filter backend...
-
-# Prisma クライアントを生成
-# NOTE:
-# - このコマンドはビルド時点の Prisma スキーマを元にクライアントを生成します
-# - 開発コンテナ起動後にホスト側で backend/prisma/schema.prisma を変更した場合、
-#   生成済みクライアントがスキーマと不整合になる点に注意してください
-# - その場合は、以下のいずれかの方法で Prisma クライアントを再生成してください
-#   1. `pnpm run docker:dev:build` で開発用イメージを再ビルドする
-#   2. `docker exec -it mycats_dev_backend pnpm --filter backend run prisma:generate` を実行する
-WORKDIR /app/backend
-RUN pnpm prisma generate
-
-# ソースコードはボリュームマウントで提供される
-# デフォルトコマンドは docker-compose.dev.yml で指定
-WORKDIR /app
-CMD ["pnpm", "--filter", "backend", "run", "start:dev"]
-
-# ---- Build Stage ----
-FROM base AS build
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY backend/package.json ./backend/
-COPY frontend/package.json ./frontend/
-COPY backend/prisma ./backend/prisma
-
-# Install dependencies including devDependencies for building
-# Using --filter backend... to install backend dependencies and workspace root dependencies
-RUN pnpm install --frozen-lockfile --filter backend...
-
-COPY backend ./backend
-WORKDIR /app/backend
-RUN pnpm prisma generate
-RUN pnpm build
-
-# ---- Production Stage ----
-FROM node:20-alpine3.22 AS production
-WORKDIR /app
-
-# Run backend container with restricted privileges and production-friendly defaults
-ENV NODE_ENV=production
-ENV PORT=8080
-
-# Install required dependencies for Prisma on Alpine and pnpm, create user
-# hadolint ignore=DL3018
-RUN apk add --no-cache openssl libc6-compat && \
-    npm install -g pnpm@10.18.1 && \
-    addgroup -S nodejs && adduser -S nodeapp -G nodejs
-
-# Copy workspace config and package files for production install
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY backend/package.json ./backend/
-COPY frontend/package.json ./frontend/
-COPY backend/prisma ./backend/prisma
-
-# Install ONLY production dependencies directly in the production stage
-# This ensures no broken symlinks from copying node_modules and keeps image small
-RUN pnpm install --frozen-lockfile --prod --filter backend...
-
-# Copy build artifacts from build stage
-COPY --from=build /app/backend/dist ./backend/dist
-COPY --from=build /app/backend/prisma ./backend/prisma
-
-# Generate Prisma Client for production environment
-WORKDIR /app/backend
-RUN pnpm prisma generate
-
-# Copy entrypoint script
-COPY backend/docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh && chown -R nodeapp:nodejs /app
-
-USER nodeapp
-
-EXPOSE 8080
-CMD ["./docker-entrypoint.sh"]
+main()
+  .catch((e) => {
+    console.error('Fatal error:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
 `````
 
 ## File: backend/src/app.module.ts
@@ -61567,6 +61893,121 @@ export class AppModule implements NestModule {
       .forRoutes('*');
   }
 }
+`````
+
+## File: backend/test/jest-e2e.json
+`````json
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testRegex": ".*\\.e2e-spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "collectCoverageFrom": [
+    "src/**/*.(t|j)s",
+    "!src/scripts/**",
+    "!src/**/*.spec.ts"
+  ],
+  "coverageDirectory": "../coverage-e2e",
+  "testEnvironment": "node",
+  "maxWorkers": 1,
+  "setupFiles": ["<rootDir>/test/setup-e2e.ts"]
+}
+`````
+
+## File: Dockerfile.backend
+`````
+# ---- Base Stage ----
+FROM node:20-alpine3.22 AS base
+WORKDIR /app
+RUN npm install -g pnpm@10.18.1
+
+# ---- Development Stage ----
+FROM base AS development
+# 開発モード: ホットリロード対応
+# ソースコードはボリュームマウントされるため、COPY は最小限にとどめる
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+# pnpm workspace の依存関係解決に必要（frontend への参照がある場合に備える）
+COPY frontend/package.json ./frontend/
+COPY backend/prisma ./backend/prisma
+
+# 開発依存関係を含む全依存関係をインストール
+RUN pnpm install --frozen-lockfile --filter backend...
+
+# Prisma クライアントを生成
+# NOTE:
+# - このコマンドはビルド時点の Prisma スキーマを元にクライアントを生成します
+# - 開発コンテナ起動後にホスト側で backend/prisma/schema.prisma を変更した場合、
+#   生成済みクライアントがスキーマと不整合になる点に注意してください
+# - その場合は、以下のいずれかの方法で Prisma クライアントを再生成してください
+#   1. `pnpm run docker:dev:build` で開発用イメージを再ビルドする
+#   2. `docker exec -it mycats_dev_backend pnpm --filter backend run prisma:generate` を実行する
+WORKDIR /app/backend
+RUN pnpm prisma generate
+
+# ソースコードはボリュームマウントで提供される
+# デフォルトコマンドは docker-compose.dev.yml で指定
+WORKDIR /app
+CMD ["pnpm", "--filter", "backend", "run", "start:dev"]
+
+# ---- Build Stage ----
+FROM base AS build
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+COPY backend/prisma ./backend/prisma
+
+# Install dependencies including devDependencies for building
+# Using --filter backend... to install backend dependencies and workspace root dependencies
+RUN pnpm install --frozen-lockfile --filter backend...
+
+COPY backend ./backend
+WORKDIR /app/backend
+RUN pnpm prisma generate
+RUN pnpm build
+
+# ---- Production Stage ----
+FROM node:20-alpine3.22 AS production
+WORKDIR /app
+
+# Run backend container with restricted privileges and production-friendly defaults
+ENV NODE_ENV=production
+ENV PORT=8080
+
+# Install required dependencies for Prisma on Alpine and pnpm, create user
+# hadolint ignore=DL3018
+RUN apk add --no-cache openssl libc6-compat && \
+    npm install -g pnpm@10.18.1 && \
+    addgroup -S nodejs && adduser -S nodeapp -G nodejs
+
+# Copy workspace config and package files for production install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+COPY backend/prisma ./backend/prisma
+
+# Install ONLY production dependencies directly in the production stage
+# This ensures no broken symlinks from copying node_modules and keeps image small
+RUN pnpm install --frozen-lockfile --prod --filter backend...
+
+# Copy build artifacts from build stage
+COPY --from=build /app/backend/dist ./backend/dist
+COPY --from=build /app/backend/prisma ./backend/prisma
+
+# Generate Prisma Client for production environment
+WORKDIR /app/backend
+RUN pnpm prisma generate
+
+# Copy entrypoint script
+COPY backend/docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh && chown -R nodeapp:nodejs /app
+
+USER nodeapp
+
+EXPOSE 8080
+CMD ["./docker-entrypoint.sh"]
 `````
 
 ## File: .github/workflows/deploy-only.yml

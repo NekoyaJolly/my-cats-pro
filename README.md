@@ -91,8 +91,10 @@
 
 ### データベース・インフラ
 
-- **データベース**: PostgreSQL 15+
+- **データベース**: PostgreSQL 15+ または Supabase (推奨)
 - **ORM**: Prisma 6.14.0
+- **接続管理**: Supabase Transaction Pooler 対応 (port 6543)
+  - 詳細は [Supabase 接続設定ガイド](docs/SUPABASE_CONNECTION_GUIDE.md) を参照
 - **キャッシュ**: Redis (予定)
 - **Node.js**: 20.x (推奨)
 - **コンテナ**: Docker + Alpine Linux 3.22 (node:20-alpine3.22 ベース)
@@ -713,6 +715,23 @@ docker-compose up -d
 | 自前サーバー   | ✅       | ✅     | ✅  | ✅           | VPS代  |
 
 ## 🔍 トラブルシューティング
+
+### データベース関連
+
+#### Supabase 移行
+
+ローカル PostgreSQL から Supabase へ移行する場合、または Supabase から戻す場合は、
+**[ローカル PostgreSQL から Supabase への移行ガイド](docs/MIGRATION_FROM_LOCAL_POSTGRES.md)** を参照してください。
+
+移行ガイドには以下が含まれます：
+- 完全な移行手順（データバックアップ、環境変数設定、データ復元）
+- ロールバック手順（Supabase から ローカル PostgreSQL に戻す方法）
+- トラブルシューティング（接続プーラーのタイムアウト、マイグレーション失敗など）
+
+#### Supabase 接続設定
+
+Supabase の接続設定（Transaction Pooler vs Direct Connection）については、
+**[Supabase 接続設定ガイド](docs/SUPABASE_CONNECTION_GUIDE.md)** を参照してください。
 
 ### よくある問題
 
