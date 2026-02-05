@@ -155,6 +155,7 @@ jobs:
           - 5432:5432
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/testdb
       JWT_SECRET: test-jwt-secret-key-for-ci
       ARGON2_MEMORY_COST: 65536
       ARGON2_TIME_COST: 3
@@ -234,6 +235,7 @@ jobs:
       PORT: 3004
       LOG_LEVEL: error
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/e2edb
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/e2edb
       JWT_SECRET: test-jwt-secret-key-for-ci-testing-32chars
       JWT_REFRESH_SECRET: test-jwt-refresh-secret-key-for-ci-testing-32chars-different
       JWT_EXPIRES_IN: 15m
@@ -442,6 +444,7 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/testdb
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d testdb -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
           npx prisma migrate deploy
@@ -450,6 +453,7 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/testdb
           JWT_SECRET: test-jwt-secret-key-minimum-32-chars-long-for-security
           JWT_REFRESH_SECRET: test-refresh-secret-key-minimum-32-chars-long
           CSRF_TOKEN_SECRET: test-csrf-token-secret-for-cloud-run-validation-32chars-min
