@@ -73,6 +73,14 @@ jobs:
             --style markdown
           echo "# Domain: 共通コンポーネント (Common)" | cat - dist_notebook/Domain_Common.md > tmp && mv tmp dist_notebook/Domain_Common.md
 
+      - name: Generate Schema_Database.md
+        run: |
+          npx repomix \
+            --include "backend/prisma/schema.prisma,backend/prisma/migrations/**/*.sql" \
+            --output dist_notebook/Schema_Database.md \
+            --style markdown
+          echo "# Database Schema (Prisma)" | cat - dist_notebook/Schema_Database.md > tmp && mv tmp dist_notebook/Schema_Database.md
+
       - name: List generated files
         run: |
           echo "Generated domain files:"
@@ -166,6 +174,7 @@ jobs:
               'dist_notebook/Domain_Care.md',
               'dist_notebook/Domain_Settings.md',
               'dist_notebook/Domain_Common.md',
+              'dist_notebook/Schema_Database.md',
           ]
 
           print(f"📦 Uploading {len(domain_files)} domain files to Google Drive...")
