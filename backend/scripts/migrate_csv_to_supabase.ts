@@ -4,18 +4,26 @@
  *
  * 使用方法:
  *   cd backend
+ *   # 通常実行（確認プロンプトあり）
  *   pnpm exec dotenv -e ./.env -- tsx scripts/migrate_csv_to_supabase.ts
+ *
+ *   # 自動実行（--force フラグ使用）
+ *   pnpm exec dotenv -e ./.env -- tsx scripts/migrate_csv_to_supabase.ts --force
+ *
+ *   # カスタムCSVパス指定
+ *   PEDIGREE_CSV_PATH=path/to/file.csv pnpm exec dotenv -e ./.env -- tsx scripts/migrate_csv_to_supabase.ts
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as readline from 'readline';
 import { PrismaClient } from '@prisma/client';
+import { parse } from 'csv-parse/sync';
 
 const prisma = new PrismaClient();
 
 interface CsvRow {
   pedigreeId: string;
-  championFlag: string;
   title: string;
   catName: string;
   catName2: string;
@@ -32,7 +40,6 @@ interface CsvRow {
   notes: string;
   notes2: string;
   otherNo: string;
-  fatherChampionFlag: string;
   fatherTitle: string;
   fatherCatName: string;
   fatherCatName2: string;
@@ -40,7 +47,6 @@ interface CsvRow {
   fatherEyeColor: string;
   fatherJCU: string;
   fatherOtherCode: string;
-  motherChampionFlag: string;
   motherTitle: string;
   motherCatName: string;
   motherCatName2: string;
@@ -48,62 +54,50 @@ interface CsvRow {
   motherEyeColor: string;
   motherJCU: string;
   motherOtherCode: string;
-  ffChampionFlag: string;
   ffTitle: string;
   ffCatName: string;
   ffCatColor: string;
   ffjcu: string;
-  fmChampionFlag: string;
   fmTitle: string;
   fmCatName: string;
   fmCatColor: string;
   fmjcu: string;
-  mfChampionFlag: string;
   mfTitle: string;
   mfCatName: string;
   mfCatColor: string;
   mfjcu: string;
-  mmChampionFlag: string;
   mmTitle: string;
   mmCatName: string;
   mmCatColor: string;
   mmjcu: string;
-  fffChampionFlag: string;
   fffTitle: string;
   fffCatName: string;
   fffCatColor: string;
   fffjcu: string;
-  ffmChampionFlag: string;
   ffmTitle: string;
   ffmCatName: string;
   ffmCatColor: string;
   ffmjcu: string;
-  fmfChampionFlag: string;
   fmfTitle: string;
   fmfCatName: string;
   fmfCatColor: string;
   fmfjcu: string;
-  fmmChampionFlag: string;
   fmmTitle: string;
   fmmCatName: string;
   fmmCatColor: string;
   fmmjcu: string;
-  mffChampionFlag: string;
   mffTitle: string;
   mffCatName: string;
   mffCatColor: string;
   mffjcu: string;
-  mfmChampionFlag: string;
   mfmTitle: string;
   mfmCatName: string;
   mfmCatColor: string;
   mfmjcu: string;
-  mmfChampionFlag: string;
   mmfTitle: string;
   mmfCatName: string;
   mmfCatColor: string;
   mmfjcu: string;
-  mmmChampionFlag: string;
   mmmTitle: string;
   mmmCatName: string;
   mmmCatColor: string;
@@ -112,27 +106,18 @@ interface CsvRow {
 }
 
 /**
- * CSVをパースする簡易関数（ダブルクォート対応）
+ * CSVをパースする関数（RFC 4180準拠のcsv-parseライブラリ使用）
  */
 function parseCsv(content: string): CsvRow[] {
-  const lines = content.split('\n');
-  const headers = lines[0].split(',').map((h) => h.trim());
+  const records = parse(content, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+    relaxColumnCount: true,
+    bom: true, // UTF-8 BOMを自動除去
+  }) as CsvRow[];
 
-  const rows: CsvRow[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    // CSV行をパース（シンプルなカンマ分割）
-    const values = line.split(',');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CSV parsing requires dynamic key assignment
-    const row: Record<string, string> = {};
-    for (let j = 0; j < headers.length && j < values.length; j++) {
-      row[headers[j]] = values[j]?.trim() ?? '';
-    }
-    rows.push(row as unknown as CsvRow);
-  }
-  return rows;
+  return records;
 }
 
 /**
@@ -155,18 +140,46 @@ function toStringOrNull(value: string | undefined): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
+/**
+ * ユーザーに確認を求める
+ */
+async function confirmAction(message: string): Promise<boolean> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(`${message} (yes/no): `, (answer) => {
+      rl.close();
+      resolve(answer.toLowerCase() === 'yes');
+    });
+  });
+}
+
 async function main() {
   console.log('🚀 血統書データ移行スクリプトを開始します...');
 
-  // CSVファイルを読み込み
-  const csvPath = path.join(
-    __dirname,
-    '../src/pedigree/血統書データUTF8Ver.csv',
-  );
+  // 本番環境チェック
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ 本番環境ではこのスクリプトを実行できません');
+    console.error(
+      '   データの移行は慎重に行う必要があります。開発環境で十分にテストしてください。',
+    );
+    process.exit(1);
+  }
+
+  // CSVファイルパスの取得（環境変数で上書き可能）
+  const csvRelativePath =
+    process.env.PEDIGREE_CSV_PATH ?? '../src/pedigree/pedigree_data_utf8.csv';
+  const csvPath = path.join(__dirname, csvRelativePath);
   console.log(`📄 CSVファイル読み込み中: ${csvPath}`);
 
   if (!fs.existsSync(csvPath)) {
     console.error(`❌ CSVファイルが見つかりません: ${csvPath}`);
+    console.error(
+      `   環境変数 PEDIGREE_CSV_PATH でパスを指定できます: PEDIGREE_CSV_PATH=path/to/file.csv`,
+    );
     process.exit(1);
   }
 
@@ -174,7 +187,23 @@ async function main() {
   const rows = parseCsv(csvContent);
   console.log(`📊 ${rows.length} 行のデータを読み込みました`);
 
-  // 既存データをクリア（オプション）
+  // 既存データ削除の確認（--forceフラグがない場合）
+  const forceFlag = process.argv.includes('--force');
+  if (!forceFlag) {
+    console.log('');
+    console.log('⚠️  このスクリプトは既存のPedigreeデータをすべて削除します。');
+    console.log('   この操作は取り消せません。');
+    console.log('');
+
+    const confirmed = await confirmAction('既存データを削除して続行しますか？');
+    if (!confirmed) {
+      console.log('キャンセルしました');
+      await prisma.$disconnect();
+      process.exit(0);
+    }
+  }
+
+  // 既存データをクリア
   console.log('🗑️  既存のPedigreeデータを削除中...');
   await prisma.pedigree.deleteMany({});
 
@@ -269,20 +298,35 @@ async function main() {
     }));
 
     try {
-      await prisma.pedigree.createMany({
+      const result = await prisma.pedigree.createMany({
         data: pedigreeData,
         skipDuplicates: true,
       });
-      successCount += batch.length;
+      successCount += result.count;
       console.log(
-        `✅ バッチ ${Math.floor(i / batchSize) + 1}: ${batch.length} 件挿入完了`,
+        `✅ バッチ ${Math.floor(i / batchSize) + 1}: ${result.count} 件挿入完了`,
       );
     } catch (error) {
-      errorCount += batch.length;
       console.error(
-        `❌ バッチ ${Math.floor(i / batchSize) + 1} でエラー:`,
+        `❌ バッチ ${Math.floor(i / batchSize) + 1} でエラー（個別インサートを試行します）:`,
         error,
       );
+      // バッチ全体が失敗した場合は、1件ずつ挿入して成功・失敗件数を正確にカウントする
+      for (let j = 0; j < pedigreeData.length; j++) {
+        const record = pedigreeData[j];
+        try {
+          await prisma.pedigree.create({
+            data: record,
+          });
+          successCount += 1;
+        } catch (recordError) {
+          errorCount += 1;
+          console.error(
+            `❌ レコード (バッチ ${Math.floor(i / batchSize) + 1}, インデックス ${j}, pedigreeId: ${record.pedigreeId}) でエラー:`,
+            recordError,
+          );
+        }
+      }
     }
   }
 
@@ -301,8 +345,8 @@ async function main() {
   console.log('🎉 移行完了！');
 }
 
-main().catch((e) => {
+main().catch(async (e) => {
   console.error('移行中にエラーが発生しました:', e);
-  prisma.$disconnect();
+  await prisma.$disconnect();
   process.exit(1);
 });

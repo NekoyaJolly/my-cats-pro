@@ -716,6 +716,23 @@ docker-compose up -d
 
 ## 🔍 トラブルシューティング
 
+### データベース関連
+
+#### Supabase 移行
+
+ローカル PostgreSQL から Supabase へ移行する場合、または Supabase から戻す場合は、
+**[ローカル PostgreSQL から Supabase への移行ガイド](docs/MIGRATION_FROM_LOCAL_POSTGRES.md)** を参照してください。
+
+移行ガイドには以下が含まれます：
+- 完全な移行手順（データバックアップ、環境変数設定、データ復元）
+- ロールバック手順（Supabase から ローカル PostgreSQL に戻す方法）
+- トラブルシューティング（接続プーラーのタイムアウト、マイグレーション失敗など）
+
+#### Supabase 接続設定
+
+Supabase の接続設定（Transaction Pooler vs Direct Connection）については、
+**[Supabase 接続設定ガイド](docs/SUPABASE_CONNECTION_GUIDE.md)** を参照してください。
+
 ### よくある問題
 
 1. **ポート競合 (3000 / 3004)**
