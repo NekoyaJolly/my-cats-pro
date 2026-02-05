@@ -50,8 +50,10 @@ DIRECT_URL="postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler
 #### オプション1: ローカル PostgreSQL（推奨）
 ```bash
 DATABASE_URL="postgresql://runner:password@localhost:55432/mycats_development"
-# DIRECT_URL は不要
+# DIRECT_URL は不要 - Prisma が DATABASE_URL をマイグレーションにも使用します
 ```
+
+**注意**: ローカル PostgreSQL 使用時は `DIRECT_URL` は不要です（Prisma が `DATABASE_URL` をマイグレーションにも使用します）。
 
 #### オプション2: Supabase 使用
 ```bash
@@ -59,19 +61,25 @@ DATABASE_URL="postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pool
 DIRECT_URL="postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
 ```
 
+**注意**: Supabase の Transaction Pooler（port 6543）を `DATABASE_URL` に設定する場合は、`DIRECT_URL`（port 5432）の設定が**必須**です。マイグレーション実行時に直接接続が必要になります。
+
 ## 📝 Supabase ダッシュボードでの接続文字列取得
 
 1. Supabase プロジェクトダッシュボードにログイン
 2. **Settings** → **Database** を選択
 3. **Connection string** セクションで以下を確認:
 
-### Transaction Pooler (Session mode)
+### Transaction Pooler (Transaction mode - 推奨)
+
+**注意**: Supabase の Connection Pooler には「Transaction mode」と「Session mode」の2つのモードがあります。**Prisma を使用する場合は Transaction mode が推奨されます**。Transaction mode は短命なトランザクション向けで、サーバーレス環境に最適です。Session mode は `SET`、`PREPARE`、`LISTEN/NOTIFY` などのセッション機能が必要な場合にのみ使用してください。
+
 ```
 Host: aws-0-[REGION].pooler.supabase.com
 Port: 6543
 Database: postgres
 User: postgres.[PROJECT_REF]
 Password: [YOUR_PASSWORD]
+Mode: Transaction (Supabase ダッシュボードで選択)
 ```
 
 完全な接続文字列:
@@ -214,10 +222,12 @@ gcloud secrets create DIRECT_URL \
 ```bash
 # デプロイ時に環境変数を設定
 gcloud run deploy mycats-backend \
-  --image=gcr.io/PROJECT_ID/backend:latest \
+  --image=asia-northeast1-docker.pkg.dev/PROJECT_ID/mycats-pro/backend:latest \
   --region=asia-northeast1 \
   --update-secrets=DATABASE_URL=DATABASE_URL:latest,DIRECT_URL=DIRECT_URL:latest
 ```
+
+**注意**: イメージパスは実際のプロジェクト構成に合わせて変更してください。形式: `${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest`
 
 ## ✅ チェックリスト
 
