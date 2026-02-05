@@ -82,12 +82,12 @@ jobs:
         if: steps.changed-files.outputs.count > 0
         run: |
           pip install --upgrade pip
-          pip install google-auth google-api-python-client
+          pip install google-auth google-auth-oauthlib google-api-python-client
 
-      - name: Setup Google Drive credentials
+      - name: Setup OAuth credentials
         if: steps.changed-files.outputs.count > 0
         run: |
-          echo '${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}' > credentials.json
+          echo '${{ secrets.GOOGLE_OAUTH_CREDENTIALS }}' > oauth-token.json
 
       - name: Sync files to Google Drive
         if: steps.changed-files.outputs.count > 0
@@ -96,18 +96,52 @@ jobs:
         run: |
           python << 'EOF'
           import os
-          from google.oauth2 import service_account
+          import json
+          from google.oauth2.credentials import Credentials
+          from google.auth.transport.requests import Request
           from googleapiclient.discovery import build
           from googleapiclient.http import MediaFileUpload
 
-          SCOPES = ['https://www.googleapis.com/auth/drive']
+          # OAuth2認証（リフレッシュトークン使用）
+          with open('oauth-token.json', 'r') as f:
+              token_data = json.load(f)
 
-          # 認証
-          credentials = service_account.Credentials.from_service_account_file(
-              'credentials.json', scopes=SCOPES)
-          service = build('drive', 'v3', credentials=credentials)
+          creds = Credentials(
+              token=None,
+              refresh_token=token_data['refresh_token'],
+              token_uri='https://oauth2.googleapis.com/token',
+              client_id=token_data['client_id'],
+              client_secret=token_data['client_secret']
+          )
+
+          # トークンをリフレッシュ
+          creds.refresh(Request())
+
+          service = build('drive', 'v3', credentials=creds)
 
           ROOT_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '')
+
+          # MIMEタイプマッピング
+          MIME_TYPES = {
+              '.ts': 'text/plain',
+              '.tsx': 'text/plain',
+              '.js': 'text/plain',
+              '.jsx': 'text/plain',
+              '.json': 'application/json',
+              '.md': 'text/markdown',
+              '.py': 'text/x-python',
+              '.sh': 'text/x-shellscript',
+              '.yml': 'text/yaml',
+              '.yaml': 'text/yaml',
+              '.css': 'text/css',
+              '.html': 'text/html',
+              '.sql': 'text/plain',
+              '.prisma': 'text/plain',
+          }
+
+          def get_mime_type(filename):
+              ext = os.path.splitext(filename)[1].lower()
+              return MIME_TYPES.get(ext, 'text/plain')
 
           # フォルダキャッシュ
           folder_cache = {}
@@ -138,7 +172,7 @@ jobs:
                   if items:
                       current_parent = items[0]['id']
                   else:
-                      # フォルダを作成（フォルダはクォータを消費しない）
+                      # フォルダを作成
                       folder_metadata = {
                           'name': part,
                           'mimeType': 'application/vnd.google-apps.folder',
@@ -152,47 +186,40 @@ jobs:
               
               return current_parent
 
-          def upload_as_google_doc(file_path, parent_folder_id):
-              """ファイルをGoogle Docs形式でアップロード（クォータ消費なし）"""
+          def upload_or_update_file(file_path, parent_folder_id):
+              """ファイルをアップロードまたは更新"""
               filename = os.path.basename(file_path)
-              # 拡張子を除いた名前 + 元の拡張子を名前に含める
-              doc_name = filename
+              mime_type = get_mime_type(filename)
               
-              # 既存ファイルを検索（Google Docs形式）
-              query = f"name='{doc_name}' and '{parent_folder_id}' in parents and mimeType='application/vnd.google-apps.document' and trashed=false"
+              # 既存ファイルを検索
+              query = f"name='{filename}' and '{parent_folder_id}' in parents and trashed=false"
               results = service.files().list(q=query, fields='files(id, name)').execute()
               items = results.get('files', [])
               
-              # ファイル内容を読み込み
-              try:
-                  with open(file_path, 'r', encoding='utf-8') as f:
-                      content = f.read()
-              except UnicodeDecodeError:
-                  with open(file_path, 'r', encoding='latin-1') as f:
-                      content = f.read()
+              media = MediaFileUpload(file_path, mimetype=mime_type, resumable=True)
               
               if items:
-                  # 既存ファイルを削除して再作成（Google Docsは直接更新が複雑なため）
+                  # 更新
                   file_id = items[0]['id']
-                  service.files().delete(fileId=file_id).execute()
+                  file = service.files().update(
+                      fileId=file_id,
+                      media_body=media,
+                      fields='id, name'
+                  ).execute()
+                  print(f"🔄 Updated: {file_path}")
+              else:
+                  # 新規作成
+                  file_metadata = {
+                      'name': filename,
+                      'parents': [parent_folder_id]
+                  }
+                  file = service.files().create(
+                      body=file_metadata,
+                      media_body=media,
+                      fields='id, name'
+                  ).execute()
+                  print(f"✅ Uploaded: {file_path}")
               
-              # 新規作成（Google Docs形式）
-              file_metadata = {
-                  'name': doc_name,
-                  'mimeType': 'application/vnd.google-apps.document',
-                  'parents': [parent_folder_id]
-              }
-              
-              # 一時ファイルに書き出してアップロード
-              media = MediaFileUpload(file_path, mimetype='text/plain', resumable=True)
-              
-              file = service.files().create(
-                  body=file_metadata,
-                  media_body=media,
-                  fields='id, name'
-              ).execute()
-              
-              print(f"✅ Uploaded: {file_path}")
               return file
 
           # ファイル同期
@@ -202,7 +229,7 @@ jobs:
           with open('files_to_sync.txt', 'r') as f:
               files = [line.strip() for line in f if line.strip()]
 
-          print(f"📦 Syncing {len(files)} files as Google Docs...")
+          print(f"📦 Syncing {len(files)} files to Google Drive...")
 
           for file_path in files:
               try:
@@ -217,7 +244,7 @@ jobs:
                   else:
                       parent_id = ROOT_FOLDER_ID
                   
-                  upload_as_google_doc(file_path, parent_id)
+                  upload_or_update_file(file_path, parent_id)
                   synced_count += 1
                   
               except Exception as e:
@@ -231,7 +258,7 @@ jobs:
           # GitHub Actionsのサマリーに出力
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
               f.write(f"## 📁 Google Drive Sync\n\n")
-              f.write(f"✅ **{synced_count} files synced as Google Docs**\n\n")
+              f.write(f"✅ **{synced_count} files synced**\n\n")
               if error_count > 0:
                   f.write(f"⚠️ **{error_count} errors**\n\n")
           EOF
@@ -239,5 +266,5 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          rm -f credentials.json
+          rm -f oauth-token.json
           rm -f files_to_sync.txt

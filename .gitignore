@@ -124,6 +124,8 @@ Applications/
 # Google Drive Integration (credentials)
 gdrive-credentials.json
 .folder_id
+oauth-credentials.json
+.oauth-token.json
 Desktop/
 Documents/
 Downloads/
