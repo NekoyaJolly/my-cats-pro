@@ -79,7 +79,7 @@ jobs:
           ls -lh dist_notebook/
 
       - name: Setup rclone
-        uses: rclone/rclone-action@v1
+        uses: rclone/action@v2
         with:
           rclone_version: 'latest'
 
