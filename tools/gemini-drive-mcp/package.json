@@ -1,0 +1,26 @@
+{
+    "name": "gemini-drive-mcp",
+    "version": "0.1.0",
+    "description": "MCP Server for Gemini 1.5 Pro with Google Drive Context",
+    "private": true,
+    "type": "module",
+    "bin": {
+        "gemini-drive-mcp": "./build/index.js"
+    },
+    "scripts": {
+        "build": "tsc && chmod +x build/index.js",
+        "start": "node build/index.js",
+        "watch": "tsc --watch"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "@modelcontextprotocol/sdk": "^0.6.0",
+        "dotenv": "^16.4.5",
+        "googleapis": "^140.0.0",
+        "zod": "^3.23.8"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.9",
+        "typescript": "^5.5.3"
+    }
+}

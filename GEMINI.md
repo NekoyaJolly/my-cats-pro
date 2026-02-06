@@ -120,6 +120,19 @@ Geminiはこのファイルを「唯一の真実」として参照し、以下�
 * **Pedigree Logic**: 本猫から3代前まで遡る血統書データ構造は複雑です。変更する際は、無限ループやパフォーマンス低下に細心の注意を払ってください。
 * **Shift Management**: スタッフのシフト管理は、猫の世話（Care Schedule）と連動しています。
 
+## 7. Gemini MCP Server Knowledge (Code Analysis)
+
+本プロジェクトには、Google Drive 上の最新コードベースを知識源とする Gemini MCP Server (`gemini-drive-mcp`) が統合されています。
+Antigravity (Agent) は、以下のシナリオで積極的にこのツールを活用してください。
+
+1. **仕様の確認**: 「現在の実装はどうなっているか？」とユーザーに聞かれた場合、`analyze_codebase` を使用してコードから仕様を逆引きする。
+2. **影響範囲の調査**: リファクタリングや機能追加の際、関連するファイルや依存関係を網羅的に把握するために使用する。
+3. **矛盾の検知**: 新しい実装方針が、既存のドメイン設計（Breeding, Care, Settingsなど）と矛盾しないか検証をする。
+
+**利用方法**:
+- ツール名: `analyze_codebase`
+- プロンプト例: 「繁殖スケジュール機能のDBスキーマ設計と、フロントエンドの実装状況を教えて」
+
 ---
 
 **Mission Statement:**
