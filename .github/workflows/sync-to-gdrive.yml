@@ -79,9 +79,9 @@ jobs:
           ls -lh dist_notebook/
 
       - name: Setup rclone
-        uses: rclone/rclone-action@v2
+        uses: AnimMouse/setup-rclone@v1
         with:
-          rclone_version: 'latest'
+          version: latest
 
       - name: Sync to Google Drive
         env:
