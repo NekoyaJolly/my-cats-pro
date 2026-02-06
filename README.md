@@ -446,6 +446,7 @@ NEXT_PUBLIC_AUTH_DISABLED=1
 | `pnpm run test:e2e` | backend E2E テスト (空でも passWithNoTests) |
 | `pnpm run api:smoke` | 登録→ログイン→tags POST のスモーク (要通常認証) |
 | `pnpm run diagnose` | 環境診断スクリプト |
+| `pnpm run check:connection` | Vercel と Supabase の接続状況を確認 |
 | `pnpm run setup` | 初期セットアップ (将来拡張用) |
 | `pnpm --filter backend exec ts-node src/scripts/create-or-update-admin.ts` | Admin再作成/更新 (パス保持/強制更新対応) |
 
@@ -655,15 +656,48 @@ Cloud Run にデプロイされた URL は以下の形式になります（実�
 
 > **Note:** GitHub Pages へのデプロイは廃止しました。以下のオプションから環境に合わせて選択してください。
 
-### 1. Vercel（推奨）
+### 接続状況の確認
 
-**適用対象**: フロントエンド + API Routes（フルスタック）
+Vercel と Supabase の接続状況を確認するには:
+
+```bash
+pnpm run check:connection
+```
+
+詳細なガイドは [Vercel と Supabase の接続状況](docs/VERCEL_SUPABASE_CONNECTION_STATUS.md) を参照してください。
+
+### 1. Google Cloud Run（メイン）
+
+**適用対象**: フロントエンド + バックエンド + Supabase PostgreSQL
+
+**現在の構成**:
+- フロントエンド: Cloud Run
+- バックエンド: Cloud Run  
+- データベース: Supabase PostgreSQL
+- CI/CD: GitHub Actions → Cloud Build
+
+詳細は以下のドキュメントを参照:
+- [CI/CD デプロイフロー](docs/CICD_DEPLOYMENT_FLOW.md)
+- [データベースデプロイガイド](docs/DATABASE_DEPLOYMENT_GUIDE.md)
+- [Supabase 接続設定ガイド](docs/SUPABASE_CONNECTION_GUIDE.md)
+
+### 2. Vercel（オプション）
+
+**適用対象**: フロントエンド + API Routes（Supabase PostgreSQL）
+
+> ⚠️ Vercel へのデプロイには追加の設定が必要です。詳細は [Vercel と Supabase の接続状況](docs/VERCEL_SUPABASE_CONNECTION_STATUS.md) を参照してください。
 
 ```bash
 # Vercel CLIでデプロイ
 npm i -g vercel
 cd frontend
 vercel
+
+# 環境変数の設定（Vercel ダッシュボードで設定）
+# - NEXT_PUBLIC_API_URL
+# - DATABASE_URL
+# - DIRECT_URL
+# - JWT_SECRET など
 ```
 
 **メリット**:
@@ -673,7 +707,7 @@ vercel
 - プライベート公開対応
 - Edge Functions対応
 
-### 2. Railway/Heroku（フルスタック）
+### 3. Railway/Heroku（フルスタック）
 
 **適用対象**: フロントエンド + バックエンド + データベース
 
@@ -708,11 +742,12 @@ docker-compose up -d
 
 ### デプロイ方式の比較
 
-| 方式           | フロント | バック | DB  | プライベート | コスト |
-| -------------- | -------- | ------ | --- | ------------ | ------ |
-| Vercel         | ✅       | 部分的 | ❌  | ✅           | 無料〜 |
-| Railway/Heroku | ✅       | ✅     | ✅  | ✅           | 有料   |
-| 自前サーバー   | ✅       | ✅     | ✅  | ✅           | VPS代  |
+| 方式                | フロント | バック | DB       | プライベート | コスト | 状態      |
+| ------------------- | -------- | ------ | -------- | ------------ | ------ | --------- |
+| Google Cloud Run    | ✅       | ✅     | Supabase | ✅           | 従量制 | **稼働中** |
+| Vercel              | ✅       | 部分的 | Supabase | ✅           | 無料〜 | 設定必要  |
+| Railway/Heroku      | ✅       | ✅     | ✅       | ✅           | 有料   | 未設定    |
+| 自前サーバー        | ✅       | ✅     | ✅       | ✅           | VPS代  | 未設定    |
 
 ## 🔍 トラブルシューティング
 
