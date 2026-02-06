@@ -1,0 +1,113 @@
+name: Sync to Google Drive (rclone)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sync-to-drive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install repomix
+        run: npm install -g repomix
+
+      - name: Create domain files (NotebookLM Ready)
+        run: |
+          mkdir -p dist_notebook
+          
+          # 1. 猫管理
+          npx repomix \
+            --include "backend/prisma/schema.prisma,backend/src/cats/**,backend/src/breeds/**,backend/src/coat-colors/**,backend/src/gallery/**,backend/src/gallery-upload/**,frontend/src/app/cats/**,frontend/src/app/gallery/**,frontend/src/components/cats/**" \
+            --output dist_notebook/Domain_Cats.md \
+            --style markdown
+          echo "# Domain: 猫管理 (Cat Management)" | cat - dist_notebook/Domain_Cats.md > tmp && mv tmp dist_notebook/Domain_Cats.md
+
+          # 2. 繁殖管理
+          npx repomix \
+            --include "backend/prisma/schema.prisma,backend/src/breeding/**,backend/src/graduation/**,frontend/src/app/breeding/**,frontend/src/app/kittens/**" \
+            --output dist_notebook/Domain_Breeding.md \
+            --style markdown
+          echo "# Domain: 繁殖管理 (Breeding Management)" | cat - dist_notebook/Domain_Breeding.md > tmp && mv tmp dist_notebook/Domain_Breeding.md
+
+          # 3. 血統書
+          npx repomix \
+            --include "backend/prisma/schema.prisma,backend/src/pedigree/**,frontend/src/app/pedigrees/**" \
+            --output dist_notebook/Domain_Pedigree.md \
+            --style markdown
+          echo "# Domain: 血統書 (Pedigree)" | cat - dist_notebook/Domain_Pedigree.md > tmp && mv tmp dist_notebook/Domain_Pedigree.md
+
+          # 4. ケア・医療
+          npx repomix \
+            --include "backend/prisma/schema.prisma,backend/src/care/**,frontend/src/app/care/**,frontend/src/app/medical-records/**" \
+            --output dist_notebook/Domain_Care.md \
+            --style markdown
+          echo "# Domain: ケア・医療 (Care & Medical)" | cat - dist_notebook/Domain_Care.md > tmp && mv tmp dist_notebook/Domain_Care.md
+
+          # 5. システム設定
+          npx repomix \
+            --include "backend/prisma/schema.prisma,backend/src/tags/**,backend/src/tenants/**,backend/src/users/**,backend/src/auth/**,backend/src/shift/**,backend/src/staff/**,frontend/src/app/tags/**,frontend/src/app/tenants/**,frontend/src/app/settings/**,frontend/src/app/staff/**" \
+            --output dist_notebook/Domain_Settings.md \
+            --style markdown
+          echo "# Domain: システム設定 (System Settings)" | cat - dist_notebook/Domain_Settings.md > tmp && mv tmp dist_notebook/Domain_Settings.md
+
+          # 6. 共通コンポーネント
+          npx repomix \
+            --include "backend/src/common/**,frontend/src/components/**,frontend/src/lib/**" \
+            --output dist_notebook/Domain_Common.md \
+            --style markdown
+          echo "# Domain: 共通コンポーネント (Common)" | cat - dist_notebook/Domain_Common.md > tmp && mv tmp dist_notebook/Domain_Common.md
+
+          # 7. DBスキーマ単独
+          npx repomix \
+            --include "backend/prisma/schema.prisma,backend/prisma/migrations/**/*.sql" \
+            --output dist_notebook/Schema_Database.md \
+            --style markdown
+          echo "# Database Schema (Prisma)" | cat - dist_notebook/Schema_Database.md > tmp && mv tmp dist_notebook/Schema_Database.md
+
+          echo "✅ Domain files generated:"
+          ls -lh dist_notebook/
+
+      - name: Setup rclone
+        uses: rclone/rclone-action@v1
+        with:
+          rclone_version: 'latest'
+
+      - name: Sync to Google Drive
+        env:
+          RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        run: |
+          # rclone.confを作成
+          mkdir -p ~/.config/rclone
+          echo "$RCLONE_CONF" | base64 --decode > ~/.config/rclone/rclone.conf
+          
+          # rclone configの中身を動的に書き換える（Folder IDなど）
+          # 注: RCLONE_CONFには [gdrive] セクションが含まれている前提
+          
+          echo "🚀 Starting sync to folder ID: $GOOGLE_DRIVE_FOLDER_ID"
+          
+          # バックエンド設定: gdrive
+          # root_folder_id を動的に設定するために環境変数経由または引数で渡すのが一般的だが
+          # rclone backend support allows overriding
+          
+          # --drive-root-folder-id オプションを使用
+          
+          rclone sync dist_notebook gdrive: \
+            --drive-root-folder-id "$GOOGLE_DRIVE_FOLDER_ID" \
+            --checksum \
+            --delete-excluded \
+            --transfers=8 \
+            --verbose
+            
+          echo "🎉 Sync complete!"
