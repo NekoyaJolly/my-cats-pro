@@ -1090,41 +1090,52 @@ model PedigreePrintSetting {
 // Print Template Management
 // ==========================================
 
+model PrintDocCategory {
+  id            String          @id @default(uuid())
+  tenantId      String?         @map("tenant_id")
+  name          String          // 表示名（例: "血統書"）
+  slug          String          // 識別子（例: "PEDIGREE"）
+  description   String?
+  defaultFields Json?           @map("default_fields") // カテゴリに紐づくデフォルトフィールド定義
+  displayOrder  Int             @default(0) @map("display_order")
+  isActive      Boolean         @default(true) @map("is_active")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  templates     PrintTemplate[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("print_doc_categories")
+}
+
 model PrintTemplate {
-  id                String                @id @default(uuid())
-  tenantId          String?               @map("tenant_id") // null = 共通テンプレート
+  id                String           @id @default(uuid())
+  tenantId          String?          @map("tenant_id") // null = 共通テンプレート
   name              String
   description       String?
-  category          PrintTemplateCategory @default(PEDIGREE)
-  paperWidth        Int                   @map("paper_width")    // mm単位
-  paperHeight       Int                   @map("paper_height")   // mm単位
-  backgroundUrl     String?               @map("background_url")
-  backgroundOpacity Int                   @default(100) @map("background_opacity") // 0-100%
-  positions         Json                  // フィールド座標設定
-  fontSizes         Json?                 @map("font_sizes")     // フォントサイズ設定
-  isActive          Boolean               @default(true) @map("is_active")
-  isDefault         Boolean               @default(false) @map("is_default")
-  displayOrder      Int                   @default(0) @map("display_order")
-  createdAt         DateTime              @default(now()) @map("created_at")
-  updatedAt         DateTime              @updatedAt @map("updated_at")
+  category          String           @default("CUSTOM") // カテゴリスラッグ（後方互換）
+  categoryId        String?          @map("category_id") // PrintDocCategory への FK
+  paperWidth        Int              @map("paper_width")    // mm単位
+  paperHeight       Int              @map("paper_height")   // mm単位
+  backgroundUrl     String?          @map("background_url")
+  backgroundOpacity Int              @default(100) @map("background_opacity") // 0-100%
+  positions         Json             // フィールド座標設定（dataSource情報含む）
+  fontSizes         Json?            @map("font_sizes")     // フォントサイズ設定
+  isActive          Boolean          @default(true) @map("is_active")
+  isDefault         Boolean          @default(false) @map("is_default")
+  displayOrder      Int              @default(0) @map("display_order")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  docCategory       PrintDocCategory? @relation(fields: [categoryId], references: [id])
 
   @@index([tenantId])
   @@index([category])
+  @@index([categoryId])
   @@index([isActive])
   @@index([name])
   @@index([tenantId, category, isActive])
   @@map("print_templates")
-}
-
-enum PrintTemplateCategory {
-  PEDIGREE           // 血統書
-  KITTEN_TRANSFER    // 子猫譲渡証明書
-  HEALTH_CERTIFICATE // 健康診断書
-  VACCINATION_RECORD // ワクチン接種記録
-  BREEDING_RECORD    // 繁殖記録
-  CONTRACT           // 契約書
-  INVOICE            // 請求書/領収書
-  CUSTOM             // カスタム書類
 }
 
 enum DisplayNameMode {

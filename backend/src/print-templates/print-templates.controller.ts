@@ -16,25 +16,103 @@ import {
   UpdatePrintTemplateDto,
   QueryPrintTemplatesDto,
   DuplicatePrintTemplateDto,
-  PrintTemplateCategory,
+  CreatePrintDocCategoryDto,
+  UpdatePrintDocCategoryDto,
 } from './dto';
 import { PrintTemplatesService } from './print-templates.service';
 
 @Controller('print-templates')
 export class PrintTemplatesController {
-  constructor(private readonly service: PrintTemplatesService) {}
+  constructor(private readonly service: PrintTemplatesService) { }
+
+  // ==========================================
+  // カテゴリ管理
+  // ==========================================
 
   /**
-   * 利用可能なカテゴリ一覧を取得
+   * カテゴリ一覧を取得
    * GET /api/v1/print-templates/categories
    */
   @Get('categories')
-  getCategories() {
+  async getCategories(@Query('tenantId') tenantId?: string) {
+    const categories = await this.service.findAllCategories(tenantId);
     return {
       success: true,
-      data: this.service.getCategories(),
+      data: categories,
     };
   }
+
+  /**
+   * カテゴリを1件取得
+   * GET /api/v1/print-templates/categories/:id
+   */
+  @Get('categories/:id')
+  async getCategory(@Param('id') id: string) {
+    const category = await this.service.findOneCategory(id);
+    return {
+      success: true,
+      data: category,
+    };
+  }
+
+  /**
+   * カテゴリを作成
+   * POST /api/v1/print-templates/categories
+   */
+  @Post('categories')
+  async createCategory(@Body() dto: CreatePrintDocCategoryDto) {
+    const category = await this.service.createCategory(dto);
+    return {
+      success: true,
+      data: category,
+    };
+  }
+
+  /**
+   * カテゴリを更新
+   * PATCH /api/v1/print-templates/categories/:id
+   */
+  @Patch('categories/:id')
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() dto: UpdatePrintDocCategoryDto,
+  ) {
+    const category = await this.service.updateCategory(id, dto);
+    return {
+      success: true,
+      data: category,
+    };
+  }
+
+  /**
+   * カテゴリを削除
+   * DELETE /api/v1/print-templates/categories/:id
+   */
+  @Delete('categories/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeCategory(@Param('id') id: string) {
+    await this.service.removeCategory(id);
+  }
+
+  // ==========================================
+  // データソース
+  // ==========================================
+
+  /**
+   * 利用可能なデータソース一覧を取得
+   * GET /api/v1/print-templates/data-sources
+   */
+  @Get('data-sources')
+  getDataSources() {
+    return {
+      success: true,
+      data: this.service.getDataSources(),
+    };
+  }
+
+  // ==========================================
+  // テンプレート管理
+  // ==========================================
 
   /**
    * テンプレート一覧を取得
@@ -46,38 +124,6 @@ export class PrintTemplatesController {
     return {
       success: true,
       data: templates,
-    };
-  }
-
-  /**
-   * カテゴリ別テンプレート一覧を取得
-   * GET /api/v1/print-templates/category/:category
-   */
-  @Get('category/:category')
-  async findByCategory(
-    @Param('category') category: PrintTemplateCategory,
-    @Query('tenantId') tenantId?: string,
-  ) {
-    const templates = await this.service.findByCategory(category, tenantId);
-    return {
-      success: true,
-      data: templates,
-    };
-  }
-
-  /**
-   * デフォルトテンプレートを取得
-   * GET /api/v1/print-templates/default/:category
-   */
-  @Get('default/:category')
-  async findDefault(
-    @Param('category') category: PrintTemplateCategory,
-    @Query('tenantId') tenantId?: string,
-  ) {
-    const template = await this.service.findDefault(category, tenantId);
-    return {
-      success: true,
-      data: template,
     };
   }
 

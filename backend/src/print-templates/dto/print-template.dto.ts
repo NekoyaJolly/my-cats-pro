@@ -5,34 +5,102 @@ import {
   IsInt,
   IsBoolean,
   IsObject,
-  IsEnum,
   Min,
   Max,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
 
-/** 印刷テンプレートカテゴリ */
-export enum PrintTemplateCategory {
-  PEDIGREE = 'PEDIGREE',
-  KITTEN_TRANSFER = 'KITTEN_TRANSFER',
-  HEALTH_CERTIFICATE = 'HEALTH_CERTIFICATE',
-  VACCINATION_RECORD = 'VACCINATION_RECORD',
-  BREEDING_RECORD = 'BREEDING_RECORD',
-  CONTRACT = 'CONTRACT',
-  INVOICE = 'INVOICE',
-  CUSTOM = 'CUSTOM',
+// ==========================================
+// カテゴリ DTO
+// ==========================================
+
+/** デフォルトフィールド定義 */
+export class DefaultFieldDto {
+  @IsString()
+  key: string;
+
+  @IsString()
+  label: string;
+
+  @IsOptional()
+  @IsString()
+  dataSourceType?: string;
+
+  @IsOptional()
+  @IsString()
+  dataSourceField?: string;
 }
 
-/** カテゴリの日本語ラベル */
-export const PrintTemplateCategoryLabels: Record<PrintTemplateCategory, string> = {
-  [PrintTemplateCategory.PEDIGREE]: '血統書',
-  [PrintTemplateCategory.KITTEN_TRANSFER]: '子猫譲渡証明書',
-  [PrintTemplateCategory.HEALTH_CERTIFICATE]: '健康診断書',
-  [PrintTemplateCategory.VACCINATION_RECORD]: 'ワクチン接種記録',
-  [PrintTemplateCategory.BREEDING_RECORD]: '繁殖記録',
-  [PrintTemplateCategory.CONTRACT]: '契約書',
-  [PrintTemplateCategory.INVOICE]: '請求書/領収書',
-  [PrintTemplateCategory.CUSTOM]: 'カスタム書類',
-};
+/** カテゴリ作成DTO */
+export class CreatePrintDocCategoryDto {
+  @IsOptional()
+  @IsString()
+  tenantId?: string;
+
+  @IsString()
+  name: string;
+
+  @IsString()
+  slug: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DefaultFieldDto)
+  defaultFields?: DefaultFieldDto[];
+
+  @IsOptional()
+  @IsInt()
+  displayOrder?: number;
+}
+
+/** カテゴリ更新DTO */
+export class UpdatePrintDocCategoryDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DefaultFieldDto)
+  defaultFields?: DefaultFieldDto[];
+
+  @IsOptional()
+  @IsInt()
+  displayOrder?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+/** カテゴリレスポンス型 */
+export interface PrintDocCategoryResponse {
+  id: string;
+  tenantId: string | null;
+  name: string;
+  slug: string;
+  description: string | null;
+  defaultFields: DefaultFieldDto[] | null;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ==========================================
+// テンプレート DTO
+// ==========================================
 
 /** テンプレート作成DTO */
 export class CreatePrintTemplateDto {
@@ -47,8 +115,12 @@ export class CreatePrintTemplateDto {
   @IsString()
   description?: string;
 
-  @IsEnum(PrintTemplateCategory)
-  category: PrintTemplateCategory;
+  @IsString()
+  category: string;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
 
   @IsInt()
   @Min(50)
@@ -97,8 +169,12 @@ export class UpdatePrintTemplateDto {
   description?: string;
 
   @IsOptional()
-  @IsEnum(PrintTemplateCategory)
-  category?: PrintTemplateCategory;
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
 
   @IsOptional()
   @IsInt()
@@ -146,8 +222,8 @@ export class UpdatePrintTemplateDto {
 /** クエリパラメータDTO */
 export class QueryPrintTemplatesDto {
   @IsOptional()
-  @IsEnum(PrintTemplateCategory)
-  category?: PrintTemplateCategory;
+  @IsString()
+  category?: string;
 
   @IsOptional()
   @IsBoolean()
@@ -174,13 +250,14 @@ export class DuplicatePrintTemplateDto {
   tenantId?: string;
 }
 
-/** レスポンス型 */
+/** テンプレートレスポンス型 */
 export interface PrintTemplateResponse {
   id: string;
   tenantId: string | null;
   name: string;
   description: string | null;
-  category: PrintTemplateCategory;
+  category: string;
+  categoryId: string | null;
   paperWidth: number;
   paperHeight: number;
   backgroundUrl: string | null;
@@ -192,4 +269,23 @@ export interface PrintTemplateResponse {
   displayOrder: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ==========================================
+// データソース定義
+// ==========================================
+
+/** データソースフィールド情報 */
+export interface DataSourceFieldInfo {
+  key: string;
+  label: string;
+  type: 'string' | 'number' | 'date' | 'boolean';
+}
+
+/** データソース情報 */
+export interface DataSourceInfo {
+  type: string;
+  label: string;
+  description: string;
+  fields: DataSourceFieldInfo[];
 }
