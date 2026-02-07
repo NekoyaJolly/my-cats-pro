@@ -196,13 +196,6 @@ export function useGetCareSchedules(
     queryFn: async () => {
       const response = await apiClient.get('/care/schedules', {
         query: params,
-        init: {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-          },
-        },
       });
 
       if (!response.data) {
@@ -233,12 +226,12 @@ export function useAddCareSchedule() {
       return response.data as CareScheduleResponse;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ 
+      void queryClient.invalidateQueries({
         queryKey: careScheduleKeys.lists(),
-        refetchType: 'all' 
+        refetchType: 'all'
       });
-      void queryClient.refetchQueries({ 
-        queryKey: careScheduleKeys.lists() 
+      void queryClient.refetchQueries({
+        queryKey: careScheduleKeys.lists()
       });
       notifications.show({
         title: 'ケア予定を登録しました',
@@ -359,13 +352,6 @@ export function useGetMedicalRecords(
     queryFn: async () => {
       const response = await apiClient.get('/care/medical-records', {
         query: params,
-        init: {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-          },
-        },
       });
 
       if (!response.data) {
@@ -396,12 +382,12 @@ export function useCreateMedicalRecord() {
       return response as unknown as MedicalRecordResponse;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ 
+      void queryClient.invalidateQueries({
         queryKey: medicalRecordKeys.lists(),
-        refetchType: 'all' 
+        refetchType: 'all'
       });
-      void queryClient.refetchQueries({ 
-        queryKey: medicalRecordKeys.lists() 
+      void queryClient.refetchQueries({
+        queryKey: medicalRecordKeys.lists()
       });
       notifications.show({
         title: '医療記録を登録しました',

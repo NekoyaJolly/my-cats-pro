@@ -45,7 +45,7 @@ async function bootstrap() {
       validateProductionEnvironment();
       logger.log(`✅ ${process.env.NODE_ENV} environment validation passed`);
     }
-    
+
     logEnvironmentInfo();
 
     const app = await NestFactory.create(AppModule, {
@@ -56,11 +56,11 @@ async function bootstrap() {
             (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
               ? (process.env.CORS_ORIGIN || '').split(',').map((o: string) => o.trim()).filter(Boolean)
               : [
-                  'http://localhost:3000',
-                  'http://localhost:3002',
-                  'http://localhost:3003',
-                  'http://localhost:3005',
-                ];
+                'http://localhost:3000',
+                'http://localhost:3002',
+                'http://localhost:3003',
+                'http://localhost:3005',
+              ];
 
           if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') && (!process.env.CORS_ORIGIN || allowedOrigins.length === 0)) {
             return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
@@ -81,95 +81,95 @@ async function bootstrap() {
         },
         credentials: true,
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cookie'],
+        allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cookie', 'Cache-Control', 'Pragma'],
         exposedHeaders: ['Content-Length', 'Content-Type', 'Set-Cookie'],
         preflightContinue: false,
         optionsSuccessStatus: 204,
       },
     });
 
-  // Body parser limit を拡張（Base64画像対応：最大50MB）
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ extended: true, limit: '50mb' }));
+    // Body parser limit を拡張（Base64画像対応：最大50MB）
+    app.use(json({ limit: '50mb' }));
+    app.use(urlencoded({ extended: true, limit: '50mb' }));
 
-  // Pino logger
-  app.useLogger(app.get(PinoLogger));
+    // Pino logger
+    app.useLogger(app.get(PinoLogger));
 
     // Security: Helmet middleware for security headers
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          imgSrc: ["'self'", "data:", "https:"],
-          connectSrc: ["'self'"],
-          fontSrc: ["'self'"],
-          objectSrc: ["'none'"],
-          mediaSrc: ["'self'"],
-          frameSrc: ["'none'"],
+    app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
+          },
         },
-      },
-      hsts: {
-        maxAge: 31536000, // 1 year in seconds
-        includeSubDomains: true,
-        preload: true,
-      },
-      referrerPolicy: {
-        policy: 'strict-origin-when-cross-origin',
-      },
-      noSniff: true,
-      xssFilter: true,
-    }),
-  );
+        hsts: {
+          maxAge: 31536000, // 1 year in seconds
+          includeSubDomains: true,
+          preload: true,
+        },
+        referrerPolicy: {
+          policy: 'strict-origin-when-cross-origin',
+        },
+        noSniff: true,
+        xssFilter: true,
+      }),
+    );
 
-  // Sentry (条件付き)
-  if (process.env.SENTRY_DSN) {
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      environment: process.env.NODE_ENV || 'development',
-      tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
-      profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 0.1),
-      integrations: [nodeProfilingIntegration()],
-      beforeSend(event) {
-        // Redact sensitive headers before sending to Sentry
-        if (event.request?.headers) {
-          const headers = event.request.headers as Record<string, string>;
-          if (headers.authorization) {
-            headers.authorization = '[REDACTED]';
+    // Sentry (条件付き)
+    if (process.env.SENTRY_DSN) {
+      Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        environment: process.env.NODE_ENV || 'development',
+        tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
+        profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 0.1),
+        integrations: [nodeProfilingIntegration()],
+        beforeSend(event) {
+          // Redact sensitive headers before sending to Sentry
+          if (event.request?.headers) {
+            const headers = event.request.headers as Record<string, string>;
+            if (headers.authorization) {
+              headers.authorization = '[REDACTED]';
+            }
+            if (headers.cookie) {
+              headers.cookie = '[REDACTED]';
+            }
+            if (headers.Authorization) {
+              headers.Authorization = '[REDACTED]';
+            }
+            if (headers.Cookie) {
+              headers.Cookie = '[REDACTED]';
+            }
           }
-          if (headers.cookie) {
-            headers.cookie = '[REDACTED]';
-          }
-          if (headers.Authorization) {
-            headers.Authorization = '[REDACTED]';
-          }
-          if (headers.Cookie) {
-            headers.Cookie = '[REDACTED]';
-          }
+          return event;
+        },
+      });
+      logger.log('Sentry initialized with security redaction');
+    }
+
+    // Cookie parser (for refresh token, etc.)
+    app.use(cookieParser());
+
+    // Debug middleware for pregnancy-checks (development only)
+    if (process.env.NODE_ENV !== 'production') {
+      app.use('/api/v1/breeding/pregnancy-checks', (req: Request, res: Response, next: NextFunction) => {
+        if (req.method === 'POST') {
+          const body = req.body as Record<string, unknown>;
+          console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(body, null, 2));
+          console.log('[DEBUG MIDDLEWARE] motherId type:', typeof body?.motherId, 'value:', body?.motherId);
+          console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof body?.fatherId, 'value:', body?.fatherId);
         }
-        return event;
-      },
-    });
-    logger.log('Sentry initialized with security redaction');
-  }
-
-  // Cookie parser (for refresh token, etc.)
-  app.use(cookieParser());
-
-  // Debug middleware for pregnancy-checks (development only)
-  if (process.env.NODE_ENV !== 'production') {
-    app.use('/api/v1/breeding/pregnancy-checks', (req: Request, res: Response, next: NextFunction) => {
-      if (req.method === 'POST') {
-        const body = req.body as Record<string, unknown>;
-        console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(body, null, 2));
-        console.log('[DEBUG MIDDLEWARE] motherId type:', typeof body?.motherId, 'value:', body?.motherId);
-        console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof body?.fatherId, 'value:', body?.fatherId);
-      }
-      next();
-    });
-  }
+        next();
+      });
+    }
 
     // Global validation pipe
     app.useGlobalPipes(
@@ -274,11 +274,11 @@ async function bootstrap() {
       SwaggerModule.setup("api/docs", app, document);
     }
 
-  if (!process.env.PORT && process.env.NODE_ENV === 'production') {
-    throw new Error('PORT environment variable is not set in production environment.');
-  }
-  const port = process.env.PORT || 3004;
-  await app.listen(port, '0.0.0.0');
+    if (!process.env.PORT && process.env.NODE_ENV === 'production') {
+      throw new Error('PORT environment variable is not set in production environment.');
+    }
+    const port = process.env.PORT || 3004;
+    await app.listen(port, '0.0.0.0');
 
     // Graceful shutdown
     const gracefulShutdown = (signal: string) => {

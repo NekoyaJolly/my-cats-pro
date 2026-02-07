@@ -35,6 +35,7 @@ import {
   IconHome,
   IconCat,
   IconStethoscope,
+  IconBuildingHospital,
   IconHeartHandshake,
   IconPhoto,
   IconUsers,
@@ -100,11 +101,6 @@ const navigationItems = [
     icon: IconUsers,
   },
   {
-    label: '表示設定',
-    href: '/settings',
-    icon: IconSettings,
-  },
-  {
     label: 'その他',
     href: '/more',
     icon: IconSettings,
@@ -131,7 +127,7 @@ export const bottomNavigationItems = [
   { id: 'breeding', label: '交配', href: '/breeding', icon: IconHeartHandshake },
   { id: 'kittens', label: '子猫', href: '/kittens', icon: IconPaw },
   { id: 'care', label: 'ケア', href: '/care', icon: IconStethoscope },
-  { id: 'medical', label: '医療', href: '/medical-records', icon: IconStethoscope },
+  { id: 'medical', label: '医療', href: '/medical-records', icon: IconBuildingHospital },
   { id: 'tags', label: 'タグ', href: '/tags', icon: IconTag },
   { id: 'pedigrees', label: '血統書', href: '/pedigrees', icon: IconCertificate },
   { id: 'more', label: 'その他', href: '/more', icon: IconSettings },
@@ -271,10 +267,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         if (response.success && Array.isArray(response.data)) {
           const cats = response.data as Cat[];
           const today = new Date();
-          
+
           // 在舎猫のみをフィルタ
           const inHouseCats = cats.filter((cat) => cat.isInHouse);
-          
+
           // 子猫判定関数（6ヶ月未満）
           const isKittenFunc = (cat: Cat) => {
             if (!cat.birthDate) return false;
@@ -282,10 +278,10 @@ export function AppLayout({ children }: AppLayoutProps) {
             const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
             return ageInMonths < 6;
           };
-          
+
           // 大人の猫（子猫以外）
           const adultCats = inHouseCats.filter((cat) => !isKittenFunc(cat));
-          
+
           // 子猫（90日未満で母猫IDを持つ）
           const kittens = inHouseCats.filter((cat) => {
             if (!cat.birthDate || !cat.motherId) return false;
@@ -293,12 +289,12 @@ export function AppLayout({ children }: AppLayoutProps) {
             const ageInDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
             return ageInDays < 90;
           });
-          
+
           // 卒業予定の猫（「卒業予定」タグを持つ猫）
-          const graduatedCats = inHouseCats.filter((cat) => 
+          const graduatedCats = inHouseCats.filter((cat) =>
             cat.tags?.some((catTag) => catTag.tag.name === '卒業予定')
           );
-          
+
           // 統計を計算
           const stats: CatStats = {
             male: adultCats.filter((cat) => cat.gender === 'MALE').length,
@@ -306,7 +302,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             kittens: kittens.length,
             graduated: graduatedCats.length,
           };
-          
+
           setCatStats(stats);
         }
       } catch (error) {
@@ -315,7 +311,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     };
 
     fetchCatStats();
-    
+
     // 5分ごとに更新
     const interval = setInterval(fetchCatStats, 5 * 60 * 1000);
     return () => clearInterval(interval);
@@ -343,214 +339,214 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="theme-default">
-    <ContextMenuManager>
-    <AppShell
-      header={{ height: 60 }}
-      navbar={{
-        width: 280,
-        breakpoint: 'sm',
-        collapsed: { mobile: !mobileOpened, desktop: !desktopOpened },
-      }}
-      padding="0"
-      styles={(_theme) => ({
-        header: {
-          backgroundColor: 'transparent',
-          borderBottom: 'var(--border-width, 1px) solid var(--glass-border, var(--border-subtle, rgba(255, 255, 255, 0.3)))',
-        },
-        navbar: {
-          backgroundColor: 'transparent',
-          borderRight: 'var(--border-width, 1px) solid var(--glass-border, var(--border-subtle, rgba(255, 255, 255, 0.3)))',
-        },
-        main: {
-          backgroundColor: 'transparent',
-        },
-      })}
-    >
-      <AppShell.Header className="glass-effect" style={{ borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0, display: 'flex', justifyContent: 'center' }}>
-        <Group
-          h="100%"
-          px="var(--layout-px)"
-          justify="space-between"
-          wrap="nowrap"
-          style={{ color: 'var(--text-primary)', width: '100%', maxWidth: 'var(--container-max-width)' }}
+      <ContextMenuManager>
+        <AppShell
+          header={{ height: 60 }}
+          navbar={{
+            width: 280,
+            breakpoint: 'sm',
+            collapsed: { mobile: !mobileOpened, desktop: !desktopOpened },
+          }}
+          padding="0"
+          styles={(_theme) => ({
+            header: {
+              backgroundColor: 'transparent',
+              borderBottom: 'var(--border-width, 1px) solid var(--glass-border, var(--border-subtle, rgba(255, 255, 255, 0.3)))',
+            },
+            navbar: {
+              backgroundColor: 'transparent',
+              borderRight: 'var(--border-width, 1px) solid var(--glass-border, var(--border-subtle, rgba(255, 255, 255, 0.3)))',
+            },
+            main: {
+              backgroundColor: 'transparent',
+            },
+          })}
         >
-          <Group gap="sm" wrap="nowrap" style={{ flex: '1 1 auto', minWidth: 0 }}>
-            <Burger
-              opened={mobileOpened}
-              onClick={toggleMobile}
-              hiddenFrom="sm"
-              size="sm"
-              color="var(--text-primary)"
-            />
-            <Burger
-              opened={desktopOpened}
-              onClick={toggleDesktop}
-              visibleFrom="sm"
-              size="sm"
-              color="var(--text-primary)"
-            />
-            <Group gap={12} wrap="nowrap" style={{ minWidth: 0 }}>
-              <Text 
-                fw={800} 
-                visibleFrom="sm"
-                style={{ 
-                  color: 'var(--accent)', 
-                  fontSize: 20, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 8, 
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '-0.03em'
-                }}
-              >
-                <span style={{ fontSize: '1.6rem', lineHeight: 1 }}>🐈</span> MyCats
-              </Text>
-              {pageTitle && (
-                <>
-                  <div style={{ width: 1, height: 24, backgroundColor: 'var(--text-muted)', opacity: 0.3, transform: 'rotate(15deg)' }} />
-                  <Text fw={700} size="md" style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {pageTitle}
+          <AppShell.Header className="glass-effect" style={{ borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0, display: 'flex', justifyContent: 'center' }}>
+            <Group
+              h="100%"
+              px="var(--layout-px)"
+              justify="space-between"
+              wrap="nowrap"
+              style={{ color: 'var(--text-primary)', width: '100%', maxWidth: 'var(--container-max-width)' }}
+            >
+              <Group gap="sm" wrap="nowrap" style={{ flex: '1 1 auto', minWidth: 0 }}>
+                <Burger
+                  opened={mobileOpened}
+                  onClick={toggleMobile}
+                  hiddenFrom="sm"
+                  size="sm"
+                  color="var(--text-primary)"
+                />
+                <Burger
+                  opened={desktopOpened}
+                  onClick={toggleDesktop}
+                  visibleFrom="sm"
+                  size="sm"
+                  color="var(--text-primary)"
+                />
+                <Group gap={12} wrap="nowrap" style={{ minWidth: 0 }}>
+                  <Text
+                    fw={800}
+                    visibleFrom="sm"
+                    style={{
+                      color: 'var(--accent)',
+                      fontSize: 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      whiteSpace: 'nowrap',
+                      letterSpacing: '-0.03em'
+                    }}
+                  >
+                    <span style={{ fontSize: '1.6rem', lineHeight: 1 }}>🐈</span> MyCats
                   </Text>
-                </>
-              )}
-            </Group>
-          </Group>
-          
-          <Group gap="xs" wrap="nowrap" style={{ flex: '0 0 auto' }}>
-            <Badge 
-              color="blue" 
-              size="lg" 
-              style={{ cursor: 'pointer' }}
-              onClick={() => router.push('/cats?tab=male')}
-            >
-              ♂ {catStats.male}
-            </Badge>
-            <Badge 
-              color="pink" 
-              size="lg" 
-              style={{ cursor: 'pointer' }}
-              onClick={() => router.push('/cats?tab=female')}
-            >
-              ♀ {catStats.female}
-            </Badge>
-            <Badge 
-              color="orange" 
-              size="lg" 
-              style={{ cursor: 'pointer' }}
-              onClick={() => router.push('/cats?tab=kitten')}
-            >
-              🐾 {catStats.kittens}
-            </Badge>
-            <Badge 
-              color="green" 
-              size="lg" 
-              style={{ cursor: 'pointer' }}
-              onClick={() => router.push('/cats?tab=grad')}
-            >
-              🎓 {catStats.graduated}
-            </Badge>
-          </Group>
-          
-          {pageActions && <div className="page-actions-container">{pageActions}</div>}
-        </Group>
-      </AppShell.Header>
+                  {pageTitle && (
+                    <>
+                      <div style={{ width: 1, height: 24, backgroundColor: 'var(--text-muted)', opacity: 0.3, transform: 'rotate(15deg)' }} />
+                      <Text fw={700} size="md" style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {pageTitle}
+                      </Text>
+                    </>
+                  )}
+                </Group>
+              </Group>
 
-      <AppShell.Navbar p="md" className="glass-effect" style={{ borderTop: 'none', borderBottom: 'none', borderLeft: 'none', borderRadius: 0 }}>
-        {/* ユーザー情報セクション */}
-        {isAuthenticated && user && (
-          <AppShell.Section mb="xl">
-            <Box 
-              style={{ 
-                background: 'rgba(255, 255, 255, 0.1)', 
-                borderRadius: 'var(--radius-base, 20px)', 
-                padding: 16,
-                border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.2))'
+              <Group gap="xs" wrap="nowrap" style={{ flex: '0 0 auto' }}>
+                <Badge
+                  color="blue"
+                  size="lg"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => router.push('/cats?tab=male')}
+                >
+                  ♂ {catStats.male}
+                </Badge>
+                <Badge
+                  color="pink"
+                  size="lg"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => router.push('/cats?tab=female')}
+                >
+                  ♀ {catStats.female}
+                </Badge>
+                <Badge
+                  color="orange"
+                  size="lg"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => router.push('/cats?tab=kitten')}
+                >
+                  🐾 {catStats.kittens}
+                </Badge>
+                <Badge
+                  color="green"
+                  size="lg"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => router.push('/cats?tab=grad')}
+                >
+                  🎓 {catStats.graduated}
+                </Badge>
+              </Group>
+
+              {pageActions && <div className="page-actions-container">{pageActions}</div>}
+            </Group>
+          </AppShell.Header>
+
+          <AppShell.Navbar p="md" className="glass-effect" style={{ borderTop: 'none', borderBottom: 'none', borderLeft: 'none', borderRadius: 0 }}>
+            {/* ユーザー情報セクション */}
+            {isAuthenticated && user && (
+              <AppShell.Section mb="xl">
+                <Box
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 'var(--radius-base, 20px)',
+                    padding: 16,
+                    border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.2))'
+                  }}
+                >
+                  <Group gap="sm" wrap="nowrap">
+                    <Avatar radius="xl" size={44} color="blue" variant="filled" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                      {accountInitials}
+                    </Avatar>
+                    <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                      <Text size="sm" fw={700} lineClamp={1} style={{ color: 'var(--text-primary)' }}>
+                        {accountLabel}
+                      </Text>
+                      <Text size="xs" c="dimmed" lineClamp={1}>
+                        {accountEmail}
+                      </Text>
+                    </Stack>
+                  </Group>
+                  <Button
+                    variant="subtle"
+                    color="red"
+                    size="compact-xs"
+                    fullWidth
+                    mt="md"
+                    leftSection={<IconLogout size={14} />}
+                    onClick={handleLogout}
+                    loading={logoutLoading}
+                    radius="md"
+                  >
+                    ログアウト
+                  </Button>
+                </Box>
+              </AppShell.Section>
+            )}
+
+            <AppShell.Section grow component={ScrollArea}>
+              <Stack gap={4}>
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+
+                  return (
+                    <NavLink
+                      key={item.href}
+                      component={Link}
+                      href={item.href}
+                      label={item.label}
+                      leftSection={<Icon size={20} stroke={1.5} />}
+                      active={isActive}
+                      onClick={() => {
+                        if (mobileOpened) toggleMobile();
+                      }}
+                      styles={{
+                        root: {
+                          borderRadius: 'calc(var(--radius-base, 12px) * 0.6)',
+                          padding: '10px 12px',
+                          backgroundColor: isActive ? 'var(--accent-soft)' : 'transparent',
+                          color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                          transition: 'all 0.2s ease',
+                          border: isActive ? '1px solid var(--accent)' : '1px solid transparent',
+                        },
+                        label: {
+                          fontWeight: isActive ? 700 : 500,
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Stack>
+            </AppShell.Section>
+          </AppShell.Navbar>
+
+          <AppShell.Main style={{ paddingBottom: 100 }}>
+            <Box
+              px="var(--layout-px)"
+              style={{
+                maxWidth: 'var(--container-max-width)',
+                margin: '0 auto',
+                width: '100%',
+                /* Theme-specific responsive adjustments */
+                paddingTop: 'var(--section-gap, 24px)',
               }}
             >
-              <Group gap="sm" wrap="nowrap">
-                <Avatar radius="xl" size={44} color="blue" variant="filled" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                  {accountInitials}
-                </Avatar>
-                <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-                  <Text size="sm" fw={700} lineClamp={1} style={{ color: 'var(--text-primary)' }}>
-                    {accountLabel}
-                  </Text>
-                  <Text size="xs" c="dimmed" lineClamp={1}>
-                    {accountEmail}
-                  </Text>
-                </Stack>
-              </Group>
-              <Button
-                variant="subtle"
-                color="red"
-                size="compact-xs"
-                fullWidth
-                mt="md"
-                leftSection={<IconLogout size={14} />}
-                onClick={handleLogout}
-                loading={logoutLoading}
-                radius="md"
-              >
-                ログアウト
-              </Button>
+              {children}
             </Box>
-          </AppShell.Section>
-        )}
-
-        <AppShell.Section grow component={ScrollArea}>
-          <Stack gap={4}>
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              
-              return (
-                <NavLink
-                  key={item.href}
-                  component={Link}
-                  href={item.href}
-                  label={item.label}
-                  leftSection={<Icon size={20} stroke={1.5} />}
-                  active={isActive}
-                  onClick={() => {
-                    if (mobileOpened) toggleMobile();
-                  }}
-                  styles={{
-                    root: {
-                      borderRadius: 'calc(var(--radius-base, 12px) * 0.6)',
-                      padding: '10px 12px',
-                      backgroundColor: isActive ? 'var(--accent-soft)' : 'transparent',
-                      color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                      transition: 'all 0.2s ease',
-                      border: isActive ? '1px solid var(--accent)' : '1px solid transparent',
-                    },
-                    label: {
-                      fontWeight: isActive ? 700 : 500,
-                    },
-                  }}
-                />
-              );
-            })}
-          </Stack>
-        </AppShell.Section>
-      </AppShell.Navbar>
-
-      <AppShell.Main style={{ paddingBottom: 100 }}>
-        <Box 
-          px="var(--layout-px)" 
-          style={{ 
-            maxWidth: 'var(--container-max-width)', 
-            margin: '0 auto',
-            width: '100%',
-            /* Theme-specific responsive adjustments */
-            paddingTop: 'var(--section-gap, 24px)',
-          }}
-        >
-          {children}
-        </Box>
-        <BottomNavigation pathname={pathname} />
-      </AppShell.Main>
-    </AppShell>
-    </ContextMenuManager>
+            <BottomNavigation pathname={pathname} />
+          </AppShell.Main>
+        </AppShell>
+      </ContextMenuManager>
     </div>
   );
 }
@@ -603,16 +599,16 @@ function BottomNavigation({ pathname }: { pathname: string }) {
             }}
           >
             {isActive && (
-              <Box 
-                style={{ 
-                  position: 'absolute', 
-                  top: -8, 
-                  width: 4, 
-                  height: 4, 
-                  borderRadius: '50%', 
+              <Box
+                style={{
+                  position: 'absolute',
+                  top: -8,
+                  width: 4,
+                  height: 4,
+                  borderRadius: '50%',
                   backgroundColor: 'var(--accent)',
                   boxShadow: '0 0 8px var(--accent)'
-                }} 
+                }}
               />
             )}
             <IconComponent size={24} stroke={isActive ? 2 : 1.5} />
