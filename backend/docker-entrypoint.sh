@@ -8,8 +8,8 @@ echo "Running database migrations..."
 npx prisma migrate deploy --schema=./prisma/schema.prisma
 
 echo "Seeding database..."
-node dist/prisma/seed.js
+# シードは冪等でない処理を含むため、既存データがある場合は失敗を許容
+node dist/prisma/seed.js || echo "⚠️ Seed skipped (data may already exist)"
 
 echo "Starting application..."
 exec node dist/main.js
-
