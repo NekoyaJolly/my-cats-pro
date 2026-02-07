@@ -38,34 +38,26 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN pnpm build
 
 # ---- Production Stage ----
+# standalone 出力を使用するため、pnpm install は不要
+# Next.js standalone には必要な node_modules が同梱済み
 FROM node:20-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN npm install -g pnpm@10.18.1 && \
-    addgroup -S nodejs && adduser -S nodeapp -G nodejs
+RUN addgroup -S nodejs && adduser -S nodeapp -G nodejs
 
-# Copy workspace config and package files for production install
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY backend/package.json ./backend/
-COPY frontend/package.json ./frontend/
-
-# Install ONLY production dependencies directly
-RUN pnpm install --frozen-lockfile --prod --filter frontend...
-
-# Copy build artifacts
-COPY --from=build /app/frontend/.next ./frontend/.next
+# standalone 出力をコピー（モノレポ構成のため frontend/ 配下にサーバーが配置される）
+COPY --from=build /app/frontend/.next/standalone ./
+# 静的アセットは standalone に含まれないため個別コピー
+COPY --from=build /app/frontend/.next/static ./frontend/.next/static
 COPY --from=build /app/frontend/public ./frontend/public
-COPY --from=build /app/frontend/package.json ./frontend/package.json
-
-# Set working directory to frontend where the app runs
-WORKDIR /app/frontend
 
 RUN chown -R nodeapp:nodejs /app
 
 USER nodeapp
 
 EXPOSE 8080
-CMD ["pnpm", "start"]
+CMD ["node", "frontend/server.js"]

@@ -23,8 +23,6 @@ on:
         required: false
       GCP_PROJECT_ID_STAGING:
         required: false
-      GCP_SQL_INSTANCE_NAME_STAGING:
-        required: false
       GCP_RUN_SA_BACKEND_STAGING:
         required: false
       GCP_RUN_SA_FRONTEND_STAGING:
@@ -33,8 +31,6 @@ on:
       GCP_SA_KEY:
         required: false
       GCP_PROJECT_ID:
-        required: false
-      GCP_SQL_INSTANCE_NAME:
         required: false
       GCP_RUN_SA_BACKEND:
         required: false
@@ -46,7 +42,7 @@ permissions:
 
 env:
   NODE_VERSION: "20"
-  PNPM_VERSION: "9"
+  PNPM_VERSION: "10"
   REGION: "asia-northeast1"
   REPO_NAME: "mycats-pro"
 
@@ -72,9 +68,6 @@ jobs:
           fi
           if [ -z "${{ secrets.GCP_PROJECT_ID_STAGING }}" ]; then
             missing_secrets+=("GCP_PROJECT_ID_STAGING")
-          fi
-          if [ -z "${{ secrets.GCP_SQL_INSTANCE_NAME_STAGING }}" ]; then
-            missing_secrets+=("GCP_SQL_INSTANCE_NAME_STAGING")
           fi
           if [ -z "${{ secrets.GCP_RUN_SA_BACKEND_STAGING }}" ]; then
             missing_secrets+=("GCP_RUN_SA_BACKEND_STAGING")
@@ -113,13 +106,11 @@ jobs:
       - name: Deploy to Staging using Cloud Build
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID_STAGING }}
-          SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE_NAME_STAGING }}
           BACKEND_SA: ${{ secrets.GCP_RUN_SA_BACKEND_STAGING }}
           FRONTEND_SA: ${{ secrets.GCP_RUN_SA_FRONTEND_STAGING }}
         run: |
           echo "🚀 Deploying to staging environment..."
           echo "   Project: ${PROJECT_ID}"
-          echo "   SQL Instance: ${SQL_INSTANCE}"
           
           # Validate that required environment variables are set
           if [ -z "${FRONTEND_SA}" ]; then
@@ -136,9 +127,6 @@ jobs:
           
           echo "   Backend Service Account: ${BACKEND_SA}"
           echo "   Frontend Service Account: ${FRONTEND_SA}"
-          
-          # Build Cloud SQL connection name
-          CLOUD_SQL_CONN="${PROJECT_ID}:${{ env.REGION }}:${SQL_INSTANCE}"
           
           # Build service URLs (will be updated after first deployment)
           BACKEND_URL="https://mycats-pro-backend-staging-687406216678.${{ env.REGION }}.run.app"
@@ -165,7 +153,6 @@ jobs:
           SUBSTITUTIONS="${SUBSTITUTIONS},_REPO_NAME=${{ env.REPO_NAME }}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_NAME=mycats-pro-backend-staging"
           SUBSTITUTIONS="${SUBSTITUTIONS},_FRONTEND_SERVICE_NAME=mycats-pro-frontend-staging"
-          SUBSTITUTIONS="${SUBSTITUTIONS},_CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_ACCOUNT=${BACKEND_SA}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_CORS_ORIGIN=${CORS_ORIGIN}"
@@ -273,9 +260,6 @@ jobs:
           if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
             missing_secrets+=("GCP_PROJECT_ID")
           fi
-          if [ -z "${{ secrets.GCP_SQL_INSTANCE_NAME }}" ]; then
-            missing_secrets+=("GCP_SQL_INSTANCE_NAME")
-          fi
           if [ -z "${{ secrets.GCP_RUN_SA_BACKEND }}" ]; then
             missing_secrets+=("GCP_RUN_SA_BACKEND")
           fi
@@ -313,13 +297,11 @@ jobs:
       - name: Deploy to Production using Cloud Build
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE_NAME }}
           BACKEND_SA: ${{ secrets.GCP_RUN_SA_BACKEND }}
           FRONTEND_SA: ${{ secrets.GCP_RUN_SA_FRONTEND }}
         run: |
           echo "🚀 Deploying to production environment..."
           echo "   Project: ${PROJECT_ID}"
-          echo "   SQL Instance: ${SQL_INSTANCE}"
           
           # Validate that required environment variables are set
           if [ -z "${FRONTEND_SA}" ]; then
@@ -336,9 +318,6 @@ jobs:
           
           echo "   Backend Service Account: ${BACKEND_SA}"
           echo "   Frontend Service Account: ${FRONTEND_SA}"
-          
-          # Build Cloud SQL connection name
-          CLOUD_SQL_CONN="${PROJECT_ID}:${{ env.REGION }}:${SQL_INSTANCE}"
           
           # Production URLs - 独自ドメインを使用
           BACKEND_URL="https://api.nekoya.co.jp"
@@ -365,7 +344,6 @@ jobs:
           SUBSTITUTIONS="${SUBSTITUTIONS},_REPO_NAME=${{ env.REPO_NAME }}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_NAME=mycats-pro-backend"
           SUBSTITUTIONS="${SUBSTITUTIONS},_FRONTEND_SERVICE_NAME=mycats-pro-frontend"
-          SUBSTITUTIONS="${SUBSTITUTIONS},_CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONN}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_ACCOUNT=${BACKEND_SA}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_CORS_ORIGIN=${CORS_ORIGIN}"
