@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Box,
   Button,
   Card,
   Checkbox,
@@ -27,7 +26,7 @@ export type GroupModalProps = {
   opened: boolean;
   onClose: () => void;
   form: UseFormReturnType<GroupFormValues>;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  onSubmit: () => void;
   isEditing: boolean;
   isSubmitting: boolean;
   categoryOptions: { value: string; label: string }[];
@@ -160,7 +159,7 @@ export function GroupModal({
           <Button variant="outline" onClick={onClose}>
             キャンセル
           </Button>
-          <Button type="submit" loading={isSubmitting}>
+          <Button loading={isSubmitting} onClick={onSubmit}>
             {isEditing ? '更新' : '作成'}
           </Button>
         </Group>
@@ -169,16 +168,14 @@ export function GroupModal({
   ];
 
   return (
-    <Box component="form" onSubmit={onSubmit}>
-      <UnifiedModal
-        opened={opened}
-        onClose={onClose}
-        title={isEditing ? 'タググループを編集' : 'タググループを追加'}
-        size="lg"
-        keepMounted={false}
-        sections={sections}
-      />
-    </Box>
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title={isEditing ? 'タググループを編集' : 'タググループを追加'}
+      size="lg"
+      keepMounted={false}
+      sections={sections}
+    />
   );
 }
 

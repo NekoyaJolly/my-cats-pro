@@ -2,8 +2,6 @@ import { Injectable, Logger } from "@nestjs/common";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import type { Prisma } from "@prisma/client";
 import {
-  // TagAutomationEventType, // Unused - keeping import for future use
-  // TagAutomationRunStatus, // Unused - keeping import for future use
   TagAssignmentAction,
   TagAssignmentSource,
 } from "@prisma/client";
@@ -39,7 +37,7 @@ export class TagAutomationExecutionService {
     private readonly prisma: PrismaService,
     private readonly automationService: TagAutomationService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   /**
    * イベントに基づいてルールを実行
@@ -145,16 +143,24 @@ export class TagAutomationExecutionService {
         };
       }
 
-      // タグを付与
-      let assignedCount = 0;
+      // configからactionTypeを判定（デフォルトはASSIGN）
+      const config = rule.config as Record<string, unknown> | null;
+      const actionType = (config?.['actionType'] as string) === 'REMOVE' ? 'REMOVE' : 'ASSIGN';
+
+      // タグを付与または削除
+      let processedCount = 0;
       for (const catId of targetCatIds) {
         for (const tagId of tagIds) {
           try {
-            await this.assignTag(catId, tagId, rule.id, run.id);
-            assignedCount++;
+            if (actionType === 'REMOVE') {
+              await this.removeTag(catId, tagId, rule.id, run.id);
+            } else {
+              await this.assignTag(catId, tagId, rule.id, run.id);
+            }
+            processedCount++;
           } catch (error) {
             this.logger.warn(
-              `Failed to assign tag ${tagId} to cat ${catId}:`,
+              `Failed to ${actionType.toLowerCase()} tag ${tagId} for cat ${catId}:`,
               error instanceof Error ? error.message : String(error),
             );
           }
@@ -164,13 +170,13 @@ export class TagAutomationExecutionService {
       // 実行完了を記録
       await this.automationService.markRunCompleted(run.id);
 
-      this.logger.log(`Rule ${rule.name} executed successfully. Assigned ${assignedCount} tags.`);
+      this.logger.log(`Rule ${rule.name} executed successfully. ${actionType === 'REMOVE' ? 'Removed' : 'Assigned'} ${processedCount} tags.`);
 
       return {
         ruleId: rule.id,
         ruleName: rule.name,
         success: true,
-        tagsAssigned: assignedCount,
+        tagsAssigned: processedCount,
       };
     } catch (error) {
       // 実行失敗を記録
@@ -223,11 +229,11 @@ export class TagAutomationExecutionService {
       case 'PAGE_ACTION': {
         // PAGE_ACTIONイベントの処理
         const pageEvent = event as PageActionEvent;
-        
+
         // configから対象猫の選択方法を取得
         const config = rule.config as Record<string, unknown> | null;
         const targetSelection = config?.['targetSelection'] as string | undefined;
-        
+
         if (targetSelection === 'event_target' && pageEvent.targetType === 'cat') {
           // イベントで指定された猫を対象とする
           catIds.push(pageEvent.targetId);
@@ -322,6 +328,54 @@ export class TagAutomationExecutionService {
     });
 
     this.logger.debug(`Assigned tag ${tagId} to cat ${catId} via rule ${ruleId}`);
+  }
+
+  /**
+   * タグを猫から削除
+   */
+  private async removeTag(
+    catId: string,
+    tagId: string,
+    ruleId: string,
+    automationRunId: string,
+  ): Promise<void> {
+    // 付与されているかチェック
+    const existing = await this.prisma.catTag.findUnique({
+      where: {
+        catId_tagId: {
+          catId,
+          tagId,
+        },
+      },
+    });
+
+    if (!existing) {
+      this.logger.debug(`Tag ${tagId} not assigned to cat ${catId}, skipping removal`);
+      return;
+    }
+
+    // タグを削除
+    await this.prisma.catTag.delete({
+      where: {
+        catId_tagId: {
+          catId,
+          tagId,
+        },
+      },
+    });
+
+    // 履歴を記録
+    await this.automationService.recordAssignment({
+      catId,
+      tagId,
+      action: TagAssignmentAction.UNASSIGNED,
+      source: TagAssignmentSource.AUTOMATION,
+      ruleId,
+      automationRunId,
+      applyTagMutation: false, // 既に削除済み
+    });
+
+    this.logger.debug(`Removed tag ${tagId} from cat ${catId} via rule ${ruleId}`);
   }
 
   /**

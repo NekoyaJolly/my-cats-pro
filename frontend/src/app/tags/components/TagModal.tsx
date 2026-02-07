@@ -2,7 +2,6 @@
 
 import {
   Badge,
-  Box,
   Button,
   Card,
   Checkbox,
@@ -28,7 +27,7 @@ export type TagModalProps = {
   opened: boolean;
   onClose: () => void;
   form: UseFormReturnType<TagFormValues>;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  onSubmit: () => void;
   isEditing: boolean;
   isSubmitting: boolean;
   categoryOptions: { value: string; label: string }[];
@@ -221,7 +220,7 @@ export function TagModal({
           <Button variant="outline" onClick={onClose}>
             キャンセル
           </Button>
-          <Button type="submit" loading={isSubmitting}>
+          <Button loading={isSubmitting} onClick={onSubmit}>
             {isEditing ? '更新' : '作成'}
           </Button>
         </Group>
@@ -230,16 +229,14 @@ export function TagModal({
   ];
 
   return (
-    <Box component="form" onSubmit={onSubmit}>
-      <UnifiedModal
-        opened={opened}
-        onClose={onClose}
-        title={isEditing ? 'タグを編集' : 'タグを追加'}
-        size="lg"
-        keepMounted={false}
-        sections={sections}
-      />
-    </Box>
+    <UnifiedModal
+      opened={opened}
+      onClose={onClose}
+      title={isEditing ? 'タグを編集' : 'タグを追加'}
+      size="lg"
+      keepMounted={false}
+      sections={sections}
+    />
   );
 }
 
