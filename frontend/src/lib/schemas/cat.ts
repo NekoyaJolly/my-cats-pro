@@ -17,8 +17,8 @@ export const catFormSchema = z.object({
   microchipNumber: optionalTrimmedString,
   registrationId: optionalTrimmedString,
   description: optionalTrimmedString,
-  isInHouse: z.boolean().default(true),
-  tagIds: z.array(z.string()).default([]),
+  isInHouse: z.boolean().optional(),
+  tagIds: z.array(z.string()).optional(),
 });
 
 export type CatFormSchema = z.infer<typeof catFormSchema>;

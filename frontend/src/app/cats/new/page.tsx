@@ -83,8 +83,8 @@ export default function CatRegistrationPage() {
       microchipNumber: values.microchipNumber,
       registrationNumber: values.registrationId,
       description: values.description,
-      isInHouse: values.isInHouse,
-      tagIds: values.tagIds.length > 0 ? values.tagIds : undefined,
+      isInHouse: values.isInHouse ?? true,
+      tagIds: (values.tagIds ?? []).length > 0 ? values.tagIds : undefined,
     };
 
     try {
