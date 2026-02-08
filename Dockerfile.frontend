@@ -54,10 +54,12 @@ COPY --from=build /app/frontend/.next/standalone ./
 # 静的アセットは standalone に含まれないため個別コピー
 COPY --from=build /app/frontend/.next/static ./frontend/.next/static
 COPY --from=build /app/frontend/public ./frontend/public
+# Standalone モードでは public/ を自動配信しないため、カスタムサーバーを使用
+COPY --from=build /app/frontend/custom-server.js ./frontend/custom-server.js
 
 RUN chown -R nodeapp:nodejs /app
 
 USER nodeapp
 
 EXPOSE 8080
-CMD ["node", "frontend/server.js"]
+CMD ["node", "frontend/custom-server.js"]
