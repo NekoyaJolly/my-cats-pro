@@ -14,8 +14,8 @@ yarn-error.log*
 dist/
 build/
 .next/
-# PWA: Serwist が生成する Service Worker ファイル（ビルド時に自動生成）
-frontend/public/sw.js
+# PWA: Serwist が生成する Service Worker 関連ファイル（ビルド時に自動生成）
+# 注意: sw.js 本体は Cloud Build / Docker で必要なため Git 管理対象にする
 frontend/public/sw.js.map
 frontend/public/swe-worker-*.js
 frontend/public/workbox-*.js
@@ -139,5 +139,6 @@ Movies/
 Music/
 OneDrive*/
 Pictures/
-Public/
+# macOS ホームの ~/Public/ のみ除外（frontend/public/ を巻き込まないようルート限定）
+/Public/
 .Trash/
