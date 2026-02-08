@@ -113,7 +113,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
     gender: columnFilters.gender || undefined,
   });
 
-  const pedigrees = (data?.data || []) as unknown as PedigreeData[];
+  const pedigrees = useMemo(() => (data?.data || []) as unknown as PedigreeData[], [data?.data]);
   const total = data?.meta?.total || 0;
   const totalPages = data?.meta?.totalPages || 1;
 
