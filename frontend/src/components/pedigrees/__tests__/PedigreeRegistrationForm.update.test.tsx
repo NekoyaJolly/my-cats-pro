@@ -135,7 +135,7 @@ describe('PedigreeRegistrationForm update smoke', () => {
     await screen.findByRole('button', { name: '血統書を更新' });
 
     // 何か変更を入れてから更新
-    const catNameInput = screen.getByLabelText('猫の名前');
+    const catNameInput = screen.getByLabelText('本猫名');
     await user.clear(catNameInput);
     await user.type(catNameInput, '更新後の猫名');
 
