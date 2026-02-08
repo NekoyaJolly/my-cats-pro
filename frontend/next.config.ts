@@ -2,9 +2,21 @@ import type { NextConfig } from "next";
 import path from "path";
 // Bundle Analyzer (ANALYZE=true でビルド時に有効化)
 import withBundleAnalyzer from '@next/bundle-analyzer';
+// PWA: Service Worker 生成 (Serwist)
+import withSerwistInit from '@serwist/next';
 
 const bundleAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
+});
+
+// PWA: Serwist 設定
+const withSerwist = withSerwistInit({
+  // Service Worker のソースファイル
+  swSrc: 'src/app/sw.ts',
+  // 出力先 (public ディレクトリ)
+  swDest: 'public/sw.js',
+  // 開発環境では Service Worker を無効化（本番ビルド時のみ生成）
+  disable: process.env.NODE_ENV !== 'production',
 });
 
 const nextConfig: NextConfig = {
@@ -54,7 +66,7 @@ const nextConfig: NextConfig = {
         config.optimization.splitChunks = false;
       }
     }
-    
+
     // 本番ビルド時の最適化
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (!dev && !isServer && config.optimization?.splitChunks?.cacheGroups) {
@@ -77,4 +89,4 @@ const nextConfig: NextConfig = {
   // Remove rewrites and headers as they don't work with static export
 };
 
-export default bundleAnalyzer(nextConfig);
+export default withSerwist(bundleAnalyzer(nextConfig));

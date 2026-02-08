@@ -4,7 +4,8 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "esnext",
+      "webworker"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -37,7 +38,8 @@
       ]
     },
     "types": [
-      "node"
+      "node",
+      "@serwist/next/typings"
     ]
   },
   "include": [
@@ -55,6 +57,7 @@
     "**/*_old.ts",
     ".next",
     "out",
-    "dist"
+    "dist",
+    "public/sw.js"
   ]
 }

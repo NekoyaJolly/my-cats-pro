@@ -14,6 +14,11 @@ yarn-error.log*
 dist/
 build/
 .next/
+# PWA: Serwist が生成する Service Worker ファイル（ビルド時に自動生成）
+frontend/public/sw.js
+frontend/public/sw.js.map
+frontend/public/swe-worker-*.js
+frontend/public/workbox-*.js
 .nuxt/
 out/
 
