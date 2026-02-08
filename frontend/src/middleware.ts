@@ -63,8 +63,11 @@ export const config = {
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - favicon.ico / favicon.svg (favicon files)
+     * - icons (PWA icons)
+     * - sw.js / swe-worker-*.js / workbox-*.js (Service Worker)
+     * - manifest.webmanifest (PWA manifest)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|sw\\.js|swe-worker-.*\\.js|workbox-.*\\.js|icons/.*).*)',
+    '/((?!api|_next/static|_next/image|favicon\\.ico|favicon\\.svg|icons/|sw\\.js|swe-worker-|workbox-|manifest\\.webmanifest).*)',
   ],
 };
