@@ -21,7 +21,7 @@ const eslintConfig = [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettier,
-  
+
   // === TypeScript設定 ===
   {
     name: 'frontend-typescript-config',
@@ -41,7 +41,7 @@ const eslintConfig = [
     rules: {
       // === TypeScript Rules ===
       // 開発段階では警告レベルで運用、段階的にerrorに移行
-      '@typescript-eslint/no-unused-vars': ['warn', { 
+      '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_'
       }],
@@ -54,14 +54,14 @@ const eslintConfig = [
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/triple-slash-reference': 'off', // Next.js generated files
-      
+
       // === Import/Export Rules ===
       // 警告削減のため順序チェックは一旦無効化（将来Re-enable検討）
       'import-x/order': 'off',
       'import-x/no-duplicates': 'error',
       'import-x/no-unresolved': 'off', // TypeScriptで解決するため無効化
       'import-x/no-unused-modules': 'off', // 開発段階では無効化
-      
+
       // === React/Next.js Rules ===
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
@@ -69,7 +69,7 @@ const eslintConfig = [
       '@next/next/no-html-link-for-pages': 'error',
       '@next/next/no-page-custom-font': 'warn',
       '@next/next/no-unwanted-polyfillio': 'warn',
-      
+
       // === 一般的なJavaScript Rules ===
       // 開発効率優先でconsoleは許可（本番ビルド時に見直し）
       'no-console': 'off',
@@ -106,7 +106,7 @@ const eslintConfig = [
       '@next/next/no-html-link-for-pages': 'error',
       '@next/next/no-page-custom-font': 'warn',
       '@next/next/no-unwanted-polyfillio': 'warn',
-      
+
       // === 一般的なJavaScript Rules ===
       'no-console': 'off',
       'no-debugger': 'warn',
@@ -117,7 +117,7 @@ const eslintConfig = [
       }
     }
   },
-  
+
   // === テストファイル専用設定 ===
   {
     name: 'frontend-test-config',
@@ -146,24 +146,26 @@ const eslintConfig = [
       '@typescript-eslint/no-unsafe-argument': 'off',
     }
   },
-  
+
   // === 除外設定 ===
   {
     name: 'frontend-ignores',
     ignores: [
       ".next/**",
-      "out/**", 
+      "out/**",
       "dist/**",
       "node_modules/**",
       "coverage/**",
       "next-env.d.ts",
       "**/*_old.tsx",
-      "**/*page_old.tsx", 
+      "**/*page_old.tsx",
       "**/*page_new.tsx",
       "**/*_old.ts",
       "*.config.js",
       "*.config.mjs",
       "check-syntax.js",
+      "custom-server.js",
+      "public/sw.js",
       "src/lib/api/generated/**",
       "**/*.bak",
       "**/*.backup.ts",
