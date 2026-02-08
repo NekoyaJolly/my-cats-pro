@@ -30,7 +30,7 @@ import { GenderBadge } from '@/components/GenderBadge';
 /**
  * 性別を表示用に変換
  */
-function formatGender(gender: string): 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY' {
+export function formatGender(gender: string): 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY' {
   const upperGender = gender.toUpperCase();
   if (
     upperGender === 'MALE' ||
@@ -49,7 +49,7 @@ function formatGender(gender: string): 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY' {
 /**
  * 日付フォーマット
  */
-function formatDate(value: string | null | undefined): string {
+export function formatDate(value: string | null | undefined): string {
   if (!value) return '';
   try {
     const date = new Date(value);
@@ -66,7 +66,7 @@ function formatDate(value: string | null | undefined): string {
 /**
  * サムネイルURLの取得
  */
-function getThumbnailUrl(entry: GalleryEntry): string | null {
+export function getThumbnailUrl(entry: GalleryEntry): string | null {
   if (entry.media.length === 0) return null;
 
   // order順でソートして最初のメディアを取得
@@ -82,7 +82,7 @@ function getThumbnailUrl(entry: GalleryEntry): string | null {
 /**
  * メディアタイプの判定
  */
-function getMediaInfo(entry: GalleryEntry): {
+export function getMediaInfo(entry: GalleryEntry): {
   hasImages: boolean;
   hasYouTube: boolean;
   count: number;
