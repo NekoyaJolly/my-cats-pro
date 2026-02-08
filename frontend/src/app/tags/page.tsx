@@ -810,10 +810,10 @@ export default function TagsPage() {
         </Group>
 
         <Tabs value={activeTab} onChange={handleTabChange} keepMounted={false}>
-          <Tabs.List style={{ whiteSpace: 'nowrap' }}>
-            <Tabs.Tab value="categories">カテゴリ</Tabs.Tab>
-            <Tabs.Tab value="tags">タグ一覧</Tabs.Tab>
-            <Tabs.Tab value="automation" leftSection={<IconRobot size={16} />}>
+          <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+            <Tabs.Tab value="categories" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>カテゴリ</Tabs.Tab>
+            <Tabs.Tab value="tags" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>タグ一覧</Tabs.Tab>
+            <Tabs.Tab value="automation" leftSection={<IconRobot size={16} />} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
               自動化ルール
             </Tabs.Tab>
           </Tabs.List>

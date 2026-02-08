@@ -88,7 +88,7 @@ export function BreedingScheduleTab({
       mb="md"
       style={{ height: isFullscreen ? 'calc(100vh - 180px)' : 'auto' }}
     >
-      <Group gap="xs" mb="md" align="flex-end" wrap="nowrap">
+      <Group gap="xs" mb="md" align="flex-end" wrap="nowrap" justify="center">
         <Select
           value={selectedYear.toString()}
           onChange={(value) => onYearChange(parseInt(value || '2024'))}
@@ -111,6 +111,7 @@ export function BreedingScheduleTab({
         <ActionButton
           action="create"
           onClick={onOpenMaleModal}
+          styles={{ inner: { justifyContent: 'center' } }}
         >
           オス追加
         </ActionButton>
@@ -118,6 +119,7 @@ export function BreedingScheduleTab({
           action="cancel"
           onClick={handleClearData}
           title="localStorageに保存された交配管理表のデータをクリア"
+          styles={{ inner: { justifyContent: 'center' } }}
         >
           データクリア
         </ActionButton>

@@ -57,17 +57,17 @@ export default function PedigreesPage() {
   return (
     <Container size="xl" py="md">
       <Tabs value={tabParam} onChange={handleTabChange} mt="md">
-        <Tabs.List grow>
-          <Tabs.Tab value="register" leftSection={<IconPlus size={14} />}>
+        <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+          <Tabs.Tab value="register" leftSection={<IconPlus size={14} />} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
             作成
           </Tabs.Tab>
-          <Tabs.Tab value="list" leftSection={<IconList size={14} />}>
+          <Tabs.Tab value="list" leftSection={<IconList size={14} />} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
             データ管理
           </Tabs.Tab>
-          <Tabs.Tab value="tree" leftSection={<IconBinaryTree size={14} />}>
+          <Tabs.Tab value="tree" leftSection={<IconBinaryTree size={14} />} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
             Family Tree
           </Tabs.Tab>
-          <Tabs.Tab value="print-settings" leftSection={<IconSettings size={14} />}>
+          <Tabs.Tab value="print-settings" leftSection={<IconSettings size={14} />} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
             印刷設定
           </Tabs.Tab>
         </Tabs.List>

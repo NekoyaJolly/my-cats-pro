@@ -66,20 +66,21 @@ export function TabsSection({
       }}
       {...tabsProps}
     >
-      <Tabs.List>
+      <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
         {tabs.map((tab) => (
           <Tabs.Tab
             key={tab.value}
             value={tab.value}
             leftSection={tab.icon}
             disabled={tab.disabled}
+            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
           >
-            <Group gap="xs">
+            <Group gap="xs" wrap="nowrap">
               <span>{tab.label}</span>
               {tab.count !== undefined && (
-                <Badge 
-                  size="xs" 
-                  variant="light" 
+                <Badge
+                  size="xs"
+                  variant="light"
                   color={tab.badgeColor || defaultBadgeColor}
                 >
                   {tab.count}

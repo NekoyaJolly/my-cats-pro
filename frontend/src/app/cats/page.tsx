@@ -455,13 +455,13 @@ export default function CatsPage() {
               onChange={(value) => setActiveTab(value || 'cats')}
               style={{ flex: 1, minWidth: 'fit-content' }}
             >
-              <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-                <Tabs.Tab value="cats">Cats ({isStatisticsLoading ? '...' : totalCount})</Tabs.Tab>
-                <Tabs.Tab value="male">Male ({isStatisticsLoading ? '...' : maleCount})</Tabs.Tab>
-                <Tabs.Tab value="female">Female ({isStatisticsLoading ? '...' : femaleCount})</Tabs.Tab>
-                <Tabs.Tab value="kitten">Kitten ({isStatisticsLoading ? '...' : kittenCount})</Tabs.Tab>
-                <Tabs.Tab value="raising">Raising ({isStatisticsLoading ? '...' : raisingCount})</Tabs.Tab>
-                <Tabs.Tab value="grad">Grad ({isStatisticsLoading ? '...' : gradCount})</Tabs.Tab>
+              <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+                <Tabs.Tab value="cats" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Cats ({isStatisticsLoading ? '...' : totalCount})</Tabs.Tab>
+                <Tabs.Tab value="male" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Male ({isStatisticsLoading ? '...' : maleCount})</Tabs.Tab>
+                <Tabs.Tab value="female" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Female ({isStatisticsLoading ? '...' : femaleCount})</Tabs.Tab>
+                <Tabs.Tab value="kitten" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Kitten ({isStatisticsLoading ? '...' : kittenCount})</Tabs.Tab>
+                <Tabs.Tab value="raising" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Raising ({isStatisticsLoading ? '...' : raisingCount})</Tabs.Tab>
+                <Tabs.Tab value="grad" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Grad ({isStatisticsLoading ? '...' : gradCount})</Tabs.Tab>
               </Tabs.List>
             </Tabs>
 
