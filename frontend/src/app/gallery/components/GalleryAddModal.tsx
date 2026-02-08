@@ -5,7 +5,7 @@
  * 新規エントリの作成フォーム
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Stack,
   TextInput,
@@ -22,6 +22,10 @@ import { IconPlus } from '@tabler/icons-react';
 import { ImageUploader } from './ImageUploader';
 import { YouTubeInput } from './YouTubeInput';
 import { UnifiedModal, type ModalSection } from '@/components/common';
+import {
+  useBreedMasterData,
+  useCoatColorMasterData,
+} from '@/lib/api/hooks/use-master-data';
 import type {
   GalleryCategory,
   CreateGalleryEntryDto,
@@ -36,8 +40,8 @@ interface MediaItem {
 interface FormValues {
   name: string;
   gender: string;
-  coatColor: string;
-  breed: string;
+  coatColor: string | null;
+  breed: string | null;
   transferDate: Date | null;
   destination: string;
   externalLink: string;
@@ -100,12 +104,47 @@ export function GalleryAddModal({
 }: GalleryAddModalProps) {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
 
+  // マスタデータ取得
+  const { data: breedData, isLoading: isBreedLoading } = useBreedMasterData();
+  const { data: coatColorData, isLoading: isCoatColorLoading } = useCoatColorMasterData();
+
+  // Select用の選択肢を生成（Mantine Selectは重複valueを許容しないため、重複排除が必要）
+  const breedOptions = useMemo(() => {
+    const items = breedData?.data;
+    if (!items) return [];
+    const seen = new Set<string>();
+    return items.reduce<Array<{ value: string; label: string }>>((acc, item) => {
+      const name = (item.displayName ?? item.name ?? '').trim();
+      // code=0のプレースホルダーレコード、空名、重複を除外
+      const isPlaceholder = item.code === 0 && (!name || /^\d+$/.test(name));
+      if (!name || isPlaceholder || seen.has(name)) return acc;
+      seen.add(name);
+      acc.push({ value: name, label: name });
+      return acc;
+    }, []);
+  }, [breedData]);
+
+  const coatColorOptions = useMemo(() => {
+    const items = coatColorData?.data;
+    if (!items) return [];
+    const seen = new Set<string>();
+    return items.reduce<Array<{ value: string; label: string }>>((acc, item) => {
+      const name = (item.displayName ?? item.name ?? '').trim();
+      // code=0のプレースホルダーレコード、空名、重複を除外
+      const isPlaceholder = item.code === 0 && (!name || /^\d+$/.test(name));
+      if (!name || isPlaceholder || seen.has(name)) return acc;
+      seen.add(name);
+      acc.push({ value: name, label: name });
+      return acc;
+    }, []);
+  }, [coatColorData]);
+
   const form = useForm<FormValues>({
     initialValues: {
       name: '',
       gender: '',
-      coatColor: '',
-      breed: '',
+      coatColor: null,
+      breed: null,
       transferDate: null,
       destination: '',
       externalLink: '',
@@ -128,8 +167,8 @@ export function GalleryAddModal({
       category,
       name: values.name.trim(),
       gender: values.gender,
-      coatColor: values.coatColor.trim() || undefined,
-      breed: values.breed.trim() || undefined,
+      coatColor: values.coatColor?.trim() || undefined,
+      breed: values.breed?.trim() || undefined,
       transferDate: values.transferDate
         ? values.transferDate.toISOString().split('T')[0]
         : undefined,
@@ -182,16 +221,26 @@ export function GalleryAddModal({
               required
               {...form.getInputProps('gender')}
             />
-            <TextInput
+            <Select
               label="毛色"
-              placeholder="例: 茶トラ"
+              placeholder={isCoatColorLoading ? '読み込み中...' : '毛色を選択'}
+              data={coatColorOptions}
+              searchable
+              clearable
+              nothingFoundMessage="該当なし"
+              disabled={isCoatColorLoading}
               {...form.getInputProps('coatColor')}
             />
           </Group>
 
-          <TextInput
+          <Select
             label="猫種"
-            placeholder="例: アメリカンショートヘア"
+            placeholder={isBreedLoading ? '読み込み中...' : '猫種を選択'}
+            data={breedOptions}
+            searchable
+            clearable
+            nothingFoundMessage="該当なし"
+            disabled={isBreedLoading}
             {...form.getInputProps('breed')}
           />
         </>

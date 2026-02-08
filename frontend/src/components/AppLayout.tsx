@@ -28,7 +28,6 @@ import {
   IconTag,
   IconCertificate,
   IconLogout,
-  IconPalette,
   IconCalendarEvent,
   IconCalendarTime,
   IconSettings,
@@ -109,11 +108,6 @@ const navigationItems = [
     label: 'ギャラリー',
     href: '/gallery',
     icon: IconPhoto,
-  },
-  {
-    label: 'デザインガイド',
-    href: '/demo/action-buttons',
-    icon: IconPalette,
   },
 ];
 

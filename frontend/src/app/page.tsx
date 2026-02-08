@@ -32,7 +32,7 @@ import {
   IconCalendarTime,
   IconUsers,
   IconPhoto,
-  IconPalette,
+
   IconPaw,
   IconCalendarEvent,
 } from '@tabler/icons-react';
@@ -143,23 +143,23 @@ export default function Home() {
 
       setLoading(true);
       setError(null);
-      
+
       try {
         console.log('📡 API呼び出し開始...');
-        
+
         // 猫データを取得
         const catListQuery: ApiQueryParams<'/cats', 'get'> = { limit: 1000 };
         const catsResponse = await apiClient.get('/cats', {
           query: catListQuery,
         });
-        
+
         console.log('🐱 猫データレスポンス:', catsResponse);
-        
+
         if (!catsResponse.success) {
           console.error('❌ 猫データ取得失敗:', catsResponse);
           throw new Error(catsResponse.error || '猫データの取得に失敗しました');
         }
-        
+
         const fetchedCats = Array.isArray(catsResponse.data) ? catsResponse.data : [];
         console.log(`✅ 猫データ取得成功: ${fetchedCats.length}件`);
         setCats(fetchedCats as Cat[]);
@@ -193,7 +193,7 @@ export default function Home() {
         } catch (breedingError) {
           console.warn('⚠️ 交配予定の取得に失敗しました:', breedingError);
         }
-        
+
       } catch (err) {
         console.error('❌ データ取得エラー:', err);
         setError(err instanceof Error ? err.message : 'データの取得に失敗しました');
@@ -213,7 +213,7 @@ export default function Home() {
   // LocalStorageから設定を読み込んでカード設定を初期化
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     // デフォルトのダッシュボードカード定義（サイドバーの項目と同じ順序）
     const defaultDashboardCards: Omit<DashboardCardConfig, 'visible' | 'order'>[] = [
       {
@@ -318,23 +318,16 @@ export default function Home() {
         color: 'orange',
         href: '/gallery',
       },
-      {
-        id: 'demo',
-        title: 'デザインガイド',
-        description: 'UIコンポーネントのデモ',
-        icon: <IconPalette size={32} />,
-        color: 'grape',
-        href: '/demo/action-buttons',
-      },
+
     ];
-    
+
     const settings = loadDashboardSettings();
     const cardsWithDefaults = defaultDashboardCards.map((card, index) => ({
       ...card,
       visible: index < 8, // 最初の8項目のみデフォルトで表示
       order: index,
     }));
-    
+
     const appliedCards = applyDashboardSettings(cardsWithDefaults, settings);
     setDashboardCards(appliedCards);
 
@@ -439,7 +432,7 @@ export default function Home() {
   const handleDisplayModeChange = (mode: HomeDisplayMode) => {
     setDisplayMode(mode);
     saveHomeDisplayMode(mode);
-    
+
     // モード切り替え時に対応する設定モーダルを開く
     if (mode === 'card') {
       openSettings();
@@ -515,7 +508,7 @@ export default function Home() {
           <Box style={{ flex: 1 }}>
             <Text size="sm" c="dimmed">{today}</Text>
           </Box>
-          
+
           {/* 表示モード切り替えと設定ボタン */}
           <DisplayModeToggle
             mode={displayMode}
@@ -589,7 +582,7 @@ export default function Home() {
                   {card.badge}
                 </Badge>
               )}
-              
+
               <Stack gap="md" style={{ height: '100%' }}>
                 <ThemeIcon
                   size={64}
@@ -599,7 +592,7 @@ export default function Home() {
                 >
                   {card.icon}
                 </ThemeIcon>
-                
+
                 <Stack gap="xs" style={{ flex: 1 }}>
                   <Title order={4}>{card.title}</Title>
                   <Text size="sm" c="dimmed" lineClamp={2}>
@@ -611,7 +604,7 @@ export default function Home() {
                     </Text>
                   )}
                 </Stack>
-                
+
                 <Group justify="space-between" mt="auto">
                   <Text size="sm" fw={500} c={card.color}>
                     詳細を見る
