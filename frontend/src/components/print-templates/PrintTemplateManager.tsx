@@ -27,7 +27,7 @@ import { CategoryManager } from './CategoryManager';
 // ==========================================
 // API ヘルパー
 // ==========================================
-const API_PREFIX = '/api/v1/print-templates';
+const API_PREFIX = '/print-templates';
 
 async function apiFetch<T>(path: string): Promise<T> {
   const res = await apiRequest<T>(`${API_PREFIX}${path}`);
