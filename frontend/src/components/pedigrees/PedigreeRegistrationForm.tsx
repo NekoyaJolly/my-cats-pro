@@ -930,14 +930,14 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
               {/* Row 2: キャッテリー名, 猫の名前（2列） */}
               <Grid.Col span={{ base: 6, md: 4 }}>
                 <InputWithFloatingLabel
-                  label="キャッテリー名"
+                  label="キャッテリー"
                   value={formData.catName2}
                   onChange={(e) => updateFormData('catName2', e.target.value)}
                 />
               </Grid.Col>
               <Grid.Col span={{ base: 6, md: 4 }}>
                 <InputWithFloatingLabel
-                  label="猫の名前"
+                  label="本猫名"
                   value={formData.catName}
                   onChange={(e) => updateFormData('catName', e.target.value)}
                 />
@@ -1012,7 +1012,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
               {/* Row 6: 目の色, 生年月日, 登録年月日（3列均等） */}
               <Grid.Col span={{ base: 4, md: 3 }}>
                 <InputWithFloatingLabel
-                  label="目の色"
+                  label="目色"
                   value={formData.eyeColor}
                   onChange={(e) => updateFormData('eyeColor', e.target.value)}
                 />
@@ -1035,14 +1035,14 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
               {/* Row 7: ブリーダー名, オーナー名（2列） */}
               <Grid.Col span={{ base: 6, md: 4 }}>
                 <InputWithFloatingLabel
-                  label="ブリーダー名"
+                  label="ブリーダー"
                   value={formData.breederName}
                   onChange={(e) => updateFormData('breederName', e.target.value)}
                 />
               </Grid.Col>
               <Grid.Col span={{ base: 6, md: 4 }}>
                 <InputWithFloatingLabel
-                  label="オーナー名"
+                  label="オーナー"
                   value={formData.ownerName}
                   onChange={(e) => updateFormData('ownerName', e.target.value)}
                 />
@@ -1074,7 +1074,7 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
               </Grid.Col>
               <Grid.Col span={{ base: 3, md: 4 }}>
                 <InputWithFloatingLabel
-                  label="他団体No"
+                  label="他No"
                   value={formData.otherNo}
                   onChange={(e) => updateFormData('otherNo', e.target.value)}
                 />
@@ -1201,10 +1201,10 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
                   {/* FF */}
                   <Grid.Col span={12}><Divider label="父方祖父（4項目）" /></Grid.Col>
 
-                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="FFタイトル" value={formData.ffTitle} onChange={(e) => updateFormData('ffTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="FF名前" value={formData.ffCatName} onChange={(e) => updateFormData('ffCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="FF色柄" value={formData.ffCatColor} onChange={(e) => updateFormData('ffCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 3 }}>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FFタイトル" value={formData.ffTitle} onChange={(e) => updateFormData('ffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FF名前" value={formData.ffCatName} onChange={(e) => updateFormData('ffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="FF色柄" value={formData.ffCatColor} onChange={(e) => updateFormData('ffCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
                     <InputWithFloatingLabel
                       label="FFナンバー"
                       value={formData.ffjcu}
@@ -1229,10 +1229,10 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
                   {/* MF */}
                   <Grid.Col span={12}><Divider label="母方祖父（4項目）" /></Grid.Col>
 
-                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="MFタイトル" value={formData.mfTitle} onChange={(e) => updateFormData('mfTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="MF名前" value={formData.mfCatName} onChange={(e) => updateFormData('mfCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 3 }}><InputWithFloatingLabel label="MF色柄" value={formData.mfCatColor} onChange={(e) => updateFormData('mfCatColor', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 3 }}>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MFタイトル" value={formData.mfTitle} onChange={(e) => updateFormData('mfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MF名前" value={formData.mfCatName} onChange={(e) => updateFormData('mfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}><InputWithFloatingLabel label="MF色柄" value={formData.mfCatColor} onChange={(e) => updateFormData('mfCatColor', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 6, sm: 3 }}>
                     <InputWithFloatingLabel
                       label="MFナンバー"
                       value={formData.mfjcu}
@@ -1262,9 +1262,9 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
                 <Grid gutter={10}>
                   {/* FFF */}
                   <Grid.Col span={12}><Divider label="父父父（FFF）" /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FFFタイトル" value={formData.fffTitle} onChange={(e) => updateFormData('fffTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FFF名前" value={formData.fffCatName} onChange={(e) => updateFormData('fffCatName', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                  <Grid.Col span={{ base: 4, sm: 4 }}><InputWithFloatingLabel label="FFFタイトル" value={formData.fffTitle} onChange={(e) => updateFormData('fffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 8, sm: 4 }}><InputWithFloatingLabel label="FFF名前" value={formData.fffCatName} onChange={(e) => updateFormData('fffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}  >
                     <InputWithFloatingLabel
                       label="FFFナンバー"
                       value={formData.fffjcu}
@@ -1275,8 +1275,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
                   {/* FFM */}
                   <Grid.Col span={12}><Divider label="父父母（FFM）" /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FFMタイトル" value={formData.ffmTitle} onChange={(e) => updateFormData('ffmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FFM名前" value={formData.ffmCatName} onChange={(e) => updateFormData('ffmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 4, sm: 4 }}><InputWithFloatingLabel label="FFMタイトル" value={formData.ffmTitle} onChange={(e) => updateFormData('ffmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 8, sm: 4 }}><InputWithFloatingLabel label="FFM名前" value={formData.ffmCatName} onChange={(e) => updateFormData('ffmCatName', e.target.value)} /></Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 4 }}>
                     <InputWithFloatingLabel
                       label="FFMナンバー"
@@ -1288,8 +1288,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
                   {/* FMF */}
                   <Grid.Col span={12}><Divider label="父母父（FMF）" /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FMFタイトル" value={formData.fmfTitle} onChange={(e) => updateFormData('fmfTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FMF名前" value={formData.fmfCatName} onChange={(e) => updateFormData('fmfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 4, sm: 4 }}><InputWithFloatingLabel label="FMFタイトル" value={formData.fmfTitle} onChange={(e) => updateFormData('fmfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 8, sm: 4 }}><InputWithFloatingLabel label="FMF名前" value={formData.fmfCatName} onChange={(e) => updateFormData('fmfCatName', e.target.value)} /></Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 4 }}>
                     <InputWithFloatingLabel
                       label="FMFナンバー"
@@ -1301,8 +1301,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
                   {/* FMM */}
                   <Grid.Col span={12}><Divider label="父母母（FMM）" /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FMMタイトル" value={formData.fmmTitle} onChange={(e) => updateFormData('fmmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="FMM名前" value={formData.fmmCatName} onChange={(e) => updateFormData('fmmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 4, sm: 4 }}><InputWithFloatingLabel label="FMMタイトル" value={formData.fmmTitle} onChange={(e) => updateFormData('fmmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 8, sm: 4 }}><InputWithFloatingLabel label="FMM名前" value={formData.fmmCatName} onChange={(e) => updateFormData('fmmCatName', e.target.value)} /></Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 4 }}>
                     <InputWithFloatingLabel
                       label="FMMナンバー"
@@ -1314,8 +1314,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
                   {/* MFF */}
                   <Grid.Col span={12}><Divider label="母父父（MFF）" /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MFFタイトル" value={formData.mffTitle} onChange={(e) => updateFormData('mffTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MFF名前" value={formData.mffCatName} onChange={(e) => updateFormData('mffCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 4, sm: 4 }}><InputWithFloatingLabel label="MFFタイトル" value={formData.mffTitle} onChange={(e) => updateFormData('mffTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 8, sm: 4 }}><InputWithFloatingLabel label="MFF名前" value={formData.mffCatName} onChange={(e) => updateFormData('mffCatName', e.target.value)} /></Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 4 }}>
                     <InputWithFloatingLabel
                       label="MFFナンバー"
@@ -1327,8 +1327,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
                   {/* MFM */}
                   <Grid.Col span={12}><Divider label="母父母（MFM）" /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MFMタイトル" value={formData.mfmTitle} onChange={(e) => updateFormData('mfmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MFM名前" value={formData.mfmCatName} onChange={(e) => updateFormData('mfmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 4, sm: 4 }}><InputWithFloatingLabel label="MFMタイトル" value={formData.mfmTitle} onChange={(e) => updateFormData('mfmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 8, sm: 4 }}><InputWithFloatingLabel label="MFM名前" value={formData.mfmCatName} onChange={(e) => updateFormData('mfmCatName', e.target.value)} /></Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 4 }}>
                     <InputWithFloatingLabel
                       label="MFMナンバー"
@@ -1340,8 +1340,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
                   {/* MMF */}
                   <Grid.Col span={12}><Divider label="母母父（MMF）" /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MMFタイトル" value={formData.mmfTitle} onChange={(e) => updateFormData('mmfTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MMF名前" value={formData.mmfCatName} onChange={(e) => updateFormData('mmfCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 4, sm: 4 }}><InputWithFloatingLabel label="MMFタイトル" value={formData.mmfTitle} onChange={(e) => updateFormData('mmfTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 8, sm: 4 }}><InputWithFloatingLabel label="MMF名前" value={formData.mmfCatName} onChange={(e) => updateFormData('mmfCatName', e.target.value)} /></Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 4 }}>
                     <InputWithFloatingLabel
                       label="MMFナンバー"
@@ -1353,8 +1353,8 @@ export function PedigreeRegistrationForm({ onSuccess, onCancel }: PedigreeRegist
 
                   {/* MMM */}
                   <Grid.Col span={12}><Divider label="母母母（MMM）" /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MMMタイトル" value={formData.mmmTitle} onChange={(e) => updateFormData('mmmTitle', e.target.value)} /></Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}><InputWithFloatingLabel label="MMM名前" value={formData.mmmCatName} onChange={(e) => updateFormData('mmmCatName', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 4, sm: 4 }}><InputWithFloatingLabel label="MMMタイトル" value={formData.mmmTitle} onChange={(e) => updateFormData('mmmTitle', e.target.value)} /></Grid.Col>
+                  <Grid.Col span={{ base: 8, sm: 4 }}><InputWithFloatingLabel label="MMM名前" value={formData.mmmCatName} onChange={(e) => updateFormData('mmmCatName', e.target.value)} /></Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 4 }}>
                     <InputWithFloatingLabel
                       label="MMMナンバー"

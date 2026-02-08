@@ -80,11 +80,11 @@ export default function TagsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
+
   // URLパラメータからタブ状態を取得（無効な値の場合はデフォルトの 'categories' を使用）
   const tabParam = searchParams.get('tab');
-  const activeTab: TabValue = VALID_TABS.includes(tabParam as TabValue) 
-    ? (tabParam as TabValue) 
+  const activeTab: TabValue = VALID_TABS.includes(tabParam as TabValue)
+    ? (tabParam as TabValue)
     : 'categories';
 
   const { setPageHeader } = usePageHeader();
@@ -650,11 +650,11 @@ export default function TagsPage() {
 
   const handleEditAutomationRule = (rule: TagAutomationRule) => {
     setEditingAutomationRule(rule);
-    
+
     // configからデータを抽出
     const config = (rule.config && typeof rule.config === 'object') ? rule.config as Record<string, unknown> : {};
     const tagIds = (config.tagIds as string[]) || [];
-    
+
     // ルールタイプの判定
     let ruleType: AutomationRuleFormValues['ruleType'] = 'PAGE_ACTION';
     if (rule.eventType === 'AGE_THRESHOLD') {
@@ -662,23 +662,23 @@ export default function TagsPage() {
     } else if (rule.eventType === 'TAG_ASSIGNED') {
       ruleType = 'TAG_ASSIGNED';
     }
-    
+
     // アクションタイプの判定
-    const actionType: AutomationRuleFormValues['actionType'] = 
+    const actionType: AutomationRuleFormValues['actionType'] =
       (config.actionType as string) === 'REMOVE' ? 'REMOVE' : 'ASSIGN';
-    
+
     // ページアクション設定
     const pageAction: AutomationRuleFormValues['pageAction'] = {
       page: (config.page as string) || 'cats',
       action: (config.action as string) || '',
     };
-    
+
     // 年齢閾値設定
     const ageThreshold: AutomationRuleFormValues['ageThreshold'] = {
       ageType: (config.ageType as 'days' | 'months') || 'days',
       threshold: (config.threshold as number) || 60,
     };
-    
+
     // トリガータグID
     const triggerTagId = (config.triggerTagId as string) || '';
 
@@ -810,7 +810,7 @@ export default function TagsPage() {
         </Group>
 
         <Tabs value={activeTab} onChange={handleTabChange} keepMounted={false}>
-          <Tabs.List>
+          <Tabs.List style={{ whiteSpace: 'nowrap' }}>
             <Tabs.Tab value="categories">カテゴリ</Tabs.Tab>
             <Tabs.Tab value="tags">タグ一覧</Tabs.Tab>
             <Tabs.Tab value="automation" leftSection={<IconRobot size={16} />}>

@@ -78,7 +78,7 @@ function formatDate(value: string | null | undefined) {
 
 function formatRecurrenceRule(rule: string | null | undefined): string {
   if (!rule) return '単発';
-  
+
   if (rule.includes('FREQ=DAILY')) return '毎日';
   if (rule.includes('FREQ=WEEKLY')) {
     const dayMatch = rule.match(/BYDAY=([A-Z,]+)/);
@@ -118,7 +118,7 @@ function buildRecurrenceRule(schedule: CreateScheduleFormState['schedule']): str
   switch (schedule.type) {
     case 'daily':
       return 'FREQ=DAILY;INTERVAL=1';
-    
+
     case 'weekly':
       if (schedule.daysOfWeek && schedule.daysOfWeek.length > 0) {
         const days = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
@@ -126,21 +126,21 @@ function buildRecurrenceRule(schedule: CreateScheduleFormState['schedule']): str
         return `FREQ=WEEKLY;INTERVAL=1;BYDAY=${byday}`;
       }
       return 'FREQ=WEEKLY;INTERVAL=1';
-    
+
     case 'monthly':
       if (schedule.dayOfMonth) {
         return `FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=${schedule.dayOfMonth}`;
       }
       return 'FREQ=MONTHLY;INTERVAL=1';
-    
+
     case 'period':
       // 期間指定の場合はRRULEではなく終了日を使用
       return undefined;
-    
+
     case 'birthday':
       // 生後○日目は個別にハンドリングが必要
       return undefined;
-    
+
     default:
       return undefined;
   }
@@ -171,7 +171,7 @@ interface CompleteScheduleFormState {
 
 export default function CarePage() {
   const { setPageHeader } = usePageHeader();
-  
+
   const [page, setPage] = useState(1);
   const [selectedCareNames, setSelectedCareNames] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -260,7 +260,7 @@ export default function CarePage() {
   const catsQuery = useGetCats({ limit: 100 });
 
   const tagsQuery = useGetTagCategories();
-  
+
   // ページヘッダーを設定
   useEffect(() => {
     setPageHeader(
@@ -289,33 +289,33 @@ export default function CarePage() {
     return () => setPageHeader(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   const allTags = useMemo(() => {
     try {
       // Return empty array if data is not available or not an array
       if (!tagsQuery.data?.data || !Array.isArray(tagsQuery.data.data)) {
         return [];
       }
-      
+
       // Helper to validate tag has required properties
       const isValidTag = (tag: unknown): tag is TagView => {
         if (!tag || typeof tag !== 'object') return false;
         const t = tag as TagView;
         return typeof t.id === 'string' && typeof t.name === 'string' &&
-               t.id.trim() !== '' && t.name.trim() !== '';
+          t.id.trim() !== '' && t.name.trim() !== '';
       };
-      
+
       // Helper to validate category has required properties
       const isValidCategory = (category: unknown): category is TagCategoryView => {
         if (!category || typeof category !== 'object') return false;
         const c = category as TagCategoryView;
         return typeof c.name === 'string' && c.name.trim() !== '' && Array.isArray(c.tags);
       };
-      
+
       // Use category.tags directly (already computed by useGetTagCategories)
       return tagsQuery.data.data
         .filter(isValidCategory)
-        .flatMap((category: TagCategoryView) => 
+        .flatMap((category: TagCategoryView) =>
           (category.tags || [])
             .filter(isValidTag)
             .map((tag: TagView) => ({
@@ -435,9 +435,9 @@ export default function CarePage() {
     // TODO: 新しいAPIに合わせて送信処理を更新
     // 仮に複数猫に対応したAPIを使用
     const catIds = createForm.selectedCatIds.length > 0 ? createForm.selectedCatIds : filteredCats.map(cat => cat.id);
-    
+
     const recurrenceRule = buildRecurrenceRule(createForm.schedule);
-    
+
     addScheduleMutation.mutate(
       {
         name: trimmedName,
@@ -635,93 +635,95 @@ export default function CarePage() {
             </Card>
           ) : (
             <>
-              <Table verticalSpacing="sm" highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th style={{ width: '15%' }}>ケア名</Table.Th>
-                    <Table.Th style={{ width: '20%' }}>スケジュール</Table.Th>
-                    <Table.Th style={{ width: '20%' }}>内容</Table.Th>
-                    <Table.Th style={{ width: '12%' }}>対象</Table.Th>
-                    <Table.Th style={{ width: '10%' }}>状態</Table.Th>
-                    <Table.Th style={{ width: '23%', textAlign: 'center' }}>操作</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {schedules.map((schedule) => (
-                    <ContextMenuProvider
-                      key={schedule.id}
-                      entity={schedule}
-                      entityType="ケアスケジュール"
-                      actions={['view', 'edit', 'delete']}
-                      onAction={handleScheduleContextAction}
-                    >
-                    <Table.Tr style={{ cursor: 'pointer' }} title="右クリックまたはダブルクリックで操作">
-                      <Table.Td>
-                        <Text size="sm" fw={500}>
-                          {schedule.name}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Stack gap={0}>
-                          <Text size="sm" fw={500}>
-                            {formatDate(schedule.scheduleDate)}
-                          </Text>
-                          {schedule.recurrenceRule && (
-                            <Text size="xs" c="green">
-                              {formatRecurrenceRule(schedule.recurrenceRule)}
-                            </Text>
-                          )}
-                        </Stack>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" c={schedule.description ? undefined : 'dimmed'}>
-                          {schedule.description ? truncateText(schedule.description, 15) : 'なし'}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" fw={500}>
-                          {schedule.cats && schedule.cats.length > 0 ? `${schedule.cats.length}頭` : schedule.cat ? '1頭' : '未設定'}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Switch
-                          checked={schedule.status === 'PENDING' || schedule.status === 'IN_PROGRESS'}
-                          size="sm"
-                          onLabel="有効"
-                          offLabel="無効"
-                          disabled
-                        />
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap="xs" justify="center">
-                          <IconActionButton
-                            variant="confirm"
-                            label="完了にする"
-                            onClick={() => openCompleteScheduleModal(schedule)}
-                            disabled={schedule.status === 'COMPLETED'}
-                          />
-                          <IconActionButton
-                            variant="view"
-                            onClick={() => {
-                              setDetailSchedule(schedule);
-                              openDetailModal();
-                            }}
-                          />
-                          <IconActionButton
-                            variant="edit"
-                            onClick={() => handleEditSchedule(schedule)}
-                          />
-                          <IconActionButton
-                            variant="delete"
-                            onClick={() => handleDeleteSchedule(schedule)}
-                          />
-                        </Group>
-                      </Table.Td>
+              <Box style={{ overflowX: 'auto' }}>
+                <Table verticalSpacing="sm" highlightOnHover style={{ whiteSpace: 'nowrap', minWidth: 700 }}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th style={{ width: '15%' }}>ケア名</Table.Th>
+                      <Table.Th style={{ width: '20%' }}>スケジュール</Table.Th>
+                      <Table.Th style={{ width: '20%' }}>内容</Table.Th>
+                      <Table.Th style={{ width: '12%' }}>対象</Table.Th>
+                      <Table.Th style={{ width: '10%' }}>状態</Table.Th>
+                      <Table.Th style={{ width: '23%', textAlign: 'center' }}>操作</Table.Th>
                     </Table.Tr>
-                    </ContextMenuProvider>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {schedules.map((schedule) => (
+                      <ContextMenuProvider
+                        key={schedule.id}
+                        entity={schedule}
+                        entityType="ケアスケジュール"
+                        actions={['view', 'edit', 'delete']}
+                        onAction={handleScheduleContextAction}
+                      >
+                        <Table.Tr style={{ cursor: 'pointer' }} title="右クリックまたはダブルクリックで操作">
+                          <Table.Td>
+                            <Text size="sm" fw={500}>
+                              {schedule.name}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Stack gap={0}>
+                              <Text size="sm" fw={500}>
+                                {formatDate(schedule.scheduleDate)}
+                              </Text>
+                              {schedule.recurrenceRule && (
+                                <Text size="xs" c="green">
+                                  {formatRecurrenceRule(schedule.recurrenceRule)}
+                                </Text>
+                              )}
+                            </Stack>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text size="sm" c={schedule.description ? undefined : 'dimmed'}>
+                              {schedule.description ? truncateText(schedule.description, 15) : 'なし'}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text size="sm" fw={500}>
+                              {schedule.cats && schedule.cats.length > 0 ? `${schedule.cats.length}頭` : schedule.cat ? '1頭' : '未設定'}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Switch
+                              checked={schedule.status === 'PENDING' || schedule.status === 'IN_PROGRESS'}
+                              size="sm"
+                              onLabel="有効"
+                              offLabel="無効"
+                              disabled
+                            />
+                          </Table.Td>
+                          <Table.Td>
+                            <Group gap="xs" justify="center">
+                              <IconActionButton
+                                variant="confirm"
+                                label="完了にする"
+                                onClick={() => openCompleteScheduleModal(schedule)}
+                                disabled={schedule.status === 'COMPLETED'}
+                              />
+                              <IconActionButton
+                                variant="view"
+                                onClick={() => {
+                                  setDetailSchedule(schedule);
+                                  openDetailModal();
+                                }}
+                              />
+                              <IconActionButton
+                                variant="edit"
+                                onClick={() => handleEditSchedule(schedule)}
+                              />
+                              <IconActionButton
+                                variant="delete"
+                                onClick={() => handleDeleteSchedule(schedule)}
+                              />
+                            </Group>
+                          </Table.Td>
+                        </Table.Tr>
+                      </ContextMenuProvider>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Box>
 
               {meta.totalPages > 1 && (
                 <Group justify="center">
@@ -846,13 +848,13 @@ export default function CarePage() {
         )}
       </UnifiedModal>
 
-      <UnifiedModal 
-        opened={createModalOpened} 
+      <UnifiedModal
+        opened={createModalOpened}
         onClose={() => {
           closeCreateModal();
           resetCreateForm();
-        }} 
-        title="ケア予定を追加" 
+        }}
+        title="ケア予定を追加"
         size="lg"
         sections={[
           {
@@ -1187,13 +1189,13 @@ export default function CarePage() {
         </Group>
       </UnifiedModal>
 
-      <UnifiedModal 
-        opened={completeModalOpened} 
+      <UnifiedModal
+        opened={completeModalOpened}
         onClose={() => {
           closeCompleteModal();
           setTargetSchedule(null);
-        }} 
-        title={targetSchedule ? `${targetSchedule.cat?.name ?? '未設定'} - ${targetSchedule.name || targetSchedule.title} を完了` : 'ケア完了処理'} 
+        }}
+        title={targetSchedule ? `${targetSchedule.cat?.name ?? '未設定'} - ${targetSchedule.name || targetSchedule.title} を完了` : 'ケア完了処理'}
         size="lg"
         sections={targetSchedule ? [
           {
@@ -1299,244 +1301,196 @@ export default function CarePage() {
         title="ケア予定を編集"
         size="lg"
       >
-          <TextInput
-            label="ケア名"
-            placeholder="例: 年次健康診断"
-            value={createForm.name}
-            onChange={(event) =>
-              setCreateForm((prev) => ({
-                ...prev,
-                name: event.target.value,
-              }))
-            }
-            required
-          />
+        <TextInput
+          label="ケア名"
+          placeholder="例: 年次健康診断"
+          value={createForm.name}
+          onChange={(event) =>
+            setCreateForm((prev) => ({
+              ...prev,
+              name: event.target.value,
+            }))
+          }
+          required
+        />
 
-          <RadioGroup
-            label="カテゴリ"
-            value={createForm.category}
-            onChange={(value) => setCreateForm((prev) => ({ ...prev, category: value as 'Male' | 'Female' | 'Kitten' | 'Adult' }))}
-          >
-            <Group mt="xs">
-              <Radio value="Male" label="Male" />
-              <Radio value="Female" label="Female" />
-              <Radio value="Kitten" label="Kitten" />
-              <Radio value="Adult" label="Adult" />
-            </Group>
-          </RadioGroup>
-
-          <div>
-            <Group grow align="flex-end" gap="xs">
-              <Select
-                label="タグ"
-                placeholder="タグを選択"
-                data={allTags || []}
-                value={selectedTag}
-                onChange={(value) => setSelectedTag(value)}
-              />
-              <Button
-                leftSection={<IconPlus size={16} />}
-                onClick={() => {
-                  if (selectedTag && !(createForm.tags || []).includes(selectedTag)) {
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      tags: [...(prev.tags || []), selectedTag],
-                    }));
-                    setSelectedTag(null);
-                  }
-                }}
-                disabled={!selectedTag}
-                w="auto"
-              >
-                追加
-              </Button>
-            </Group>
-            {(createForm.tags || []).length > 0 && (
-              <Group mt="xs" gap="xs">
-                {(createForm.tags || []).map((tagId) => {
-                  const tag = allTags.find((t) => t.value === tagId);
-                  return (
-                    <Badge
-                      key={tagId}
-                      variant="light"
-                      rightSection={
-                        <ActionIcon
-                          size="xs"
-                          variant="transparent"
-                          onClick={() =>
-                            setCreateForm((prev) => ({
-                              ...prev,
-                              tags: (prev.tags || []).filter((id) => id !== tagId),
-                            }))
-                          }
-                        >
-                          <IconX size={12} />
-                        </ActionIcon>
-                      }
-                    >
-                      {tag?.label || tagId}
-                    </Badge>
-                  );
-                })}
-              </Group>
-            )}
-          </div>
-
-          <Group justify="space-between" align="center">
-            <Text size="sm" fw={500}>対象猫</Text>
-            <Text size="sm" c="dimmed">{filteredCats.length}頭</Text>
+        <RadioGroup
+          label="カテゴリ"
+          value={createForm.category}
+          onChange={(value) => setCreateForm((prev) => ({ ...prev, category: value as 'Male' | 'Female' | 'Kitten' | 'Adult' }))}
+        >
+          <Group mt="xs">
+            <Radio value="Male" label="Male" />
+            <Radio value="Female" label="Female" />
+            <Radio value="Kitten" label="Kitten" />
+            <Radio value="Adult" label="Adult" />
           </Group>
+        </RadioGroup>
 
-          <Accordion>
-            <Accordion.Item value="select-cats">
-              <Accordion.Control>更に選択する</Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap="xs">
-                  {filteredCats.length === 0 ? (
-                    <Text size="sm" c="dimmed">絞り込まれた猫がありません</Text>
-                  ) : (
-                    filteredCats.map((cat) => (
-                      <Checkbox
-                        key={cat.id}
-                        label={`${cat.name} (${cat.gender})`}
-                        checked={createForm.selectedCatIds.includes(cat.id)}
-                        onChange={(event) => {
-                          const checked = event.currentTarget.checked;
+        <div>
+          <Group grow align="flex-end" gap="xs">
+            <Select
+              label="タグ"
+              placeholder="タグを選択"
+              data={allTags || []}
+              value={selectedTag}
+              onChange={(value) => setSelectedTag(value)}
+            />
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={() => {
+                if (selectedTag && !(createForm.tags || []).includes(selectedTag)) {
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    tags: [...(prev.tags || []), selectedTag],
+                  }));
+                  setSelectedTag(null);
+                }
+              }}
+              disabled={!selectedTag}
+              w="auto"
+            >
+              追加
+            </Button>
+          </Group>
+          {(createForm.tags || []).length > 0 && (
+            <Group mt="xs" gap="xs">
+              {(createForm.tags || []).map((tagId) => {
+                const tag = allTags.find((t) => t.value === tagId);
+                return (
+                  <Badge
+                    key={tagId}
+                    variant="light"
+                    rightSection={
+                      <ActionIcon
+                        size="xs"
+                        variant="transparent"
+                        onClick={() =>
                           setCreateForm((prev) => ({
                             ...prev,
-                            selectedCatIds: checked
-                              ? [...prev.selectedCatIds, cat.id]
-                              : prev.selectedCatIds.filter((id) => id !== cat.id),
-                          }));
-                        }}
-                      />
-                    ))
-                  )}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
-
-          <Select
-            label="スケジュールタイプ"
-            placeholder="スケジュールタイプを選択"
-            data={[
-              { value: 'daily', label: '毎日' },
-              { value: 'weekly', label: '毎週○曜日' },
-              { value: 'monthly', label: '毎月○日' },
-              { value: 'period', label: '○日〜○日（期間指定）' },
-              { value: 'birthday', label: '生後○日目' },
-              { value: 'single', label: '単日' },
-            ]}
-            value={createForm.schedule?.type || null}
-            onChange={(value) => setCreateForm((prev) => ({
-              ...prev,
-              schedule: value ? { type: value as 'daily' | 'weekly' | 'monthly' | 'period' | 'birthday' | 'single' } : null
-            }))}
-          />
-
-          {createForm.schedule?.type === 'weekly' && (
-            <Select
-              label="曜日"
-              placeholder="曜日を選択"
-              data={[
-                { value: '0', label: '日曜日' },
-                { value: '1', label: '月曜日' },
-                { value: '2', label: '火曜日' },
-                { value: '3', label: '水曜日' },
-                { value: '4', label: '木曜日' },
-                { value: '5', label: '金曜日' },
-                { value: '6', label: '土曜日' },
-              ]}
-              value={createForm.schedule.daysOfWeek?.[0]?.toString() || null}
-              onChange={(value) => setCreateForm((prev) => {
-                if (!prev.schedule) {
-                  return prev;
-                }
-                return {
-                  ...prev,
-                  schedule: {
-                    ...prev.schedule,
-                    daysOfWeek: value ? [parseInt(value, 10)] : [],
-                  },
-                };
+                            tags: (prev.tags || []).filter((id) => id !== tagId),
+                          }))
+                        }
+                      >
+                        <IconX size={12} />
+                      </ActionIcon>
+                    }
+                  >
+                    {tag?.label || tagId}
+                  </Badge>
+                );
               })}
-            />
-          )}
-
-          {createForm.schedule?.type === 'monthly' && (
-            <Select
-              label="日付"
-              placeholder="日付を選択"
-              data={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: `${i + 1}日` }))}
-              value={createForm.schedule.dayOfMonth?.toString() || null}
-              onChange={(value) => setCreateForm((prev) => {
-                if (!prev.schedule) {
-                  return prev;
-                }
-                return {
-                  ...prev,
-                  schedule: {
-                    ...prev.schedule,
-                    dayOfMonth: value ? parseInt(value, 10) : undefined,
-                  },
-                };
-              })}
-            />
-          )}
-
-          {createForm.schedule?.type === 'period' && (
-            <Group grow>
-              <DatePickerInput
-                label="開始日"
-                value={createForm.schedule.startDate ? new Date(createForm.schedule.startDate) : null}
-                onChange={(value) => setCreateForm((prev) => ({
-                  ...prev,
-                  schedule: prev.schedule ? {
-                    ...prev.schedule,
-                    startDate: value
-                  } : null
-                }))}
-              />
-              <DatePickerInput
-                label="終了日"
-                value={createForm.schedule.endDate ? new Date(createForm.schedule.endDate) : null}
-                onChange={(value) => setCreateForm((prev) => ({
-                  ...prev,
-                  schedule: prev.schedule ? {
-                    ...prev.schedule,
-                    endDate: value
-                  } : null
-                }))}
-              />
             </Group>
           )}
+        </div>
 
-          {createForm.schedule?.type === 'birthday' && (
-            <TextInput
-              label="生後日数"
-              placeholder="例: 21"
-              type="number"
-              value={createForm.schedule.daysAfterBirth?.toString() || ''}
-              onChange={(event) => setCreateForm((prev) => {
-                if (!prev.schedule) {
-                  return prev;
-                }
-                const value = parseInt(event.target.value, 10);
-                return {
-                  ...prev,
-                  schedule: {
-                    ...prev.schedule,
-                    daysAfterBirth: Number.isNaN(value) ? undefined : value,
-                  },
-                };
-              })}
-            />
-          )}
+        <Group justify="space-between" align="center">
+          <Text size="sm" fw={500}>対象猫</Text>
+          <Text size="sm" c="dimmed">{filteredCats.length}頭</Text>
+        </Group>
 
-          {createForm.schedule?.type === 'single' && (
+        <Accordion>
+          <Accordion.Item value="select-cats">
+            <Accordion.Control>更に選択する</Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap="xs">
+                {filteredCats.length === 0 ? (
+                  <Text size="sm" c="dimmed">絞り込まれた猫がありません</Text>
+                ) : (
+                  filteredCats.map((cat) => (
+                    <Checkbox
+                      key={cat.id}
+                      label={`${cat.name} (${cat.gender})`}
+                      checked={createForm.selectedCatIds.includes(cat.id)}
+                      onChange={(event) => {
+                        const checked = event.currentTarget.checked;
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          selectedCatIds: checked
+                            ? [...prev.selectedCatIds, cat.id]
+                            : prev.selectedCatIds.filter((id) => id !== cat.id),
+                        }));
+                      }}
+                    />
+                  ))
+                )}
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
+
+        <Select
+          label="スケジュールタイプ"
+          placeholder="スケジュールタイプを選択"
+          data={[
+            { value: 'daily', label: '毎日' },
+            { value: 'weekly', label: '毎週○曜日' },
+            { value: 'monthly', label: '毎月○日' },
+            { value: 'period', label: '○日〜○日（期間指定）' },
+            { value: 'birthday', label: '生後○日目' },
+            { value: 'single', label: '単日' },
+          ]}
+          value={createForm.schedule?.type || null}
+          onChange={(value) => setCreateForm((prev) => ({
+            ...prev,
+            schedule: value ? { type: value as 'daily' | 'weekly' | 'monthly' | 'period' | 'birthday' | 'single' } : null
+          }))}
+        />
+
+        {createForm.schedule?.type === 'weekly' && (
+          <Select
+            label="曜日"
+            placeholder="曜日を選択"
+            data={[
+              { value: '0', label: '日曜日' },
+              { value: '1', label: '月曜日' },
+              { value: '2', label: '火曜日' },
+              { value: '3', label: '水曜日' },
+              { value: '4', label: '木曜日' },
+              { value: '5', label: '金曜日' },
+              { value: '6', label: '土曜日' },
+            ]}
+            value={createForm.schedule.daysOfWeek?.[0]?.toString() || null}
+            onChange={(value) => setCreateForm((prev) => {
+              if (!prev.schedule) {
+                return prev;
+              }
+              return {
+                ...prev,
+                schedule: {
+                  ...prev.schedule,
+                  daysOfWeek: value ? [parseInt(value, 10)] : [],
+                },
+              };
+            })}
+          />
+        )}
+
+        {createForm.schedule?.type === 'monthly' && (
+          <Select
+            label="日付"
+            placeholder="日付を選択"
+            data={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: `${i + 1}日` }))}
+            value={createForm.schedule.dayOfMonth?.toString() || null}
+            onChange={(value) => setCreateForm((prev) => {
+              if (!prev.schedule) {
+                return prev;
+              }
+              return {
+                ...prev,
+                schedule: {
+                  ...prev.schedule,
+                  dayOfMonth: value ? parseInt(value, 10) : undefined,
+                },
+              };
+            })}
+          />
+        )}
+
+        {createForm.schedule?.type === 'period' && (
+          <Group grow>
             <DatePickerInput
-              label="日付"
+              label="開始日"
               value={createForm.schedule.startDate ? new Date(createForm.schedule.startDate) : null}
               onChange={(value) => setCreateForm((prev) => ({
                 ...prev,
@@ -1546,40 +1500,88 @@ export default function CarePage() {
                 } : null
               }))}
             />
-          )}
-
-          <Textarea
-            label="備考"
-            placeholder="ケアの詳細やメモを入力（任意）"
-            value={createForm.description}
-            onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
-            minRows={3}
-            autosize
-          />
-
-          {createError && (
-            <Alert color="red" icon={<IconAlertCircle size={16} />}>
-              {createError}
-            </Alert>
-          )}
-
-          <Divider />
-
-          <Group justify="flex-end">
-            <ActionButton
-              action="cancel"
-              onClick={() => {
-                closeEditModal();
-                setEditingSchedule(null);
-                resetCreateForm();
-              }}
-            >
-              キャンセル
-            </ActionButton>
-            <ActionButton action="save" onClick={handleUpdateSubmit} loading={updateScheduleMutation.isPending}>
-              更新
-            </ActionButton>
+            <DatePickerInput
+              label="終了日"
+              value={createForm.schedule.endDate ? new Date(createForm.schedule.endDate) : null}
+              onChange={(value) => setCreateForm((prev) => ({
+                ...prev,
+                schedule: prev.schedule ? {
+                  ...prev.schedule,
+                  endDate: value
+                } : null
+              }))}
+            />
           </Group>
+        )}
+
+        {createForm.schedule?.type === 'birthday' && (
+          <TextInput
+            label="生後日数"
+            placeholder="例: 21"
+            type="number"
+            value={createForm.schedule.daysAfterBirth?.toString() || ''}
+            onChange={(event) => setCreateForm((prev) => {
+              if (!prev.schedule) {
+                return prev;
+              }
+              const value = parseInt(event.target.value, 10);
+              return {
+                ...prev,
+                schedule: {
+                  ...prev.schedule,
+                  daysAfterBirth: Number.isNaN(value) ? undefined : value,
+                },
+              };
+            })}
+          />
+        )}
+
+        {createForm.schedule?.type === 'single' && (
+          <DatePickerInput
+            label="日付"
+            value={createForm.schedule.startDate ? new Date(createForm.schedule.startDate) : null}
+            onChange={(value) => setCreateForm((prev) => ({
+              ...prev,
+              schedule: prev.schedule ? {
+                ...prev.schedule,
+                startDate: value
+              } : null
+            }))}
+          />
+        )}
+
+        <Textarea
+          label="備考"
+          placeholder="ケアの詳細やメモを入力（任意）"
+          value={createForm.description}
+          onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
+          minRows={3}
+          autosize
+        />
+
+        {createError && (
+          <Alert color="red" icon={<IconAlertCircle size={16} />}>
+            {createError}
+          </Alert>
+        )}
+
+        <Divider />
+
+        <Group justify="flex-end">
+          <ActionButton
+            action="cancel"
+            onClick={() => {
+              closeEditModal();
+              setEditingSchedule(null);
+              resetCreateForm();
+            }}
+          >
+            キャンセル
+          </ActionButton>
+          <ActionButton action="save" onClick={handleUpdateSubmit} loading={updateScheduleMutation.isPending}>
+            更新
+          </ActionButton>
+        </Group>
       </UnifiedModal>
 
       {/* 削除確認モーダル */}

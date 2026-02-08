@@ -120,7 +120,7 @@ export default function MedicalRecordsPage() {
     const categories = tagsQuery.data?.data || [];
     const healthCategory = categories.find(cat => cat.key === 'health' || cat.name.includes('健康'));
     if (!healthCategory) return [];
-    
+
     // 健康カテゴリ内の全タグを取得
     return healthCategory.tags || [];
   }, [tagsQuery.data]);
@@ -262,86 +262,88 @@ export default function MedicalRecordsPage() {
             </Card>
           ) : (
             <>
-              <Table verticalSpacing="sm" highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th style={{ width: '15%' }}>受診日</Table.Th>
-                    <Table.Th style={{ width: '15%' }}>猫名</Table.Th>
-                    <Table.Th style={{ width: '25%' }}>症状・診断</Table.Th>
-                    <Table.Th style={{ width: '15%' }}>病院名</Table.Th>
-                    <Table.Th style={{ width: '15%' }}>状態</Table.Th>
-                    <Table.Th style={{ width: '15%', textAlign: 'center' }}>操作</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {records.map((record) => (
-                    <Table.Tr key={record.id}>
-                      <Table.Td>
-                        <Text size="sm" fw={500}>
-                          {formatDate(record.visitDate)}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" fw={500}>
-                          {record.cat.name}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Stack gap={4}>
-                          <Text size="sm" c={record.diagnosis ? undefined : 'dimmed'}>
-                            {record.diagnosis ? truncateText(record.diagnosis, 12) : '診断なし'}
-                          </Text>
-                          {record.symptom && (
-                            <Text size="xs" c="dimmed">
-                              {truncateText(record.symptom, 12)}
-                            </Text>
-                          )}
-                          {record.tags && record.tags.length > 0 && (
-                            <Group gap={4}>
-                              {record.tags.slice(0, 2).map((tag) => (
-                                <Badge
-                                  key={tag.id}
-                                  size="xs"
-                                  variant="dot"
-                                  color={tag.color || 'blue'}
-                                >
-                                  {tag.name}
-                                </Badge>
-                              ))}
-                              {record.tags.length > 2 && (
-                                <Text size="xs" c="dimmed">
-                                  +{record.tags.length - 2}
-                                </Text>
-                              )}
-                            </Group>
-                          )}
-                        </Stack>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" c={record.hospitalName ? undefined : 'dimmed'}>
-                          {record.hospitalName || '未設定'}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge color={STATUS_COLORS[record.status]} variant="light">
-                          {STATUS_LABELS[record.status]}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap="xs" justify="center">
-                          <IconActionButton
-                            variant="view"
-                            onClick={() => {
-                              setDetailRecord(record);
-                              openDetailModal();
-                            }}
-                          />
-                        </Group>
-                      </Table.Td>
+              <Box style={{ overflowX: 'auto' }}>
+                <Table verticalSpacing="sm" highlightOnHover style={{ whiteSpace: 'nowrap', minWidth: 700 }}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th style={{ width: '15%' }}>受診日</Table.Th>
+                      <Table.Th style={{ width: '15%' }}>猫名</Table.Th>
+                      <Table.Th style={{ width: '25%' }}>症状・診断</Table.Th>
+                      <Table.Th style={{ width: '15%' }}>病院名</Table.Th>
+                      <Table.Th style={{ width: '15%' }}>状態</Table.Th>
+                      <Table.Th style={{ width: '15%', textAlign: 'center' }}>操作</Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {records.map((record) => (
+                      <Table.Tr key={record.id}>
+                        <Table.Td>
+                          <Text size="sm" fw={500}>
+                            {formatDate(record.visitDate)}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" fw={500}>
+                            {record.cat.name}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Stack gap={4}>
+                            <Text size="sm" c={record.diagnosis ? undefined : 'dimmed'}>
+                              {record.diagnosis ? truncateText(record.diagnosis, 12) : '診断なし'}
+                            </Text>
+                            {record.symptom && (
+                              <Text size="xs" c="dimmed">
+                                {truncateText(record.symptom, 12)}
+                              </Text>
+                            )}
+                            {record.tags && record.tags.length > 0 && (
+                              <Group gap={4} wrap="nowrap">
+                                {record.tags.slice(0, 2).map((tag) => (
+                                  <Badge
+                                    key={tag.id}
+                                    size="xs"
+                                    variant="dot"
+                                    color={tag.color || 'blue'}
+                                  >
+                                    {tag.name}
+                                  </Badge>
+                                ))}
+                                {record.tags.length > 2 && (
+                                  <Text size="xs" c="dimmed">
+                                    +{record.tags.length - 2}
+                                  </Text>
+                                )}
+                              </Group>
+                            )}
+                          </Stack>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" c={record.hospitalName ? undefined : 'dimmed'}>
+                            {record.hospitalName || '未設定'}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge color={STATUS_COLORS[record.status]} variant="light">
+                            {STATUS_LABELS[record.status]}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Group gap="xs" justify="center">
+                            <IconActionButton
+                              variant="view"
+                              onClick={() => {
+                                setDetailRecord(record);
+                                openDetailModal();
+                              }}
+                            />
+                          </Group>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Box>
 
               {meta.totalPages > 1 && (
                 <Group justify="center">

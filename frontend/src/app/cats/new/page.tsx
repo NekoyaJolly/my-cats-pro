@@ -237,7 +237,7 @@ export default function CatRegistrationPage() {
                     control={control}
                     render={({ field }) => (
                       <InputWithFloatingLabel
-                        label="マイクロチップ番号"
+                        label="MC番号"
                         error={errors.microchipNumber?.message}
                         {...field}
                         value={field.value ?? ''}

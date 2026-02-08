@@ -28,7 +28,7 @@ export interface BreedingScheduleTabProps {
   activeMales: Cat[];
   breedingSchedule: Record<string, BreedingScheduleEntry>;
   selectedMaleForEdit: string | null;
-  
+
   // アクション
   onYearChange: (year: number) => void;
   onMonthChange: (month: number) => void;
@@ -41,7 +41,7 @@ export interface BreedingScheduleTabProps {
   onMatingResult: (maleId: string, femaleId: string, femaleName: string, date: string, result: 'success' | 'failure') => void;
   onScheduleContextAction: (action: string, entity: BreedingScheduleEntry) => void;
   onClearData: () => void;
-  
+
   // ヘルパー
   getMatingCheckCount: (maleId: string, femaleId: string, date: string) => number;
 }
@@ -80,15 +80,15 @@ export function BreedingScheduleTab({
   };
 
   return (
-    <Card 
-      shadow="sm" 
-      padding={isFullscreen ? "xs" : "md"} 
-      radius="md" 
-      withBorder 
+    <Card
+      shadow="sm"
+      padding={isFullscreen ? "xs" : "md"}
+      radius="md"
+      withBorder
       mb="md"
       style={{ height: isFullscreen ? 'calc(100vh - 180px)' : 'auto' }}
     >
-      <Group gap="xs" mb="md" align="flex-end">
+      <Group gap="xs" mb="md" align="flex-end" wrap="nowrap">
         <Select
           value={selectedYear.toString()}
           onChange={(value) => onYearChange(parseInt(value || '2024'))}
@@ -111,35 +111,33 @@ export function BreedingScheduleTab({
         <ActionButton
           action="create"
           onClick={onOpenMaleModal}
-          isSectionAction
         >
           オス追加
         </ActionButton>
         <ActionButton
           action="cancel"
           onClick={handleClearData}
-          isSectionAction
           title="localStorageに保存された交配管理表のデータをクリア"
         >
           データクリア
         </ActionButton>
       </Group>
-      
-      <ScrollArea 
-        style={{ 
+
+      <ScrollArea
+        style={{
           height: isFullscreen ? 'calc(100% - 80px)' : '600px',
           width: '100%'
         }}
       >
         <Table
-          style={{ 
+          style={{
             fontSize: isFullscreen ? '11px' : '14px',
             minWidth: isFullscreen ? '1200px' : '800px',
             position: 'relative'
           }}
         >
-          <Table.Thead 
-            style={{ 
+          <Table.Thead
+            style={{
               position: 'sticky',
               top: 0,
               backgroundColor: 'var(--surface)',
@@ -148,8 +146,8 @@ export function BreedingScheduleTab({
             }}
           >
             <Table.Tr>
-              <Table.Th 
-                style={{ 
+              <Table.Th
+                style={{
                   width: isFullscreen ? 60 : 80,
                   minWidth: isFullscreen ? 60 : 80,
                   maxWidth: isFullscreen ? 60 : 80,
@@ -167,9 +165,9 @@ export function BreedingScheduleTab({
                 </Flex>
               </Table.Th>
               {activeMales.map((male) => (
-                <Table.Th 
-                  key={male.id} 
-                  style={{ 
+                <Table.Th
+                  key={male.id}
+                  style={{
                     minWidth: isFullscreen ? 100 : 120,
                     borderRight: '1px solid var(--border-subtle)'
                   }}
@@ -219,15 +217,15 @@ export function BreedingScheduleTab({
                   }}
                 >
                   <Flex align="center" gap={4} justify="center">
-                    <Text 
-                      size={isFullscreen ? "xs" : "sm"} 
+                    <Text
+                      size={isFullscreen ? "xs" : "sm"}
                       fw={dayOfWeek === 0 || dayOfWeek === 6 ? 600 : 400}
                       c={dayOfWeek === 0 ? 'red' : dayOfWeek === 6 ? 'blue' : undefined}
                     >
                       {date}日
                     </Text>
-                    <Text 
-                      size={isFullscreen ? "8px" : "xs"} 
+                    <Text
+                      size={isFullscreen ? "8px" : "xs"}
                       c={dayOfWeek === 0 ? 'red' : dayOfWeek === 6 ? 'blue' : 'dimmed'}
                     >
                       ({['日', '月', '火', '水', '木', '金', '土'][dayOfWeek]})
@@ -237,20 +235,20 @@ export function BreedingScheduleTab({
                 {activeMales.map((male) => {
                   const scheduleKey = `${male.id}-${dateString}`;
                   const schedule = breedingSchedule[scheduleKey];
-                  
+
                   // 次の日も同じ交配期間かチェック
                   const nextDate = new Date(selectedYear, selectedMonth, date + 1);
                   const nextDateString = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
                   const nextScheduleKey = `${male.id}-${nextDateString}`;
                   const nextSchedule = breedingSchedule[nextScheduleKey];
-                  const hasNextSameMating = schedule && nextSchedule && 
-                    schedule.femaleName === nextSchedule.femaleName && 
+                  const hasNextSameMating = schedule && nextSchedule &&
+                    schedule.femaleName === nextSchedule.femaleName &&
                     !schedule.isHistory && !nextSchedule.isHistory;
-                  
+
                   return (
-                    <Table.Td 
-                      key={male.id} 
-                      style={{ 
+                    <Table.Td
+                      key={male.id}
+                      style={{
                         textAlign: 'center',
                         borderRight: hasNextSameMating ? 'none' : '1px solid var(--border-subtle)',
                         backgroundColor: schedule && !schedule.isHistory ? '#fffacd' : 'transparent'
@@ -272,7 +270,7 @@ export function BreedingScheduleTab({
                           variant="subtle"
                           size={isFullscreen ? "xs" : "sm"}
                           onClick={() => onMaleSelect(male.id, dateString)}
-                          style={{ 
+                          style={{
                             width: '100%',
                             height: isFullscreen ? '24px' : '32px'
                           }}
@@ -324,17 +322,17 @@ function ScheduleCell({
         actions={['edit', 'delete']}
         onAction={(action) => onScheduleContextAction(action, schedule)}
       >
-        <Box 
-          style={{ 
-            position: 'relative', 
-            width: '100%', 
-            height: '100%', 
-            minHeight: isFullscreen ? '28px' : '32px', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'center', 
-            opacity: 0.6, 
-            cursor: 'pointer' 
+        <Box
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            minHeight: isFullscreen ? '28px' : '32px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            opacity: 0.6,
+            cursor: 'pointer'
           }}
           title="ダブルクリックまたは右クリックで操作"
         >
@@ -380,16 +378,16 @@ function ScheduleCell({
       actions={['edit', 'delete']}
       onAction={(action) => onScheduleContextAction(action, schedule)}
     >
-      <Box 
-        style={{ 
-          position: 'relative', 
-          width: '100%', 
-          height: '100%', 
-          minHeight: isFullscreen ? '28px' : '32px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'center', 
-          cursor: 'pointer' 
+      <Box
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          minHeight: isFullscreen ? '28px' : '32px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          cursor: 'pointer'
         }}
         title="ダブルクリックまたは右クリックで操作"
       >
@@ -399,7 +397,7 @@ function ScheduleCell({
               {schedule.femaleName}
             </Badge>
           )}
-          
+
           {schedule.dayIndex === schedule.duration - 1 ? (
             <Group gap={2}>
               <ActionIcon
