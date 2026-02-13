@@ -32,9 +32,21 @@ RUN pnpm install --frozen-lockfile --filter frontend...
 COPY frontend ./frontend
 WORKDIR /app/frontend
 RUN mkdir -p public
-# Set NEXT_PUBLIC_API_URL during build time if needed, or rely on runtime env
+
+# ビルド時環境変数: バージョン追跡用
+# これらの変数は Next.js ビルドプロセスで使用され、
+# デバッグエンドポイント (/api/debug-version) で確認可能
 ARG NEXT_PUBLIC_API_URL
+ARG GITHUB_SHA
+ARG BUILD_TIME
+
+# Next.js ビルドに環境変数を注入
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV GITHUB_SHA=${GITHUB_SHA}
+ENV BUILD_TIME=${BUILD_TIME}
+
+# Next.js をビルド
+# 注意: .next ディレクトリは毎回完全に再生成される
 RUN pnpm build
 
 # ---- Production Stage ----

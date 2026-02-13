@@ -149,6 +149,9 @@ jobs:
           
           # Build substitutions string
           # Note: パイプ文字で区切られたCORS_ORIGINはcloudbuild.yamlでカンマに変換される
+          # ビルドメタデータをバージョン追跡用に追加
+          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
           SUBSTITUTIONS="_ENVIRONMENT=staging"
           SUBSTITUTIONS="${SUBSTITUTIONS},_REPO_NAME=${{ env.REPO_NAME }}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_NAME=mycats-pro-backend-staging"
@@ -157,6 +160,9 @@ jobs:
           SUBSTITUTIONS="${SUBSTITUTIONS},_FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_CORS_ORIGIN=${CORS_ORIGIN}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1"
+          # ビルドメタデータ（バージョン追跡用）
+          SUBSTITUTIONS="${SUBSTITUTIONS},_GITHUB_SHA=${{ github.sha }}"
+          SUBSTITUTIONS="${SUBSTITUTIONS},_BUILD_TIME=${BUILD_TIME}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DATABASE_URL_SECRET_NAME=DATABASE_URL"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DATABASE_URL_SECRET_VERSION=latest"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DIRECT_URL_SECRET_NAME=DIRECT_URL"
@@ -340,6 +346,9 @@ jobs:
           
           # Build substitutions string
           # Note: パイプ文字で区切られたCORS_ORIGINはcloudbuild.yamlでカンマに変換される
+          # ビルドメタデータをバージョン追跡用に追加
+          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
           SUBSTITUTIONS="_ENVIRONMENT=production"
           SUBSTITUTIONS="${SUBSTITUTIONS},_REPO_NAME=${{ env.REPO_NAME }}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_BACKEND_SERVICE_NAME=mycats-pro-backend"
@@ -348,6 +357,9 @@ jobs:
           SUBSTITUTIONS="${SUBSTITUTIONS},_FRONTEND_SERVICE_ACCOUNT=${FRONTEND_SA}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_CORS_ORIGIN=${CORS_ORIGIN}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_NEXT_PUBLIC_API_URL=${BACKEND_URL}/api/v1"
+          # ビルドメタデータ（バージョン追跡用）
+          SUBSTITUTIONS="${SUBSTITUTIONS},_GITHUB_SHA=${{ github.sha }}"
+          SUBSTITUTIONS="${SUBSTITUTIONS},_BUILD_TIME=${BUILD_TIME}"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DATABASE_URL_SECRET_NAME=DATABASE_URL"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DATABASE_URL_SECRET_VERSION=latest"
           SUBSTITUTIONS="${SUBSTITUTIONS},_DIRECT_URL_SECRET_NAME=DIRECT_URL"
