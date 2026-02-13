@@ -597,6 +597,36 @@ NODE_ENV=production node backend/dist/main.js
 - **フロントエンド**: `frontend/.next/`ディレクトリ
 - **バックエンド**: `backend/dist/`ディレクトリ（`pnpm run build`実行時）
 
+### デプロイバージョンの確認 🆕
+
+デプロイされたコードが最新版であることを確認するため、デバッグエンドポイントを提供しています。
+
+#### クイックチェック
+
+```bash
+# 自動検証スクリプト（推奨）
+./scripts/verify-deployment.sh production
+
+# または curl で手動確認
+curl https://nekoya.co.jp/api/debug-version | jq
+```
+
+#### レスポンス例
+
+```json
+{
+  "gitCommit": "e7a8547...",      // デプロイされたGitコミット
+  "buildTime": "2026-02-13...",   // ビルド実行時刻
+  "nodeEnv": "production",        // 実行環境
+  "nextPublicApiUrl": "https://api.nekoya.co.jp/api/v1"
+}
+```
+
+**詳細は以下のドキュメントを参照:**
+- **クイックリファレンス**: [`docs/QUICK_REFERENCE.md`](./docs/QUICK_REFERENCE.md)
+- **デプロイガイド**: [`docs/DEPLOYMENT_GUIDE.md`](./docs/DEPLOYMENT_GUIDE.md)
+- **全ドキュメント**: [`docs/README.md`](./docs/README.md)
+
 ### 本番環境（Cloud Run）での動作確認
 
 本番環境にデプロイ後、以下の手順でログイン機能の動作確認を行ってください。
@@ -607,6 +637,7 @@ Cloud Run にデプロイされた URL は以下の形式になります（実�
 
 - **フロントエンド**: `https://<frontend-service-name>-<project-hash>.<region>.run.app`
 - **バックエンド API**: `https://<backend-service-name>-<project-hash>.<region>.run.app/api/v1`
+- **バージョン確認**: `https://<frontend-service-name>-<project-hash>.<region>.run.app/api/debug-version`
 
 > 実際の URL は Cloud Run コンソールまたは `gcloud run services describe` コマンドで確認してください。
 
