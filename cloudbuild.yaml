@@ -28,6 +28,15 @@ steps:
       # Pass the public API URL as a build argument for the frontend
       - '--build-arg'
       - 'NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}'
+      # Pass Git commit SHA for version tracking
+      - '--build-arg'
+      - 'GITHUB_SHA=${_GITHUB_SHA}'
+      # Pass build timestamp for version tracking
+      - '--build-arg'
+      - 'BUILD_TIME=${_BUILD_TIME}'
+      # キャッシュを使用しない（最新のコードを確実にビルドするため）
+      # 注意: これによりビルド時間が増加しますが、デプロイの確実性が向上します
+      - '--no-cache'
       - '-f'
       - 'Dockerfile.frontend'
       - '.'
@@ -150,7 +159,7 @@ steps:
             --region "${_LOCATION}" \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "NODE_ENV=${_ENVIRONMENT},NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}" \
+            --set-env-vars "NODE_ENV=${_ENVIRONMENT},NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL},GITHUB_SHA=${_GITHUB_SHA},BUILD_TIME=${_BUILD_TIME}" \
             --execution-environment=gen2 \
             --service-account "${_FRONTEND_SERVICE_ACCOUNT}" \
             --concurrency 50 \
@@ -179,6 +188,10 @@ substitutions:
   # URLs (must be provided by caller)
   _NEXT_PUBLIC_API_URL: ''
   _CORS_ORIGIN: ''
+  
+  # Build metadata for version tracking
+  _GITHUB_SHA: 'unknown'
+  _BUILD_TIME: 'unknown'
   
   # Cloud SQL connection (Supabase移行後は未使用)
   # _CLOUD_SQL_CONNECTION_NAME: ''
