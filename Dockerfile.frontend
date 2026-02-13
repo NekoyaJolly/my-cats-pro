@@ -54,10 +54,20 @@ RUN pnpm build
 # Next.js standalone には必要な node_modules が同梱済み
 FROM node:20-alpine AS production
 WORKDIR /app
+
+# ビルド時メタデータをランタイムに渡すための ARG 再定義
+ARG GITHUB_SHA
+ARG BUILD_TIME
+
 ENV NODE_ENV=production
 ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# ビルド時メタデータを環境変数として焼き込む
+# これにより /api/debug-version でランタイムに参照可能
+ENV GITHUB_SHA=${GITHUB_SHA}
+ENV BUILD_TIME=${BUILD_TIME}
 
 RUN addgroup -S nodejs && adduser -S nodeapp -G nodejs
 

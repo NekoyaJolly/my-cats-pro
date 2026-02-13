@@ -122,7 +122,9 @@
 ### 新しいドキュメントを追加する場合
 
 1. **適切なカテゴリを選択**: 上記の目次に従って配置
-2. **わかりやすいファイル名**: `UPPERCASE_SNAKE_CASE.md` を使用
+2. **わかりやすいファイル名**:
+   - 原則として `kebab-case.md` を使用（例: `system-design.md`, `production-deployment.md`）
+   - プロジェクト全体や横断的なガイド（例: `README.md`, `SETUP_GUIDE.md`, `TROUBLESHOOTING.md`, `DEPLOYMENT_*.md`）のみ `UPPERCASE_SNAKE_CASE.md` を使用
 3. **目次を更新**: このREADMEの該当セクションにリンクを追加
 4. **日付を記載**: ドキュメント末尾に作成日・更新日を記載
 

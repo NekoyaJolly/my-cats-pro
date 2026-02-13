@@ -2,11 +2,10 @@
 
 ## 🚀 デプロイ実行
 
-```bash
-# GitHub Actions から
-1. Actions タブ → "Deploy Only"
-2. "Run workflow" → 環境選択 → 実行
-```
+GitHub Actions から実行する:
+
+1. Actions タブで "Deploy Only" を選択
+2. "Run workflow" → 環境を選択して実行
 
 ## ✅ デプロイ確認（3つの方法）
 

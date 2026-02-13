@@ -159,7 +159,7 @@ steps:
             --region "${_LOCATION}" \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "NODE_ENV=${_ENVIRONMENT},NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}" \
+            --set-env-vars "NODE_ENV=${_ENVIRONMENT},NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL},GITHUB_SHA=${_GITHUB_SHA},BUILD_TIME=${_BUILD_TIME}" \
             --execution-environment=gen2 \
             --service-account "${_FRONTEND_SERVICE_ACCOUNT}" \
             --concurrency 50 \

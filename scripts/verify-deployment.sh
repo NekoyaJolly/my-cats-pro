@@ -52,8 +52,23 @@ echo -e "${YELLOW}📡 デバッグエンドポイントにアクセス中...${N
 echo -e "   URL: ${DEBUG_URL}"
 echo ""
 
-# curlでデータを取得
-RESPONSE=$(curl -s "${DEBUG_URL}")
+# curlでデータを取得（-f でHTTPエラーを検出、-S で進捗表示を抑制しつつエラーは表示）
+HTTP_CODE=$(curl -fsSL -w "%{http_code}" -o /tmp/debug-response.json "${DEBUG_URL}" 2>/tmp/curl-error.txt || echo "000")
+
+if [ "$HTTP_CODE" != "200" ]; then
+    echo -e "${RED}❌ エンドポイントへのアクセスに失敗しました${NC}"
+    echo -e "   HTTP Status: ${HTTP_CODE}"
+    echo -e "   URL: ${DEBUG_URL}"
+    if [ -s /tmp/curl-error.txt ]; then
+        echo -e "${YELLOW}   エラー詳細:${NC}"
+        cat /tmp/curl-error.txt
+    fi
+    rm -f /tmp/debug-response.json /tmp/curl-error.txt
+    exit 1
+fi
+
+RESPONSE=$(cat /tmp/debug-response.json)
+rm -f /tmp/debug-response.json /tmp/curl-error.txt
 
 # jqが利用可能かチェック
 if ! command -v jq &> /dev/null; then

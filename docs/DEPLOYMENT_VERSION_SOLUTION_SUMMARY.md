@@ -320,5 +320,4 @@ curl https://nekoya.co.jp/api/debug-version | jq
 ---
 
 **実装完了日**: 2026-02-13  
-**PR**: #XXX  
 **実装者**: GitHub Copilot Agent
