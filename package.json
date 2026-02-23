@@ -38,6 +38,8 @@
     "test:health": "curl -s http://localhost:3004/health",
     "test:api": "curl -s http://localhost:3004/api/v1/pedigrees",
     "test:e2e": "pnpm --filter backend run test:e2e -- --passWithNoTests",
+    "test:e2e:ui": "pnpm --filter frontend run test:e2e",
+    "test:e2e:ui:interactive": "pnpm --filter frontend run test:e2e:ui",
     "api:smoke": "(curl -sS -X POST http://localhost:3004/api/v1/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"dev1@example.com\",\"password\":\"Passw0rd!\"}' || true) && TOKEN=$(curl -sS -X POST http://localhost:3004/api/v1/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"dev1@example.com\",\"password\":\"Passw0rd!\"}' | sed -n 's/.*\"access_token\":\"\\([^\\\"]*\\)\".*/\\1/p'); curl -sS -X POST http://localhost:3004/api/v1/tags -H \"Authorization: Bearer $TOKEN\" -H 'Content-Type: application/json' -d '{\"name\":\"indoor\",\"color\":\"#10B981\"}'",
     "dev:stable": "node ./scripts/start-dev-stable.mjs",
     "dev:stop": "./scripts/stop-dev.sh",

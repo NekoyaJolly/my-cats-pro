@@ -79,6 +79,8 @@ backend/prisma/schema_prisma.txt
 # Test results
 test-results/
 playwright-report/
+# Playwright 認証状態（ログイン情報を含むため Git 管理対象外）
+frontend/e2e/.auth/
 
 # Temporary files
 *.tmp
