@@ -15,7 +15,7 @@ permissions:
 
 env:
   NODE_VERSION: "20"
-  PNPM_VERSION: "10"
+  PNPM_VERSION: "9"
 
 jobs:
   # 1. セキュリティスキャン
@@ -65,7 +65,7 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
@@ -549,7 +549,7 @@ jobs:
           echo "☁️ Validating Cloud Run requirements..."
 
           # Check port 8080 is listening
-          if netstat -tuln | grep -q ":8080"; then
+          if ss -tuln | grep -q ":8080"; then
             echo "✅ Service listening on port 8080 (Cloud Run default)"
           else
             echo "❌ Service not listening on port 8080"
