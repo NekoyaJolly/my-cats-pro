@@ -74,6 +74,11 @@ jobs:
 
       - name: Check for critical/high vulnerabilities (fail CI)
         uses: aquasecurity/trivy-action@0.28.0
+        env:
+          # Previous Trivy SARIF step exports TRIVY_FORMAT/TRIVY_OUTPUT into the job env.
+          # Force table output to stdout for this fail-on-findings step.
+          TRIVY_FORMAT: table
+          TRIVY_OUTPUT: ""
         with:
           scan-type: "fs"
           scan-ref: "."
