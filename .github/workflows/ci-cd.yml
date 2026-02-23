@@ -73,16 +73,14 @@ jobs:
           wait-for-processing: false
 
       - name: Check for critical/high vulnerabilities (fail CI)
-        run: |
-          set -euo pipefail
-
-          echo "🔍 Scanning for CRITICAL/HIGH vulnerabilities..."
-          TRIVY_FORMAT="" TRIVY_OUTPUT="" trivy fs \
-            --severity CRITICAL,HIGH \
-            --ignore-unfixed \
-            --format table \
-            --exit-code 1 \
-            .
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+          format: "table"
+          exit-code: "1"
 
       - name: Dependency security audit
         run: |
