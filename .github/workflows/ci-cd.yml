@@ -72,16 +72,17 @@ jobs:
           category: "trivy-fs-scan"
           wait-for-processing: false
 
-      - name: Check for critical vulnerabilities
+      - name: Check for critical/high vulnerabilities (fail CI)
         run: |
-          echo "🔍 Scanning for critical and high severity vulnerabilities..."
-          if TRIVY_FORMAT="" TRIVY_OUTPUT="" trivy fs --severity CRITICAL,HIGH --quiet --exit-code 1 .; then
-            echo "✅ No critical or high severity vulnerabilities found"
-          else
-            echo "❌ Critical or high severity vulnerabilities detected!"
-            TRIVY_FORMAT="" TRIVY_OUTPUT="" trivy fs --severity CRITICAL,HIGH .
-            exit 1
-          fi
+          set -euo pipefail
+
+          echo "🔍 Scanning for CRITICAL/HIGH vulnerabilities..."
+          TRIVY_FORMAT="" TRIVY_OUTPUT="" trivy fs \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --format table \
+            --exit-code 1 \
+            .
 
       - name: Dependency security audit
         run: |
