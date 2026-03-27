@@ -377,8 +377,8 @@ export function clearTokens(): void {
   
   if (typeof window !== 'undefined') {
     // localStorageの残留トークンもクリア（移行期間の互換性のため）
-    try { localStorage.removeItem('accessToken'); } catch (_) {}
-    try { localStorage.removeItem('refreshToken'); } catch (_) {}
+    try { localStorage.removeItem('accessToken'); } catch { /* localStorage未対応環境では無視 */ }
+    try { localStorage.removeItem('refreshToken'); } catch { /* localStorage未対応環境では無視 */ }
     deleteCookie('accessToken');
     deleteCookie('refreshToken');
   }

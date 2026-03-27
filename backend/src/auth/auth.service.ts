@@ -13,8 +13,8 @@ import { JwtService } from "@nestjs/jwt";
 import { UserRole, User } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
-import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../email/email.service";
+import { PrismaService } from "../prisma/prisma.service";
 
 import { LoginAttemptService, LoginAttemptData } from "./login-attempt.service";
 import { PasswordService } from "./password.service";
