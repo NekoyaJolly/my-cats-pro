@@ -78,7 +78,8 @@ const sanitizeLevel = (value: unknown): LogLevel => {
           level: (label) => ({ level: sanitizeLevel(label) }),
         },
       },
-      // nestjs-pino の既定 `*` は Express 5 + globalPrefix で `/api/v1/*` になり例外化する
+      // nestjs-pino の既定 `*` は Express 5 + globalPrefix で `/api/v1/*` となり、
+      // path-to-regexp v8 で解釈できず `Missing parameter name` を起こす
       forRoutes: [{ path: '*path', method: RequestMethod.ALL }],
     }),
     ConfigModule.forRoot({
