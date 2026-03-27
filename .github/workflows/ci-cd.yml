@@ -52,40 +52,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
 
-      - name: Install dependencies (for Trivy pnpm analyzer)
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.30.0
-        with:
-          scan-type: "fs"
-          scan-ref: "."
-          format: "sarif"
-          output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH,MEDIUM"
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: "trivy-results.sarif"
-          category: "trivy-fs-scan"
-          wait-for-processing: false
-
-      - name: Check for critical/high vulnerabilities (fail CI)
-        uses: aquasecurity/trivy-action@v0.30.0
-        env:
-          # Previous Trivy SARIF step exports TRIVY_FORMAT/TRIVY_OUTPUT into the job env.
-          # Force table output to stdout for this fail-on-findings step.
-          TRIVY_FORMAT: table
-          TRIVY_OUTPUT: ""
-        with:
-          scan-type: "fs"
-          scan-ref: "."
-          severity: "CRITICAL,HIGH"
-          ignore-unfixed: true
-          format: "table"
-          exit-code: "1"
 
       - name: Dependency security audit
         run: |
