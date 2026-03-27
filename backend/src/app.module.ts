@@ -137,6 +137,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // CORSはmain.tsで設定済みのため、CorsMiddlewareは削除
+    // Express 5 / path-to-regexp v8 では `*` 単独指定は例外になるため `*path` を使う
     consumer
       .apply(RequestIdMiddleware, SecurityMiddleware, CookieParserMiddleware)
       .forRoutes({ path: '*path', method: RequestMethod.ALL });
