@@ -125,9 +125,7 @@ export default function Home() {
 
   // 認証チェック
   useEffect(() => {
-    console.log('🔐 認証状態:', { isAuthenticated, initialized, hasToken: !!accessToken });
     if (initialized && !isAuthenticated) {
-      console.warn('⚠️ 未認証です。ログインページにリダイレクトします');
       router.push('/login');
     }
   }, [initialized, isAuthenticated, router, accessToken]);
@@ -136,7 +134,6 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       if (!isAuthenticated || !initialized) {
-        console.log('⏳ 認証初期化を待機中...');
         setLoading(false);
         return;
       }
@@ -145,23 +142,17 @@ export default function Home() {
       setError(null);
 
       try {
-        console.log('📡 API呼び出し開始...');
-
         // 猫データを取得
         const catListQuery: ApiQueryParams<'/cats', 'get'> = { limit: 1000 };
         const catsResponse = await apiClient.get('/cats', {
           query: catListQuery,
         });
 
-        console.log('🐱 猫データレスポンス:', catsResponse);
-
         if (!catsResponse.success) {
-          console.error('❌ 猫データ取得失敗:', catsResponse);
           throw new Error(catsResponse.error || '猫データの取得に失敗しました');
         }
 
         const fetchedCats = Array.isArray(catsResponse.data) ? catsResponse.data : [];
-        console.log(`✅ 猫データ取得成功: ${fetchedCats.length}件`);
         setCats(fetchedCats as Cat[]);
 
         // ケアスケジュールのサマリーを取得

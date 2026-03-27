@@ -45,8 +45,6 @@ export class PedigreeController {
     private readonly printSettingsService: PrintSettingsService,
   ) {}
 
-  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
-  @Public()
   @Post()
   @UseGuards(RoleGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -145,8 +143,6 @@ export class PedigreeController {
   }
 
   @Get("pedigree-id/:pedigreeId/pdf")
-  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
-  @Public()
   @ApiOperation({ summary: "血統書PDFを生成してダウンロード" })
   @ApiResponse({ status: HttpStatus.OK, description: "PDF生成成功", type: 'application/pdf' })
   @ApiResponse({
@@ -255,8 +251,6 @@ export class PedigreeController {
     return this.pedigreeService.getDescendants(id);
   }
 
-  // TODO: 本番リリース前に削除 - @Public()は開発環境専用
-  @Public()
   @Patch(":id")
   @UseGuards(RoleGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)

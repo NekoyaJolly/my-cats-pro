@@ -944,11 +944,7 @@ export default function BreedingPage() {
         onBirthDateChange={setBirthDate}
         onSubmit={handleBirthInfoSubmit}
         onDetailSubmit={() => {
-                console.log('詳細登録:', {
-                  birthPlan: selectedBirthPlan,
-                  birthCount,
-                  deathCount,
-                });
+                // 詳細登録ハンドラー（実装中）
               }}
         isLoading={updateBirthPlanMutation.isPending || createCatMutation.isPending}
       />

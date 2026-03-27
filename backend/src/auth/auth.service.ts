@@ -14,6 +14,7 @@ import { UserRole, User } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
 import { PrismaService } from "../prisma/prisma.service";
+import { EmailService } from "../email/email.service";
 
 import { LoginAttemptService, LoginAttemptData } from "./login-attempt.service";
 import { PasswordService } from "./password.service";
@@ -72,6 +73,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly passwordService: PasswordService,
     private readonly loginAttemptService: LoginAttemptService,
+    private readonly emailService: EmailService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<ValidatedUser | null> {
@@ -336,15 +338,14 @@ export class AuthService {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: メール送信実装
     // 開発環境ではコンソールにトークンを出力
     if (process.env.NODE_ENV !== 'production') {
       this.logger.log(`Password reset token for ${email}: ${resetToken}`);
       this.logger.log(`Reset URL: http://localhost:3000/reset-password?token=${resetToken}`);
     }
 
-    // 本番環境では、ここでメール送信サービスを呼び出す
-    // await this.mailService.sendPasswordResetEmail(user.email, resetToken);
+    // メール送信（RESEND_API_KEYが設定されていれば本番環境でも送信）
+    await this.emailService.sendPasswordResetEmail(user.email, resetToken);
 
     return {
       success: true,

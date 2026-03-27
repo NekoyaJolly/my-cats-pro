@@ -20,13 +20,16 @@ import { ActionButton } from '@/components/ActionButton';
 import {
   useGalleryEntries,
   useCreateGalleryEntry,
+  useUpdateGalleryEntry,
   useDeleteGalleryEntry,
   type GalleryEntry,
   type GalleryCategory,
+  type UpdateGalleryEntryDto,
 } from '@/lib/api/hooks/use-gallery';
 import { GalleryTabs } from './components/GalleryTabs';
 import { GalleryGrid } from './components/GalleryGrid';
 import { GalleryAddModal } from './components/GalleryAddModal';
+import { GalleryEditModal } from './components/GalleryEditModal';
 import { MediaLightbox } from './components/MediaLightbox';
 import { useGalleryTab, useGalleryPagination } from './hooks/useGalleryTab';
 
@@ -70,8 +73,15 @@ function GalleryContent() {
 
   const { mutate: createEntry, isPending: isCreating } =
     useCreateGalleryEntry();
+  const { mutate: updateEntry, isPending: isUpdating } =
+    useUpdateGalleryEntry();
   const { mutate: deleteEntry } =
     useDeleteGalleryEntry();
+
+  // 編集モーダル状態
+  const [editModalOpened, { open: openEditModal, close: closeEditModal }] =
+    useDisclosure(false);
+  const [selectedEntryForEdit, setSelectedEntryForEdit] = useState<GalleryEntry | null>(null);
 
   // 全カテゴリの件数取得（カウント用）
   const { data: kittenData } = useGalleryEntries('KITTEN', 1, 1);
@@ -96,8 +106,20 @@ function GalleryContent() {
   };
 
   const handleEditClick = (entry: GalleryEntry) => {
-    // TODO: 編集モーダルを実装
-    console.log('Edit entry:', entry.id);
+    setSelectedEntryForEdit(entry);
+    openEditModal();
+  };
+
+  const handleEditSubmit = (id: string, dto: UpdateGalleryEntryDto) => {
+    updateEntry(
+      { id, dto },
+      {
+        onSuccess: () => {
+          closeEditModal();
+          setSelectedEntryForEdit(null);
+        },
+      },
+    );
   };
 
   const handleDeleteClick = (entry: GalleryEntry) => {
@@ -168,6 +190,18 @@ function GalleryContent() {
         category={currentTab}
         onSubmit={handleAddSubmit}
         loading={isCreating}
+      />
+
+      {/* 編集モーダル */}
+      <GalleryEditModal
+        entry={selectedEntryForEdit}
+        opened={editModalOpened}
+        onClose={() => {
+          closeEditModal();
+          setSelectedEntryForEdit(null);
+        }}
+        onSubmit={handleEditSubmit}
+        loading={isUpdating}
       />
 
       {/* ライトボックス */}

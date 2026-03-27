@@ -327,15 +327,8 @@ function deleteCookie(name: string): void {
 /**
  * Set authentication tokens
  * 
- * ⚠️ SECURITY WARNING: Current implementation stores tokens in localStorage
- * which is vulnerable to XSS attacks. This is a known security issue that needs
- * to be addressed.
- * 
- * TODO (P1 - High Priority):
- * - Migrate to HttpOnly cookies for refresh tokens
- * - Consider HttpOnly cookies for access tokens
- * - Remove localStorage storage completely
- * - See: docs/IMPROVEMENT_ACTION_PLAN.md for migration steps
+ * トークンは Cookie のみに保存します。
+ * localStorage への保存は XSS 脆弱性のため廃止しました。
  * 
  * @param access - Access token
  * @param refresh - Optional refresh token
@@ -349,21 +342,15 @@ export function setTokens(access: string | null, refresh?: string | null): void 
 
   if (typeof window !== 'undefined') {
     if (access) {
-      // TODO: Remove localStorage storage in favor of HttpOnly cookies
-      localStorage.setItem('accessToken', access);
       setCookie('accessToken', access, 7);
     } else {
-      localStorage.removeItem('accessToken');
       deleteCookie('accessToken');
     }
 
     if (refresh !== undefined) {
       if (refresh) {
-        // TODO: Remove localStorage storage in favor of HttpOnly cookies
-        localStorage.setItem('refreshToken', refresh);
         setCookie('refreshToken', refresh, 7);
       } else {
-        localStorage.removeItem('refreshToken');
         deleteCookie('refreshToken');
       }
     }
@@ -372,14 +359,14 @@ export function setTokens(access: string | null, refresh?: string | null): void 
 
 export function getAccessToken(): string | null {
   if (!accessToken && typeof window !== 'undefined') {
-    accessToken = localStorage.getItem('accessToken') || getCookie('accessToken');
+    accessToken = getCookie('accessToken');
   }
   return accessToken;
 }
 
 export function getRefreshToken(): string | null {
   if (!refreshToken && typeof window !== 'undefined') {
-    refreshToken = localStorage.getItem('refreshToken') || getCookie('refreshToken');
+    refreshToken = getCookie('refreshToken');
   }
   return refreshToken;
 }
@@ -389,8 +376,9 @@ export function clearTokens(): void {
   refreshToken = null;
   
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    // localStorageの残留トークンもクリア（移行期間の互換性のため）
+    try { localStorage.removeItem('accessToken'); } catch (_) {}
+    try { localStorage.removeItem('refreshToken'); } catch (_) {}
     deleteCookie('accessToken');
     deleteCookie('refreshToken');
   }

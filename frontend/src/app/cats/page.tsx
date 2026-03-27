@@ -66,11 +66,8 @@ export default function CatsPage() {
         openEditModal();
       }
     },
-    duplicate: async (cat) => {
-      if (cat) {
-        // 複製ロジック（後で実装）
-        console.log('Duplicate cat:', cat);
-      }
+    duplicate: async (_cat) => {
+      // 複製機能は未実装
     },
   });
 
@@ -303,8 +300,7 @@ export default function CatsPage() {
         break;
 
       case 'duplicate':
-        // 複製ロジック（後で実装）
-        console.log('Duplicate:', cat);
+        // 複製機能は未実装
         break;
 
       default:

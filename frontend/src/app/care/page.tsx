@@ -429,12 +429,26 @@ export default function CarePage() {
       return;
     }
 
-    // TODO: スケジュールバリデーションを追加
+    // スケジュールの開始日バリデーション
+    if (createForm.schedule?.startDate) {
+      const startDate = dayjs(createForm.schedule.startDate);
+      if (!startDate.isValid()) {
+        setCreateError('開始日の形式が正しくありません。');
+        return;
+      }
+    }
+
+    // 対象猫のバリデーション
+    const catIds = createForm.selectedCatIds.length > 0
+      ? createForm.selectedCatIds
+      : filteredCats.map(cat => cat.id);
+
+    if (catIds.length === 0) {
+      setCreateError('対象の猫がいません。猫を登録してから再度お試しください。');
+      return;
+    }
 
     setCreateError(null);
-    // TODO: 新しいAPIに合わせて送信処理を更新
-    // 仮に複数猫に対応したAPIを使用
-    const catIds = createForm.selectedCatIds.length > 0 ? createForm.selectedCatIds : filteredCats.map(cat => cat.id);
 
     const recurrenceRule = buildRecurrenceRule(createForm.schedule);
 
