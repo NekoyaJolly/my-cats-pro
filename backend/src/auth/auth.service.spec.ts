@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { AuthService } from './auth.service';
@@ -56,6 +57,12 @@ describe('AuthService', () => {
           useValue: {
             checkAndRecordAttempt: jest.fn(() => Promise.resolve({ allowed: true })),
             clearFailedAttempts: jest.fn(() => Promise.resolve()),
+          },
+        },
+        {
+          provide: EmailService,
+          useValue: {
+            sendPasswordResetEmail: jest.fn(() => Promise.resolve()),
           },
         },
       ],
