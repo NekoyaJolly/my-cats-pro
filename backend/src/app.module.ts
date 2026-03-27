@@ -1,4 +1,4 @@
-import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
+import { Module, MiddlewareConsumer, NestModule, RequestMethod } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { EventEmitterModule } from "@nestjs/event-emitter";
@@ -139,6 +139,6 @@ export class AppModule implements NestModule {
     // CORSはmain.tsで設定済みのため、CorsMiddlewareは削除
     consumer
       .apply(RequestIdMiddleware, SecurityMiddleware, CookieParserMiddleware)
-      .forRoutes('*');
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }
