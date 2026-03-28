@@ -1,4 +1,4 @@
-import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
+import { Module, MiddlewareConsumer, NestModule, RequestMethod } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { EventEmitterModule } from "@nestjs/event-emitter";
@@ -78,6 +78,9 @@ const sanitizeLevel = (value: unknown): LogLevel => {
           level: (label) => ({ level: sanitizeLevel(label) }),
         },
       },
+      // nestjs-pino の既定 `*` は Express 5 + globalPrefix で `/api/v1/*` となり、
+      // path-to-regexp v8 で解釈できず `Missing parameter name` を起こす
+      forRoutes: [{ path: '*path', method: RequestMethod.ALL }],
     }),
     ConfigModule.forRoot({
       isGlobal: true,
@@ -137,8 +140,9 @@ const sanitizeLevel = (value: unknown): LogLevel => {
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // CORSはmain.tsで設定済みのため、CorsMiddlewareは削除
+    // Express 5 / path-to-regexp v8 では `*` 単独指定は例外になるため `*path` を使う
     consumer
       .apply(RequestIdMiddleware, SecurityMiddleware, CookieParserMiddleware)
-      .forRoutes('*');
+      .forRoutes({ path: '*path', method: RequestMethod.ALL });
   }
 }
