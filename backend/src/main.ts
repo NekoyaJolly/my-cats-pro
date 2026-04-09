@@ -8,7 +8,7 @@ import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import cookieParser from 'cookie-parser';
 import { config as loadEnv } from 'dotenv';
-import { json, urlencoded, Request, Response, NextFunction } from 'express';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { Logger as PinoLogger } from 'nestjs-pino';
 
@@ -157,19 +157,6 @@ async function bootstrap() {
 
     // Cookie parser (for refresh token, etc.)
     app.use(cookieParser());
-
-    // Debug middleware for pregnancy-checks (development only)
-    if (process.env.NODE_ENV !== 'production') {
-      app.use('/api/v1/breeding/pregnancy-checks', (req: Request, res: Response, next: NextFunction) => {
-        if (req.method === 'POST') {
-          const body = req.body as Record<string, unknown>;
-          console.log('[DEBUG MIDDLEWARE] Raw request body:', JSON.stringify(body, null, 2));
-          console.log('[DEBUG MIDDLEWARE] motherId type:', typeof body?.motherId, 'value:', body?.motherId);
-          console.log('[DEBUG MIDDLEWARE] fatherId type:', typeof body?.fatherId, 'value:', body?.fatherId);
-        }
-        next();
-      });
-    }
 
     // Global validation pipe
     app.useGlobalPipes(

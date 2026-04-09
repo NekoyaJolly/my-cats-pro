@@ -172,7 +172,9 @@ export function useGalleryEntries(
       params.append('page', String(page));
       params.append('limit', String(limit));
 
-      const res = await fetch(`${apiBaseUrl}/gallery?${params.toString()}`);
+      const res = await fetch(`${apiBaseUrl}/gallery?${params.toString()}`, {
+        credentials: 'include',
+      });
       if (!res.ok) {
         const message = await extractErrorMessage(
           res,
@@ -197,7 +199,9 @@ export function useGalleryEntry(id: string | null) {
     queryKey: galleryKeys.detail(id ?? ''),
     queryFn: async () => {
       if (!id) throw new Error('IDが必要です');
-      const res = await fetch(`${apiBaseUrl}/gallery/${id}`);
+      const res = await fetch(`${apiBaseUrl}/gallery/${id}`, {
+        credentials: 'include',
+      });
       if (!res.ok) {
         const message = await extractErrorMessage(
           res,
@@ -222,6 +226,7 @@ export function useCreateGalleryEntry() {
       const res = await fetch(`${apiBaseUrl}/gallery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(dto),
       });
       if (!res.ok) {
@@ -259,6 +264,7 @@ export function useBulkCreateGalleryEntries() {
       const res = await fetch(`${apiBaseUrl}/gallery/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(entries),
       });
       if (!res.ok) {
@@ -310,6 +316,7 @@ export function useUpdateGalleryEntry() {
       const res = await fetch(`${apiBaseUrl}/gallery/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(dto),
       });
       if (!res.ok) {
@@ -346,6 +353,7 @@ export function useDeleteGalleryEntry() {
     mutationFn: async (id: string) => {
       const res = await fetch(`${apiBaseUrl}/gallery/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!res.ok) {
         const message = await extractErrorMessage(res, '削除に失敗しました');
@@ -388,6 +396,7 @@ export function useAddGalleryMedia() {
       const res = await fetch(`${apiBaseUrl}/gallery/${entryId}/media`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(media),
       });
       if (!res.ok) {
@@ -428,6 +437,7 @@ export function useDeleteGalleryMedia() {
     mutationFn: async (mediaId: string) => {
       const res = await fetch(`${apiBaseUrl}/gallery/media/${mediaId}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!res.ok) {
         const message = await extractErrorMessage(
@@ -476,6 +486,7 @@ export function useReorderGalleryMedia() {
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ mediaIds }),
         }
       );

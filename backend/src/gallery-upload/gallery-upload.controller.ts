@@ -6,8 +6,11 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 import { GenerateUploadUrlDto, ConfirmUploadDto } from './dto';
 import { GalleryUploadService } from './gallery-upload.service';
@@ -17,6 +20,8 @@ import { GalleryUploadService } from './gallery-upload.service';
  * Signed URL 方式でクライアントから直接 GCS へアップロードを行う
  */
 @ApiTags('Gallery Upload')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('gallery/upload')
 export class GalleryUploadController {
   constructor(private readonly uploadService: GalleryUploadService) {}

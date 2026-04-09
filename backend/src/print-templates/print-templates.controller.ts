@@ -9,7 +9,11 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
+
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 import {
   CreatePrintTemplateDto,
@@ -21,6 +25,8 @@ import {
 } from './dto';
 import { PrintTemplatesService } from './print-templates.service';
 
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('print-templates')
 export class PrintTemplatesController {
   constructor(private readonly service: PrintTemplatesService) { }

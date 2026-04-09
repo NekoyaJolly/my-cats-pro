@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Card,
   Text,
@@ -25,6 +26,7 @@ import type { Cat } from '@/lib/api/hooks/use-cats';
 import { GenderBadge } from '@/components/GenderBadge';
 import { notifications } from '@mantine/notifications';
 import { calculateAgeInDays } from '../utils';
+import { SaleInfoModal, type SaleInfo } from './SaleInfoModal';
 
 /** 出荷準備対象となる体重閾値（グラム） */
 const SHIPPING_WEIGHT_THRESHOLD = 500;
@@ -160,6 +162,7 @@ interface KittenShippingRowProps {
 }
 
 function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
+  const [saleModalOpened, setSaleModalOpened] = useState(false);
   const { data: weightData, isLoading: isWeightLoading } = useGetWeightRecords({
     catId: kitten.id,
     limit: 1,
@@ -171,14 +174,11 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
   const latestWeight = weightData?.data?.[0]?.weight ?? null;
   const isAboveThreshold = latestWeight !== null && latestWeight >= SHIPPING_WEIGHT_THRESHOLD;
 
-  // 500g未満の場合は表示しない
   if (!isWeightLoading && !isAboveThreshold) {
     return null;
   }
 
-  const handleSetDisposition = (disposition: DispositionType) => {
-    // TODO: 将来的には、SALEの場合はモーダルを開いて購入者情報を入力させる
-    // 現在は仮データで作成し、後で編集する想定
+  const submitDisposition = (disposition: DispositionType, saleInfo?: SaleInfo) => {
     createDispositionMutation.mutate(
       {
         birthRecordId: kitten.birthPlanId,
@@ -189,11 +189,11 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
         ...(disposition === 'TRAINING' && {
           trainingStartDate: new Date().toISOString().split('T')[0],
         }),
-        ...(disposition === 'SALE' && {
+        ...(disposition === 'SALE' && saleInfo && {
           saleInfo: {
-            buyer: '',
-            price: 0,
-            saleDate: new Date().toISOString().split('T')[0],
+            buyer: saleInfo.buyer,
+            price: saleInfo.price,
+            saleDate: saleInfo.saleDate,
           },
         }),
         ...(disposition === 'DECEASED' && {
@@ -202,6 +202,7 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
       },
       {
         onSuccess: () => {
+          setSaleModalOpened(false);
           notifications.show({
             title: '行先を登録しました',
             message: `${kitten.name}の行先を登録しました`,
@@ -210,17 +211,28 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
           onRefetch();
         },
         onError: (error) => {
-          // 行先登録に失敗した場合はユーザーにエラーを通知する
           notifications.show({
             title: '行先の登録に失敗しました',
-            message: error instanceof Error 
-              ? `エラー: ${error.message}` 
+            message: error instanceof Error
+              ? `エラー: ${error.message}`
               : '行先の登録中にエラーが発生しました。時間をおいて再度お試しください。',
             color: 'red',
           });
         },
       }
     );
+  };
+
+  const handleSetDisposition = (disposition: DispositionType) => {
+    if (disposition === 'SALE') {
+      setSaleModalOpened(true);
+      return;
+    }
+    submitDisposition(disposition);
+  };
+
+  const handleSaleConfirm = (saleInfo: SaleInfo) => {
+    submitDisposition('SALE', saleInfo);
   };
 
   return (
@@ -283,6 +295,13 @@ function KittenShippingRow({ kitten, onRefetch }: KittenShippingRowProps) {
           />
         </Group>
       </Table.Td>
+      <SaleInfoModal
+        opened={saleModalOpened}
+        kittenName={kitten.name}
+        onClose={() => setSaleModalOpened(false)}
+        onConfirm={handleSaleConfirm}
+        loading={createDispositionMutation.isPending}
+      />
     </Table.Tr>
   );
 }

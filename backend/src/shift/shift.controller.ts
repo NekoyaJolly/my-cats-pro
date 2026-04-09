@@ -9,8 +9,11 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/dto/api-response.dto';
 import { ShiftResponseDto, CalendarShiftEvent } from '../common/types/shift.types';
 
@@ -19,6 +22,8 @@ import { GetShiftsQueryDto } from './dto/get-shifts-query.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { ShiftService } from './shift.service';
 
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('shifts')
 export class ShiftController {
   constructor(private readonly shiftService: ShiftService) {}

@@ -66,8 +66,10 @@ export default function CatsPage() {
         openEditModal();
       }
     },
-    duplicate: async (_cat) => {
-      // 複製機能は未実装
+    duplicate: async (cat) => {
+      if (cat) {
+        router.push(`/cats/new?copyFrom=${cat.id}`);
+      }
     },
   });
 
@@ -300,7 +302,7 @@ export default function CatsPage() {
         break;
 
       case 'duplicate':
-        // 複製機能は未実装
+        router.push(`/cats/new?copyFrom=${cat.id}`);
         break;
 
       default:

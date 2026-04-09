@@ -26,8 +26,6 @@ import { Response } from 'express';
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RoleGuard } from "../auth/role.guard";
 import { Roles } from "../auth/roles.decorator";
-import { Public } from "../common/decorators/public.decorator";
-
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
 import { PedigreePdfService } from "./pdf/pedigree-pdf.service";
 import { PrintSettingsService, PositionsConfig } from "./pdf/print-settings.service";
@@ -114,7 +112,6 @@ export class PedigreeController {
   // ===== 印刷設定 API（静的ルートなので :id より先に定義） =====
 
   @Get("print-settings")
-  @Public()
   @ApiOperation({ summary: "印刷設定を取得" })
   @ApiResponse({ status: HttpStatus.OK, description: "現在の印刷設定" })
   async getPrintSettings() {
@@ -122,7 +119,6 @@ export class PedigreeController {
   }
 
   @Patch("print-settings")
-  @Public()
   @ApiOperation({ summary: "印刷設定を更新" })
   @ApiResponse({ status: HttpStatus.OK, description: "更新後の印刷設定" })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "無効な設定データです" })
@@ -135,7 +131,6 @@ export class PedigreeController {
   }
 
   @Post("print-settings/reset")
-  @Public()
   @ApiOperation({ summary: "印刷設定をデフォルトにリセット" })
   @ApiResponse({ status: HttpStatus.OK, description: "リセット後の印刷設定" })
   async resetPrintSettings() {

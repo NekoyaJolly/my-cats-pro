@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +17,10 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 import {
   CreateGalleryEntryDto,
@@ -32,6 +36,8 @@ import { GalleryService } from './gallery.service';
  * ギャラリーエントリのCRUD APIを提供
  */
 @ApiTags('Gallery')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('gallery')
 export class GalleryController {
   constructor(private readonly galleryService: GalleryService) {}

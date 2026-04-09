@@ -85,7 +85,15 @@ frontend/e2e/.auth/
 # Temporary files
 *.tmp
 *.temp
+*.bak
 tmp/
+
+# AI ツール生成物（Repomix ダンプ等）
+repomix-output*.md
+dist_notebook/
+
+# Playwright MCP スクリーンショット
+.playwright-mcp/
 
 # Database files
 *.db

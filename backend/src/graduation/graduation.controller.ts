@@ -8,6 +8,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,12 +16,17 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 import { TransferCatDto } from './dto';
 import { GraduationService } from './graduation.service';
 
 @ApiTags('Graduation')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('graduations')
 export class GraduationController {
   constructor(private readonly graduationService: GraduationService) {}

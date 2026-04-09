@@ -29,7 +29,7 @@ function toUserRole(val: string): RequestUser["role"] {
 }
 
 
-import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_MAX_AGE_MS, getRefreshCookieSameSite, isSecureEnv } from './auth.constants';
+import { ACCESS_COOKIE_NAME, ACCESS_COOKIE_MAX_AGE_MS, REFRESH_COOKIE_NAME, REFRESH_COOKIE_MAX_AGE_MS, getRefreshCookieSameSite, isSecureEnv } from './auth.constants';
 import { AuthService } from "./auth.service";
 import type { RequestUser } from "./auth.types";
 import { ChangePasswordDto } from "./dto/change-password.dto";
@@ -73,6 +73,7 @@ export class AuthController {
       firstName: userRaw.firstName ?? undefined,
       lastName: userRaw.lastName ?? undefined,
     };
+    this.setAccessCookie(res, result.data.access_token);
     const storedRefreshToken = await this.auth.getStoredRefreshToken(userRaw.id);
     if (storedRefreshToken) {
       this.setRefreshCookie(res, storedRefreshToken);
@@ -89,6 +90,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.auth.register(dto.email, dto.password);
+    if (result.data.access_token) {
+      this.setAccessCookie(res, result.data.access_token);
+    }
     if (result.data.refresh_token) {
       this.setRefreshCookie(res, result.data.refresh_token);
     }
@@ -158,6 +162,7 @@ export class AuthController {
       firstName: user.firstName ?? undefined,
       lastName: user.lastName ?? undefined,
     };
+    this.setAccessCookie(res, result.access_token);
     this.setRefreshCookie(res, result.refresh_token);
     return { success: true, data: { access_token: result.access_token, user: requestUser } };
   }
@@ -168,8 +173,7 @@ export class AuthController {
   @ApiOperation({ summary: "ログアウト（リフレッシュトークン削除）" })
   @ApiResponse({ status: HttpStatus.OK })
   logout(@GetUser() user: RequestUser | undefined, @Res({ passthrough: true }) res: Response) {
-    // Cookie 無効化
-    res.cookie(REFRESH_COOKIE_NAME, '', { httpOnly: true, secure: isSecureEnv(), sameSite: getRefreshCookieSameSite(), path: '/', maxAge: 0 });
+    this.clearAuthCookies(res);
     return this.auth.logout(user!.userId);
   }
 
@@ -188,6 +192,16 @@ export class AuthController {
     return typeof value === 'string' ? value : undefined;
   }
 
+  private setAccessCookie(res: Response, token: string) {
+    res.cookie(ACCESS_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: isSecureEnv(),
+      sameSite: getRefreshCookieSameSite(),
+      path: '/',
+      maxAge: ACCESS_COOKIE_MAX_AGE_MS,
+    });
+  }
+
   private setRefreshCookie(res: Response, token: string) {
     res.cookie(REFRESH_COOKIE_NAME, token, {
       httpOnly: true,
@@ -196,6 +210,13 @@ export class AuthController {
       path: '/',
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     });
+  }
+
+  private clearAuthCookies(res: Response) {
+    const sameSite = getRefreshCookieSameSite();
+    const opts = { httpOnly: true, secure: isSecureEnv(), sameSite, path: '/', maxAge: 0 } as const;
+    res.cookie(ACCESS_COOKIE_NAME, '', opts);
+    res.cookie(REFRESH_COOKIE_NAME, '', opts);
   }
 
 }

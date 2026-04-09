@@ -162,8 +162,8 @@ export default function Home() {
             const schedules = careResponse.data as CareSchedule[];
             setCareSummary({
               total: schedules.length,
-              completed: schedules.filter((schedule) => schedule.status === 'completed').length,
-              pending: schedules.filter((schedule) => schedule.status !== 'completed').length,
+              completed: schedules.filter((schedule) => schedule.status === 'COMPLETED').length,
+              pending: schedules.filter((schedule) => schedule.status !== 'COMPLETED').length,
             });
           }
         } catch (careError) {
@@ -362,13 +362,11 @@ export default function Home() {
         { id: 'care-medical', title: '医療記録', icon: <IconStethoscope size={18} />, href: '/care' },
       ] : card.id === 'kittens' ? [
         { id: 'kittens-list', title: '一覧', icon: <IconList size={18} />, href: '/kittens' },
-        { id: 'kittens-new', title: '作成', icon: <IconPlus size={18} />, href: '/kittens/new' },
       ] : card.id === 'pedigrees' ? [
         { id: 'pedigrees-list', title: '一覧', icon: <IconList size={18} />, href: '/pedigrees' },
         { id: 'pedigrees-new', title: '作成', icon: <IconPlus size={18} />, href: '/pedigrees/new' },
       ] : card.id === 'medical-records' ? [
         { id: 'medical-list', title: '一覧', icon: <IconList size={18} />, href: '/medical-records' },
-        { id: 'medical-new', title: '作成', icon: <IconPlus size={18} />, href: '/medical-records/new' },
       ] : undefined,
     }));
 

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   Container,
@@ -16,7 +16,7 @@ import { TextareaWithFloatingLabel } from '@/components/ui/TextareaWithFloatingL
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus } from '@tabler/icons-react';
-import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
+import { useCreateCat, useGetCat, type Cat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
 import { useGetCoatColors } from '@/lib/api/hooks/use-coat-colors';
 import { useBreedMasterData, useCoatColorMasterData } from '@/lib/api/hooks/use-master-data';
@@ -31,6 +31,8 @@ import { SelectWithFloatingLabel } from '@/components/ui/SelectWithFloatingLabel
 
 export default function CatRegistrationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const copyFromId = searchParams.get('copyFrom');
   const [activeTab, setActiveTab] = useState<string | null>('register');
   const { setPageHeader } = usePageHeader();
   const createCat = useCreateCat();
@@ -72,6 +74,24 @@ export default function CatRegistrationPage() {
       tagIds: [],
     },
   });
+
+  const { data: sourceCatData } = useGetCat(copyFromId ?? '', { enabled: !!copyFromId });
+  useEffect(() => {
+    if (!sourceCatData?.data) return;
+    const src = sourceCatData.data as Cat;
+    reset({
+      name: `${src.name ?? ''}（コピー）`,
+      gender: src.gender,
+      birthDate: src.birthDate ?? '',
+      breedId: src.breedId ?? undefined,
+      coatColorId: src.coatColorId ?? undefined,
+      microchipNumber: undefined,
+      registrationId: undefined,
+      description: src.description ?? undefined,
+      isInHouse: src.isInHouse ?? true,
+      tagIds: src.tags?.map(t => t.tag.id) ?? [],
+    });
+  }, [sourceCatData, reset]);
 
   const onSubmit = async (values: CatFormValues) => {
     const payload: CreateCatRequest = {

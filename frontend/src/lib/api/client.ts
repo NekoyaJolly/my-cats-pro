@@ -285,53 +285,19 @@ function buildRequestUrl<Method extends HttpMethod, PathKey extends FilterPathsB
 
 /**
  * トークン管理
+ *
+ * アクセストークン・リフレッシュトークンはバックエンドが HttpOnly Cookie で
+ * セットするため、フロントエンドからの Cookie 操作は不要。
+ * メモリキャッシュは Authorization ヘッダー付与（レガシー互換）のために保持する。
  */
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
 
 /**
- * Cookie に値を設定
- */
-function setCookie(name: string, value: string, days = 7): void {
-  if (typeof document === 'undefined') return;
-  
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-}
-
-/**
- * Cookie から値を取得
- */
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  
-  const nameEQ = name + '=';
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-}
-
-/**
- * Cookie を削除
- */
-function deleteCookie(name: string): void {
-  if (typeof document === 'undefined') return;
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
-}
-
-/**
- * Set authentication tokens
- * 
- * トークンは Cookie のみに保存します。
- * localStorage への保存は XSS 脆弱性のため廃止しました。
- * 
- * @param access - Access token
- * @param refresh - Optional refresh token
+ * Set authentication tokens (メモリキャッシュのみ)
+ *
+ * HttpOnly Cookie はバックエンドのレスポンスで自動セットされるため、
+ * フロントエンドでは body に含まれるトークンをメモリに保持するだけで良い。
  */
 export function setTokens(access: string | null, refresh?: string | null): void {
   accessToken = access ?? null;
@@ -341,46 +307,27 @@ export function setTokens(access: string | null, refresh?: string | null): void 
   }
 
   if (typeof window !== 'undefined') {
-    if (access) {
-      setCookie('accessToken', access, 7);
-    } else {
-      deleteCookie('accessToken');
-    }
-
-    if (refresh !== undefined) {
-      if (refresh) {
-        setCookie('refreshToken', refresh, 7);
-      } else {
-        deleteCookie('refreshToken');
-      }
-    }
+    // 移行期間の互換性: localStorage の残留トークンをクリア
+    try { localStorage.removeItem('accessToken'); } catch { /* 無視 */ }
+    try { localStorage.removeItem('refreshToken'); } catch { /* 無視 */ }
   }
 }
 
 export function getAccessToken(): string | null {
-  if (!accessToken && typeof window !== 'undefined') {
-    accessToken = getCookie('accessToken');
-  }
   return accessToken;
 }
 
 export function getRefreshToken(): string | null {
-  if (!refreshToken && typeof window !== 'undefined') {
-    refreshToken = getCookie('refreshToken');
-  }
   return refreshToken;
 }
 
 export function clearTokens(): void {
   accessToken = null;
   refreshToken = null;
-  
+
   if (typeof window !== 'undefined') {
-    // localStorageの残留トークンもクリア（移行期間の互換性のため）
-    try { localStorage.removeItem('accessToken'); } catch { /* localStorage未対応環境では無視 */ }
-    try { localStorage.removeItem('refreshToken'); } catch { /* localStorage未対応環境では無視 */ }
-    deleteCookie('accessToken');
-    deleteCookie('refreshToken');
+    try { localStorage.removeItem('accessToken'); } catch { /* 無視 */ }
+    try { localStorage.removeItem('refreshToken'); } catch { /* 無視 */ }
   }
 }
 

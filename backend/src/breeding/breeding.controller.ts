@@ -26,7 +26,7 @@ import { BreedingService } from "./breeding.service";
 import {
   BreedingQueryDto,
   CreateBreedingDto,
-  // UpdateBreedingDto, // Unused - keeping import for future use
+  UpdateBreedingDto,
   CreateBreedingNgRuleDto,
   UpdateBreedingNgRuleDto,
   CreatePregnancyCheckDto,
@@ -113,12 +113,6 @@ export class BreedingController {
   }
 
   // Pregnancy Check endpoints
-  @Get("test")
-  @ApiOperation({ summary: "テスト" })
-  @ApiResponse({ status: HttpStatus.OK })
-  test() {
-    return { message: "test" };
-  }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -138,9 +132,6 @@ export class BreedingController {
     @Body() dto: CreatePregnancyCheckDto,
     @GetUser() user?: RequestUser,
   ) {
-    console.log('[DEBUG] createPregnancyCheck - Received DTO:', JSON.stringify(dto, null, 2));
-    console.log('[DEBUG] motherId type:', typeof dto.motherId, 'value:', dto.motherId);
-    console.log('[DEBUG] fatherId type:', typeof dto.fatherId, 'value:', dto.fatherId);
     return this.breedingService.createPregnancyCheck(dto, user?.userId);
   }
 
@@ -250,6 +241,8 @@ export class BreedingController {
     return this.breedingService.removeKittenDisposition(id);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post("birth-plans/:id/complete")
   @ApiOperation({ summary: "出産記録の完了" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -346,27 +339,25 @@ export class BreedingController {
     return this.breedingService.removeMatingCheck(id);
   }
 
-  // Parameterized routes for the main breeding resource.
-  // These are intentionally placed after static subpaths such as
-  // "pregnancy-checks" and "birth-plans" so that Express does not
-  // interpret those paths as an ":id" and cause 404s.
-  // @ApiBearerAuth()
-  // @UseGuards(JwtAuthGuard)
-  // @Patch(":id")
-  // @ApiOperation({ summary: "交配記録の更新" })
-  // @ApiResponse({ status: HttpStatus.OK })
-  // @ApiParam({ name: "id" })
-  // update(@Param("id") id: string, @Body() dto: UpdateBreedingDto) {
-  //   return this.breedingService.update(id, dto);
-  // }
+  // パラメータ化ルートは静的サブパス（pregnancy-checks, birth-plans 等）の
+  // 後に配置し、Express が ":id" として誤マッチするのを防ぐ
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch(":id")
+  @ApiOperation({ summary: "交配記録の更新" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  update(@Param("id") id: string, @Body() dto: UpdateBreedingDto) {
+    return this.breedingService.update(id, dto);
+  }
 
-  // @ApiBearerAuth()
-  // @UseGuards(JwtAuthGuard)
-  // @Delete(":id")
-  // @ApiOperation({ summary: "交配記録の削除" })
-  // @ApiResponse({ status: HttpStatus.OK })
-  // @ApiParam({ name: "id" })
-  // remove(@Param("id") id: string) {
-  //   return this.breedingService.remove(id);
-  // }
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete(":id")
+  @ApiOperation({ summary: "交配記録の削除" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  remove(@Param("id") id: string) {
+    return this.breedingService.remove(id);
+  }
 }

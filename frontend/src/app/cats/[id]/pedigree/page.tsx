@@ -1,47 +1,70 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
+  Alert,
   Box,
   Button,
   Card,
   Container,
-  Stack,
-  Title,
-  Text,
-  Flex,
   Grid,
+  Loader,
+  Stack,
+  Text,
+  Title,
+  Flex,
 } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react';
 
-// ダミーデータ
-const pedigreeData = {
-  id: '1',
-  name: 'レオ',
-  generation1: { // 親
-    father: { name: 'パパ猫', color: '茶トラ' },
-    mother: { name: 'ママ猫', color: '三毛' }
-  },
-  generation2: { // 祖父母
-    paternalGrandfather: { name: '祖父1', color: '茶トラ' },
-    paternalGrandmother: { name: '祖母1', color: '白' },
-    maternalGrandfather: { name: '祖父2', color: '黒' },
-    maternalGrandmother: { name: '祖母2', color: '三毛' }
-  },
-  generation3: { // 曾祖父母
-    ppgf: { name: '曾祖父1', color: '茶トラ' }, // paternal paternal grandfather
-    ppgm: { name: '曾祖母1', color: '白' },     // paternal paternal grandmother
-    pmgf: { name: '曾祖父2', color: '茶' },     // paternal maternal grandfather
-    pmgm: { name: '曾祖母2', color: '白' },     // paternal maternal grandmother
-    mpgf: { name: '曾祖父3', color: '黒' },     // maternal paternal grandfather
-    mpgm: { name: '曾祖母3', color: '灰' },     // maternal paternal grandmother
-    mmgf: { name: '曾祖父4', color: '三毛' },   // maternal maternal grandfather
-    mmgm: { name: '曾祖母4', color: '茶' }      // maternal maternal grandmother
-  }
+import { useGetCat } from '@/lib/api/hooks/use-cats';
+import { useGetPedigreeFamilyTree } from '@/lib/api/hooks/use-pedigrees';
+
+interface AncestorInfo {
+  name: string | null;
+  color: string | null;
+}
+
+interface PedigreeData {
+  catName?: string | null;
+  fatherCatName?: string | null;
+  fatherCoatColor?: string | null;
+  motherCatName?: string | null;
+  motherCoatColor?: string | null;
+  ffCatName?: string | null;
+  ffCatColor?: string | null;
+  fmCatName?: string | null;
+  fmCatColor?: string | null;
+  mfCatName?: string | null;
+  mfCatColor?: string | null;
+  mmCatName?: string | null;
+  mmCatColor?: string | null;
+  fffCatName?: string | null;
+  fffCatColor?: string | null;
+  ffmCatName?: string | null;
+  ffmCatColor?: string | null;
+  fmfCatName?: string | null;
+  fmfCatColor?: string | null;
+  fmmCatName?: string | null;
+  fmmCatColor?: string | null;
+  mffCatName?: string | null;
+  mffCatColor?: string | null;
+  mfmCatName?: string | null;
+  mfmCatColor?: string | null;
+  mmfCatName?: string | null;
+  mmfCatColor?: string | null;
+  mmmCatName?: string | null;
+  mmmCatColor?: string | null;
+}
+
+const LEVEL_COLORS: Record<number, string> = {
+  0: '#e3f2fd',
+  1: '#f3e5f5',
+  2: '#e8f5e8',
+  3: '#fff3e0',
 };
 
-const CatCard = ({ cat, level = 0 }: { cat: { name: string; color: string } | null; level?: number }) => {
-  if (!cat) {
+function CatCard({ cat, level = 0 }: { cat: AncestorInfo; level?: number }) {
+  if (!cat.name) {
     return (
       <Card shadow="sm" padding="sm" radius="md" withBorder style={{ minHeight: 60, opacity: 0.3 }}>
         <Text size="sm" c="dimmed">不明</Text>
@@ -49,39 +72,103 @@ const CatCard = ({ cat, level = 0 }: { cat: { name: string; color: string } | nu
     );
   }
 
-  const colors = {
-    0: '#e3f2fd', // 本人: ライトブルー
-    1: '#f3e5f5', // 親: ライトパープル
-    2: '#e8f5e8', // 祖父母: ライトグリーン
-    3: '#fff3e0'  // 曾祖父母: ライトオレンジ
-  };
-
   return (
     <Card
       shadow="sm"
       padding="sm"
       radius="md"
       withBorder
-      style={{
-        backgroundColor: colors[level as keyof typeof colors] || '#f5f5f5',
-        minHeight: 60
-      }}
+      style={{ backgroundColor: LEVEL_COLORS[level] ?? '#f5f5f5', minHeight: 60 }}
     >
       <Stack gap="xs">
         <Text fw={600} size="sm">{cat.name}</Text>
-        <Text size="xs" c="dimmed">{cat.color}</Text>
+        {cat.color && <Text size="xs" c="dimmed">{cat.color}</Text>}
       </Stack>
     </Card>
   );
-};
+}
+
+function PedigreeTree({ data }: { data: PedigreeData }) {
+  const parents: AncestorInfo[] = [
+    { name: data.fatherCatName ?? null, color: data.fatherCoatColor ?? null },
+    { name: data.motherCatName ?? null, color: data.motherCoatColor ?? null },
+  ];
+  const grandparents: AncestorInfo[] = [
+    { name: data.ffCatName ?? null, color: data.ffCatColor ?? null },
+    { name: data.fmCatName ?? null, color: data.fmCatColor ?? null },
+    { name: data.mfCatName ?? null, color: data.mfCatColor ?? null },
+    { name: data.mmCatName ?? null, color: data.mmCatColor ?? null },
+  ];
+  const greatGrandparents: AncestorInfo[] = [
+    { name: data.fffCatName ?? null, color: data.fffCatColor ?? null },
+    { name: data.ffmCatName ?? null, color: data.ffmCatColor ?? null },
+    { name: data.fmfCatName ?? null, color: data.fmfCatColor ?? null },
+    { name: data.fmmCatName ?? null, color: data.fmmCatColor ?? null },
+    { name: data.mffCatName ?? null, color: data.mffCatColor ?? null },
+    { name: data.mfmCatName ?? null, color: data.mfmCatColor ?? null },
+    { name: data.mmfCatName ?? null, color: data.mmfCatColor ?? null },
+    { name: data.mmmCatName ?? null, color: data.mmmCatColor ?? null },
+  ];
+
+  return (
+    <>
+      <Box style={{ overflowX: 'auto' }}>
+        <Grid style={{ minWidth: '1200px' }}>
+          <Grid.Col span={3}>
+            <Stack gap="md" style={{ height: '100%', justifyContent: 'center' }}>
+              <CatCard cat={{ name: data.catName ?? null, color: null }} level={0} />
+            </Stack>
+          </Grid.Col>
+          <Grid.Col span={3}>
+            <Stack gap="md" style={{ height: '100%' }}>
+              {parents.map((p, i) => <CatCard key={i} cat={p} level={1} />)}
+            </Stack>
+          </Grid.Col>
+          <Grid.Col span={3}>
+            <Stack gap="md" style={{ height: '100%' }}>
+              {grandparents.map((gp, i) => <CatCard key={i} cat={gp} level={2} />)}
+            </Stack>
+          </Grid.Col>
+          <Grid.Col span={3}>
+            <Stack gap="md" style={{ height: '100%' }}>
+              {greatGrandparents.map((ggp, i) => <CatCard key={i} cat={ggp} level={3} />)}
+            </Stack>
+          </Grid.Col>
+        </Grid>
+      </Box>
+
+      <Box mt="xl">
+        <Grid>
+          <Grid.Col span={3}><Text ta="center" fw={600} c="blue">本人</Text></Grid.Col>
+          <Grid.Col span={3}><Text ta="center" fw={600} c="purple">親（第1世代）</Text></Grid.Col>
+          <Grid.Col span={3}><Text ta="center" fw={600} c="green">祖父母（第2世代）</Text></Grid.Col>
+          <Grid.Col span={3}><Text ta="center" fw={600} c="orange">曾祖父母（第3世代）</Text></Grid.Col>
+        </Grid>
+      </Box>
+    </>
+  );
+}
 
 export default function PedigreePage() {
   const router = useRouter();
-  // const params = useParams();
+  const params = useParams();
+  const catId = params.id as string;
+
+  const { data: catData, isLoading: catLoading } = useGetCat(catId);
+  const cat = catData?.data as { name?: string; pedigreeId?: string | null } | undefined;
+  const pedigreeId = cat?.pedigreeId ?? '';
+
+  const { data: treeResponse, isLoading: treeLoading, error: treeError } = useGetPedigreeFamilyTree(
+    pedigreeId,
+    { enabled: !!pedigreeId },
+  );
+  const treeData = treeResponse as { data?: PedigreeData } | undefined;
+  const pedigree = treeData?.data;
+
+  const isLoading = catLoading || (!!pedigreeId && treeLoading);
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
-      {/* ヘッダー */}
       <Box
         style={{
           backgroundColor: 'var(--surface)',
@@ -104,82 +191,33 @@ export default function PedigreePage() {
       </Box>
 
       <Container size="xl" style={{ paddingTop: '2rem' }}>
-        <Title order={1} mb="lg" ta="center">
-          {pedigreeData.name}の血統表（4世代）
-        </Title>
+        {isLoading && (
+          <Flex justify="center" align="center" py="xl">
+            <Loader size="lg" />
+          </Flex>
+        )}
 
-        {/* 血統表グリッド */}
-        <Box style={{ overflowX: 'auto' }}>
-          <Grid style={{ minWidth: '1200px' }}>
-            {/* 第1列: 本人 */}
-            <Grid.Col span={3}>
-              <Stack gap="md" style={{ height: '100%', justifyContent: 'center' }}>
-                <CatCard cat={{ name: pedigreeData.name, color: '茶トラ' }} level={0} />
-              </Stack>
-            </Grid.Col>
+        {!isLoading && !pedigreeId && (
+          <Alert icon={<IconAlertCircle size={16} />} title="血統書未登録" color="yellow">
+            {cat?.name ?? 'この猫'}には血統書が登録されていません。
+            血統書を登録するには、猫の詳細ページから血統書を関連付けてください。
+          </Alert>
+        )}
 
-            {/* 第2列: 親 */}
-            <Grid.Col span={3}>
-              <Stack gap="md" style={{ height: '100%' }}>
-                <CatCard cat={pedigreeData.generation1.father} level={1} />
-                <CatCard cat={pedigreeData.generation1.mother} level={1} />
-              </Stack>
-            </Grid.Col>
+        {!isLoading && treeError && (
+          <Alert icon={<IconAlertCircle size={16} />} title="エラー" color="red">
+            血統データの取得に失敗しました。時間をおいて再度お試しください。
+          </Alert>
+        )}
 
-            {/* 第3列: 祖父母 */}
-            <Grid.Col span={3}>
-              <Stack gap="md" style={{ height: '100%' }}>
-                <CatCard cat={pedigreeData.generation2.paternalGrandfather} level={2} />
-                <CatCard cat={pedigreeData.generation2.paternalGrandmother} level={2} />
-                <CatCard cat={pedigreeData.generation2.maternalGrandfather} level={2} />
-                <CatCard cat={pedigreeData.generation2.maternalGrandmother} level={2} />
-              </Stack>
-            </Grid.Col>
-
-            {/* 第4列: 曾祖父母 */}
-            <Grid.Col span={3}>
-              <Stack gap="md" style={{ height: '100%' }}>
-                <CatCard cat={pedigreeData.generation3.ppgf} level={3} />
-                <CatCard cat={pedigreeData.generation3.ppgm} level={3} />
-                <CatCard cat={pedigreeData.generation3.pmgf} level={3} />
-                <CatCard cat={pedigreeData.generation3.pmgm} level={3} />
-                <CatCard cat={pedigreeData.generation3.mpgf} level={3} />
-                <CatCard cat={pedigreeData.generation3.mpgm} level={3} />
-                <CatCard cat={pedigreeData.generation3.mmgf} level={3} />
-                <CatCard cat={pedigreeData.generation3.mmgm} level={3} />
-              </Stack>
-            </Grid.Col>
-          </Grid>
-        </Box>
-
-        {/* 世代ラベル */}
-        <Box mt="xl">
-          <Grid>
-            <Grid.Col span={3}>
-              <Text ta="center" fw={600} c="blue">本人</Text>
-            </Grid.Col>
-            <Grid.Col span={3}>
-              <Text ta="center" fw={600} c="purple">親（第1世代）</Text>
-            </Grid.Col>
-            <Grid.Col span={3}>
-              <Text ta="center" fw={600} c="green">祖父母（第2世代）</Text>
-            </Grid.Col>
-            <Grid.Col span={3}>
-              <Text ta="center" fw={600} c="orange">曾祖父母（第3世代）</Text>
-            </Grid.Col>
-          </Grid>
-        </Box>
-
-        {/* 注意書き */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder mt="xl">
-          <Title order={3} mb="md">血統表について</Title>
-          <Stack gap="sm">
-            <Text size="sm">• この血統表は4世代（本人 + 親、祖父母、曾祖父母）を表示しています</Text>
-            <Text size="sm">• 各世代は色分けされており、世代が古くなるほど薄い色になります</Text>
-            <Text size="sm">• 不明な個体は「不明」と表示されます</Text>
-            <Text size="sm">• より詳細な血統情報が必要な場合は、個別にお問い合わせください</Text>
-          </Stack>
-        </Card>
+        {!isLoading && pedigree && (
+          <>
+            <Title order={1} mb="lg" ta="center">
+              {pedigree.catName ?? cat?.name ?? ''}の血統表（4世代）
+            </Title>
+            <PedigreeTree data={pedigree} />
+          </>
+        )}
       </Container>
     </Box>
   );

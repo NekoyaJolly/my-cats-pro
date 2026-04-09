@@ -62,6 +62,7 @@ export function useTransferCat() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
@@ -89,7 +90,8 @@ export function useGetGraduations(page = 1, limit = 50) {
     queryFn: async () => {
       const apiBaseUrl = getPublicApiBaseUrl();
       const response = await fetch(
-        `${apiBaseUrl}/graduations?page=${page}&limit=${limit}`
+        `${apiBaseUrl}/graduations?page=${page}&limit=${limit}`,
+        { credentials: 'include' }
       );
 
       if (!response.ok) {
@@ -112,7 +114,9 @@ export function useGetGraduationDetail(id: string | null) {
 
       const apiBaseUrl = getPublicApiBaseUrl();
 
-      const response = await fetch(`${apiBaseUrl}/graduations/${id}`);
+      const response = await fetch(`${apiBaseUrl}/graduations/${id}`, {
+        credentials: 'include',
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch graduation detail');
@@ -135,6 +139,7 @@ export function useCancelGraduation() {
       const apiBaseUrl = getPublicApiBaseUrl();
       const response = await fetch(`${apiBaseUrl}/graduations/${graduationId}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       if (!response.ok) {
