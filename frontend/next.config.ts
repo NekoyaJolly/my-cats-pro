@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   // Build configuration
-  generateEtags: false,
+  generateEtags: true,
   poweredByHeader: false,
   // Standalone output for production deployment
   output: 'standalone',
@@ -42,7 +42,14 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [
       '@mantine/core',
       '@mantine/hooks',
+      '@mantine/dates',
+      '@mantine/dropzone',
+      '@mantine/modals',
+      '@mantine/notifications',
+      '@mantine/form',
       '@tabler/icons-react',
+      'date-fns',
+      'dayjs',
     ],
   },
   // Turbopack 設定

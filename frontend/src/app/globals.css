@@ -86,7 +86,7 @@ body {
 
 body {
   color: var(--text-primary);
-  font-family: "Inter", "Noto Sans JP", "Segoe UI", sans-serif;
+  font-family: var(--font-inter), var(--font-noto-sans-jp), "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.5s ease, color 0.3s ease;
@@ -130,8 +130,6 @@ h1, h2, h3, h4, h5, h6 {
 .mantine-Paper-root,
 .mantine-Card-root {
   background: var(--glass-bg, var(--bg-surface)) !important;
-  backdrop-filter: blur(var(--glass-blur, 0px)) !important;
-  -webkit-backdrop-filter: blur(var(--glass-blur, 0px)) !important;
   border: 1px solid var(--glass-border, var(--border-subtle, transparent)) !important;
   box-shadow: var(--shadow-ethereal) !important;
   border-radius: var(--radius-base, 16px) !important;
@@ -143,9 +141,17 @@ h1, h2, h3, h4, h5, h6 {
 .mantine-AppShell-navbar,
 .mantine-AppShell-footer {
   background: var(--glass-bg, var(--bg-surface)) !important;
+  border-color: var(--glass-border, var(--border-subtle, transparent)) !important;
+}
+
+/* backdrop-filter はガラスエフェクト有効時のみ適用（GPU 負荷を軽減） */
+.glass-theme .mantine-Paper-root,
+.glass-theme .mantine-Card-root,
+.glass-theme .mantine-AppShell-header,
+.glass-theme .mantine-AppShell-navbar,
+.glass-theme .mantine-AppShell-footer {
   backdrop-filter: blur(var(--glass-blur, 0px)) !important;
   -webkit-backdrop-filter: blur(var(--glass-blur, 0px)) !important;
-  border-color: var(--glass-border, var(--border-subtle, transparent)) !important;
 }
 
 /* Responsive Layout Padding (Mobile First) */

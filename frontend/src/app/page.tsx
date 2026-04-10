@@ -130,7 +130,7 @@ export default function Home() {
     }
   }, [initialized, isAuthenticated, router, accessToken]);
 
-  // データ取得
+  // データ取得（並列リクエストでウォーターフォールを回避）
   useEffect(() => {
     const fetchData = async () => {
       if (!isAuthenticated || !initialized) {
@@ -142,11 +142,13 @@ export default function Home() {
       setError(null);
 
       try {
-        // 猫データを取得
-        const catListQuery: ApiQueryParams<'/cats', 'get'> = { limit: 1000 };
-        const catsResponse = await apiClient.get('/cats', {
-          query: catListQuery,
-        });
+        const catListQuery: ApiQueryParams<'/cats', 'get'> = { limit: 50 };
+
+        const [catsResponse, careResponse, breedingResponse] = await Promise.all([
+          apiClient.get('/cats', { query: catListQuery }),
+          apiClient.get('/care/schedules').catch(() => null),
+          apiClient.get('/breeding').catch(() => null),
+        ]);
 
         if (!catsResponse.success) {
           throw new Error(catsResponse.error || '猫データの取得に失敗しました');
@@ -155,39 +157,27 @@ export default function Home() {
         const fetchedCats = Array.isArray(catsResponse.data) ? catsResponse.data : [];
         setCats(fetchedCats as Cat[]);
 
-        // ケアスケジュールのサマリーを取得
-        try {
-          const careResponse = await apiClient.get('/care/schedules');
-          if (careResponse.success && Array.isArray(careResponse.data)) {
-            const schedules = careResponse.data as CareSchedule[];
-            setCareSummary({
-              total: schedules.length,
-              completed: schedules.filter((schedule) => schedule.status === 'COMPLETED').length,
-              pending: schedules.filter((schedule) => schedule.status !== 'COMPLETED').length,
-            });
-          }
-        } catch (careError) {
-          console.warn('⚠️ ケアスケジュールの取得に失敗しました:', careError);
+        if (careResponse?.success && Array.isArray(careResponse.data)) {
+          const schedules = careResponse.data as CareSchedule[];
+          setCareSummary({
+            total: schedules.length,
+            completed: schedules.filter((schedule) => schedule.status === 'COMPLETED').length,
+            pending: schedules.filter((schedule) => schedule.status !== 'COMPLETED').length,
+          });
         }
 
-        // 交配予定のサマリーを取得
-        try {
-          const breedingResponse = await apiClient.get('/breeding');
-          if (breedingResponse.success && Array.isArray(breedingResponse.data)) {
-            const schedules = breedingResponse.data as BreedingSchedule[];
-            const today = new Date().toISOString().split('T')[0];
-            setBreedingSummary({
-              total: schedules.length,
-              today: schedules.filter((schedule) => schedule.breedingDate?.startsWith(today) || schedule.date?.startsWith(today)).length,
-            });
-          }
-        } catch (breedingError) {
-          console.warn('⚠️ 交配予定の取得に失敗しました:', breedingError);
+        if (breedingResponse?.success && Array.isArray(breedingResponse.data)) {
+          const schedules = breedingResponse.data as BreedingSchedule[];
+          const today = new Date().toISOString().split('T')[0];
+          setBreedingSummary({
+            total: schedules.length,
+            today: schedules.filter((schedule) => schedule.breedingDate?.startsWith(today) || schedule.date?.startsWith(today)).length,
+          });
         }
 
       } catch (err) {
-        console.error('❌ データ取得エラー:', err);
-        setError(err instanceof Error ? err.message : 'データの取得に失敗しました');
+        const message = err instanceof Error ? err.message : 'データの取得に失敗しました';
+        setError(message);
         notifications.show({
           title: 'エラー',
           message: 'データの取得に失敗しました',

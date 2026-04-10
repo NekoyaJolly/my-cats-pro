@@ -1,9 +1,23 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import "@mantine/core/styles.css";
 import { Suspense } from "react";
 import { Providers } from "./providers";
 import { AppLayout } from "@/components/AppLayout";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-noto-sans-jp",
+  preload: false,
+});
 
 export const metadata: Metadata = {
   title: 'MyCats Pro',
@@ -57,7 +71,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className="font-sans antialiased">
+      <body className={`${inter.variable} ${notoSansJP.variable} font-sans antialiased`}>
         <Providers>
           <Suspense fallback={null}>
             <AppLayout>{children}</AppLayout>

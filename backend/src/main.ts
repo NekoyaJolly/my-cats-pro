@@ -6,6 +6,7 @@ import { NestFactory } from "@nestjs/core";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { config as loadEnv } from 'dotenv';
 import { json, urlencoded } from 'express';
@@ -87,6 +88,9 @@ async function bootstrap() {
         optionsSuccessStatus: 204,
       },
     });
+
+    // gzip/deflate 圧縮で転送量を削減（画像等バイナリは除外）
+    app.use(compression({ threshold: 1024 }));
 
     // Body parser limit を拡張（Base64画像対応：最大50MB）
     app.use(json({ limit: '50mb' }));
@@ -197,7 +201,7 @@ async function bootstrap() {
       });
     });
 
-    // Enhanced health check endpoint
+    // Enhanced health check endpoint（DI 経由の PrismaService を再利用し接続プールを浪費しない）
     app.getHttpAdapter().get("/health", async (req: unknown, res: { status: (code: number) => { json: (data: unknown) => void } }) => {
       const health: {
         success: boolean;
@@ -232,13 +236,15 @@ async function bootstrap() {
       };
 
       try {
-        // Database health check (if enabled)
         if (process.env.HEALTH_CHECK_DATABASE === "true") {
-          const { PrismaClient } = await import("@prisma/client");
-          const prisma = new PrismaClient();
-          await prisma.$queryRaw`SELECT 1`;
-          await prisma.$disconnect();
-          health.data.database = "ok";
+          const { PrismaService } = await import("./prisma/prisma.service");
+          const prisma = app.get(PrismaService);
+          const isHealthy = await prisma.healthCheck();
+          health.data.database = isHealthy ? "ok" : "error";
+          if (!isHealthy) {
+            health.success = false;
+            health.data.status = "error";
+          }
         }
       } catch (error) {
         health.success = false;

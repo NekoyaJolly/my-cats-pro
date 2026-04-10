@@ -29,9 +29,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const theme: MantineThemeOverride = {
     primaryColor: 'brand',
     colors: { brand },
-    fontFamily: 'Inter, "Noto Sans JP", "Segoe UI", sans-serif',
+    fontFamily: 'var(--font-inter), var(--font-noto-sans-jp), "Segoe UI", sans-serif',
     headings: {
-      fontFamily: 'Inter, "Noto Sans JP", "Segoe UI", sans-serif',
+      fontFamily: 'var(--font-inter), var(--font-noto-sans-jp), "Segoe UI", sans-serif',
       fontWeight: '700',
     },
     defaultRadius: 'md',
