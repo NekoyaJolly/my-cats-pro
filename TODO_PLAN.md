@@ -1,45 +1,79 @@
 # my-cats-pro 修正・実装計画
 
-## 1. 不要な機能の削除（優先度：高）
-本番環境で不要なデモ用ページ・コンポーネント、または公開すべきではないAPIを削除・制限します。
+## 1. 解決済み（2026-04-10 対応完了）
 
-### 1.1 デモ用コンポーネントの削除
-- `frontend/src/components/cards/CardSpreadDemo.tsx`
-- `frontend/src/components/dashboard/DialNavigationExample.tsx`
-- `frontend/src/components/common/UnifiedModalSectionsDemo.tsx`
-※ `DialWheel` は実際のダッシュボード設定で使われている可能性があるため保持を検討、使われていなければ削除。
+以下は対応済み。詳細はコミット `ede2392` を参照。
 
-### 1.2 本番環境で公開すべきでないAPIエンドポイントの制限
-- `backend/src/pedigree/pedigree.controller.ts` の `@Public()` 指定
-  - `// TODO: 本番リリース前に削除 - @Public()は開発環境専用` と記載されている部分を修正。
-  - `update` と `remove` メソッドの `@Public()` を削除し、認証・認可を正しく機能させる。
+- [x] 1.1 デモ用コンポーネントの削除（不要ファイル整理で対応）
+- [x] 1.2 `@Public()` の削除（pedigree print-settings）
+- [x] 2.4 HttpOnly Cookie 化（localStorage 依存解消）
+- [x] 2.5 メール送信（EmailService は実装済みで RESEND_API_KEY 設定時に動作）
+- [x] セキュリティ: 6コントローラーに JwtAuthGuard 追加
+- [x] テストエンドポイント削除、デバッグコード除去
+- [x] 交配記録の PATCH/DELETE API 有効化
+- [x] 猫の複製機能（copyFrom パラメータ方式）
+- [x] 子猫販売時の購入者情報モーダル（SaleInfoModal）
+- [x] 個体別血統表のダミーデータ → API 接続
+- [x] ダッシュボードのリンク切れ修正
+- [x] ケアサマリーの status 比較修正（COMPLETED）
 
-## 2. 未実装部分（プレースホルダー）の実装・補完（優先度：高〜中）
-「準備中」「今後実装」となっている部分を、要件に合わせて実装または適切なUIに置き換えます。
+## 2. 未実装・改善が必要な項目（優先度順）
 
-### 2.1 子猫管理ページ (`frontend/src/app/kittens/page.tsx`)
-現状は「今後実装予定」のテキストのみ。
-- **対応案**: すでに `frontend/src/components/kittens/` 以下にコンポーネント群（`KittenManagementModal`, `WeightRecordTable` など）が存在し、`breeding/page.tsx` からも利用されている。
-- `kittens/page.tsx` では、全子猫の一覧表示（`useGetCats` 等でフィルタリング）と、そこからの体重管理や処遇管理（`KittenManagementModal` の呼び出し）ができるような一覧画面を実装する。
+### 2.1 生体管理と血統書管理のドメイン連携（優先度：中）
 
-### 2.2 ギャラリー編集モーダル (`frontend/src/app/gallery/page.tsx`)
-- `handleEditClick` に `// TODO: 編集モーダルを実装` とある。
-- **対応案**: 既存の `GalleryAddModal` を拡張するか、新しく `GalleryEditModal` を作成し、タイトルやカテゴリの変更ができるようにする。
+現状、生体管理（cats）と血統書管理（pedigrees）は独立したドメインとして機能している。
+業務上、血統書が紐付く猫もいれば紐付かない猫もいるため、単純な1:1必須関連ではない。
 
-### 2.3 ケアページのスケジュールバリデーションとAPI連携 (`frontend/src/app/care/page.tsx`)
-- `// TODO: スケジュールバリデーションを追加`
-- `// TODO: 新しいAPIに合わせて送信処理を更新`
-- **対応案**: バリデーション（必須項目のチェックなど）を追加し、複数猫IDに対応したリクエスト送信処理を正しく実装する。
+**現状の課題:**
+- 猫の編集画面に `pedigreeId` を設定するUIがない
+- バックエンドの `UpdateCatDto` にも `pedigreeId` フィールドがない
+- 血統表ページ（`/cats/[id]/pedigree`）は `pedigreeId` が設定されている前提で動作する
 
-### 2.4 APIクライアントの localStorage 依存解消 (`frontend/src/lib/api/client.ts`)
-- `TODO (P1 - High Priority): Migrate to HttpOnly cookies`
-- **対応案**: 現状の `localStorage` への保存を削除し、すでに実装されている `setCookie` / `getCookie` のみに依存するように修正する。
+**設計方針（検討中）:**
+- 血統書側から猫を紐付ける方式（血統書編集画面に「対象の在舎猫」選択を追加）
+- 猫側から血統書を検索・紐付ける方式（猫詳細の血統タブに「血統書を関連付ける」ボタン）
+- 運用上の自然なタイミングで紐付ける（例: 子猫の出荷時に血統書番号を付与）
 
-### 2.5 メール送信のTODO (`backend/src/auth/auth.service.ts`)
-- パスワードリセットの `// TODO: メール送信実装`
-- **対応案**: すでに `EmailService` (`sendPasswordResetEmail`) が実装されているため、`auth.service.ts` で `EmailService` を注入し、本番環境でメール送信が実行されるようにする。
+### 2.2 子猫管理ページの実装（優先度：中）
+
+`frontend/src/app/kittens/page.tsx` は API 接続済みだが、ページネーションUIが未実装（固定50件取得）。
+`breeding/page.tsx` の子育て中タブと機能が重複する部分の整理が必要。
+
+### 2.3 ギャラリー編集モーダル（優先度：低）
+
+`frontend/src/app/gallery/page.tsx` のギャラリー編集機能。
+現状は作成・削除は可能だが、既存エントリの編集UIが不完全。
+
+### 2.4 ケアページのバリデーション強化（優先度：低）
+
+スケジュール作成時のバリデーション（必須項目チェック等）の追加。
+
+### 2.5 NG ペアリング世代制限（優先度：低）
+
+`GENERATION_LIMIT` ルールの実装。血統書データとの連携が必要なため、2.1 の解決後に着手。
+
+### 2.6 初回管理者セットアップのハイブリッド方式（優先度：中）
+
+2026-04-10: セキュリティリスクのあった `promote-to-superadmin-once` API と
+フロントの `/setup/first-superadmin` ページを削除済み。
+今後、配布を見据えて以下のハイブリッド方式を実装する。
+
+**設計方針:**
+- 環境変数 `ADMIN_EMAIL` が設定されている場合、アプリ起動時にそのメールアドレスで
+  登録されたユーザーを自動的に SUPER_ADMIN に昇格する（バックエンド起動時処理）
+- 環境変数が未設定の場合、フロントエンドで初回セットアップウィザードを表示し、
+  最初の管理者アカウントを作成する
+- SUPER_ADMIN / ADMIN の2段階ロールは維持する（マルチテナント機能で必要）
+- セットアップ完了後はウィザードを二度と表示しない（DB にフラグ or SUPER_ADMIN 存在チェック）
+
+**実装ステップ:**
+1. バックエンド: `ADMIN_EMAIL` 環境変数での自動昇格ロジック（AppModule の onModuleInit）
+2. フロントエンド: セットアップウィザード UI（メール・パスワード入力 → SUPER_ADMIN 作成）
+3. バックエンド: セットアップ専用 API（SUPER_ADMIN 0人の場合のみ受付、レート制限付き）
 
 ## 3. 次のアクション
-1. **フェーズ3** に進み、上記の修正を順番に実行する。
-2. 実行後、ローカルでビルドやテストが通るか確認する。
-3. 最後に `skill-creator` を用いて、この「未実装・不要機能の洗い出しと修正」プロセスを自動化・再現できるスキルを作成する。
+
+1. UIからのライフサイクルE2Eテストを実施（猫登録→交配→出産→出荷→血統書登録）
+2. テスト結果を踏まえてバグ修正
+3. 2.1 の生体管理・血統書連携の設計を確定し実装
+4. 2.6 の初回管理者セットアップのハイブリッド方式を実装
