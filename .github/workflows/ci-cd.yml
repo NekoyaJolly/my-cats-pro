@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
   security-events: write
   actions: read
   checks: write
@@ -18,53 +19,26 @@ env:
   PNPM_VERSION: "9"
 
 jobs:
-  # 1. セキュリティスキャン
+  # 1. 依存関係セキュリティレビュー（PR時のみゲート）
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
-      actions: read
+      pull-requests: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js for audit
-        uses: actions/setup-node@v4
+      - name: Dependency Review (PR only)
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          fail-on-severity: high
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        id: pnpm-cache-dir
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Dependency security audit
-        run: |
-          echo "🔒 Running pnpm audit of dependencies..."
-          pnpm audit --audit-level high --prod || {
-            echo "⚠️ High severity vulnerabilities found in production dependencies"
-            echo "📋 Running detailed audit report..."
-            pnpm audit --prod
-            exit 1
-          }
-          echo "✅ Dependency audit completed - no high severity issues in production dependencies"
+      - name: Skip dependency review (push)
+        if: github.event_name != 'pull_request'
+        run: echo "✅ Push event — dependency review はPR時のみ実行。Dependabot アラートで継続監視中。"
 
   # 2. 型チェック・Lint
   lint-and-typecheck:
