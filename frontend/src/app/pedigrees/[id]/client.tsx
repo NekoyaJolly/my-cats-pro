@@ -75,7 +75,7 @@ export default function PedigreeDetailClient() {
         const response = await apiRequest<PedigreeDetail>(`/pedigrees/${pedigreeId}`);
 
         if (!response.success) {
-          throw new Error(response.error || '血統書データの取得に失敗しました');
+          throw new Error(response.error || response.message || '血統書データの取得に失敗しました');
         }
 
         setPedigree(response.data ?? null);

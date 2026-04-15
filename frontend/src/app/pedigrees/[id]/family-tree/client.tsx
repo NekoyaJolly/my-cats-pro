@@ -60,7 +60,9 @@ export default function FamilyTreeClient() {
         );
 
         if (!response.success) {
-          throw new Error(response.error || '家系図データの取得に失敗しました');
+          throw new Error(
+            response.error || response.message || '家系図データの取得に失敗しました'
+          );
         }
 
         setFamilyTree(response.data ?? null);
