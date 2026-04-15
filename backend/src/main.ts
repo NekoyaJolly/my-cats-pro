@@ -89,7 +89,8 @@ async function bootstrap() {
             if (isAllowed) {
               callback(null, true);
             } else {
-              logger.warn(`開発環境で未許可のCORSオリジンを拒否しました: ${origin}`);
+              const safeOrigin = origin.replace(/[\r\n]/g, '');
+              logger.warn(`開発環境で未許可のCORSオリジンを拒否しました: ${safeOrigin}`);
               callback(new Error('CORSで許可されていないオリジンです'), false);
             }
           }
