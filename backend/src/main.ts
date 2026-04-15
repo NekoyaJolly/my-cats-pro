@@ -53,31 +53,38 @@ async function bootstrap() {
       bufferLogs: true,
       cors: {
         origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-          const allowedOrigins =
-            (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
-              ? (process.env.CORS_ORIGIN || '').split(',').map((o: string) => o.trim()).filter(Boolean)
-              : [
-                'http://localhost:3000',
-                'http://localhost:3002',
-                'http://localhost:3003',
-                'http://localhost:3005',
-              ];
-
-          if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') && (!process.env.CORS_ORIGIN || allowedOrigins.length === 0)) {
-            return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
+          // サーバー間リクエスト（origin なし）は常に許可
+          if (!origin) {
+            return callback(null, true);
           }
 
-          const isAllowed = allowedOrigins.some((allowedOrigin) => {
-            if (typeof allowedOrigin === 'string') {
-              return allowedOrigin === origin;
-            }
-            return false;
-          });
+          const isProdLike = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
 
-          if (isAllowed || !origin) {
-            callback(null, true);
+          if (isProdLike) {
+            const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((o: string) => o.trim()).filter(Boolean);
+
+            if (allowedOrigins.length === 0) {
+              return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
+            }
+
+            // CORS_ORIGIN に登録済みのドメイン、または Vercel プレビュードメインを許可
+            const isVercelPreview = /^https:\/\/my-cats-pro-frontend[\w-]*\.vercel\.app$/.test(origin);
+            const isAllowed = allowedOrigins.includes(origin) || isVercelPreview;
+
+            if (isAllowed) {
+              callback(null, true);
+            } else {
+              callback(new Error('Not allowed by CORS'), false);
+            }
           } else {
-            callback(new Error('Not allowed by CORS'), false);
+            // 開発環境: localhost を許可
+            const devOrigins = [
+              'http://localhost:3000',
+              'http://localhost:3002',
+              'http://localhost:3003',
+              'http://localhost:3005',
+            ];
+            callback(null, devOrigins.includes(origin));
           }
         },
         credentials: true,
