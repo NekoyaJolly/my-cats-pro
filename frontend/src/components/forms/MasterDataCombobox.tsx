@@ -5,6 +5,7 @@ import {
   ActionIcon,
   Combobox,
   Group,
+  Input,
   InputBase,
   Loader,
   ScrollArea,
@@ -12,7 +13,6 @@ import {
   useCombobox,
 } from '@mantine/core';
 import { IconHistory, IconSelector, IconX } from '@tabler/icons-react';
-import { FormField } from '@/components/forms/FormField';
 import type { MasterOption } from '@/lib/master-data/master-options';
 
 const DEFAULT_INPUT_SANITIZE_REGEX = /[^0-9a-zA-Z]/g;
@@ -178,7 +178,7 @@ export function MasterDataCombobox({
   const showHistory = (historyItems?.length ?? 0) > 0;
 
   return (
-    <FormField label={label} description={description} error={error} required={required}>
+    <Input.Wrapper label={label} description={description} error={error} required={required}>
       <Combobox store={combobox} onOptionSubmit={handleOptionSubmit} disabled={disabled} withinPortal={false}>
         <Combobox.Target>
           <InputBase
@@ -252,6 +252,6 @@ export function MasterDataCombobox({
           </ScrollArea.Autosize>
         </Combobox.Dropdown>
       </Combobox>
-    </FormField>
+    </Input.Wrapper>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
@@ -17,11 +17,10 @@ import {
   Box,
   Badge,
 } from '@mantine/core';
-import { useMediaQuery, useDisclosure } from '@mantine/hooks';
+import { useDisclosure } from '@mantine/hooks';
 import {
   IconHeart,
   IconCertificate,
-  IconPlus,
   IconStethoscope,
   IconChevronRight,
   IconAlertCircle,
@@ -44,23 +43,11 @@ import {
   DashboardCardSettings,
   DashboardCardConfig,
 } from '@/components/dashboard/DashboardCardSettings';
-import { DialNavigation, type DialItem, type EditableDialItem } from '@/components/dashboard/DialNavigation';
-import { DialMenuSettings, type DialMenuItemConfig } from '@/components/dashboard/DialMenuSettings';
 import {
   loadDashboardSettings,
   saveDashboardSettings,
   applyDashboardSettings,
-  loadDialMenuSettings,
-  saveDialMenuSettings,
-  applyDialMenuSettings,
-  loadDialSizePreset,
-  saveDialSizePreset,
-  loadHomeDisplayMode,
-  saveHomeDisplayMode,
-  type DialSizePreset,
-  type HomeDisplayMode,
 } from '@/lib/storage/dashboard-settings';
-import { DisplayModeToggle } from '@/components/dashboard/DisplayModeToggle';
 
 // 猫のデータ型
 interface Cat {
@@ -105,17 +92,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dashboardCards, setDashboardCards] = useState<DashboardCardConfig[]>([]);
-  const [dialMenuItems, setDialMenuItems] = useState<DialMenuItemConfig[]>([]);
-  const [dialSizePreset, setDialSizePreset] = useState<DialSizePreset>('medium');
-  const [displayMode, setDisplayMode] = useState<HomeDisplayMode>('auto');
   const [settingsOpened, { open: openSettings, close: closeSettings }] = useDisclosure(false);
-  const [dialSettingsOpened, { open: openDialSettings, close: closeDialSettings }] = useDisclosure(false);
   const router = useRouter();
   const { setPageTitle } = usePageHeader();
   const { isAuthenticated, initialized, accessToken } = useAuth();
-
-  // レスポンシブデザイン: モバイル縦向き判定
-  const isMobilePortrait = useMediaQuery('(max-width: 768px) and (orientation: portrait)');
 
   // ページタイトルを設定
   useEffect(() => {
@@ -312,71 +292,6 @@ export default function Home() {
     const appliedCards = applyDashboardSettings(cardsWithDefaults, settings);
     setDashboardCards(appliedCards);
 
-    // ダイアルメニュー項目の初期化（モバイル用）
-    // 色変換関数
-    const colorToHex = (color: string): string => {
-      const colorMap: Record<string, string> = {
-        green: '#22C55E',
-        blue: '#2563EB',
-        pink: '#EC4899',
-        cyan: '#06B6D4',
-        teal: '#14B8A6',
-        yellow: '#EAB308',
-        violet: '#8B5CF6',
-        indigo: '#6366F1',
-        purple: '#A855F7',
-        gray: '#6B7280',
-        orange: '#F97316',
-        red: '#EF4444',
-        grape: '#9333EA',
-        lime: '#84CC16',
-      };
-      return colorMap[color] || '#2563EB';
-    };
-
-    const dialItems: Omit<DialMenuItemConfig, 'visible' | 'order'>[] = defaultDashboardCards.map((card) => ({
-      id: card.id,
-      title: card.title,
-      icon: card.icon,
-      color: colorToHex(card.color),
-      href: card.href,
-      badge: card.badge,
-      subActions: card.id === 'cats' ? [
-        { id: 'cats-new', title: '作成', icon: <IconPlus size={18} />, href: '/cats/new' },
-        { id: 'cats-list', title: '一覧', icon: <IconList size={18} />, href: '/cats' },
-      ] : card.id === 'breeding' ? [
-        { id: 'breeding-list', title: '一覧', icon: <IconList size={18} />, href: '/breeding' },
-        { id: 'breeding-schedule', title: 'スケジュール', icon: <IconCalendarTime size={18} />, href: '/breeding' },
-      ] : card.id === 'care' ? [
-        { id: 'care-schedule', title: 'スケジュール', icon: <IconCalendarTime size={18} />, href: '/care' },
-        { id: 'care-medical', title: '医療記録', icon: <IconStethoscope size={18} />, href: '/care' },
-      ] : card.id === 'kittens' ? [
-        { id: 'kittens-list', title: '一覧', icon: <IconList size={18} />, href: '/kittens' },
-      ] : card.id === 'pedigrees' ? [
-        { id: 'pedigrees-list', title: '一覧', icon: <IconList size={18} />, href: '/pedigrees' },
-        { id: 'pedigrees-new', title: '作成', icon: <IconPlus size={18} />, href: '/pedigrees/new' },
-      ] : card.id === 'medical-records' ? [
-        { id: 'medical-list', title: '一覧', icon: <IconList size={18} />, href: '/medical-records' },
-      ] : undefined,
-    }));
-
-    const dialSettings = loadDialMenuSettings();
-    // ダイアルメニューの初期設定（最初の8項目のみ表示）
-    const dialItemsWithDefaults = dialItems.map((item, index) => ({
-      ...item,
-      visible: index < 8,
-      order: index,
-    }));
-    const appliedDialItems = applyDialMenuSettings(dialItemsWithDefaults, dialSettings);
-    setDialMenuItems(appliedDialItems);
-
-    // ダイアルサイズプリセットを読み込み
-    const savedSizePreset = loadDialSizePreset();
-    setDialSizePreset(savedSizePreset);
-
-    // 表示モードを読み込み
-    const savedDisplayMode = loadHomeDisplayMode();
-    setDisplayMode(savedDisplayMode);
   }, [cats.length, careSummary.pending, breedingSummary.today, breedingSummary.total]);
 
   // カード設定保存ハンドラー
@@ -390,56 +305,9 @@ export default function Home() {
     });
   };
 
-  // ダイアルメニュー設定保存ハンドラー
-  const handleSaveDialMenuSettings = (items: DialMenuItemConfig[]) => {
-    setDialMenuItems(items);
-    saveDialMenuSettings(items);
-    notifications.show({
-      title: '保存完了',
-      message: 'ダイアルメニューの設定を保存しました',
-      color: 'green',
-    });
-  };
-
-  // ダイアルサイズプリセット変更ハンドラー
-  const handleDialSizePresetChange = (preset: DialSizePreset) => {
-    setDialSizePreset(preset);
-    saveDialSizePreset(preset);
-  };
-
-  // 表示モード変更ハンドラー
-  const handleDisplayModeChange = (mode: HomeDisplayMode) => {
-    setDisplayMode(mode);
-    saveHomeDisplayMode(mode);
-
-    // モード切り替え時に対応する設定モーダルを開く
-    if (mode === 'card') {
-      openSettings();
-    } else if (mode === 'dial') {
-      openDialSettings();
-    }
-  };
-
-  // 設定ボタンクリック時のハンドラー
-  const handleSettingsClick = () => {
-    // 現在の表示状態に応じて適切な設定モーダルを開く
-    if (shouldShowDial) {
-      openDialSettings();
-    } else {
-      openSettings();
-    }
-  };
-
   // 表示するカードのみフィルタリング
   const visibleCards = dashboardCards.filter((card) => card.visible);
 
-  // 表示するダイアルメニュー項目のみフィルタリング
-  const visibleDialItems = dialMenuItems.filter((item) => item.visible);
-
-  // 実際に表示するモードを決定（メモ化して重複を避ける）
-  const shouldShowDial = useMemo(() => {
-    return displayMode === 'dial' || (displayMode === 'auto' && isMobilePortrait);
-  }, [displayMode, isMobilePortrait]);
 
   // ローディング中の表示
   if (loading) {
@@ -488,38 +356,17 @@ export default function Home() {
             <Text size="sm" c="dimmed">{today}</Text>
           </Box>
 
-          {/* 表示モード切り替えと設定ボタン */}
-          <DisplayModeToggle
-            mode={displayMode}
-            onModeChange={handleDisplayModeChange}
-            onSettingsClick={handleSettingsClick}
-            compact={isMobilePortrait}
+          {/* カード設定ボタン */}
+          <IconSettings
+            size={20}
+            style={{ cursor: 'pointer', color: 'var(--mantine-color-dimmed)' }}
+            onClick={openSettings}
           />
         </Group>
       </Stack>
 
-      {/* 表示モードに応じたレイアウト */}
-      {shouldShowDial ? (
-        // ダイヤルナビゲーションUI
-        <DialNavigation
-          items={visibleDialItems.map((item): DialItem => ({
-            id: item.id,
-            title: item.title,
-            icon: item.icon,
-            color: item.color,
-            href: item.href,
-            badge: item.badge,
-            subActions: item.subActions,
-          }))}
-          onNavigate={(href) => router.push(href)}
-          allItems={dialMenuItems as EditableDialItem[]}
-          onItemsChange={handleSaveDialMenuSettings}
-          sizePreset={dialSizePreset}
-          onSizePresetChange={handleDialSizePresetChange}
-        />
-      ) : (
-        // デスクトップ・横向き: 詳細カードグリッド
-        <SimpleGrid
+      {/* カードグリッド */}
+      <SimpleGrid
           cols={{ base: 1, xs: 2, md: 3 }}
           spacing="lg"
         >
@@ -594,7 +441,6 @@ export default function Home() {
             </Card>
           ))}
         </SimpleGrid>
-      )}
 
       {/* カード設定モーダル */}
       <DashboardCardSettings
@@ -602,14 +448,6 @@ export default function Home() {
         onClose={closeSettings}
         cards={dashboardCards}
         onSave={handleSaveCardSettings}
-      />
-
-      {/* ダイアルメニュー設定モーダル */}
-      <DialMenuSettings
-        opened={dialSettingsOpened}
-        onClose={closeDialSettings}
-        items={dialMenuItems}
-        onSave={handleSaveDialMenuSettings}
       />
     </Container>
   );

@@ -64,7 +64,7 @@ async function bootstrap() {
             const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((o: string) => o.trim()).filter(Boolean);
 
             if (allowedOrigins.length === 0) {
-              return callback(new Error('CORS_ORIGIN is not set in production environment.'), false);
+              return callback(new Error('本番環境では CORS_ORIGIN の設定が必須です'), false);
             }
 
             // CORS_ORIGIN に登録済みのドメイン、または Vercel プレビュードメインを許可
@@ -84,7 +84,15 @@ async function bootstrap() {
               'http://localhost:3003',
               'http://localhost:3005',
             ];
-            callback(null, devOrigins.includes(origin));
+            const isAllowed = devOrigins.includes(origin);
+
+            if (isAllowed) {
+              callback(null, true);
+            } else {
+              const safeOrigin = origin.replace(/[\r\n]/g, '');
+              logger.warn(`開発環境で未許可のCORSオリジンを拒否しました: ${safeOrigin}`);
+              callback(new Error('CORSで許可されていないオリジンです'), false);
+            }
           }
         },
         credentials: true,
