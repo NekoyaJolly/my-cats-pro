@@ -17,7 +17,7 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft, IconCalendar, IconUser, IconDna, IconFileText } from '@tabler/icons-react';
 import { useRouter, useParams } from 'next/navigation';
-import { apiGet } from '../../../lib/api';
+import { apiRequest } from '@/lib/api/client';
 
 interface PedigreeDetail {
   id: string;
@@ -72,14 +72,13 @@ export default function PedigreeDetailClient() {
     const fetchPedigree = async () => {
       try {
         setLoading(true);
-        const response = await apiGet(`/pedigrees/${pedigreeId}`);
-        
-        if (!response.ok) {
-          throw new Error('血統書データの取得に失敗しました');
+        const response = await apiRequest<PedigreeDetail>(`/pedigrees/${pedigreeId}`);
+
+        if (!response.success) {
+          throw new Error(response.error || '血統書データの取得に失敗しました');
         }
 
-        const data = await response.json();
-        setPedigree(data);
+        setPedigree(response.data ?? null);
       } catch (err) {
         setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
       } finally {
