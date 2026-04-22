@@ -6,7 +6,14 @@ import type { ReactElement } from 'react';
 
 import { PedigreeList } from '../PedigreeList';
 import type { PedigreeListResponse } from '@/lib/api/hooks/use-pedigrees';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, apiRequest } from '@/lib/api/client';
+import {
+  convertPositionsConfigToLayout,
+  extractOffsetFromConfig,
+  generatePedigreePdf,
+  mapBackendPedigreeToPdfData,
+  openPedigreePdfInNewTab,
+} from '@/lib/pdf';
 
 let pushMock: jest.Mock<void, [string]>;
 
@@ -15,6 +22,35 @@ jest.mock('next/navigation', () => ({
     push: (href: string) => pushMock(href),
   }),
 }));
+
+jest.mock('@mantine/notifications', () => ({
+  notifications: { show: jest.fn() },
+}));
+
+// named export の関数は spyOn で redefine できないため factory でモックする。
+// apiClient 等の他エクスポートは実物をそのまま残して他テストを壊さない。
+jest.mock('@/lib/api/client', () => {
+  const actual = jest.requireActual('@/lib/api/client');
+  return {
+    ...actual,
+    apiRequest: jest.fn(),
+  };
+});
+
+jest.mock('@/lib/pdf', () => ({
+  convertPositionsConfigToLayout: jest.fn(),
+  extractOffsetFromConfig: jest.fn(),
+  generatePedigreePdf: jest.fn(),
+  mapBackendPedigreeToPdfData: jest.fn(),
+  openPedigreePdfInNewTab: jest.fn(),
+}));
+
+const apiRequestMock = apiRequest as jest.MockedFunction<typeof apiRequest>;
+const convertPositionsConfigToLayoutMock = convertPositionsConfigToLayout as jest.MockedFunction<typeof convertPositionsConfigToLayout>;
+const extractOffsetFromConfigMock = extractOffsetFromConfig as jest.MockedFunction<typeof extractOffsetFromConfig>;
+const mapBackendPedigreeToPdfDataMock = mapBackendPedigreeToPdfData as jest.MockedFunction<typeof mapBackendPedigreeToPdfData>;
+const generatePedigreePdfMock = generatePedigreePdf as jest.MockedFunction<typeof generatePedigreePdf>;
+const openPedigreePdfInNewTabMock = openPedigreePdfInNewTab as jest.MockedFunction<typeof openPedigreePdfInNewTab>;
 
 describe('PedigreeList', () => {
   const renderWithProviders = (ui: ReactElement) => {
@@ -112,8 +148,8 @@ describe('PedigreeList', () => {
     expect(onSelectFamilyTree).toHaveBeenCalledWith('p-2');
   });
 
-  it('血統書PDFを印刷をクリックするとPDFを新規タブで開く', async () => {
-    const response: PedigreeListResponse = {
+  it('血統書PDFを印刷をクリックすると印刷設定と血統書データを取得し pdf-lib で生成した PDF を新規タブで開く', async () => {
+    const listResponse: PedigreeListResponse = {
       success: true,
       data: [
         {
@@ -130,12 +166,32 @@ describe('PedigreeList', () => {
       },
     };
 
-    jest.spyOn(apiClient, 'get').mockResolvedValue(response);
+    // 一覧取得は apiClient.get (React Query フック経由) をモック
+    jest.spyOn(apiClient, 'get').mockResolvedValue(listResponse);
 
-    const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
-    process.env.NEXT_PUBLIC_API_URL = 'http://example.test';
+    // PDF 生成時の 2 本の API 呼び出し（print-settings と pedigree-id/:id）は
+    // apiRequest をモックし、URL で分岐してそれぞれのペイロードを返す。
+    const printSettingsPayload = { success: true, data: { offsetX: 0, offsetY: 0 } };
+    const pedigreeDetailPayload = { success: true, data: { pedigreeId: 'WCA-0003', catName: 'テスト猫3' } };
+    apiRequestMock.mockImplementation((path: string) => {
+      if (path === '/pedigrees/print-settings') {
+        return Promise.resolve(printSettingsPayload) as ReturnType<typeof apiRequest>;
+      }
+      if (path === '/pedigrees/pedigree-id/WCA-0003') {
+        return Promise.resolve(pedigreeDetailPayload) as ReturnType<typeof apiRequest>;
+      }
+      return Promise.resolve({ success: false, error: 'unexpected path' }) as ReturnType<typeof apiRequest>;
+    });
 
-    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => window);
+    // pdf-lib への受け渡しは副作用を避けるため全てモック（上の jest.mock で差し替え済み）
+    const fakeBytes = new Uint8Array([37, 80, 68, 70]); // "%PDF"
+    convertPositionsConfigToLayoutMock.mockReturnValue(
+      {} as ReturnType<typeof convertPositionsConfigToLayout>,
+    );
+    extractOffsetFromConfigMock.mockReturnValue({ offsetXmm: 0, offsetYmm: 0 });
+    mapBackendPedigreeToPdfDataMock.mockReturnValue({ catName: 'テスト猫3' });
+    generatePedigreePdfMock.mockResolvedValue(fakeBytes);
+    openPedigreePdfInNewTabMock.mockImplementation(() => undefined);
 
     renderWithProviders(<PedigreeList />);
 
@@ -144,16 +200,15 @@ describe('PedigreeList', () => {
     const user = userEvent.setup();
     await user.click(screen.getByLabelText('血統書PDFを印刷'));
 
-    expect(openSpy).toHaveBeenCalledWith(
-      'http://example.test/api/v1/pedigrees/pedigree-id/WCA-0003/pdf',
-      '_blank',
-    );
+    // 両 API が期待した path で呼ばれている
+    expect(apiRequestMock).toHaveBeenCalledWith('/pedigrees/print-settings');
+    expect(apiRequestMock).toHaveBeenCalledWith('/pedigrees/pedigree-id/WCA-0003');
 
-    openSpy.mockRestore();
-    if (typeof originalApiUrl === 'string') {
-      process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
-    } else {
-      delete process.env.NEXT_PUBLIC_API_URL;
-    }
+    // 取得したデータが各ヘルパに渡り、生成が走り、新タブで開かれる
+    expect(convertPositionsConfigToLayoutMock).toHaveBeenCalledWith(printSettingsPayload.data);
+    expect(extractOffsetFromConfigMock).toHaveBeenCalledWith(printSettingsPayload.data);
+    expect(mapBackendPedigreeToPdfDataMock).toHaveBeenCalledWith(pedigreeDetailPayload.data);
+    expect(generatePedigreePdfMock).toHaveBeenCalled();
+    expect(openPedigreePdfInNewTabMock).toHaveBeenCalledWith(fakeBytes);
   });
 });
