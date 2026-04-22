@@ -18,21 +18,28 @@ import {
 } from './pedigree-layout';
 
 export interface AncestorData {
+  /** チャンピオン称号（例: "JCU GRC."）。非空なら赤文字で名前の上に描画する */
+  title?: string | null;
   name?: string | null;
   color?: string | null;
+  eyeColor?: string | null;
   registrationNo?: string | null;
 }
 
 export interface PedigreeData {
-  title?: string;
   catName: string;
   registrationNo?: string;
   breed?: string;
   color?: string;
   sex?: string;
+  eyeColor?: string;
   birthDate?: string;
+  registrationDate?: string;
   breeder?: string;
   owner?: string;
+  littersM?: string;
+  littersF?: string;
+  otherOrganizationsNo?: string;
 
   sire?: AncestorData;
   dam?: AncestorData;
@@ -87,6 +94,8 @@ export const generatePedigreePdf = async (
 
   const page = pdfDoc.addPage([PEDIGREE_PAGE_SIZE_PT[0], PEDIGREE_PAGE_SIZE_PT[1]]);
   const black = rgb(0, 0, 0);
+  // チャンピオン称号（CH/GRC/GC/JCU GRC 等）の描画色。現物血統書に合わせた朱赤。
+  const championRed = rgb(0.78, 0.1, 0.1);
 
   if (options.debugGrid) {
     drawMmGridOverlay(page, {
@@ -96,15 +105,20 @@ export const generatePedigreePdf = async (
     });
   }
 
-  const drawField = (value: string | undefined | null, field: TextFieldLayout): void => {
+  const drawField = (
+    value: string | undefined | null,
+    field: TextFieldLayout,
+    color: typeof black = black,
+  ): void => {
     if (!value) return;
     const drawOptions: MmDrawTextOptions = {
       x: field.x + offsetX,
       y: field.y + offsetY,
       fontSize: field.fontSize,
       font: field.bold ? fonts.bold : fonts.regular,
-      color: black,
+      color,
       maxWidthMm: field.maxWidthMm,
+      align: field.align,
     };
     drawTextMm(page, value, drawOptions);
   };
@@ -114,22 +128,31 @@ export const generatePedigreePdf = async (
     ancestorLayout: AncestorLayout,
   ): void => {
     if (!ancestor) return;
+    // title は非空なら赤文字で名前の上に描画する
+    if (ancestor.title && ancestorLayout.title) {
+      drawField(ancestor.title, ancestorLayout.title, championRed);
+    }
     drawField(ancestor.name, ancestorLayout.name);
     if (ancestorLayout.color) drawField(ancestor.color, ancestorLayout.color);
+    if (ancestorLayout.eyeColor) drawField(ancestor.eyeColor, ancestorLayout.eyeColor);
     if (ancestorLayout.registrationNo) {
       drawField(ancestor.registrationNo, ancestorLayout.registrationNo);
     }
   };
 
-  drawField(data.title ?? '血 統 書', layout.title);
   drawField(data.catName, layout.catName);
   drawField(data.registrationNo, layout.registrationNo);
   drawField(data.breed, layout.breed);
   drawField(data.color, layout.color);
   drawField(data.sex, layout.sex);
+  drawField(data.eyeColor, layout.eyeColor);
   drawField(data.birthDate, layout.birthDate);
+  drawField(data.registrationDate, layout.registrationDate);
   drawField(data.breeder, layout.breeder);
   drawField(data.owner, layout.owner);
+  drawField(data.littersM, layout.littersM);
+  drawField(data.littersF, layout.littersF);
+  drawField(data.otherOrganizationsNo, layout.otherOrganizationsNo);
 
   drawAncestor(data.sire, layout.sire);
   drawAncestor(data.dam, layout.dam);
@@ -169,4 +192,19 @@ export const downloadPedigreePdf = (
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
+};
+
+/**
+ * 生成した PDF をブラウザの新しいタブで開く（印刷プレビュー向け）。
+ */
+export const openPedigreePdfInNewTab = (bytes: Uint8Array): void => {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  const blob = new Blob([buffer], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const newTab = window.open(url, '_blank');
+  if (!newTab) {
+    window.location.assign(url);
+  }
+  // Blob URL は新タブ側で使われ続けるため即時 revoke しない（ブラウザが解放する）
 };

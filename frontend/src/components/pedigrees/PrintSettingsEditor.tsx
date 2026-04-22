@@ -19,8 +19,16 @@ import {
   Select,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconDeviceFloppy, IconRefresh, IconAlertCircle, IconCheck, IconAdjustments } from '@tabler/icons-react';
+import { IconDeviceFloppy, IconRefresh, IconAlertCircle, IconCheck, IconAdjustments, IconEye, IconGrid3x3 } from '@tabler/icons-react';
 import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
+import {
+  convertPositionsConfigToLayout,
+  extractOffsetFromConfig,
+  generatePedigreePdf,
+  openPedigreePdfInNewTab,
+  type BackendPositionsConfig,
+  type PedigreeData,
+} from '@/lib/pdf';
 
 // 座標設定の型定義
 interface Position {
@@ -245,6 +253,62 @@ export function PrintSettingsEditor() {
     }
   };
 
+  // プレビュー用のサンプルデータ（全フィールドにダミー値を埋めて配置確認）
+  const getSamplePedigreeData = (): PedigreeData => ({
+    catName: 'サンプル猫名 一郎',
+    registrationNo: 'JCC-SAMPLE-0001',
+    breed: 'スコティッシュフォールド',
+    color: 'ブルータビー',
+    sex: '雄',
+    eyeColor: 'ゴールド',
+    birthDate: '2025/03/15',
+    registrationDate: '2025/05/01',
+    breeder: '株式会社サンプル',
+    owner: '山田 太郎',
+    littersM: '2',
+    littersF: '1',
+    otherOrganizationsNo: 'TICA-123',
+    sire: { title: 'CH.', name: '父猫サンプル', color: 'シルバー', eyeColor: 'グリーン', registrationNo: 'SIRE-0001' },
+    dam: { name: '母猫サンプル', color: 'ホワイト', eyeColor: 'ブルー', registrationNo: 'DAM-0001' },
+    sireFather: { title: 'JCU GRC.', name: '父の父', color: 'タビー', registrationNo: 'FF-0001' },
+    sireMother: { name: '父の母', color: 'クリーム', registrationNo: 'FM-0001' },
+    damFather: { name: '母の父', color: 'ブラック', registrationNo: 'MF-0001' },
+    damMother: { title: 'GRC.', name: '母の母', color: 'カメオ', registrationNo: 'MM-0001' },
+    sireFatherFather: { title: 'JCU GRC.', name: '父父父', registrationNo: 'FFF-0001' },
+    sireFatherMother: { name: '父父母', registrationNo: 'FFM-0001' },
+    sireMotherFather: { name: '父母父', registrationNo: 'FMF-0001' },
+    sireMotherMother: { name: '父母母', registrationNo: 'FMM-0001' },
+    damFatherFather: { name: '母父父', registrationNo: 'MFF-0001' },
+    damFatherMother: { title: 'JCU GRC.', name: '母父母', registrationNo: 'MFM-0001' },
+    damMotherFather: { name: '母母父', registrationNo: 'MMF-0001' },
+    damMotherMother: { name: '母母母', registrationNo: 'MMM-0001' },
+  });
+
+  // 現在の（保存前の）編集中設定でサンプル PDF を開く
+  const handlePreview = async (debugGrid: boolean) => {
+    if (!settings) return;
+    try {
+      const config = settings as BackendPositionsConfig;
+      const layout = convertPositionsConfigToLayout(config);
+      const { offsetXmm, offsetYmm } = extractOffsetFromConfig(config);
+      const bytes = await generatePedigreePdf({
+        data: getSamplePedigreeData(),
+        layout,
+        offsetXmm,
+        offsetYmm,
+        debugGrid,
+      });
+      openPedigreePdfInNewTab(bytes);
+    } catch (err) {
+      notifications.show({
+        title: 'プレビュー生成エラー',
+        message: err instanceof Error ? err.message : 'プレビューの生成に失敗しました',
+        color: 'red',
+        icon: <IconAlertCircle size={16} />,
+      });
+    }
+  };
+
   // 保存
   const handleSave = async () => {
     if (!settings) return;
@@ -345,6 +409,28 @@ export function PrintSettingsEditor() {
                 disabled={saving}
               >
                 リセット
+              </Button>
+            </Tooltip>
+            <Tooltip label="現在の設定でサンプル PDF を新しいタブに開く（保存不要）">
+              <Button
+                variant="light"
+                color="blue"
+                leftSection={<IconEye size={16} />}
+                onClick={() => { void handlePreview(false); }}
+                disabled={saving || !settings}
+              >
+                プレビュー
+              </Button>
+            </Tooltip>
+            <Tooltip label="mm 方眼と座標ラベルを重ねたプレビュー（印刷して現物と照合用）">
+              <Button
+                variant="light"
+                color="gray"
+                leftSection={<IconGrid3x3 size={16} />}
+                onClick={() => { void handlePreview(true); }}
+                disabled={saving || !settings}
+              >
+                グリッド付
               </Button>
             </Tooltip>
             <Button

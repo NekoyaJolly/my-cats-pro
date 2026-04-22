@@ -13,6 +13,8 @@ export const PEDIGREE_PAGE_SIZE_PT: readonly [number, number] = [
 
 export const mm = (value: number): number => value * MM_TO_PT;
 
+export type TextAlign = 'left' | 'center' | 'right';
+
 export interface MmDrawTextOptions {
   x: number;
   y: number;
@@ -21,6 +23,8 @@ export interface MmDrawTextOptions {
   color?: RGB;
   maxWidthMm?: number;
   lineHeightMm?: number;
+  /** 'left' (既定): x が左端 / 'center': x が中央 / 'right': x が右端 */
+  align?: TextAlign;
 }
 
 /**
@@ -32,7 +36,7 @@ export const drawTextMm = (
   text: string,
   options: MmDrawTextOptions,
 ): void => {
-  const { x, y, fontSize, font, color, maxWidthMm, lineHeightMm } = options;
+  const { x, y, fontSize, font, color, maxWidthMm, lineHeightMm, align = 'left' } = options;
   const pageHeightPt = page.getHeight();
 
   const lines = maxWidthMm
@@ -40,12 +44,17 @@ export const drawTextMm = (
     : [text];
 
   const lineHeightPt = lineHeightMm ? mm(lineHeightMm) : fontSize * 1.2;
+  const anchorXPt = mm(x);
 
   lines.forEach((line, index) => {
     const topPt = mm(y) + lineHeightPt * index;
     const baselineY = pageHeightPt - topPt - fontSize;
+    const textWidthPt = font.widthOfTextAtSize(line, fontSize);
+    let xPt = anchorXPt;
+    if (align === 'center') xPt = anchorXPt - textWidthPt / 2;
+    else if (align === 'right') xPt = anchorXPt - textWidthPt;
     page.drawText(line, {
-      x: mm(x),
+      x: xPt,
       y: baselineY,
       size: fontSize,
       font,

@@ -18,9 +18,19 @@ import {
   ScrollArea,
 } from '@mantine/core';
 import { IconSearch, IconFilter, IconFileText, IconRefresh, IconPrinter, IconCopy } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { useGetPedigrees } from '@/lib/api/hooks/use-pedigrees';
-import { getPublicApiBaseUrl } from '@/lib/api/public-api-base-url';
+import { apiRequest } from '@/lib/api/client';
+import {
+  convertPositionsConfigToLayout,
+  extractOffsetFromConfig,
+  generatePedigreePdf,
+  mapBackendPedigreeToPdfData,
+  openPedigreePdfInNewTab,
+  type BackendPedigreeDetail,
+  type BackendPositionsConfig,
+} from '@/lib/pdf';
 
 interface PedigreeData {
   id: string;
@@ -81,8 +91,6 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
   const router = useRouter();
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>(INITIAL_COLUMN_FILTERS);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const apiBaseUrl = getPublicApiBaseUrl();
 
   const genderOptions = [
     { value: '', label: '全て' },
@@ -160,13 +168,38 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
     }
   };
 
-  const openPedigreePdf = (pedigreeId: string) => {
-    const pdfUrl = `${apiBaseUrl}/pedigrees/pedigree-id/${encodeURIComponent(pedigreeId)}/pdf`;
+  const openPedigreePdf = async (pedigreeId: string) => {
+    try {
+      const encodedId = encodeURIComponent(pedigreeId);
+      const [settingsResponse, detailResponse] = await Promise.all([
+        apiRequest<BackendPositionsConfig>('/pedigrees/print-settings'),
+        apiRequest<BackendPedigreeDetail>(`/pedigrees/pedigree-id/${encodedId}`),
+      ]);
 
-    const newTab = window.open(pdfUrl, '_blank');
-    if (!newTab) {
-      // ポップアップがブロックされた場合は同一タブで開く
-      window.location.assign(pdfUrl);
+      if (!settingsResponse.success || !settingsResponse.data) {
+        throw new Error(settingsResponse.error || '印刷設定の取得に失敗しました');
+      }
+      if (!detailResponse.success || !detailResponse.data) {
+        throw new Error(detailResponse.error || '血統書データの取得に失敗しました');
+      }
+
+      const layout = convertPositionsConfigToLayout(settingsResponse.data);
+      const { offsetXmm, offsetYmm } = extractOffsetFromConfig(settingsResponse.data);
+      const pdfData = mapBackendPedigreeToPdfData(detailResponse.data);
+
+      const bytes = await generatePedigreePdf({
+        data: pdfData,
+        layout,
+        offsetXmm,
+        offsetYmm,
+      });
+      openPedigreePdfInNewTab(bytes);
+    } catch (err) {
+      notifications.show({
+        color: 'red',
+        title: 'PDF生成エラー',
+        message: err instanceof Error ? err.message : '不明なエラーが発生しました',
+      });
     }
   };
 
@@ -418,7 +451,7 @@ export function PedigreeList({ onSelectFamilyTree }: PedigreeListProps) {
                           color="orange"
                           aria-label="血統書PDFを印刷"
                           onClick={() => {
-                            openPedigreePdf(pedigree.pedigreeId);
+                            void openPedigreePdf(pedigree.pedigreeId);
                           }}
                         >
                           <IconPrinter size={16} />

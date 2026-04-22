@@ -1,11 +1,12 @@
+import type { TextAlign } from './mm-coordinate-helper';
+
 /**
  * 血統書レイアウト定義
  * 座標は全て「用紙左上を原点(0,0)とした mm 単位」で表記する。
  * 用紙: 339mm × 239mm
  *
- * バックエンドの backend/src/pedigree/pdf/positions.json と対応させる想定。
- * フロント単独生成時は本ファイルのデフォルト値を使用し、
- * 印刷設定エディタで調整された座標を渡した場合はそちらを優先する。
+ * バックエンドの pedigree_print_settings テーブルに保存された PositionsConfig を
+ * print-settings-adapter.ts で変換して差し替えて使用する。
  */
 
 export interface TextFieldLayout {
@@ -14,18 +15,32 @@ export interface TextFieldLayout {
   fontSize: number;
   maxWidthMm?: number;
   bold?: boolean;
+  align?: TextAlign;
+}
+
+export interface AncestorLayout {
+  /** チャンピオン称号の位置（赤文字）。adapter で name.y - 6mm に自動配置される */
+  title?: TextFieldLayout;
+  name: TextFieldLayout;
+  color?: TextFieldLayout;
+  eyeColor?: TextFieldLayout;
+  registrationNo?: TextFieldLayout;
 }
 
 export interface PedigreeLayout {
-  title: TextFieldLayout;
-  catName: TextFieldLayout;
-  registrationNo: TextFieldLayout;
   breed: TextFieldLayout;
-  color: TextFieldLayout;
   sex: TextFieldLayout;
   birthDate: TextFieldLayout;
-  breeder: TextFieldLayout;
+  eyeColor: TextFieldLayout;
+  color: TextFieldLayout;
+  catName: TextFieldLayout;
+  registrationNo: TextFieldLayout;
   owner: TextFieldLayout;
+  breeder: TextFieldLayout;
+  registrationDate: TextFieldLayout;
+  littersM: TextFieldLayout;
+  littersF: TextFieldLayout;
+  otherOrganizationsNo: TextFieldLayout;
 
   sire: AncestorLayout;
   dam: AncestorLayout;
@@ -45,92 +60,91 @@ export interface PedigreeLayout {
   damMotherMother: AncestorLayout;
 }
 
-export interface AncestorLayout {
-  name: TextFieldLayout;
-  color?: TextFieldLayout;
-  registrationNo?: TextFieldLayout;
-}
-
 /**
- * Brother MFC-J6983CDW のフチあり印刷時の印字可能領域を考慮し、
- * 上下左右 5mm 以上のマージンを確保したデフォルト座標。
- * 「フチなし印刷」設定時はプリンタ側で約 103% 拡大されるため、
- * ドライバ側で「フチなし=OFF」「倍率=100%/実寸」を必ず設定すること。
+ * バックエンドの PrintSettingsService.defaultSettings をフロント型に変換したデフォルト。
+ * バックエンド DB に設定が存在しない場合のフォールバックとして使用する。
+ * 通常は print-settings-adapter の convertPositionsConfigToLayout() を使って
+ * DB から取得した設定で上書きする。
  */
 export const DEFAULT_PEDIGREE_LAYOUT: PedigreeLayout = {
-  title: { x: 339 / 2 - 40, y: 10, fontSize: 18, bold: true },
-
-  catName: { x: 25, y: 30, fontSize: 14, maxWidthMm: 110, bold: true },
-  registrationNo: { x: 25, y: 40, fontSize: 10, maxWidthMm: 110 },
-  breed: { x: 25, y: 50, fontSize: 10, maxWidthMm: 110 },
-  color: { x: 25, y: 58, fontSize: 10, maxWidthMm: 110 },
-  sex: { x: 25, y: 66, fontSize: 10, maxWidthMm: 50 },
-  birthDate: { x: 25, y: 74, fontSize: 10, maxWidthMm: 110 },
-  breeder: { x: 25, y: 82, fontSize: 9, maxWidthMm: 110 },
-  owner: { x: 25, y: 90, fontSize: 9, maxWidthMm: 110 },
+  breed: { x: 50, y: 50, fontSize: 11 },
+  sex: { x: 50, y: 60, fontSize: 11 },
+  birthDate: { x: 77, y: 60, fontSize: 11 },
+  eyeColor: { x: 50, y: 69, fontSize: 11 },
+  color: { x: 77, y: 69, fontSize: 11 },
+  catName: { x: 170, y: 55, fontSize: 13, align: 'center', bold: true },
+  registrationNo: { x: 170, y: 69, fontSize: 12, align: 'center' },
+  owner: { x: 320, y: 50, fontSize: 11, align: 'right' },
+  breeder: { x: 320, y: 60, fontSize: 11, align: 'right' },
+  registrationDate: { x: 240, y: 69, fontSize: 11 },
+  littersM: { x: 277, y: 69, fontSize: 11 },
+  littersF: { x: 285, y: 69, fontSize: 11 },
+  otherOrganizationsNo: { x: 85, y: 210, fontSize: 7 },
 
   sire: {
-    name: { x: 160, y: 40, fontSize: 11, maxWidthMm: 80, bold: true },
-    color: { x: 160, y: 48, fontSize: 9, maxWidthMm: 80 },
-    registrationNo: { x: 160, y: 54, fontSize: 9, maxWidthMm: 80 },
+    name: { x: 50, y: 110, fontSize: 12 },
+    color: { x: 50, y: 127, fontSize: 11 },
+    eyeColor: { x: 50, y: 132, fontSize: 11 },
+    registrationNo: { x: 50, y: 137, fontSize: 11 },
   },
   dam: {
-    name: { x: 160, y: 160, fontSize: 11, maxWidthMm: 80, bold: true },
-    color: { x: 160, y: 168, fontSize: 9, maxWidthMm: 80 },
-    registrationNo: { x: 160, y: 174, fontSize: 9, maxWidthMm: 80 },
+    name: { x: 50, y: 160, fontSize: 12 },
+    color: { x: 50, y: 177, fontSize: 11 },
+    eyeColor: { x: 50, y: 182, fontSize: 11 },
+    registrationNo: { x: 50, y: 188, fontSize: 11 },
   },
 
   sireFather: {
-    name: { x: 225, y: 20, fontSize: 10, maxWidthMm: 55 },
-    color: { x: 225, y: 27, fontSize: 8, maxWidthMm: 55 },
-    registrationNo: { x: 225, y: 33, fontSize: 8, maxWidthMm: 55 },
+    name: { x: 140, y: 101, fontSize: 11 },
+    color: { x: 140, y: 106, fontSize: 11 },
+    registrationNo: { x: 140, y: 111, fontSize: 11 },
   },
   sireMother: {
-    name: { x: 225, y: 65, fontSize: 10, maxWidthMm: 55 },
-    color: { x: 225, y: 72, fontSize: 8, maxWidthMm: 55 },
-    registrationNo: { x: 225, y: 78, fontSize: 8, maxWidthMm: 55 },
+    name: { x: 140, y: 127, fontSize: 11 },
+    color: { x: 140, y: 132, fontSize: 11 },
+    registrationNo: { x: 140, y: 137, fontSize: 11 },
   },
   damFather: {
-    name: { x: 225, y: 140, fontSize: 10, maxWidthMm: 55 },
-    color: { x: 225, y: 147, fontSize: 8, maxWidthMm: 55 },
-    registrationNo: { x: 225, y: 153, fontSize: 8, maxWidthMm: 55 },
+    name: { x: 140, y: 152, fontSize: 11 },
+    color: { x: 140, y: 157, fontSize: 11 },
+    registrationNo: { x: 140, y: 162, fontSize: 11 },
   },
   damMother: {
-    name: { x: 225, y: 185, fontSize: 10, maxWidthMm: 55 },
-    color: { x: 225, y: 192, fontSize: 8, maxWidthMm: 55 },
-    registrationNo: { x: 225, y: 198, fontSize: 8, maxWidthMm: 55 },
+    name: { x: 140, y: 178, fontSize: 11 },
+    color: { x: 140, y: 183, fontSize: 11 },
+    registrationNo: { x: 140, y: 188, fontSize: 11 },
   },
 
   sireFatherFather: {
-    name: { x: 285, y: 15, fontSize: 9, maxWidthMm: 48 },
-    registrationNo: { x: 285, y: 22, fontSize: 7, maxWidthMm: 48 },
+    name: { x: 232, y: 94, fontSize: 10 },
+    registrationNo: { x: 232, y: 98, fontSize: 10 },
   },
   sireFatherMother: {
-    name: { x: 285, y: 37, fontSize: 9, maxWidthMm: 48 },
-    registrationNo: { x: 285, y: 44, fontSize: 7, maxWidthMm: 48 },
+    name: { x: 232, y: 107, fontSize: 10 },
+    registrationNo: { x: 232, y: 111, fontSize: 10 },
   },
   sireMotherFather: {
-    name: { x: 285, y: 60, fontSize: 9, maxWidthMm: 48 },
-    registrationNo: { x: 285, y: 67, fontSize: 7, maxWidthMm: 48 },
+    name: { x: 232, y: 120, fontSize: 10 },
+    registrationNo: { x: 232, y: 124, fontSize: 10 },
   },
   sireMotherMother: {
-    name: { x: 285, y: 82, fontSize: 9, maxWidthMm: 48 },
-    registrationNo: { x: 285, y: 89, fontSize: 7, maxWidthMm: 48 },
+    name: { x: 232, y: 133, fontSize: 10 },
+    registrationNo: { x: 232, y: 137, fontSize: 10 },
   },
   damFatherFather: {
-    name: { x: 285, y: 135, fontSize: 9, maxWidthMm: 48 },
-    registrationNo: { x: 285, y: 142, fontSize: 7, maxWidthMm: 48 },
+    name: { x: 232, y: 146, fontSize: 10 },
+    registrationNo: { x: 232, y: 150, fontSize: 10 },
   },
   damFatherMother: {
-    name: { x: 285, y: 157, fontSize: 9, maxWidthMm: 48 },
-    registrationNo: { x: 285, y: 164, fontSize: 7, maxWidthMm: 48 },
+    name: { x: 232, y: 158, fontSize: 10 },
+    registrationNo: { x: 232, y: 162, fontSize: 10 },
   },
   damMotherFather: {
-    name: { x: 285, y: 180, fontSize: 9, maxWidthMm: 48 },
-    registrationNo: { x: 285, y: 187, fontSize: 7, maxWidthMm: 48 },
+    name: { x: 232, y: 171, fontSize: 10 },
+    registrationNo: { x: 232, y: 175, fontSize: 10 },
   },
   damMotherMother: {
-    name: { x: 285, y: 202, fontSize: 9, maxWidthMm: 48 },
-    registrationNo: { x: 285, y: 209, fontSize: 7, maxWidthMm: 48 },
+    name: { x: 232, y: 184, fontSize: 10 },
+    registrationNo: { x: 232, y: 188, fontSize: 10 },
   },
 };
