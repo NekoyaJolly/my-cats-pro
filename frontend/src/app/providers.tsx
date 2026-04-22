@@ -6,6 +6,7 @@ import { useBootstrapAuth } from '@/lib/auth/useBootstrapAuth'
 import { QueryClientProvider } from '@/lib/api/query-client'
 import { Notifications } from '@mantine/notifications'
 import { PageHeaderProvider } from '@/lib/contexts/page-header-context'
+import { ServiceWorkerUpdateNotifier } from '@/components/providers/service-worker-update-notifier'
 import '@mantine/notifications/styles.css'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -302,6 +303,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ModalsProvider>
           <PageHeaderProvider>
             <Notifications position="top-right" zIndex={1000} />
+            <ServiceWorkerUpdateNotifier />
             {children}
           </PageHeaderProvider>
         </ModalsProvider>

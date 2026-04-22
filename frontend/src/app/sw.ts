@@ -2,8 +2,6 @@ import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
 import { Serwist } from 'serwist';
 
-// Serwist グローバル設定の型拡張
-// injectionPoint のデフォルト値 "self.__SW_MANIFEST" を TypeScript に宣言
 declare global {
     interface WorkerGlobalScope extends SerwistGlobalConfig {
         __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
@@ -13,16 +11,20 @@ declare global {
 declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
-    // ビルド時に自動注入されるプリキャッシュマニフェスト
     precacheEntries: self.__SW_MANIFEST,
-    // 待機中の Service Worker を即座にアクティブ化
-    skipWaiting: true,
-    // 全てのクライアントを即座に制御
+    // skipWaiting はクライアントからの SKIP_WAITING メッセージで手動制御する（UX を壊さないため）
+    skipWaiting: false,
+    // 新 SW アクティブ化後は既存タブを即座に制御下に置く（controllerchange → 自動リロード）
     clientsClaim: true,
-    // ナビゲーションリクエストのプリロード
     navigationPreload: true,
-    // Serwist 推奨のデフォルトキャッシュ戦略
     runtimeCaching: defaultCache,
 });
 
 serwist.addEventListeners();
+
+// クライアントの「今すぐ更新」ボタンが送る SKIP_WAITING を受けて waiting SW をアクティブ化する。
+self.addEventListener('message', (event) => {
+    if (event.data && (event.data as { type?: string }).type === 'SKIP_WAITING') {
+        void self.skipWaiting();
+    }
+});
