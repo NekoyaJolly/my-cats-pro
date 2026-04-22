@@ -15,9 +15,11 @@ import {
   LoadingOverlay,
   Alert,
 } from '@mantine/core';
-import { IconArrowLeft, IconCalendar, IconUser, IconDna, IconFileText } from '@tabler/icons-react';
+import { IconArrowLeft, IconCalendar, IconDna, IconDownload, IconFileText, IconGrid3x3, IconUser } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { useRouter, useParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api/client';
+import { downloadPedigreePdf, generatePedigreePdf, type PedigreeData } from '@/lib/pdf';
 
 interface PedigreeDetail {
   id: string;
@@ -108,6 +110,48 @@ export default function PedigreeDetailClient() {
     }
   };
 
+  const buildPedigreeData = (detail: PedigreeDetail): PedigreeData => ({
+    title: detail.title ?? '血 統 書',
+    catName: detail.catName || '',
+    registrationNo: detail.pedigreeId,
+    breed: detail.breed?.name ?? '',
+    color: detail.color?.name ?? '',
+    sex: formatGender(detail.gender),
+    birthDate: formatDate(detail.birthDate),
+    breeder: detail.breederName ?? '',
+    owner: detail.ownerName ?? '',
+    sire: detail.fatherPedigree
+      ? {
+          name: detail.fatherPedigree.catName,
+          registrationNo: detail.fatherPedigree.pedigreeId,
+        }
+      : undefined,
+    dam: detail.motherPedigree
+      ? {
+          name: detail.motherPedigree.catName,
+          registrationNo: detail.motherPedigree.pedigreeId,
+        }
+      : undefined,
+  });
+
+  const handleDownloadPdf = async (debugGrid: boolean) => {
+    if (!pedigree) return;
+    try {
+      const bytes = await generatePedigreePdf({
+        data: buildPedigreeData(pedigree),
+        debugGrid,
+      });
+      const suffix = debugGrid ? '_grid' : '';
+      downloadPedigreePdf(bytes, `pedigree_${pedigree.pedigreeId}${suffix}.pdf`);
+    } catch (err) {
+      notifications.show({
+        color: 'red',
+        title: 'PDF生成エラー',
+        message: err instanceof Error ? err.message : '不明なエラーが発生しました',
+      });
+    }
+  };
+
   const getGenderColor = (gender: number | null) => {
     switch (gender) {
       case 1: return 'blue';
@@ -159,6 +203,22 @@ export default function PedigreeDetailClient() {
               onClick={() => router.push(`/pedigrees/${pedigree.id}/family-tree`)}
             >
               家系図を見る
+            </Button>
+            <Button
+              color="blue"
+              leftSection={<IconDownload size={16} />}
+              onClick={() => { void handleDownloadPdf(false); }}
+            >
+              血統書PDFダウンロード
+            </Button>
+            <Button
+              variant="light"
+              color="gray"
+              leftSection={<IconGrid3x3 size={16} />}
+              onClick={() => { void handleDownloadPdf(true); }}
+              title="5mm/10mm 方眼と座標ラベル付きのPDF。印刷して現物と重ねるとズレ量がmmで読める"
+            >
+              座標調整用（グリッド付）
             </Button>
           </Group>
         </Group>
