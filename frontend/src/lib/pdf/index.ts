@@ -17,7 +17,7 @@ export type {
   TextAlign,
 } from './mm-coordinate-helper';
 
-export { embedJapaneseFonts } from './font-loader';
+export { embedPedigreeFonts } from './font-loader';
 export type { EmbeddedFonts, FontLoaderOptions } from './font-loader';
 
 export { DEFAULT_PEDIGREE_LAYOUT } from './pedigree-layout';

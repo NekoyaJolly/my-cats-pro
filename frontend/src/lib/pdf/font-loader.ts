@@ -10,15 +10,16 @@ export interface FontLoaderOptions {
   boldUrl?: string;
 }
 
-const DEFAULT_REGULAR_URL = '/fonts/NotoSansJP-Regular.ttf';
-const DEFAULT_BOLD_URL = '/fonts/NotoSansJP-Bold.ttf';
+const DEFAULT_REGULAR_URL = '/fonts/NotoSans-Regular.ttf';
+const DEFAULT_BOLD_URL = '/fonts/NotoSans-Bold.ttf';
 
 /**
- * public/fonts 配下の Noto Sans JP を PDFDocument に埋め込む。
+ * public/fonts 配下の Noto Sans (Latin) を PDFDocument に埋め込む。
+ * 血統書の印字内容は英字+数字のみのため Latin 専用フォントで十分。
  * fontkit.register は呼び出し側（PDF 生成エントリ）で 1 度だけ実行すること。
- * subset=true でファイルサイズを抑制しつつ、使用したグリフのみを埋め込む。
+ * subset=true で使用グリフのみを埋め込み、PDF サイズを最小化する。
  */
-export const embedJapaneseFonts = async (
+export const embedPedigreeFonts = async (
   pdfDoc: PDFDocument,
   options: FontLoaderOptions = {},
 ): Promise<EmbeddedFonts> => {

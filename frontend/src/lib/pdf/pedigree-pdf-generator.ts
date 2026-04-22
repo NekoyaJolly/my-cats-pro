@@ -1,7 +1,7 @@
 import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 
-import { embedJapaneseFonts, type FontLoaderOptions } from './font-loader';
+import { embedPedigreeFonts, type FontLoaderOptions } from './font-loader';
 import {
   PEDIGREE_PAGE_HEIGHT_MM,
   PEDIGREE_PAGE_SIZE_PT,
@@ -90,7 +90,7 @@ export const generatePedigreePdf = async (
 
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
-  const fonts = await embedJapaneseFonts(pdfDoc, options.font);
+  const fonts = await embedPedigreeFonts(pdfDoc, options.font);
 
   const page = pdfDoc.addPage([PEDIGREE_PAGE_SIZE_PT[0], PEDIGREE_PAGE_SIZE_PT[1]]);
   const black = rgb(0, 0, 0);
