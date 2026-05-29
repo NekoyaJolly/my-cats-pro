@@ -95,6 +95,11 @@ dist_notebook/
 # Playwright MCP スクリーンショット
 .playwright-mcp/
 
+# Last-Mile Shared Context: Bundle 出力 / CDP 用 Chrome プロファイル（生成物）
+# 注意: vendor/last-mile/*.tgz は CI/Docker での再現に必要なため、意図的にコミットする
+.last-mile/
+.chrome-lastmile/
+
 # Database files
 *.db
 *.sqlite

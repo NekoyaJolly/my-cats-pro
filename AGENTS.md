@@ -247,3 +247,53 @@ Antigravity (Agent) は、以下のシナリオで積極的にこのツールを
 - プロンプト例: 「繁殖スケジュール機能のDBスキーマ設計と、フロントエンドの実装状況を教えて」
 
 ---
+
+## 16. Last-Mile Shared Context Rule (ラストマイル共有コンテキスト)
+
+UI・UX・API 連携・DB 状態・Job 状態に関する **ラストマイル修正**（「最後の 20%」で人と AI の認識がズレる類の不具合）では、**コードだけで判断してはならない**。修正前に必ず **Last-Mile Bundle**（画面状態 / Console / Network / screenshot を 1 つに正規化した JSON）を確認する。
+
+> 本プロジェクトの導入範囲は **CLI + MCP + Playwright（開発ツールのみ）**。`@last-mile-context/*` は **root の devDependencies**（`vendor/last-mile/*.tgz` をローカル tarball として参照）で、**本番 Docker ビルド（`--filter frontend...`）には一切含まれない**。アプリ側計装（`window.__AI_DEBUG_CONTEXT__` / Copy AI Context ボタン）は未導入。
+
+### 16-1. Bundle の取得手段（本プロジェクト）
+
+1. **CDP 用 Chrome を起動**（既存の開発用ログイン状態を共有したい場合は、このプロファイルでログインしておく）:
+   ```bash
+   # 例 (macOS):
+   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+     --remote-debugging-port=9222 --user-data-dir=.chrome-lastmile
+   ```
+2. **接続診断**: `pnpm exec lastmile doctor`
+3. **違和感のある画面まで操作してから Bundle 取得**:
+   ```bash
+   pnpm exec lastmile collect \
+     --last-action "（押した操作）" \
+     --expected "（期待した挙動）" \
+     --actual "（実際の挙動）"
+   # 出力: .last-mile/latest/last-mile-bundle.json (+ screenshot)
+   ```
+4. **検証 / マスク**: `pnpm exec lastmile validate .last-mile/latest/last-mile-bundle.json` /
+   `pnpm exec lastmile mask .last-mile/latest/last-mile-bundle.json --strict`
+5. **MCP（AI クライアント）**: `collect_last_mile_bundle` 等 8 tool を AI から呼ぶ（接続設定は §16-4）。
+
+### 16-2. 必ず確認する項目
+
+| 確認対象 | 取得元 |
+|---|---|
+| 対象画面 | `page.url` / `page.title` |
+| 操作手順 / 期待値 / 実際の挙動 | `userObservation.lastAction` / `.expected` / `.actual`（人間が書く） |
+| Console | `console.errors` / `console.warnings` |
+| Network | `network.failedRequests` / `network.recentRequests` |
+| Server log | `server.errors` / `server.hints` |
+
+### 16-3. 守るべき原則
+
+1. **原因分類なしに修正しない**: Bundle を見ずに「ここっぽい」で直さない。`@last-mile-context/core` の `classifyIssue(bundle)` で雛形分類（API / UI / UX / Server / Network）が得られる。
+2. **修正後に再収集して回帰確認**: 同じ Bundle 観点で改善を確認する。
+3. **再発防止を Playwright spec / checklist 化**: 解決したラストマイル issue は `frontend/e2e/` の spec か checklist に落とす（`@last-mile-context/playwright-adapter` の `collectFromPlaywright` / `generatePlaywrightTestFromBundle` を利用可能）。
+4. **機密の扱い**: Bundle に含まれる Authorization / Cookie / JWT は redaction で自動マスクされる（設定: `lastmile.config.json`）。AI に渡す前に `lastmile mask <path> --strict` で再確認すると安全。マルチテナントのため、他テナントのデータが混ざっていないかも確認する。
+
+### 16-4. MCP 接続設定
+
+`lastmile-mcp` bin（8 tool: collect / page / screenshot / console / network / debug context / validate / mask）を MCP クライアントに登録する。設定例は `.cursor/mcp.json` を参照（command は `pnpm`、args は `exec lastmile-mcp --config ./lastmile.config.json`）。
+
+---

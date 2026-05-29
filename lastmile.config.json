@@ -1,0 +1,26 @@
+{
+  "appName": "my-cats-pro",
+  "environment": "development",
+  "chrome": {
+    "remoteDebuggingUrl": "http://localhost:9222",
+    "userDataDir": ".chrome-lastmile"
+  },
+  "output": {
+    "dir": ".last-mile/latest"
+  },
+  "redaction": {
+    "strict": false,
+    "maskHeaders": [
+      "authorization",
+      "cookie",
+      "set-cookie",
+      "x-api-key"
+    ],
+    "maskQueryParams": [
+      "token",
+      "access_token",
+      "refresh_token",
+      "api_key"
+    ]
+  }
+}

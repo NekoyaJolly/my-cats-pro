@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "last-mile-context": {
+      "command": "pnpm",
+      "args": ["exec", "lastmile-mcp", "--config", "./lastmile.config.json"]
+    }
+  }
+}
