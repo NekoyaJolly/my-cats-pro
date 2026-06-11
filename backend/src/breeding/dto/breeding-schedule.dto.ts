@@ -13,6 +13,7 @@ import {
   Min,
   Max,
   IsUUID,
+  IsBoolean,
 } from 'class-validator';
 
 // Prisma の enum と同期
@@ -58,6 +59,14 @@ export class CreateBreedingScheduleDto {
   @IsOptional()
   @IsString()
   notes?: string;
+  @ApiPropertyOptional({
+    description: "NGペアルール違反時でも強行登録する場合に true",
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  force?: boolean;
+
 }
 
 /**

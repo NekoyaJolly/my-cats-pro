@@ -34,6 +34,7 @@ import {
   MedicalRecordListResponseDto,
   MedicalRecordQueryDto,
   MedicalRecordResponseDto,
+  UpdateCareStatusDto,
   UpdateMedicalRecordDto,
 } from "./dto";
 
@@ -98,6 +99,19 @@ export class CareController {
   @ApiParam({ name: "id", description: "スケジュールID" })
   deleteSchedule(@Param("id") id: string) {
     return this.careService.deleteSchedule(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("schedules/:id/status")
+  @ApiOperation({ summary: "ケアスケジュールのステータス変更（有効/無効）" })
+  @ApiParam({ name: "id", description: "スケジュールID" })
+  @ApiResponse({ status: HttpStatus.OK, type: CareScheduleResponseDto })
+  updateScheduleStatus(
+    @Param("id") id: string,
+    @Body() dto: UpdateCareStatusDto,
+  ) {
+    return this.careService.updateScheduleStatus(id, dto.status);
   }
 
   @Get("medical-records")

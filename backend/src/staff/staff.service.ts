@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { Staff, Prisma } from '@prisma/client';
 
 import { StaffResponseDto, StaffListResponseDto, Weekday, WorkTimeTemplate } from '../common/types/staff.types';
@@ -54,6 +54,21 @@ export class StaffService {
    * スタッフを新規作成
    */
   async create(createStaffDto: CreateStaffDto): Promise<StaffResponseDto> {
+    // メールアドレス重複（論理削除済み含む）を事前チェックし、日本語エラーで返す
+    if (createStaffDto.email) {
+      const existing = await this.prisma.staff.findFirst({
+        where: { email: createStaffDto.email },
+        select: { id: true, isActive: true },
+      });
+      if (existing) {
+        throw new ConflictException(
+          existing.isActive
+            ? '同じメールアドレスのスタッフが既に登録されています'
+            : '同じメールアドレスの削除済みスタッフが存在します。復元機能をご利用ください',
+        );
+      }
+    }
+
     const staff = await this.prisma.staff.create({
       data: {
         name: createStaffDto.name,

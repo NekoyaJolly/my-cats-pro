@@ -824,6 +824,8 @@ export type CreateBreedingScheduleRequest = {
   duration: number;
   status?: BreedingScheduleStatus;
   notes?: string;
+  /** NGペアルール違反時の強行登録フラグ */
+  force?: boolean;
 };
 
 export type UpdateBreedingScheduleRequest = Partial<CreateBreedingScheduleRequest>;

@@ -38,6 +38,7 @@ import {
   type GetCareSchedulesParams,
   useAddCareSchedule,
   useUpdateCareSchedule,
+  useUpdateCareScheduleStatus,
   useDeleteCareSchedule,
   useCompleteCareSchedule,
   useGetCareSchedules,
@@ -210,6 +211,7 @@ export default function CarePage() {
   const scheduleQuery = useGetCareSchedules(scheduleParams);
   const addScheduleMutation = useAddCareSchedule();
   const updateScheduleMutation = useUpdateCareSchedule();
+  const updateStatusMutation = useUpdateCareScheduleStatus();
   const deleteScheduleMutation = useDeleteCareSchedule();
   const completeScheduleMutation = useCompleteCareSchedule();
 
@@ -704,7 +706,13 @@ export default function CarePage() {
                               size="sm"
                               onLabel="有効"
                               offLabel="無効"
-                              disabled
+                              disabled={schedule.status === 'COMPLETED' || updateStatusMutation.isPending}
+                              onChange={(event) => {
+                                updateStatusMutation.mutate({
+                                  id: schedule.id,
+                                  status: event.currentTarget.checked ? 'PENDING' : 'CANCELLED',
+                                });
+                              }}
                             />
                           </Table.Td>
                           <Table.Td>

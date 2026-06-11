@@ -63,6 +63,58 @@ export class BreedingService {
     });
   }
 
+  /**
+   * NGペアルールに違反していないか照合し、違反時は例外を投げる
+   * （force 指定時はスキップ。GENERATION_LIMIT は血統データ連携が未実装のため未対応）
+   */
+  private async assertNgRules(maleId: string, femaleId: string, force?: boolean): Promise<void> {
+    if (force) return;
+
+    const rules = await this.prisma.breedingNgRule.findMany({ where: { active: true } });
+    if (rules.length === 0) return;
+
+    const catSelect = {
+      name: true,
+      tags: { select: { tag: { select: { name: true } } } },
+    } as const;
+    const [male, female] = await Promise.all([
+      this.prisma.cat.findUnique({ where: { id: maleId }, select: catSelect }),
+      this.prisma.cat.findUnique({ where: { id: femaleId }, select: catSelect }),
+    ]);
+    if (!male || !female) return;
+
+    const maleTags = male.tags.map((catTag) => catTag.tag.name);
+    const femaleTags = female.tags.map((catTag) => catTag.tag.name);
+
+    for (const rule of rules) {
+      let violated = false;
+
+      if (
+        rule.type === 'TAG_COMBINATION' &&
+        rule.maleConditions.length > 0 &&
+        rule.femaleConditions.length > 0
+      ) {
+        violated =
+          rule.maleConditions.some((condition) => maleTags.includes(condition)) &&
+          rule.femaleConditions.some((condition) => femaleTags.includes(condition));
+      } else if (
+        rule.type === 'INDIVIDUAL_PROHIBITION' &&
+        rule.maleNames.length > 0 &&
+        rule.femaleNames.length > 0
+      ) {
+        violated =
+          rule.maleNames.includes(male.name) && rule.femaleNames.includes(female.name);
+      }
+
+      if (violated) {
+        const description = rule.description ? ` ${rule.description}` : '';
+        throw new BadRequestException(
+          `NGペアルール「${rule.name}」に該当するため登録できません。${description}強行する場合は force を指定してください`.trim(),
+        );
+      }
+    }
+  }
+
   async findAll(query: BreedingQueryDto): Promise<BreedingListResponse> {
     const {
       page = 1,
@@ -125,6 +177,9 @@ export class BreedingService {
 
     if (!female) throw new NotFoundException("femaleId not found");
     if (!male) throw new NotFoundException("maleId not found");
+
+    // NGペアルール照合（force 指定時はスキップ）
+    await this.assertNgRules(dto.maleId, dto.femaleId, dto.force);
 
     // Basic gender check (optional but useful)
     if ((female as CatWithGender).gender === "MALE") {
@@ -705,6 +760,9 @@ export class BreedingService {
     if (!recordedById) {
       throw new BadRequestException('記録者情報が取得できませんでした');
     }
+
+    // NGペアルール照合（force 指定時はスキップ）
+    await this.assertNgRules(dto.maleId, dto.femaleId, dto.force);
 
     const result = await this.prisma.breedingSchedule.create({
       data: {

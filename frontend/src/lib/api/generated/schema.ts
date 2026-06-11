@@ -1360,6 +1360,23 @@ export type paths = {
         patch: operations["CareController_updateSchedule"];
         trace?: never;
     };
+    "/api/v1/care/schedules/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** ケアスケジュールのステータス変更（有効/無効） */
+        patch: operations["CareController_updateScheduleStatus"];
+        trace?: never;
+    };
     "/api/v1/care/medical-records": {
         parameters: {
             query?: never;
@@ -2656,6 +2673,11 @@ export type components = {
              * @example 初回の交配。
              */
             notes?: string;
+            /**
+             * @description NGペアルール違反時でも強行登録する場合に true
+             * @example false
+             */
+            force?: boolean;
         };
         CreateBreedingNgRuleDto: {
             /**
@@ -2837,6 +2859,11 @@ export type components = {
             status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
             /** @description メモ */
             notes?: string;
+            /**
+             * @description NGペアルール違反時でも強行登録する場合に true
+             * @example false
+             */
+            force?: boolean;
         };
         UpdateBreedingScheduleDto: {
             /** @description オス猫ID */
@@ -2854,6 +2881,11 @@ export type components = {
             status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
             /** @description メモ */
             notes?: string;
+            /**
+             * @description NGペアルール違反時でも強行登録する場合に true
+             * @example false
+             */
+            force?: boolean;
         };
         CreateMatingCheckDto: {
             /** @description チェック日 (ISO8601) */
@@ -3148,6 +3180,13 @@ export type components = {
              *     }
              */
             data: Record<string, never>;
+        };
+        UpdateCareStatusDto: {
+            /**
+             * @example PENDING
+             * @enum {string}
+             */
+            status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
         };
         MedicalRecordVisitTypeDto: {
             /** @example c4a52a14-8d93-4b87-9f8c-7a6c2ef81234 */
@@ -7226,6 +7265,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateCareScheduleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareScheduleResponseDto"];
+                };
+            };
+        };
+    };
+    CareController_updateScheduleStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description スケジュールID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCareStatusDto"];
             };
         };
         responses: {

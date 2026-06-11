@@ -8,6 +8,7 @@ import {
   IsDateString,
   IsArray,
   ValidateNested,
+  IsIn,
 } from 'class-validator';
 
 /**
@@ -66,7 +67,7 @@ export class CreateGalleryEntryDto {
     description: '性別',
     enum: ['MALE', 'FEMALE', 'NEUTER', 'SPAY'],
   })
-  @IsEnum(['MALE', 'FEMALE', 'NEUTER', 'SPAY'])
+  @IsIn(['MALE', 'FEMALE', 'NEUTER', 'SPAY'])
   gender: string;
 
   @ApiPropertyOptional({ description: '毛色' })

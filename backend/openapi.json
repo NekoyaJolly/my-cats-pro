@@ -4423,6 +4423,53 @@
         ]
       }
     },
+    "/api/v1/care/schedules/{id}/status": {
+      "patch": {
+        "operationId": "CareController_updateScheduleStatus",
+        "summary": "ケアスケジュールのステータス変更（有効/無効）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "スケジュールID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCareStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareScheduleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/care/medical-records": {
       "get": {
         "operationId": "CareController_findMedicalRecords",
@@ -7708,6 +7755,11 @@
             "type": "string",
             "description": "メモ",
             "example": "初回の交配。"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "NGペアルール違反時でも強行登録する場合に true",
+            "example": false
           }
         },
         "required": [
@@ -8117,6 +8169,11 @@
           "notes": {
             "type": "string",
             "description": "メモ"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "NGペアルール違反時でも強行登録する場合に true",
+            "example": false
           }
         },
         "required": [
@@ -8160,6 +8217,11 @@
           "notes": {
             "type": "string",
             "description": "メモ"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "NGペアルール違反時でも強行登録する場合に true",
+            "example": false
           }
         }
       },
@@ -8786,6 +8848,24 @@
         "required": [
           "success",
           "data"
+        ]
+      },
+      "UpdateCareStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "PENDING"
+          }
+        },
+        "required": [
+          "status"
         ]
       },
       "MedicalRecordVisitTypeDto": {

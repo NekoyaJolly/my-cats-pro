@@ -52,8 +52,10 @@ export class TenantSettingsController {
   @ApiResponse({ status: 401, description: '認証が必要です' })
   @ApiResponse({ status: 404, description: 'テナントが見つかりません' })
   async getTagColorDefaults(@GetUser() user: RequestUser): Promise<TagColorDefaultsDto> {
+    // テナント未所属ユーザーには保存済み設定がないため、デフォルト値を返す
+    // （ページを開くたびに 400 が出る問題の修正。保存(PUT)は従来どおりテナント必須）
     if (!user.tenantId) {
-      throw new BadRequestException('テナント情報が不足しています');
+      return this.tenantSettingsService.getDefaultTagColorDefaults();
     }
     return this.tenantSettingsService.getTagColorDefaults(user.tenantId);
   }

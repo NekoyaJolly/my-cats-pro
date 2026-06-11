@@ -446,6 +446,31 @@ export class CareService {
     };
   }
 
+  /**
+   * ケアスケジュールのステータスのみを変更する（有効/無効スイッチ用）
+   */
+  async updateScheduleStatus(
+    id: string,
+    status: ScheduleStatus,
+  ): Promise<CareScheduleResponse> {
+    const existing = await this.prisma.schedule.findUnique({ where: { id } });
+
+    if (!existing) {
+      throw new NotFoundException("スケジュールが見つかりません");
+    }
+
+    const schedule = await this.prisma.schedule.update({
+      where: { id },
+      data: { status },
+      include: scheduleListInclude,
+    });
+
+    return {
+      success: true,
+      data: this.mapScheduleToResponse(schedule as ScheduleWithRelations),
+    };
+  }
+
   async deleteSchedule(id: string): Promise<{ success: true; message: string }> {
     const existing = await this.prisma.schedule.findUnique({
       where: { id },

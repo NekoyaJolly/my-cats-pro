@@ -49,6 +49,13 @@ export class TenantSettingsService {
    * @param tenantId テナントID
    * @returns タグカラーデフォルト設定（設定がない場合はフロントエンドのデフォルト値を返す）
    */
+  /**
+   * 保存済み設定を持たないユーザー向けのデフォルト値を返す
+   */
+  getDefaultTagColorDefaults(): TagColorDefaultsDto {
+    return { ...FRONTEND_DEFAULTS };
+  }
+
   async getTagColorDefaults(tenantId: string): Promise<TagColorDefaultsDto> {
     // 設定とテナントを同時に取得
     const settings = await this.prisma.tenantSettings.findUnique({

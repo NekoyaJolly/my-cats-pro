@@ -498,7 +498,8 @@ export default function BreedingPage() {
         }
       }
       
-      // NGペアチェック
+      // NGペアチェック（強行時はサーバーにも force を渡す）
+      let forceNgOverride = false;
       if (isNGPairing(selectedMale, femaleId)) {
         const ngRule = findMatchingRule(selectedMale, femaleId);
         
@@ -510,6 +511,7 @@ export default function BreedingPage() {
           closeModal();
           return;
         }
+        forceNgOverride = true;
       }
       
       // 各日付にスケジュールを追加
@@ -569,10 +571,13 @@ export default function BreedingPage() {
         const firstEntry = createdEntries.reduce((a, b) => (a.dayIndex <= b.dayIndex ? a : b));
         const scheduleStart = new Date(firstEntry.date);
         scheduleStart.setDate(scheduleStart.getDate() - firstEntry.dayIndex);
-        createScheduleOnServer({
-          ...firstEntry,
-          date: scheduleStart.toISOString().split('T')[0],
-        }).catch(() => {
+        createScheduleOnServer(
+          {
+            ...firstEntry,
+            date: scheduleStart.toISOString().split('T')[0],
+          },
+          { force: forceNgOverride },
+        ).catch(() => {
           // エラー通知はミューテーション側で表示済み
         });
       }

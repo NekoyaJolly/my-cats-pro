@@ -52,7 +52,7 @@ export interface UseBreedingScheduleReturn {
   clearScheduleData: () => void;
   
   // API 同期関数
-  createScheduleOnServer: (entry: BreedingScheduleEntry) => Promise<void>;
+  createScheduleOnServer: (entry: BreedingScheduleEntry, options?: { force?: boolean }) => Promise<void>;
   updateScheduleOnServer: (scheduleId: string, updates: UpdateBreedingScheduleRequest) => Promise<void>;
   deleteScheduleOnServer: (scheduleId: string) => Promise<void>;
   syncFromServer: () => Promise<void>;
@@ -300,13 +300,14 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
   }, []);
 
   // サーバーにスケジュールを作成
-  const createScheduleOnServer = useCallback(async (entry: BreedingScheduleEntry) => {
+  const createScheduleOnServer = useCallback(async (entry: BreedingScheduleEntry, options?: { force?: boolean }) => {
     const payload: CreateBreedingScheduleRequest = {
       maleId: entry.maleId,
       femaleId: entry.femaleId,
       startDate: entry.date,
       duration: entry.duration,
       status: 'SCHEDULED',
+      ...(options?.force ? { force: true } : {}),
     };
     
     try {

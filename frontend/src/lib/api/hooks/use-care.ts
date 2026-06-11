@@ -309,6 +309,33 @@ export function useDeleteCareSchedule() {
   });
 }
 
+export function useUpdateCareScheduleStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: CareScheduleStatus }) =>
+      apiClient.patch('/care/schedules/{id}/status', {
+        pathParams: { id } as ApiPathParams<'/care/schedules/{id}/status', 'patch'>,
+        body: { status },
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
+      notifications.show({
+        title: 'ステータスを変更しました',
+        message: variables.status === 'CANCELLED' ? '予定を無効にしました。' : '予定を有効にしました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'ステータス変更に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
 export function useCompleteCareSchedule() {
   const queryClient = useQueryClient();
 
