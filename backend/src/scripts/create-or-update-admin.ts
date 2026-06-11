@@ -28,7 +28,8 @@ async function main() {
       data: {
         email,
         passwordHash: hash,
-        role: UserRole.ADMIN,
+        // 初期管理者はテナント/ユーザー管理を含む全機能を扱える SUPER_ADMIN とする
+        role: UserRole.SUPER_ADMIN,
         isActive: true,
         clerkId: "local_admin",
         firstName: "Admin",
@@ -39,9 +40,7 @@ async function main() {
   } else {
   const updateData: Partial<typeof existing> = {};
     let changed = false;
-    if (existing.role !== UserRole.ADMIN) {
-      updateData.role = UserRole.ADMIN; changed = true;
-    }
+    // 既存ユーザーのロールは変更しない（手動でのロール変更を巻き戻さない）
     if (!existing.isActive) { updateData.isActive = true; changed = true; }
     if (forceUpdate) {
       const hash = await argon2.hash(password, {
