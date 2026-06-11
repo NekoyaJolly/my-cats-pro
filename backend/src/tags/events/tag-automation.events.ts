@@ -62,6 +62,8 @@ export interface AgeThresholdEvent extends BaseAutomationEvent {
   catId: string;
   ageInMonths: number;
   thresholdMonths: number;
+  /** 閾値に一致したルールID。指定時はそのルールのみ実行される */
+  ruleId?: string;
 }
 
 /**
@@ -75,6 +77,18 @@ export interface PageActionEvent extends BaseAutomationEvent {
   targetId: string; // 対象のリソースID（猫ID、交配記録IDなど）
   targetType?: string; // 'cat', 'breeding', 'health_record' など
   additionalData?: Record<string, unknown>; // アクション固有の追加データ
+}
+
+/**
+ * タグ付与・剥奪イベント
+ * 手動操作でタグが付与/剥奪された際に発火する
+ * （自動化による付与では無限ループ防止のため発火しない）
+ */
+export interface TagAssignedEvent extends BaseAutomationEvent {
+  eventType: 'TAG_ASSIGNED';
+  catId: string;
+  tagId: string;
+  action: 'ASSIGNED' | 'UNASSIGNED';
 }
 
 /**
@@ -97,6 +111,7 @@ export type TagAutomationEvent =
   | KittenRegisteredEvent
   | AgeThresholdEvent
   | PageActionEvent
+  | TagAssignedEvent
   | CustomEvent;
 
 /**
@@ -109,5 +124,6 @@ export const TAG_AUTOMATION_EVENTS = {
   KITTEN_REGISTERED: 'tag.automation.kitten.registered',
   AGE_THRESHOLD: 'tag.automation.age.threshold',
   PAGE_ACTION: 'tag.automation.page.action',
+  TAG_ASSIGNED: 'tag.automation.tag.assigned',
   CUSTOM: 'tag.automation.custom',
 } as const;

@@ -271,15 +271,22 @@ async function bootstrap() {
       res.status(health.success ? 200 : 503).json(health);
     });    // Swagger documentation
     if (process.env.NODE_ENV !== "production") {
-      const config = new DocumentBuilder()
-        .setTitle("Cat Management System API")
-        .setDescription("API for managing cat breeding and care records")
-        .setVersion("1.0")
-        .addBearerAuth()
-        .build();
+      // Swagger 生成は依存バージョン不整合で例外になり得るため、失敗してもアプリ起動は継続させる
+      try {
+        const config = new DocumentBuilder()
+          .setTitle("Cat Management System API")
+          .setDescription("API for managing cat breeding and care records")
+          .setVersion("1.0")
+          .addBearerAuth()
+          .build();
 
-      const document = SwaggerModule.createDocument(app, config);
-      SwaggerModule.setup("api/docs", app, document);
+        const document = SwaggerModule.createDocument(app, config);
+        SwaggerModule.setup("api/docs", app, document);
+      } catch (swaggerError) {
+        logger.warn(
+          `Swagger ドキュメントの生成に失敗したためスキップします（アプリは継続起動）: ${swaggerError instanceof Error ? swaggerError.message : String(swaggerError)}`,
+        );
+      }
     }
 
     if (!process.env.PORT && process.env.NODE_ENV === 'production') {
@@ -308,6 +315,9 @@ async function bootstrap() {
     logger.log(`❤️  Health Check: http://localhost:${port}/health`);
   } catch (error) {
     logger.error("Failed to start application:", error);
+    // bufferLogs + 非同期 transport では process.exit までにログが flush されず
+    // 起動失敗が無音になるため、標準エラーへ直接も出力する
+    console.error("Failed to start application:", error);
     process.exit(1);
   }
 }

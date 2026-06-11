@@ -152,6 +152,25 @@ export class CatsController {
     return this.catsService.findKittens(query);
   }
 
+  // NOTE: 静的パスは @Get(":id") より前に定義しないと :id に吸われて 400 になる
+  @Get("genders")
+  @ApiOperation({ summary: "性別マスタデータを取得" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "性別マスタデータを返却",
+  })
+  getGenders() {
+    return {
+      success: true,
+      data: GENDER_MASTER.map(record => ({
+        id: parseInt(record.key),
+        code: parseInt(record.key),
+        name: record.name,
+        canonical: record.canonical,
+      })),
+    };
+  }
+
   @Get(":id")
   @ApiOperation({ summary: "IDで猫データを取得" })
   @ApiResponse({ status: HttpStatus.OK, description: "猫データ" })
@@ -249,23 +268,6 @@ export class CatsController {
     return this.catsService.remove(id);
   }
 
-  @Get("genders")
-  @ApiOperation({ summary: "性別マスタデータを取得" })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: "性別マスタデータを返却",
-  })
-  getGenders() {
-    return {
-      success: true,
-      data: GENDER_MASTER.map(record => ({
-        id: parseInt(record.key),
-        code: parseInt(record.key),
-        name: record.name,
-        canonical: record.canonical,
-      })),
-    };
-  }
 
   // ==========================================
   // 体重記録 API エンドポイント

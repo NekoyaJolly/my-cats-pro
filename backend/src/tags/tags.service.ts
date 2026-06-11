@@ -1,9 +1,14 @@
 import { Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
 import { CreateTagDto, UpdateTagDto } from "./dto";
+import {
+  TAG_AUTOMATION_EVENTS,
+  type TagAssignedEvent,
+} from "./events/tag-automation.events";
 import { TagCategoriesService } from "./tag-categories.service";
 
 @Injectable()
@@ -11,6 +16,7 @@ export class TagsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tagCategoriesService: TagCategoriesService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async findAll(options: { scopes?: string[]; includeInactive?: boolean } = {}) {
@@ -136,11 +142,25 @@ export class TagsService {
   }
 
   async assignToCat(catId: string, tagId: string) {
+    let created = false;
     try {
       await this.prisma.catTag.create({ data: { catId, tagId } });
-    } catch {
-      // Unique constraint (already assigned) -> return success idempotently
+      created = true;
+    } catch (error) {
+      // 付与済み（ユニーク制約 P2002）のみ冪等に成功扱いとし、それ以外は再throw
+      const isAlreadyAssigned =
+        error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+      if (!isAlreadyAssigned) {
+        throw error;
+      }
     }
+
+    // 手動付与時のみ TAG_ASSIGNED イベントを発火する
+    // （自動化による付与は execution サービス側で発火しないため無限ループしない）
+    if (created) {
+      this.emitTagAssignedEvent(catId, tagId, "ASSIGNED");
+    }
+
     return { success: true };
   }
 
@@ -148,7 +168,25 @@ export class TagsService {
     await this.prisma.catTag.delete({
       where: { catId_tagId: { catId, tagId } },
     });
+
+    this.emitTagAssignedEvent(catId, tagId, "UNASSIGNED");
+
     return { success: true };
+  }
+
+  private emitTagAssignedEvent(
+    catId: string,
+    tagId: string,
+    action: TagAssignedEvent["action"],
+  ): void {
+    const event: TagAssignedEvent = {
+      eventType: "TAG_ASSIGNED",
+      timestamp: new Date(),
+      catId,
+      tagId,
+      action,
+    };
+    this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.TAG_ASSIGNED, event);
   }
 
   private defaultTagInclude(): Prisma.TagInclude {

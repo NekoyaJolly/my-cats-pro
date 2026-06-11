@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  IsBoolean,
 } from "class-validator";
 
 export class CreateBreedingDto {
@@ -37,4 +38,12 @@ export class CreateBreedingDto {
   @IsOptional()
   @IsString()
   notes?: string;
+  @ApiPropertyOptional({
+    description: "NGペアルール違反時でも強行登録する場合に true",
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  force?: boolean;
+
 }

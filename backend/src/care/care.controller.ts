@@ -34,6 +34,8 @@ import {
   MedicalRecordListResponseDto,
   MedicalRecordQueryDto,
   MedicalRecordResponseDto,
+  UpdateCareStatusDto,
+  UpdateMedicalRecordDto,
 } from "./dto";
 
 @ApiTags("Care")
@@ -99,6 +101,19 @@ export class CareController {
     return this.careService.deleteSchedule(id);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("schedules/:id/status")
+  @ApiOperation({ summary: "ケアスケジュールのステータス変更（有効/無効）" })
+  @ApiParam({ name: "id", description: "スケジュールID" })
+  @ApiResponse({ status: HttpStatus.OK, type: CareScheduleResponseDto })
+  updateScheduleStatus(
+    @Param("id") id: string,
+    @Body() dto: UpdateCareStatusDto,
+  ) {
+    return this.careService.updateScheduleStatus(id, dto.status);
+  }
+
   @Get("medical-records")
   @ApiOperation({ summary: "医療記録一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK, type: MedicalRecordListResponseDto })
@@ -116,5 +131,38 @@ export class CareController {
     @GetUser() user?: RequestUser,
   ) {
     return this.careService.addMedicalRecord(dto, user?.userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get("medical-records/:id")
+  @ApiOperation({ summary: "医療記録の詳細取得" })
+  @ApiParam({ name: "id", description: "医療記録ID" })
+  @ApiResponse({ status: HttpStatus.OK, type: MedicalRecordResponseDto })
+  findMedicalRecordById(@Param("id") id: string) {
+    return this.careService.findMedicalRecordById(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("medical-records/:id")
+  @ApiOperation({ summary: "医療記録の更新" })
+  @ApiParam({ name: "id", description: "医療記録ID" })
+  @ApiResponse({ status: HttpStatus.OK, type: MedicalRecordResponseDto })
+  updateMedicalRecord(
+    @Param("id") id: string,
+    @Body() dto: UpdateMedicalRecordDto,
+  ) {
+    return this.careService.updateMedicalRecord(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete("medical-records/:id")
+  @ApiOperation({ summary: "医療記録の削除" })
+  @ApiParam({ name: "id", description: "医療記録ID" })
+  @ApiResponse({ status: HttpStatus.OK, description: "削除成功" })
+  deleteMedicalRecord(@Param("id") id: string) {
+    return this.careService.deleteMedicalRecord(id);
   }
 }

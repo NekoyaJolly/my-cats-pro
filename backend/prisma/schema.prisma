@@ -189,6 +189,9 @@ model Cat {
   description           String?                @map("notes")
   fatherId              String?                @map("father_id")
   motherId              String?                @map("mother_id")
+  /// 親猫削除後も名前をテキストで保持するスナップショット
+  fatherName            String?                @map("father_name")
+  motherName            String?                @map("mother_name")
   createdAt             DateTime               @default(now()) @map("created_at")
   updatedAt             DateTime               @updatedAt @map("updated_at")
   pedigreeId            String?                @map("pedigree_id")
@@ -241,8 +244,11 @@ model Cat {
 
 model BreedingRecord {
   id              String         @id @default(uuid())
-  maleId          String         @map("male_id")
-  femaleId        String         @map("female_id")
+  maleId          String?        @map("male_id")
+  femaleId        String?        @map("female_id")
+  /// 猫削除後も名前をテキストで保持するスナップショット
+  maleName        String?        @map("male_name")
+  femaleName      String?        @map("female_name")
   breedingDate    DateTime       @map("breeding_date")
   expectedDueDate DateTime?      @map("expected_due_date")
   actualDueDate   DateTime?      @map("actual_due_date")
@@ -252,8 +258,8 @@ model BreedingRecord {
   recordedBy      String         @map("recorded_by")
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
-  female          Cat            @relation("FemaleBreeding", fields: [femaleId], references: [id])
-  male            Cat            @relation("MaleBreeding", fields: [maleId], references: [id])
+  female          Cat?           @relation("FemaleBreeding", fields: [femaleId], references: [id])
+  male            Cat?           @relation("MaleBreeding", fields: [maleId], references: [id])
   recorder        User           @relation(fields: [recordedBy], references: [id])
 
   @@index([maleId])
@@ -288,8 +294,11 @@ model BreedingNgRule {
 // 交配スケジュール - 交配期間の管理
 model BreedingSchedule {
   id         String                  @id @default(uuid())
-  maleId     String                  @map("male_id")
-  femaleId   String                  @map("female_id")
+  maleId     String?                 @map("male_id")
+  femaleId   String?                 @map("female_id")
+  /// 猫削除後も名前をテキストで保持するスナップショット
+  maleName   String?                 @map("male_name")
+  femaleName String?                 @map("female_name")
   startDate  DateTime                @map("start_date")
   duration   Int                     // 日数
   status     BreedingScheduleStatus  @default(SCHEDULED)
@@ -298,8 +307,8 @@ model BreedingSchedule {
   createdAt  DateTime                @default(now()) @map("created_at")
   updatedAt  DateTime                @updatedAt @map("updated_at")
 
-  male       Cat                     @relation("BreedingScheduleMale", fields: [maleId], references: [id])
-  female     Cat                     @relation("BreedingScheduleFemale", fields: [femaleId], references: [id])
+  male       Cat?                    @relation("BreedingScheduleMale", fields: [maleId], references: [id])
+  female     Cat?                    @relation("BreedingScheduleFemale", fields: [femaleId], references: [id])
   recorder   User                    @relation(fields: [recordedBy], references: [id])
   checks     MatingCheck[]
 
@@ -342,10 +351,13 @@ model PregnancyCheck {
   recordedBy String          @map("recorded_by")
   createdAt  DateTime        @default(now()) @map("created_at")
   updatedAt  DateTime        @updatedAt @map("updated_at")
-  motherId   String          @map("mother_id")
+  motherId   String?         @map("mother_id")
   fatherId   String?         @map("father_id")
+  /// 猫削除後も名前をテキストで保持するスナップショット
+  motherName String?         @map("mother_name")
+  fatherName String?         @map("father_name")
   matingDate DateTime?       @map("mating_date")
-  mother     Cat             @relation("PregnancyCheckMother", fields: [motherId], references: [id])
+  mother     Cat?            @relation("PregnancyCheckMother", fields: [motherId], references: [id])
   recorder   User            @relation(fields: [recordedBy], references: [id])
 
   @@index([motherId])
@@ -369,11 +381,14 @@ model BirthPlan {
   actualKittens      Int?                @map("actual_kittens")
   expectedBirthDate  DateTime            @map("expected_birth_date")
   expectedKittens    Int?                @map("expected_kittens")
-  motherId           String              @map("mother_id")
+  motherId           String?             @map("mother_id")
   fatherId           String?             @map("father_id")
+  /// 猫削除後も名前をテキストで保持するスナップショット
+  motherName         String?             @map("mother_name")
+  fatherName         String?             @map("father_name")
   matingDate         DateTime?           @map("mating_date")
   completedAt        DateTime?           @map("completed_at")
-  mother             Cat                 @relation("BirthPlanMother", fields: [motherId], references: [id])
+  mother             Cat?                @relation("BirthPlanMother", fields: [motherId], references: [id])
   recorder           User                @relation(fields: [recordedBy], references: [id])
   kittenDispositions KittenDisposition[]
 
@@ -580,7 +595,9 @@ model MedicalVisitType {
 
 model MedicalRecord {
   id             String                    @id @default(uuid())
-  catId          String                    @map("cat_id")
+  catId          String?                   @map("cat_id")
+  /// 猫削除後も対象名をテキストで保持するスナップショット
+  catName        String?                   @map("cat_name")
   scheduleId     String?                   @map("schedule_id")
   recordedBy     String                    @map("recorded_by")
   visitDate      DateTime                  @map("visit_date")
@@ -599,7 +616,7 @@ model MedicalRecord {
   visitTypeId    String?                   @map("visit_type_id")
   attachments    MedicalRecordAttachment[]
   tags           MedicalRecordTag[]
-  cat            Cat                       @relation(fields: [catId], references: [id])
+  cat            Cat?                      @relation(fields: [catId], references: [id])
   recorder       User                      @relation(fields: [recordedBy], references: [id])
   schedule       Schedule?                 @relation(fields: [scheduleId], references: [id])
   visitType      MedicalVisitType?         @relation(fields: [visitTypeId], references: [id])

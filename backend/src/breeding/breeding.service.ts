@@ -1,7 +1,9 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
+import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";
 
 import {
   BreedingQueryDto,
@@ -42,7 +44,76 @@ import {
 
 @Injectable()
 export class BreedingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
+
+  /**
+   * PAGE_ACTION タイプのタグ自動化ルール向けイベントを発火する
+   */
+  private emitPageActionEvent(action: string, catId: string): void {
+    this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.PAGE_ACTION, {
+      eventType: "PAGE_ACTION" as const,
+      timestamp: new Date(),
+      page: "breeding",
+      action,
+      targetId: catId,
+      targetType: "cat",
+    });
+  }
+
+  /**
+   * NGペアルールに違反していないか照合し、違反時は例外を投げる
+   * （force 指定時はスキップ。GENERATION_LIMIT は血統データ連携が未実装のため未対応）
+   */
+  private async assertNgRules(maleId: string, femaleId: string, force?: boolean): Promise<void> {
+    if (force) return;
+
+    const rules = await this.prisma.breedingNgRule.findMany({ where: { active: true } });
+    if (rules.length === 0) return;
+
+    const catSelect = {
+      name: true,
+      tags: { select: { tag: { select: { name: true } } } },
+    } as const;
+    const [male, female] = await Promise.all([
+      this.prisma.cat.findUnique({ where: { id: maleId }, select: catSelect }),
+      this.prisma.cat.findUnique({ where: { id: femaleId }, select: catSelect }),
+    ]);
+    if (!male || !female) return;
+
+    const maleTags = male.tags.map((catTag) => catTag.tag.name);
+    const femaleTags = female.tags.map((catTag) => catTag.tag.name);
+
+    for (const rule of rules) {
+      let violated = false;
+
+      if (
+        rule.type === 'TAG_COMBINATION' &&
+        rule.maleConditions.length > 0 &&
+        rule.femaleConditions.length > 0
+      ) {
+        violated =
+          rule.maleConditions.some((condition) => maleTags.includes(condition)) &&
+          rule.femaleConditions.some((condition) => femaleTags.includes(condition));
+      } else if (
+        rule.type === 'INDIVIDUAL_PROHIBITION' &&
+        rule.maleNames.length > 0 &&
+        rule.femaleNames.length > 0
+      ) {
+        violated =
+          rule.maleNames.includes(male.name) && rule.femaleNames.includes(female.name);
+      }
+
+      if (violated) {
+        const description = rule.description ? ` ${rule.description}` : '';
+        throw new BadRequestException(
+          `NGペアルール「${rule.name}」に該当するため登録できません。${description}強行する場合は force を指定してください`.trim(),
+        );
+      }
+    }
+  }
 
   async findAll(query: BreedingQueryDto): Promise<BreedingListResponse> {
     const {
@@ -106,6 +177,9 @@ export class BreedingService {
 
     if (!female) throw new NotFoundException("femaleId not found");
     if (!male) throw new NotFoundException("maleId not found");
+
+    // NGペアルール照合（force 指定時はスキップ）
+    await this.assertNgRules(dto.maleId, dto.femaleId, dto.force);
 
     // Basic gender check (optional but useful)
     if ((female as CatWithGender).gender === "MALE") {
@@ -308,6 +382,24 @@ export class BreedingService {
         mother: { select: { id: true, name: true } },
       },
     });
+
+    // 妊娠確認イベントを発火（タグ自動化: PREGNANCY_CONFIRMED / breeding.pregnancy_confirmed）
+    if (result.status === 'CONFIRMED') {
+      this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.PREGNANCY_CONFIRMED, {
+        eventType: 'PREGNANCY_CONFIRMED' as const,
+        timestamp: new Date(),
+        pregnancyCheckId: result.id,
+        femaleId: result.motherId,
+        maleId: result.fatherId ?? undefined,
+        confirmedDate: result.checkDate,
+      });
+      if (result.motherId) {
+        this.emitPageActionEvent('pregnancy_confirmed', result.motherId);
+      }
+      if (result.fatherId) {
+        this.emitPageActionEvent('pregnancy_confirmed', result.fatherId);
+      }
+    }
 
     return { success: true, data: result };
   }
@@ -669,6 +761,9 @@ export class BreedingService {
       throw new BadRequestException('記録者情報が取得できませんでした');
     }
 
+    // NGペアルール照合（force 指定時はスキップ）
+    await this.assertNgRules(dto.maleId, dto.femaleId, dto.force);
+
     const result = await this.prisma.breedingSchedule.create({
       data: {
         maleId: dto.maleId,
@@ -685,6 +780,22 @@ export class BreedingService {
         checks: true,
       },
     });
+
+    // 交配予定イベントを発火（タグ自動化: BREEDING_PLANNED / breeding.create）
+    this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.BREEDING_PLANNED, {
+      eventType: 'BREEDING_PLANNED' as const,
+      timestamp: new Date(),
+      breedingId: result.id,
+      maleId: result.maleId,
+      femaleId: result.femaleId,
+      plannedDate: result.startDate,
+    });
+    if (result.maleId) {
+      this.emitPageActionEvent('create', result.maleId);
+    }
+    if (result.femaleId) {
+      this.emitPageActionEvent('create', result.femaleId);
+    }
 
     return { success: true, data: result };
   }

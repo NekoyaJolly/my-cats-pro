@@ -87,6 +87,9 @@ export default function BreedingPage() {
     getMatingCheckCount,
     addMatingCheck,
     clearScheduleData,
+    createScheduleOnServer,
+    updateScheduleOnServer,
+    deleteScheduleOnServer,
   } = useBreedingSchedule();
 
   const [activeTab, setActiveTab] = useState('schedule');
@@ -257,10 +260,30 @@ export default function BreedingPage() {
     }
   };
 
+  // 対象ペアのサーバー側スケジュールに交配結果ステータスを反映する
+  const syncMatingResultToServer = (maleId: string, femaleName: string, result: 'success' | 'failure') => {
+    const serverIds = new Set<string>();
+    Object.keys(breedingSchedule).forEach((key) => {
+      const entry = breedingSchedule[key];
+      if (key.startsWith(`${maleId}-`) && entry.femaleName === femaleName && !entry.isHistory && entry.serverId) {
+        serverIds.add(entry.serverId);
+      }
+    });
+    serverIds.forEach((serverId) => {
+      updateScheduleOnServer(serverId, {
+        status: result === 'success' ? 'COMPLETED' : 'CANCELLED',
+      }).catch(() => {
+        // エラー通知はミューテーション側で表示済み
+      });
+    });
+  };
+
   // 交配結果処理
   const handleMatingResult = (maleId: string, femaleId: string, femaleName: string, matingDate: string, result: 'success' | 'failure') => {
     const male = activeMales.find((m: Cat) => m.id === maleId);
-    
+
+    syncMatingResultToServer(maleId, femaleName, result);
+
     if (result === 'success') {
       const checkDate = new Date();
       checkDate.setDate(checkDate.getDate() + 21);
@@ -279,7 +302,7 @@ export default function BreedingPage() {
           setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
             const newSchedule = { ...prev };
             Object.keys(newSchedule).forEach(key => {
-              if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
+              if (key.startsWith(`${maleId}-`) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
                 newSchedule[key] = {
                   ...newSchedule[key],
                   isHistory: true,
@@ -310,7 +333,7 @@ export default function BreedingPage() {
       setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
         const newSchedule = { ...prev };
         Object.keys(newSchedule).forEach(key => {
-          if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
+          if (key.startsWith(`${maleId}-`) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
             newSchedule[key] = {
               ...newSchedule[key],
               isHistory: true,
@@ -375,6 +398,17 @@ export default function BreedingPage() {
       return { ...updated, ...newSchedule };
     });
 
+    // サーバー側スケジュールにも期間・メス猫変更を反映
+    if (selectedScheduleForEdit.serverId) {
+      updateScheduleOnServer(selectedScheduleForEdit.serverId, {
+        femaleId: finalFemaleId,
+        startDate: startDate.toISOString().split('T')[0],
+        duration: newDuration,
+      }).catch(() => {
+        // エラー通知はミューテーション側で表示済み
+      });
+    }
+
     const message = newFemaleId && newFemaleId !== femaleId
       ? `交配期間を${newDuration}日間に変更し、メス猫を${newFemaleName}に変更しました`
       : `交配期間を${newDuration}日間に変更しました`;
@@ -405,9 +439,16 @@ export default function BreedingPage() {
         const scheduleKey = `${maleId}-${dateStr}`;
         delete updated[scheduleKey];
       }
-      
+
       return updated;
     });
+
+    // サーバー側スケジュールも削除
+    if (selectedScheduleForEdit.serverId) {
+      deleteScheduleOnServer(selectedScheduleForEdit.serverId).catch(() => {
+        // エラー通知はミューテーション側で表示済み
+      });
+    }
 
     notifications.show({
       title: '削除成功',
@@ -457,7 +498,8 @@ export default function BreedingPage() {
         }
       }
       
-      // NGペアチェック
+      // NGペアチェック（強行時はサーバーにも force を渡す）
+      let forceNgOverride = false;
       if (isNGPairing(selectedMale, femaleId)) {
         const ngRule = findMatchingRule(selectedMale, femaleId);
         
@@ -469,6 +511,7 @@ export default function BreedingPage() {
           closeModal();
           return;
         }
+        forceNgOverride = true;
       }
       
       // 各日付にスケジュールを追加
@@ -497,6 +540,15 @@ export default function BreedingPage() {
             isHistory: true,
             result: success ? '成功' : '失敗',
           };
+
+          // 前回ペアの結果をサーバーにも反映（成功: COMPLETED / 失敗: CANCELLED）
+          if (existingPair.serverId) {
+            updateScheduleOnServer(existingPair.serverId, {
+              status: success ? 'COMPLETED' : 'CANCELLED',
+            }).catch(() => {
+              // エラー通知はミューテーション側で表示済み
+            });
+          }
         } else if (!existingPair) {
           newSchedules[scheduleKey] = {
             maleId: selectedMale,
@@ -510,10 +562,27 @@ export default function BreedingPage() {
           };
         }
       });
-      
+
       setBreedingSchedule(prev => ({ ...prev, ...newSchedules }));
+
+      // 新規スケジュールをサーバーに永続化（期間全体を1レコードとして登録）
+      const createdEntries = Object.values(newSchedules).filter((entry) => !entry.isHistory);
+      if (createdEntries.length > 0) {
+        const firstEntry = createdEntries.reduce((a, b) => (a.dayIndex <= b.dayIndex ? a : b));
+        const scheduleStart = new Date(firstEntry.date);
+        scheduleStart.setDate(scheduleStart.getDate() - firstEntry.dayIndex);
+        createScheduleOnServer(
+          {
+            ...firstEntry,
+            date: scheduleStart.toISOString().split('T')[0],
+          },
+          { force: forceNgOverride },
+        ).catch(() => {
+          // エラー通知はミューテーション側で表示済み
+        });
+      }
     }
-    
+
     closeModal();
   };
 
@@ -563,9 +632,9 @@ export default function BreedingPage() {
   };
 
   // 出産情報登録
-  const handleBirthInfoSubmit = async () => {
-    if (!selectedBirthPlan) return;
-    
+  const handleBirthInfoSubmit = async (): Promise<boolean> => {
+    if (!selectedBirthPlan) return false;
+
     try {
       const birthDateStr = birthDate;
       const aliveCount = birthCount - deathCount;
@@ -613,12 +682,27 @@ export default function BreedingPage() {
       setBirthCount(0);
       setDeathCount(0);
       setBirthDate(new Date().toISOString().split('T')[0]);
+      return true;
     } catch (error) {
       notifications.show({
         title: 'エラー',
         message: error instanceof Error ? error.message : '出産情報の登録に失敗しました',
         color: 'red',
       });
+      return false;
+    }
+  };
+
+  // 詳細登録: 出産情報を登録した上で、子猫管理モーダルを開いて名前・性別等の詳細を編集できるようにする
+  const handleBirthInfoDetailSubmit = async () => {
+    if (!selectedBirthPlan) return;
+
+    const motherId = selectedBirthPlan.motherId;
+    const succeeded = await handleBirthInfoSubmit();
+
+    if (succeeded) {
+      setSelectedMotherIdForModal(motherId);
+      openManagementModal();
     }
   };
 
@@ -942,10 +1026,12 @@ export default function BreedingPage() {
         onBirthCountChange={setBirthCount}
         onDeathCountChange={setDeathCount}
         onBirthDateChange={setBirthDate}
-        onSubmit={handleBirthInfoSubmit}
+        onSubmit={() => {
+          void handleBirthInfoSubmit();
+        }}
         onDetailSubmit={() => {
-                // 詳細登録ハンドラー（実装中）
-              }}
+          void handleBirthInfoDetailSubmit();
+        }}
         isLoading={updateBirthPlanMutation.isPending || createCatMutation.isPending}
       />
 

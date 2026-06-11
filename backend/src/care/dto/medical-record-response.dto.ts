@@ -222,7 +222,8 @@ export type MedicalRecordData = {
   followUpDate: string | null;
   status: MedicalRecordStatus;
   notes: string | null;
-  cat: { id: string; name: string };
+  // 猫削除後は id: null + スナップショット名で返す
+  cat: { id: string | null; name: string | null };
   schedule: { id: string; name: string } | null;
   tags: {
     id: string;

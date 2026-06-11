@@ -224,6 +224,641 @@
         ]
       }
     },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "UsersController_listUsers",
+        "summary": "ユーザー一覧取得",
+        "description": "SUPER_ADMINは全ユーザー、TENANT_ADMINは自テナントのユーザーを取得します。",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": false,
+            "in": "query",
+            "description": "テナント ID でフィルタ（SUPER_ADMIN のみ有効）",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ユーザー一覧を返却"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "operationId": "UsersController_getMe",
+        "summary": "自身のプロフィール取得",
+        "description": "JWTで認証されたユーザー自身のプロフィール情報を取得します。",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "プロフィール情報を返却"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "404": {
+            "description": "ユーザーが見つかりません"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_updateMe",
+        "summary": "自身のプロフィール更新",
+        "description": "JWTで認証されたユーザー自身のプロフィール情報を更新します。各フィールドはオプショナルです。",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "プロフィールが更新されました"
+          },
+          "400": {
+            "description": "更新するフィールドがありません"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "409": {
+            "description": "メールアドレスが既に使用されています"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/invite": {
+      "post": {
+        "operationId": "UsersController_inviteUser",
+        "summary": "ユーザー招待",
+        "description": "SUPER_ADMINは任意のテナント、TENANT_ADMINは自テナントにユーザーを招待します。",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "招待が作成されました"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "テナントが見つかりません"
+          },
+          "409": {
+            "description": "メールアドレスが既に使用されています"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{id}/role": {
+      "patch": {
+        "operationId": "UsersController_updateUserRole",
+        "summary": "ユーザーロール変更",
+        "description": "SUPER_ADMINは任意のユーザー、TENANT_ADMINは自テナントのADMIN/USERのロールを変更します。",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "対象ユーザー ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ロールが更新されました"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "ユーザーが見つかりません"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{id}": {
+      "delete": {
+        "operationId": "UsersController_deleteUser",
+        "summary": "ユーザー削除",
+        "description": "SUPER_ADMINは任意のユーザー（自分と他のSUPER_ADMINを除く）、TENANT_ADMINは自テナントのADMIN/USERを削除します。",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "対象ユーザー ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ユーザーが削除されました"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "ユーザーが見つかりません"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants": {
+      "get": {
+        "operationId": "TenantsController_listTenants",
+        "summary": "テナント一覧取得",
+        "description": "SuperAdminのみが実行可能。全テナントの一覧を取得します。",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "テナント一覧を返却"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "TenantsController_createTenant",
+        "summary": "テナント作成",
+        "description": "SuperAdminのみが実行可能。新しいテナントを作成します。",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTenantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "テナントが作成されました"
+          },
+          "400": {
+            "description": "不正なリクエスト"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "409": {
+            "description": "スラッグが既に使用されています"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}": {
+      "get": {
+        "operationId": "TenantsController_getTenantById",
+        "summary": "テナント詳細取得",
+        "description": "SuperAdminまたはテナント管理者（自テナントのみ）が実行可能。指定IDのテナント詳細を取得します。",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "テナント詳細を返却"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "テナントが見つかりません"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "TenantsController_updateTenant",
+        "summary": "テナント更新",
+        "description": "SuperAdminのみが実行可能。指定IDのテナントを更新します。",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "テナントが更新されました"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "テナントが見つかりません"
+          },
+          "409": {
+            "description": "スラッグが既に使用されています"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "TenantsController_deleteTenant",
+        "summary": "テナント削除",
+        "description": "SuperAdminのみが実行可能。指定IDのテナントを削除します。所属ユーザーがいる場合は削除できません。",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "テナントが削除されました"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "テナントが見つかりません"
+          },
+          "409": {
+            "description": "所属ユーザーが存在するため削除できません"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/invite-admin": {
+      "post": {
+        "operationId": "TenantsController_inviteTenantAdmin",
+        "summary": "テナント管理者を招待",
+        "description": "SuperAdminのみが実行可能。新しいテナントを作成し、管理者を招待します。",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteTenantAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "招待が正常に作成されました"
+          },
+          "400": {
+            "description": "不正なリクエスト"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "409": {
+            "description": "メールアドレスまたはスラッグが既に使用されています"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/{tenantId}/users/invite": {
+      "post": {
+        "operationId": "TenantsController_inviteUser",
+        "summary": "ユーザーを招待",
+        "description": "テナント管理者が自分のテナントにユーザーを招待します。",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "招待が正常に作成されました"
+          },
+          "400": {
+            "description": "不正なリクエスト"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "テナントが見つかりません"
+          },
+          "409": {
+            "description": "メールアドレスが既に使用されています"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/complete-invitation": {
+      "post": {
+        "operationId": "TenantsController_completeInvitation",
+        "summary": "招待完了",
+        "description": "招待トークンを使用してユーザー登録を完了します。認証不要。",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteInvitationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "ユーザー登録が完了しました"
+          },
+          "400": {
+            "description": "不正なリクエストまたは無効なトークン"
+          },
+          "409": {
+            "description": "メールアドレスが既に使用されています"
+          }
+        },
+        "tags": [
+          "tenants"
+        ]
+      }
+    },
+    "/api/v1/tenant-settings/tag-color-defaults": {
+      "get": {
+        "operationId": "TenantSettingsController_getTagColorDefaults",
+        "summary": "タグカラーデフォルト設定を取得",
+        "description": "テナントのタグカラーデフォルト設定を取得します。設定が存在しない場合はフロントエンドのデフォルト値を返します。",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "タグカラーデフォルト設定を返却",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagColorDefaultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "404": {
+            "description": "テナントが見つかりません"
+          }
+        },
+        "tags": [
+          "tenant-settings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "TenantSettingsController_updateTagColorDefaults",
+        "summary": "タグカラーデフォルト設定を更新",
+        "description": "テナントのタグカラーデフォルト設定を更新します。部分更新をサポートしています。",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagColorDefaultsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "タグカラーデフォルト設定が更新されました",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagColorDefaultsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正なリクエスト"
+          },
+          "401": {
+            "description": "認証が必要です"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "テナントが見つかりません"
+          }
+        },
+        "tags": [
+          "tenant-settings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/cats": {
       "post": {
         "operationId": "CatsController_create",
@@ -329,6 +964,15 @@
             }
           },
           {
+            "name": "isInHouse",
+            "required": false,
+            "in": "query",
+            "description": "在舎中フィルター",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "ageMin",
             "required": false,
             "in": "query",
@@ -399,6 +1043,109 @@
         "responses": {
           "200": {
             "description": "統計情報"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/kittens": {
+      "get": {
+        "operationId": "CatsController_findKittens",
+        "summary": "子猫一覧を取得（生後6ヶ月未満、母猫ごとにグループ化）",
+        "parameters": [
+          {
+            "name": "motherId",
+            "required": false,
+            "in": "query",
+            "description": "母猫ID（指定時はその母猫の子猫のみ取得）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "検索キーワード（子猫名）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "ソート項目",
+            "schema": {
+              "default": "birthDate",
+              "example": "birthDate",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "ソート順",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "子猫データの一覧（母猫ごとにグループ化）"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/genders": {
+      "get": {
+        "operationId": "CatsController_getGenders",
+        "summary": "性別マスタデータを取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "性別マスタデータを返却"
           }
         },
         "tags": [
@@ -585,14 +1332,298 @@
         ]
       }
     },
-    "/api/v1/cats/genders": {
+    "/api/v1/cats/{id}/family": {
       "get": {
-        "operationId": "CatsController_getGenders",
-        "summary": "性別マスタデータを取得",
-        "parameters": [],
+        "operationId": "CatsController_getCatFamily",
+        "summary": "猫の家族情報を取得（血統タブ用）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "性別マスタデータを返却"
+            "description": "家族情報（親・兄弟姉妹・子猫）"
+          },
+          "404": {
+            "description": "猫データが見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/{id}/weight-records": {
+      "get": {
+        "operationId": "CatsController_getWeightRecords",
+        "summary": "猫の体重記録一覧を取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫データのID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "開始日",
+            "schema": {
+              "example": "2024-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "終了日",
+            "schema": {
+              "example": "2024-12-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "ソート順",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "体重記録一覧"
+          },
+          "404": {
+            "description": "猫データが見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "CatsController_createWeightRecord",
+        "summary": "猫の体重記録を追加",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWeightRecordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "体重記録が正常に作成されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "404": {
+            "description": "猫データが見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/weight-records/{recordId}": {
+      "get": {
+        "operationId": "CatsController_getWeightRecord",
+        "summary": "体重記録を取得",
+        "parameters": [
+          {
+            "name": "recordId",
+            "required": true,
+            "in": "path",
+            "description": "体重記録のID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "体重記録"
+          },
+          "404": {
+            "description": "体重記録が見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "CatsController_updateWeightRecord",
+        "summary": "体重記録を更新",
+        "parameters": [
+          {
+            "name": "recordId",
+            "required": true,
+            "in": "path",
+            "description": "体重記録のID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWeightRecordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "体重記録が正常に更新されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "404": {
+            "description": "体重記録が見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "CatsController_deleteWeightRecord",
+        "summary": "体重記録を削除",
+        "parameters": [
+          {
+            "name": "recordId",
+            "required": true,
+            "in": "path",
+            "description": "体重記録のID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "体重記録が正常に削除されました"
+          },
+          "404": {
+            "description": "体重記録が見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/weight-records/bulk": {
+      "post": {
+        "operationId": "CatsController_createBulkWeightRecords",
+        "summary": "複数の猫の体重を一括登録",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBulkWeightRecordsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "体重記録が正常に一括作成されました"
+          },
+          "400": {
+            "description": "無効なデータです"
           }
         },
         "tags": [
@@ -633,6 +1664,11 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "get": {
@@ -745,6 +1781,152 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pedigrees/next-id": {
+      "get": {
+        "operationId": "PedigreeController_getNextId",
+        "summary": "次の血統書番号を取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "次の血統書番号"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pedigrees/print-settings": {
+      "get": {
+        "operationId": "PedigreeController_getPrintSettings",
+        "summary": "印刷設定を取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "現在の印刷設定"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "PedigreeController_updatePrintSettings",
+        "summary": "印刷設定を更新",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "更新後の印刷設定"
+          },
+          "400": {
+            "description": "無効な設定データです"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pedigrees/print-settings/reset": {
+      "post": {
+        "operationId": "PedigreeController_resetPrintSettings",
+        "summary": "印刷設定をデフォルトにリセット",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "リセット後の印刷設定"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pedigrees/pedigree-id/{pedigreeId}/pdf": {
+      "get": {
+        "operationId": "PedigreeController_generatePdf",
+        "summary": "血統書PDFを生成してダウンロード",
+        "parameters": [
+          {
+            "name": "pedigreeId",
+            "required": true,
+            "in": "path",
+            "description": "血統書番号",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "出力形式 (pdf|base64)",
+            "schema": {
+              "example": "pdf",
+              "type": "string"
+            }
+          },
+          {
+            "name": "debug",
+            "required": false,
+            "in": "query",
+            "description": "デバッグモード（背景画像表示）",
+            "schema": {
+              "example": "false",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF生成成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "血統書データが見つかりません"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -773,6 +1955,11 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -801,6 +1988,11 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "patch": {
@@ -843,6 +2035,11 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "delete": {
@@ -872,6 +2069,11 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -900,6 +2102,11 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -938,6 +2145,11 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -966,6 +2178,313 @@
         },
         "tags": [
           "Pedigrees"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/print-templates/categories": {
+      "get": {
+        "operationId": "PrintTemplatesController_getCategories",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "PrintTemplatesController_createCategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePrintDocCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/print-templates/categories/{id}": {
+      "get": {
+        "operationId": "PrintTemplatesController_getCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "PrintTemplatesController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePrintDocCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "PrintTemplatesController_removeCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/print-templates/data-sources": {
+      "get": {
+        "operationId": "PrintTemplatesController_getDataSources",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/print-templates": {
+      "get": {
+        "operationId": "PrintTemplatesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "PrintTemplatesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePrintTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/print-templates/{id}": {
+      "get": {
+        "operationId": "PrintTemplatesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "PrintTemplatesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePrintTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "PrintTemplatesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/print-templates/{id}/duplicate": {
+      "post": {
+        "operationId": "PrintTemplatesController_duplicate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicatePrintTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -1025,6 +2544,7 @@
             "in": "query",
             "description": "1ページあたりの件数",
             "schema": {
+              "maximum": 1000,
               "default": 50,
               "example": 50,
               "type": "number"
@@ -1065,6 +2585,36 @@
         "responses": {
           "200": {
             "description": "品種データの一覧"
+          }
+        },
+        "tags": [
+          "Breeds"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeds/master-data": {
+      "get": {
+        "operationId": "BreedsController_getMasterData",
+        "summary": "Pedigree連携用の品種マスターデータを取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CSV マスターデータを displayName / displayNameMode 付きで返却",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MasterDataItemDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1211,6 +2761,54 @@
         ]
       }
     },
+    "/api/v1/display-preferences/me": {
+      "get": {
+        "operationId": "DisplayPreferencesController_getMine",
+        "summary": "自身の表示設定を取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "表示設定の取得に成功"
+          }
+        },
+        "tags": [
+          "Display Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "DisplayPreferencesController_updateMine",
+        "summary": "自身の表示設定を更新",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDisplayPreferenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "表示設定の更新に成功"
+          }
+        },
+        "tags": [
+          "Display Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/coat-colors": {
       "post": {
         "operationId": "CoatColorsController_create",
@@ -1267,6 +2865,7 @@
             "in": "query",
             "description": "1ページあたりの件数",
             "schema": {
+              "maximum": 1000,
               "default": 50,
               "example": 50,
               "type": "number"
@@ -1307,6 +2906,36 @@
         "responses": {
           "200": {
             "description": "毛色データの一覧"
+          }
+        },
+        "tags": [
+          "Coat Colors"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coat-colors/master-data": {
+      "get": {
+        "operationId": "CoatColorsController_getMasterData",
+        "summary": "Pedigree連携用の色柄マスターデータを取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CSV マスターデータを displayName / displayNameMode 付きで返却",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MasterDataItemDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1542,6 +3171,11 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "post": {
@@ -1687,21 +3321,6 @@
         ]
       }
     },
-    "/api/v1/breeding/test": {
-      "get": {
-        "operationId": "BreedingController_test",
-        "summary": "テスト",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Breeding"
-        ]
-      }
-    },
     "/api/v1/breeding/pregnancy-checks": {
       "get": {
         "operationId": "BreedingController_findAllPregnancyChecks",
@@ -1759,6 +3378,11 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "post": {
@@ -1913,6 +3537,11 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "post": {
@@ -2031,6 +3660,11 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -2056,6 +3690,11 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -2090,6 +3729,11 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "delete": {
@@ -2112,6 +3756,11 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -2136,6 +3785,395 @@
         },
         "tags": [
           "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/schedules": {
+      "get": {
+        "operationId": "BreedingController_findAllBreedingSchedules",
+        "summary": "交配スケジュール一覧の取得",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "maleId",
+            "required": false,
+            "in": "query",
+            "description": "オス猫IDでフィルタ",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "femaleId",
+            "required": false,
+            "in": "query",
+            "description": "メス猫IDでフィルタ",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "ステータスでフィルタ",
+            "schema": {
+              "enum": [
+                "SCHEDULED",
+                "IN_PROGRESS",
+                "COMPLETED",
+                "CANCELLED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "開始日（from）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "開始日（to）",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "BreedingController_createBreedingSchedule",
+        "summary": "交配スケジュールの作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBreedingScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/schedules/{id}": {
+      "patch": {
+        "operationId": "BreedingController_updateBreedingSchedule",
+        "summary": "交配スケジュールの更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBreedingScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BreedingController_removeBreedingSchedule",
+        "summary": "交配スケジュールの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/schedules/{scheduleId}/checks": {
+      "get": {
+        "operationId": "BreedingController_findMatingChecks",
+        "summary": "交配チェック一覧の取得",
+        "parameters": [
+          {
+            "name": "scheduleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "BreedingController_createMatingCheck",
+        "summary": "交配チェックの追加",
+        "parameters": [
+          {
+            "name": "scheduleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMatingCheckDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/mating-checks/{id}": {
+      "patch": {
+        "operationId": "BreedingController_updateMatingCheck",
+        "summary": "交配チェックの更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMatingCheckDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BreedingController_removeMatingCheck",
+        "summary": "交配チェックの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/{id}": {
+      "patch": {
+        "operationId": "BreedingController_update",
+        "summary": "交配記録の更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBreedingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BreedingController_remove",
+        "summary": "交配記録の削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -2385,6 +4423,53 @@
         ]
       }
     },
+    "/api/v1/care/schedules/{id}/status": {
+      "patch": {
+        "operationId": "CareController_updateScheduleStatus",
+        "summary": "ケアスケジュールのステータス変更（有効/無効）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "スケジュールID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCareStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareScheduleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/care/medical-records": {
       "get": {
         "operationId": "CareController_findMedicalRecords",
@@ -2429,19 +4514,12 @@
             }
           },
           {
-            "name": "visitType",
+            "name": "visitTypeId",
             "required": false,
             "in": "query",
+            "description": "受診種別ID",
             "schema": {
-              "example": "CHECKUP",
-              "enum": [
-                "CHECKUP",
-                "EMERGENCY",
-                "SURGERY",
-                "FOLLOW_UP",
-                "VACCINATION",
-                "OTHER"
-              ],
+              "example": "c4a52a14-8d93-4b87-9f8c-7a6c2ef81234",
               "type": "string"
             }
           },
@@ -2519,6 +4597,116 @@
                 }
               }
             }
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/care/medical-records/{id}": {
+      "get": {
+        "operationId": "CareController_findMedicalRecordById",
+        "summary": "医療記録の詳細取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "医療記録ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalRecordResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "CareController_updateMedicalRecord",
+        "summary": "医療記録の更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "医療記録ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMedicalRecordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalRecordResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "CareController_deleteMedicalRecord",
+        "summary": "医療記録の削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "医療記録ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "削除成功"
           }
         },
         "tags": [
@@ -3317,7 +5505,7 @@
     "/api/v1/tags/automation/rules/{id}/execute": {
       "post": {
         "operationId": "TagAutomationController_executeRule",
-        "summary": "ルールを手動実行（テスト用）",
+        "summary": "ルールを手動実行（実データの対象猫に即時適用）",
         "parameters": [
           {
             "name": "id",
@@ -3331,7 +5519,7 @@
         ],
         "responses": {
           "200": {
-            "description": "ルール実行成功"
+            "description": "ルール実行結果"
           }
         },
         "tags": [
@@ -3373,7 +5561,12 @@
           "201": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       },
       "get": {
         "operationId": "StaffController_findAll",
@@ -3382,7 +5575,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/v1/staff/{id}": {
@@ -3402,7 +5600,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       },
       "patch": {
         "operationId": "StaffController_update",
@@ -3430,7 +5633,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       },
       "delete": {
         "operationId": "StaffController_remove",
@@ -3448,7 +5656,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/v1/staff/{id}/restore": {
@@ -3468,7 +5681,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/v1/shifts": {
@@ -3489,7 +5707,12 @@
           "201": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       },
       "get": {
         "operationId": "ShiftController_findAll",
@@ -3498,7 +5721,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/v1/shifts/calendar": {
@@ -3509,7 +5737,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/v1/shifts/{id}": {
@@ -3529,7 +5762,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       },
       "patch": {
         "operationId": "ShiftController_update",
@@ -3557,7 +5795,12 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       },
       "delete": {
         "operationId": "ShiftController_remove",
@@ -3575,7 +5818,897 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/graduations/cats/{id}/transfer": {
+      "post": {
+        "operationId": "GraduationController_transferCat",
+        "summary": "猫を譲渡（卒業）する",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferCatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "譲渡成功"
+          },
+          "400": {
+            "description": "すでに卒業済みです"
+          },
+          "404": {
+            "description": "猫が見つかりません"
+          }
+        },
+        "tags": [
+          "Graduation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/graduations": {
+      "get": {
+        "operationId": "GraduationController_findAllGraduations",
+        "summary": "卒業猫一覧取得",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "卒業猫一覧"
+          }
+        },
+        "tags": [
+          "Graduation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/graduations/{id}": {
+      "get": {
+        "operationId": "GraduationController_findOneGraduation",
+        "summary": "卒業猫詳細取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "卒業ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "卒業猫詳細"
+          },
+          "404": {
+            "description": "卒業記録が見つかりません"
+          }
+        },
+        "tags": [
+          "Graduation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "GraduationController_updateGraduation",
+        "summary": "卒業記録の更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "卒業ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGraduationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功"
+          },
+          "404": {
+            "description": "卒業記録が見つかりません"
+          }
+        },
+        "tags": [
+          "Graduation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "GraduationController_cancelGraduation",
+        "summary": "卒業取り消し（緊急時用）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "卒業ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "卒業取り消し成功"
+          },
+          "404": {
+            "description": "卒業記録が見つかりません"
+          }
+        },
+        "tags": [
+          "Graduation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gallery/upload/signed-url": {
+      "post": {
+        "operationId": "GalleryUploadController_generateUploadUrl",
+        "summary": "アップロード用Signed URLを生成",
+        "description": "クライアントがGCSへ直接アップロードするためのSigned URLを発行します。有効期限は15分です。",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateUploadUrlDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Signed URL生成成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "uploadUrl": {
+                          "type": "string",
+                          "description": "アップロード用Signed URL"
+                        },
+                        "fileKey": {
+                          "type": "string",
+                          "description": "GCS内のファイルキー"
+                        },
+                        "publicUrl": {
+                          "type": "string",
+                          "description": "アップロード後の公開URL"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "パラメータエラー"
+          }
+        },
+        "tags": [
+          "Gallery Upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gallery/upload/confirm": {
+      "post": {
+        "operationId": "GalleryUploadController_confirmUpload",
+        "summary": "アップロード完了を確認",
+        "description": "クライアントがGCSへアップロード完了後に呼び出し、ファイルの存在を確認します。",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "確認成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "ファイルの公開URL"
+                        },
+                        "size": {
+                          "type": "number",
+                          "description": "ファイルサイズ（バイト）"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ファイルが見つからない"
+          }
+        },
+        "tags": [
+          "Gallery Upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gallery/upload/{fileKey}": {
+      "delete": {
+        "operationId": "GalleryUploadController_deleteFile",
+        "summary": "アップロード済みファイルを削除",
+        "description": "指定されたファイルキーのファイルをGCSから削除します。",
+        "parameters": [
+          {
+            "name": "fileKey",
+            "required": true,
+            "in": "path",
+            "description": "削除するファイルのキー（URLエンコード済み）",
+            "schema": {
+              "example": "gallery%2F550e8400-e29b-41d4-a716-446655440000.jpg",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "削除成功"
+          }
+        },
+        "tags": [
+          "Gallery Upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gallery": {
+      "get": {
+        "operationId": "GalleryController_findAll",
+        "summary": "ギャラリーエントリ一覧取得",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "カテゴリでフィルタリング",
+            "schema": {
+              "enum": [
+                "KITTEN",
+                "FATHER",
+                "MOTHER",
+                "GRADUATION"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ギャラリー一覧"
+          }
+        },
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "GalleryController_create",
+        "summary": "ギャラリーエントリ作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGalleryEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "作成成功"
+          }
+        },
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gallery/{id}": {
+      "get": {
+        "operationId": "GalleryController_findOne",
+        "summary": "ギャラリーエントリ詳細取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "エントリID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ギャラリー詳細"
+          },
+          "404": {
+            "description": "エントリが見つかりません"
+          }
+        },
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "GalleryController_update",
+        "summary": "ギャラリーエントリ更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "エントリID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGalleryEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功"
+          },
+          "404": {
+            "description": "エントリが見つかりません"
+          }
+        },
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "GalleryController_delete",
+        "summary": "ギャラリーエントリ削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "エントリID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "削除成功"
+          },
+          "404": {
+            "description": "エントリが見つかりません"
+          }
+        },
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gallery/{id}/media": {
+      "post": {
+        "operationId": "GalleryController_addMedia",
+        "summary": "メディア追加",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "エントリID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "メディア追加成功"
+          }
+        },
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gallery/media/{mediaId}": {
+      "delete": {
+        "operationId": "GalleryController_deleteMedia",
+        "summary": "メディア削除",
+        "parameters": [
+          {
+            "name": "mediaId",
+            "required": true,
+            "in": "path",
+            "description": "メディアID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "メディア削除成功"
+          }
+        },
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gallery/bulk": {
+      "post": {
+        "operationId": "GalleryController_bulkCreate",
+        "summary": "一括登録（子育て中タブ用）",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "一括登録成功"
+          }
+        },
+        "tags": [
+          "Gallery"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/export": {
+      "post": {
+        "operationId": "ExportController_export",
+        "summary": "データをエクスポート",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "エクスポート成功"
+          },
+          "400": {
+            "description": "無効なリクエスト"
+          }
+        },
+        "tags": [
+          "Export"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/import/preview": {
+      "post": {
+        "operationId": "ImportController_preview",
+        "summary": "インポートファイルのプレビュー",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSVファイル"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "プレビュー取得成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPreviewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ファイルが不正な形式"
+          },
+          "401": {
+            "description": "認証が必要"
+          }
+        },
+        "tags": [
+          "Import"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/import/cats": {
+      "post": {
+        "operationId": "ImportController_importCats",
+        "summary": "猫データのインポート",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSVファイル（カラム: name, gender, birthDate, breed, color, registrationNumber, microchipNumber, notes）"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "インポート完了",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ファイルが不正な形式"
+          },
+          "401": {
+            "description": "認証が必要"
+          }
+        },
+        "tags": [
+          "Import"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/import/pedigrees": {
+      "post": {
+        "operationId": "ImportController_importPedigrees",
+        "summary": "血統書データのインポート",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSVファイル（カラム: pedigreeId, catName, title, breedCode, genderCode, coatColorCode）"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "インポート完了",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ファイルが不正な形式"
+          },
+          "401": {
+            "description": "認証が必要"
+          }
+        },
+        "tags": [
+          "Import"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/import/tags": {
+      "post": {
+        "operationId": "ImportController_importTags",
+        "summary": "タグデータのインポート",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSVファイル（カラム: name, category, group, color, isActive）"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "インポート完了",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ファイルが不正な形式"
+          },
+          "401": {
+            "description": "認証が必要"
+          }
+        },
+        "tags": [
+          "Import"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     }
   },
@@ -3678,6 +6811,252 @@
           }
         }
       },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "名",
+            "example": "太郎",
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "description": "姓",
+            "example": "山田",
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "description": "メールアドレス",
+            "example": "user@example.com"
+          }
+        }
+      },
+      "InviteUserDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "招待するメールアドレス",
+            "example": "user@example.com"
+          },
+          "role": {
+            "type": "string",
+            "description": "ユーザーロール",
+            "enum": [
+              "USER",
+              "ADMIN",
+              "SUPER_ADMIN",
+              "TENANT_ADMIN"
+            ],
+            "default": "USER"
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ]
+      },
+      "UpdateUserRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "新しいロール",
+            "enum": [
+              "USER",
+              "ADMIN",
+              "SUPER_ADMIN",
+              "TENANT_ADMIN"
+            ],
+            "example": "ADMIN"
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "CreateTenantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "テナント名",
+            "example": "サンプルテナント"
+          },
+          "slug": {
+            "type": "string",
+            "description": "テナントスラッグ（未入力の場合は自動生成）",
+            "example": "sample-tenant"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateTenantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "テナント名",
+            "example": "更新後テナント名"
+          },
+          "slug": {
+            "type": "string",
+            "description": "テナントスラッグ",
+            "example": "updated-tenant"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "有効/無効フラグ",
+            "example": true
+          }
+        }
+      },
+      "InviteTenantAdminDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "招待するメールアドレス",
+            "example": "admin@example.com"
+          },
+          "tenantName": {
+            "type": "string",
+            "description": "テナント名",
+            "example": "Sample Tenant"
+          },
+          "tenantSlug": {
+            "type": "string",
+            "description": "テナントスラッグ（URL識別子）",
+            "example": "sample-tenant"
+          }
+        },
+        "required": [
+          "email",
+          "tenantName"
+        ]
+      },
+      "CompleteInvitationDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "招待トークン"
+          },
+          "password": {
+            "type": "string",
+            "description": "パスワード",
+            "minLength": 8
+          },
+          "firstName": {
+            "type": "string",
+            "description": "名"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "姓"
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
+      },
+      "ColorSettingDto": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "description": "背景カラー（16進数カラーコード）",
+            "example": "#6366F1"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "テキストカラー（16進数カラーコード）",
+            "example": "#111827"
+          }
+        },
+        "required": [
+          "color",
+          "textColor"
+        ]
+      },
+      "TagColorDefaultsDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "description": "カテゴリのデフォルトカラー設定",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ColorSettingDto"
+              }
+            ]
+          },
+          "group": {
+            "description": "グループのデフォルトカラー設定",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ColorSettingDto"
+              }
+            ]
+          },
+          "tag": {
+            "description": "タグのデフォルトカラー設定",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ColorSettingDto"
+              }
+            ]
+          }
+        }
+      },
+      "PartialColorSettingDto": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "description": "背景カラー（16進数カラーコード）",
+            "example": "#6366F1"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "テキストカラー（16進数カラーコード）",
+            "example": "#111827"
+          }
+        }
+      },
+      "UpdateTagColorDefaultsDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "description": "カテゴリのデフォルトカラー設定（部分更新可能）",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialColorSettingDto"
+              }
+            ]
+          },
+          "group": {
+            "description": "グループのデフォルトカラー設定（部分更新可能）",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialColorSettingDto"
+              }
+            ]
+          },
+          "tag": {
+            "description": "タグのデフォルトカラー設定（部分更新可能）",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialColorSettingDto"
+              }
+            ]
+          }
+        }
+      },
       "CreateCatDto": {
         "type": "object",
         "properties": {
@@ -3751,6 +7130,100 @@
       "UpdateCatDto": {
         "type": "object",
         "properties": {}
+      },
+      "CreateWeightRecordDto": {
+        "type": "object",
+        "properties": {
+          "weight": {
+            "type": "number",
+            "description": "体重（グラム単位）",
+            "example": 350,
+            "minimum": 1,
+            "maximum": 50000
+          },
+          "recordedAt": {
+            "type": "string",
+            "description": "記録日時（省略時は現在日時）",
+            "example": "2024-01-15T10:00:00.000Z"
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ",
+            "example": "ミルクをよく飲んでいる"
+          }
+        },
+        "required": [
+          "weight"
+        ]
+      },
+      "UpdateWeightRecordDto": {
+        "type": "object",
+        "properties": {
+          "weight": {
+            "type": "number",
+            "description": "体重（グラム単位）",
+            "example": 380,
+            "minimum": 1,
+            "maximum": 50000
+          },
+          "recordedAt": {
+            "type": "string",
+            "description": "記録日時",
+            "example": "2024-01-15T10:00:00.000Z"
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ",
+            "example": "順調に成長中"
+          }
+        }
+      },
+      "BulkWeightRecordItemDto": {
+        "type": "object",
+        "properties": {
+          "catId": {
+            "type": "string",
+            "description": "猫ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "weight": {
+            "type": "number",
+            "description": "体重（グラム単位）",
+            "example": 350,
+            "minimum": 1,
+            "maximum": 50000
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ",
+            "example": "元気"
+          }
+        },
+        "required": [
+          "catId",
+          "weight"
+        ]
+      },
+      "CreateBulkWeightRecordsDto": {
+        "type": "object",
+        "properties": {
+          "recordedAt": {
+            "type": "string",
+            "description": "記録日時（全レコード共通）",
+            "example": "2024-01-15T10:00:00.000Z"
+          },
+          "records": {
+            "description": "体重記録の配列",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkWeightRecordItemDto"
+            }
+          }
+        },
+        "required": [
+          "recordedAt",
+          "records"
+        ]
       },
       "CreatePedigreeDto": {
         "type": "object",
@@ -4099,6 +7572,65 @@
         "type": "object",
         "properties": {}
       },
+      "CreatePrintDocCategoryDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdatePrintDocCategoryDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreatePrintTemplateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "DuplicatePrintTemplateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdatePrintTemplateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "MasterDataItemDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "number",
+            "description": "マスターデータのコード",
+            "example": 26
+          },
+          "name": {
+            "type": "string",
+            "description": "CSV 定義のデフォルト名称",
+            "example": "Maine Coon"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "画面に表示される名称。個別設定が無い場合は name と同一。",
+            "example": "26 - Maine Coon"
+          },
+          "displayNameMode": {
+            "type": "string",
+            "enum": [
+              "CANONICAL",
+              "CODE_AND_NAME",
+              "CUSTOM"
+            ],
+            "description": "このレコードに適用された表示モード",
+            "example": "CODE_AND_NAME"
+          },
+          "isOverridden": {
+            "type": "boolean",
+            "description": "ユーザー上書きが適用された場合に true",
+            "example": true
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
       "CreateBreedDto": {
         "type": "object",
         "properties": {
@@ -4123,6 +7655,58 @@
       "UpdateBreedDto": {
         "type": "object",
         "properties": {}
+      },
+      "LabelOverrideDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "number",
+            "description": "対象コード",
+            "example": 26
+          },
+          "label": {
+            "type": "string",
+            "description": "表示名の上書き",
+            "example": "メインクーン"
+          }
+        }
+      },
+      "UpdateDisplayPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "breedNameMode": {
+            "type": "string",
+            "enum": [
+              "CANONICAL",
+              "CODE_AND_NAME",
+              "CUSTOM"
+            ],
+            "description": "品種マスタの表示モード"
+          },
+          "coatColorNameMode": {
+            "type": "string",
+            "enum": [
+              "CANONICAL",
+              "CODE_AND_NAME",
+              "CUSTOM"
+            ],
+            "description": "毛色マスタの表示モード"
+          },
+          "breedLabelOverrides": {
+            "description": "品種コードごとの表示名上書き",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LabelOverrideDto"
+            }
+          },
+          "coatColorLabelOverrides": {
+            "description": "毛色コードごとの表示名上書き",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LabelOverrideDto"
+            }
+          }
+        }
       },
       "CreateCoatColorDto": {
         "type": "object",
@@ -4176,6 +7760,11 @@
             "type": "string",
             "description": "メモ",
             "example": "初回の交配。"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "NGペアルール違反時でも強行登録する場合に true",
+            "example": false
           }
         },
         "required": [
@@ -4551,6 +8140,131 @@
           }
         }
       },
+      "CreateBreedingScheduleDto": {
+        "type": "object",
+        "properties": {
+          "maleId": {
+            "type": "string",
+            "description": "オス猫ID"
+          },
+          "femaleId": {
+            "type": "string",
+            "description": "メス猫ID"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "開始日 (ISO8601)"
+          },
+          "duration": {
+            "type": "number",
+            "description": "期間（日数）",
+            "minimum": 1,
+            "maximum": 14
+          },
+          "status": {
+            "type": "string",
+            "description": "ステータス",
+            "enum": [
+              "SCHEDULED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "NGペアルール違反時でも強行登録する場合に true",
+            "example": false
+          }
+        },
+        "required": [
+          "maleId",
+          "femaleId",
+          "startDate",
+          "duration"
+        ]
+      },
+      "UpdateBreedingScheduleDto": {
+        "type": "object",
+        "properties": {
+          "maleId": {
+            "type": "string",
+            "description": "オス猫ID"
+          },
+          "femaleId": {
+            "type": "string",
+            "description": "メス猫ID"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "開始日 (ISO8601)"
+          },
+          "duration": {
+            "type": "number",
+            "description": "期間（日数）",
+            "minimum": 1,
+            "maximum": 14
+          },
+          "status": {
+            "type": "string",
+            "description": "ステータス",
+            "enum": [
+              "SCHEDULED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "NGペアルール違反時でも強行登録する場合に true",
+            "example": false
+          }
+        }
+      },
+      "CreateMatingCheckDto": {
+        "type": "object",
+        "properties": {
+          "checkDate": {
+            "type": "string",
+            "description": "チェック日 (ISO8601)"
+          },
+          "count": {
+            "type": "number",
+            "description": "チェック回数",
+            "default": 1
+          }
+        },
+        "required": [
+          "checkDate"
+        ]
+      },
+      "UpdateMatingCheckDto": {
+        "type": "object",
+        "properties": {
+          "checkDate": {
+            "type": "string",
+            "description": "チェック日 (ISO8601)"
+          },
+          "count": {
+            "type": "number",
+            "description": "チェック回数",
+            "default": 1
+          }
+        }
+      },
+      "UpdateBreedingDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CareScheduleCatDto": {
         "type": "object",
         "properties": {
@@ -4585,10 +8299,12 @@
           },
           "remindAt": {
             "type": "string",
+            "nullable": true,
             "example": "2025-08-01T09:00:00.000Z"
           },
           "offsetValue": {
             "type": "number",
+            "nullable": true,
             "example": 2
           },
           "offsetUnit": {
@@ -4600,6 +8316,7 @@
               "WEEK",
               "MONTH"
             ],
+            "nullable": true,
             "example": "DAY"
           },
           "relativeTo": {
@@ -4609,6 +8326,7 @@
               "END_DATE",
               "CUSTOM_DATE"
             ],
+            "nullable": true,
             "example": "START_DATE"
           },
           "channel": {
@@ -4631,22 +8349,27 @@
               "YEARLY",
               "CUSTOM"
             ],
-            "example": "NONE"
+            "example": "NONE",
+            "nullable": true
           },
           "repeatInterval": {
             "type": "number",
+            "nullable": true,
             "example": 1
           },
           "repeatCount": {
             "type": "number",
+            "nullable": true,
             "example": 5
           },
           "repeatUntil": {
             "type": "string",
+            "nullable": true,
             "example": "2025-12-31T00:00:00.000Z"
           },
           "notes": {
             "type": "string",
+            "nullable": true,
             "example": "前日9時に通知"
           },
           "isActive": {
@@ -4682,6 +8405,7 @@
           },
           "parentId": {
             "type": "string",
+            "nullable": true,
             "example": "parent-tag-id"
           }
         },
@@ -4709,6 +8433,7 @@
           },
           "description": {
             "type": "string",
+            "nullable": true,
             "example": "毎年の定期健診"
           },
           "scheduleDate": {
@@ -4717,10 +8442,12 @@
           },
           "endDate": {
             "type": "string",
+            "nullable": true,
             "example": "2025-09-01T01:00:00.000Z"
           },
           "timezone": {
             "type": "string",
+            "nullable": true,
             "example": "Asia/Tokyo"
           },
           "scheduleType": {
@@ -4770,6 +8497,7 @@
           },
           "recurrenceRule": {
             "type": "string",
+            "nullable": true,
             "example": "FREQ=YEARLY;INTERVAL=1"
           },
           "assignedTo": {
@@ -5127,6 +8855,59 @@
           "data"
         ]
       },
+      "UpdateCareStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "PENDING"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "MedicalRecordVisitTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "c4a52a14-8d93-4b87-9f8c-7a6c2ef81234"
+          },
+          "key": {
+            "type": "object",
+            "example": "CHECKUP"
+          },
+          "name": {
+            "type": "string",
+            "example": "健康診断"
+          },
+          "description": {
+            "type": "object",
+            "example": "定期的な健康診断"
+          },
+          "displayOrder": {
+            "type": "number",
+            "example": 1
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "displayOrder",
+          "isActive"
+        ]
+      },
       "MedicalRecordSymptomDto": {
         "type": "object",
         "properties": {
@@ -5135,7 +8916,7 @@
             "example": "くしゃみ"
           },
           "note": {
-            "type": "string",
+            "type": "object",
             "example": "1週間継続"
           }
         },
@@ -5151,7 +8932,7 @@
             "example": "抗生物質"
           },
           "dosage": {
-            "type": "string",
+            "type": "object",
             "example": "朝晩1錠"
           }
         },
@@ -5200,28 +8981,39 @@
             "type": "string",
             "example": "tag-123"
           },
-          "slug": {
-            "type": "string",
-            "example": "vaccination"
-          },
-          "label": {
+          "name": {
             "type": "string",
             "example": "ワクチン"
           },
-          "level": {
-            "type": "number",
-            "example": 1
+          "color": {
+            "type": "object",
+            "example": "#3B82F6"
           },
-          "parentId": {
+          "textColor": {
+            "type": "object",
+            "example": "#FFFFFF"
+          },
+          "groupId": {
             "type": "string",
-            "example": "parent-tag"
+            "example": "group-123"
+          },
+          "groupName": {
+            "type": "object",
+            "example": "医療"
+          },
+          "categoryId": {
+            "type": "object",
+            "example": "category-456"
+          },
+          "categoryName": {
+            "type": "object",
+            "example": "医療タグ"
           }
         },
         "required": [
           "id",
-          "slug",
-          "label",
-          "level"
+          "name",
+          "groupId"
         ]
       },
       "MedicalRecordAttachmentDto": {
@@ -5232,23 +9024,23 @@
             "example": "https://cdn.example.com/xray.png"
           },
           "description": {
-            "type": "string",
+            "type": "object",
             "example": "胸部レントゲン"
           },
           "fileName": {
-            "type": "string",
+            "type": "object",
             "example": "xray.png"
           },
           "fileType": {
-            "type": "string",
+            "type": "object",
             "example": "image/png"
           },
           "fileSize": {
-            "type": "number",
+            "type": "object",
             "example": 204800
           },
           "capturedAt": {
-            "type": "string",
+            "type": "object",
             "example": "2025-08-10T09:30:00.000Z"
           }
         },
@@ -5268,24 +9060,19 @@
             "example": "2025-08-10T00:00:00.000Z"
           },
           "visitType": {
-            "type": "string",
-            "enum": [
-              "CHECKUP",
-              "EMERGENCY",
-              "SURGERY",
-              "FOLLOW_UP",
-              "VACCINATION",
-              "OTHER"
-            ],
-            "example": "CHECKUP",
-            "nullable": true
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MedicalRecordVisitTypeDto"
+              }
+            ]
           },
           "hospitalName": {
-            "type": "string",
+            "type": "object",
             "example": "ねこクリニック東京"
           },
           "symptom": {
-            "type": "string",
+            "type": "object",
             "example": "くしゃみが止まらない"
           },
           "symptomDetails": {
@@ -5295,15 +9082,15 @@
             }
           },
           "diseaseName": {
-            "type": "string",
+            "type": "object",
             "example": "猫風邪"
           },
           "diagnosis": {
-            "type": "string",
+            "type": "object",
             "example": "猫風邪の兆候"
           },
           "treatmentPlan": {
-            "type": "string",
+            "type": "object",
             "example": "抗生物質を5日間投与"
           },
           "medications": {
@@ -5313,7 +9100,7 @@
             }
           },
           "followUpDate": {
-            "type": "string",
+            "type": "object",
             "example": "2025-08-13T00:00:00.000Z"
           },
           "status": {
@@ -5325,7 +9112,7 @@
             "example": "TREATING"
           },
           "notes": {
-            "type": "string",
+            "type": "object",
             "example": "食欲は戻ってきた"
           },
           "cat": {
@@ -5477,17 +9264,10 @@
             "description": "受診日",
             "example": "2025-08-10"
           },
-          "visitType": {
+          "visitTypeId": {
             "type": "string",
-            "enum": [
-              "CHECKUP",
-              "EMERGENCY",
-              "SURGERY",
-              "FOLLOW_UP",
-              "VACCINATION",
-              "OTHER"
-            ],
-            "example": "CHECKUP"
+            "description": "受診種別ID",
+            "example": "c4a52a14-8d93-4b87-9f8c-7a6c2ef81234"
           },
           "hospitalName": {
             "type": "string",
@@ -5538,8 +9318,8 @@
             "type": "string",
             "example": "食欲も戻りつつあり"
           },
-          "careTagIds": {
-            "description": "関連ケアタグID",
+          "tagIds": {
+            "description": "関連タグID",
             "type": "array",
             "items": {
               "type": "string"
@@ -5573,6 +9353,94 @@
           "success",
           "data"
         ]
+      },
+      "UpdateMedicalRecordDto": {
+        "type": "object",
+        "properties": {
+          "catId": {
+            "type": "string",
+            "description": "猫ID",
+            "example": "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60"
+          },
+          "scheduleId": {
+            "type": "string",
+            "description": "スケジュールID",
+            "example": "a6f7e52f-4a3b-4a76-9870-1234567890ab"
+          },
+          "visitDate": {
+            "type": "string",
+            "description": "受診日",
+            "example": "2025-08-10"
+          },
+          "visitTypeId": {
+            "type": "string",
+            "description": "受診種別ID",
+            "example": "c4a52a14-8d93-4b87-9f8c-7a6c2ef81234"
+          },
+          "hospitalName": {
+            "type": "string",
+            "example": "ねこクリニック東京"
+          },
+          "symptom": {
+            "type": "string",
+            "example": "くしゃみが止まらない"
+          },
+          "symptomDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicalRecordSymptomDto"
+            }
+          },
+          "diseaseName": {
+            "type": "string",
+            "example": "猫風邪"
+          },
+          "diagnosis": {
+            "type": "string",
+            "example": "猫風邪の兆候"
+          },
+          "treatmentPlan": {
+            "type": "string",
+            "example": "抗生物質を5日間投与"
+          },
+          "medications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicalRecordMedicationDto"
+            }
+          },
+          "followUpDate": {
+            "type": "string",
+            "example": "2025-08-13"
+          },
+          "status": {
+            "type": "string",
+            "example": "TREATING",
+            "enum": [
+              "TREATING",
+              "COMPLETED"
+            ],
+            "default": "TREATING"
+          },
+          "notes": {
+            "type": "string",
+            "example": "食欲も戻りつつあり"
+          },
+          "tagIds": {
+            "description": "関連タグID",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "attachments": {
+            "description": "添付ファイル",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicalRecordAttachmentInputDto"
+            }
+          }
+        }
       },
       "CreateTagDto": {
         "type": "object",
@@ -5992,10 +9860,10 @@
           },
           "name": {
             "type": "string",
-            "description": "ルール名"
+            "description": "ルール名（未入力時は自動生成）"
           },
           "description": {
-            "type": "string",
+            "type": "object",
             "description": "ルールの説明"
           },
           "triggerType": {
@@ -6016,14 +9884,15 @@
               "PREGNANCY_CONFIRMED",
               "KITTEN_REGISTERED",
               "AGE_THRESHOLD",
+              "CUSTOM",
               "PAGE_ACTION",
-              "CUSTOM"
+              "TAG_ASSIGNED"
             ],
             "description": "イベントタイプ",
-            "example": "BREEDING_PLANNED"
+            "example": "PAGE_ACTION"
           },
           "scope": {
-            "type": "string",
+            "type": "object",
             "description": "適用範囲（スコープ）",
             "example": "breeding"
           },
@@ -6046,14 +9915,13 @@
               "tagIds": [
                 "tag-id-1",
                 "tag-id-2"
-              ]
+              ],
+              "actionType": "ASSIGN"
             }
           }
         },
         "required": [
-          "name",
-          "triggerType",
-          "eventType"
+          "triggerType"
         ]
       },
       "UpdateTagAutomationRuleDto": {
@@ -6065,10 +9933,10 @@
           },
           "name": {
             "type": "string",
-            "description": "ルール名"
+            "description": "ルール名（未入力時は自動生成）"
           },
           "description": {
-            "type": "string",
+            "type": "object",
             "description": "ルールの説明"
           },
           "triggerType": {
@@ -6089,14 +9957,15 @@
               "PREGNANCY_CONFIRMED",
               "KITTEN_REGISTERED",
               "AGE_THRESHOLD",
+              "CUSTOM",
               "PAGE_ACTION",
-              "CUSTOM"
+              "TAG_ASSIGNED"
             ],
             "description": "イベントタイプ",
-            "example": "BREEDING_PLANNED"
+            "example": "PAGE_ACTION"
           },
           "scope": {
-            "type": "string",
+            "type": "object",
             "description": "適用範囲（スコープ）",
             "example": "breeding"
           },
@@ -6119,7 +9988,8 @@
               "tagIds": [
                 "tag-id-1",
                 "tag-id-2"
-              ]
+              ],
+              "actionType": "ASSIGN"
             }
           }
         }
@@ -6139,6 +10009,390 @@
       "UpdateShiftDto": {
         "type": "object",
         "properties": {}
+      },
+      "TransferCatDto": {
+        "type": "object",
+        "properties": {
+          "transferDate": {
+            "type": "string",
+            "description": "譲渡日",
+            "example": "2025-11-11"
+          },
+          "destination": {
+            "type": "string",
+            "description": "譲渡先",
+            "example": "山田家"
+          },
+          "notes": {
+            "type": "string",
+            "description": "備考",
+            "example": "譲渡先は愛情深い家庭です"
+          }
+        },
+        "required": [
+          "transferDate",
+          "destination"
+        ]
+      },
+      "UpdateGraduationDto": {
+        "type": "object",
+        "properties": {
+          "transferDate": {
+            "type": "string",
+            "description": "譲渡日",
+            "example": "2025-11-11"
+          },
+          "destination": {
+            "type": "string",
+            "description": "譲渡先",
+            "example": "山田家"
+          },
+          "notes": {
+            "type": "string",
+            "description": "備考",
+            "example": "譲渡先は愛情深い家庭です"
+          }
+        }
+      },
+      "GenerateUploadUrlDto": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "description": "ファイル名",
+            "example": "kitten-photo-1.jpg"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "コンテンツタイプ",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ],
+            "example": "image/jpeg"
+          },
+          "fileSize": {
+            "type": "number",
+            "description": "ファイルサイズ（バイト）",
+            "example": 1024000,
+            "minimum": 1,
+            "maximum": 10485760
+          }
+        },
+        "required": [
+          "fileName",
+          "contentType",
+          "fileSize"
+        ]
+      },
+      "ConfirmUploadDto": {
+        "type": "object",
+        "properties": {
+          "fileKey": {
+            "type": "string",
+            "description": "アップロード時に発行されたファイルキー",
+            "example": "gallery/550e8400-e29b-41d4-a716-446655440000.jpg"
+          },
+          "galleryEntryId": {
+            "type": "string",
+            "description": "紐付けるギャラリーエントリID（任意）",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          }
+        },
+        "required": [
+          "fileKey"
+        ]
+      },
+      "CreateMediaDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "YOUTUBE"
+            ],
+            "description": "メディアタイプ"
+          },
+          "url": {
+            "type": "string",
+            "description": "メディアURL"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "description": "サムネイルURL（YouTube用）"
+          },
+          "order": {
+            "type": "number",
+            "description": "表示順序"
+          }
+        },
+        "required": [
+          "type",
+          "url"
+        ]
+      },
+      "CreateGalleryEntryDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "KITTEN",
+              "FATHER",
+              "MOTHER",
+              "GRADUATION"
+            ],
+            "description": "カテゴリ"
+          },
+          "name": {
+            "type": "string",
+            "description": "猫の名前"
+          },
+          "gender": {
+            "type": "string",
+            "description": "性別",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "NEUTER",
+              "SPAY"
+            ]
+          },
+          "coatColor": {
+            "type": "string",
+            "description": "毛色"
+          },
+          "breed": {
+            "type": "string",
+            "description": "品種"
+          },
+          "catId": {
+            "type": "string",
+            "description": "在舎猫ID（参照用）"
+          },
+          "transferDate": {
+            "type": "string",
+            "description": "譲渡日（卒業猫用）"
+          },
+          "destination": {
+            "type": "string",
+            "description": "譲渡先（卒業猫用）"
+          },
+          "externalLink": {
+            "type": "string",
+            "description": "外部リンク（卒業猫用）"
+          },
+          "notes": {
+            "type": "string",
+            "description": "備考"
+          },
+          "media": {
+            "description": "メディア（画像・動画）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateMediaDto"
+            }
+          }
+        },
+        "required": [
+          "category",
+          "name",
+          "gender"
+        ]
+      },
+      "UpdateGalleryEntryDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "KITTEN",
+              "FATHER",
+              "MOTHER",
+              "GRADUATION"
+            ],
+            "description": "カテゴリ"
+          },
+          "name": {
+            "type": "string",
+            "description": "猫の名前"
+          },
+          "gender": {
+            "type": "string",
+            "description": "性別",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "NEUTER",
+              "SPAY"
+            ]
+          },
+          "coatColor": {
+            "type": "string",
+            "description": "毛色"
+          },
+          "breed": {
+            "type": "string",
+            "description": "品種"
+          },
+          "catId": {
+            "type": "string",
+            "description": "在舎猫ID（参照用）"
+          },
+          "transferDate": {
+            "type": "string",
+            "description": "譲渡日（卒業猫用）"
+          },
+          "destination": {
+            "type": "string",
+            "description": "譲渡先（卒業猫用）"
+          },
+          "externalLink": {
+            "type": "string",
+            "description": "外部リンク（卒業猫用）"
+          },
+          "notes": {
+            "type": "string",
+            "description": "備考"
+          },
+          "media": {
+            "description": "メディア（画像・動画）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateMediaDto"
+            }
+          }
+        }
+      },
+      "AddMediaDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "YOUTUBE"
+            ],
+            "description": "メディアタイプ"
+          },
+          "url": {
+            "type": "string",
+            "description": "メディアURL"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "description": "サムネイルURL（YouTube用）"
+          }
+        },
+        "required": [
+          "type",
+          "url"
+        ]
+      },
+      "ExportRequestDto": {
+        "type": "object",
+        "properties": {
+          "dataType": {
+            "type": "string",
+            "enum": [
+              "cats",
+              "pedigrees",
+              "medical_records",
+              "care_schedules",
+              "tags"
+            ],
+            "description": "エクスポート対象データ種別"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "json"
+            ],
+            "description": "エクスポート形式",
+            "default": "csv"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "開始日（フィルタ用）"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "終了日（フィルタ用）"
+          },
+          "ids": {
+            "description": "対象IDリスト（特定データのみエクスポート）",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "dataType",
+          "format"
+        ]
+      },
+      "ImportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "previewCount": {
+            "type": "number",
+            "description": "プレビューデータ件数"
+          },
+          "sampleData": {
+            "type": "array",
+            "description": "サンプルデータ（最初の5件）"
+          },
+          "columns": {
+            "description": "検出されたカラム",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "データ総件数"
+          }
+        },
+        "required": [
+          "previewCount",
+          "sampleData",
+          "columns",
+          "totalCount"
+        ]
+      },
+      "ImportResultDto": {
+        "type": "object",
+        "properties": {
+          "successCount": {
+            "type": "number",
+            "description": "インポート成功件数"
+          },
+          "errorCount": {
+            "type": "number",
+            "description": "インポート失敗件数"
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "処理総件数"
+          },
+          "errors": {
+            "description": "エラー詳細（最初の10件）",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "successCount",
+          "errorCount",
+          "totalCount"
+        ]
       }
     }
   }

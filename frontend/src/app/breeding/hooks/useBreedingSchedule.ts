@@ -52,7 +52,7 @@ export interface UseBreedingScheduleReturn {
   clearScheduleData: () => void;
   
   // API 同期関数
-  createScheduleOnServer: (entry: BreedingScheduleEntry) => Promise<void>;
+  createScheduleOnServer: (entry: BreedingScheduleEntry, options?: { force?: boolean }) => Promise<void>;
   updateScheduleOnServer: (scheduleId: string, updates: UpdateBreedingScheduleRequest) => Promise<void>;
   deleteScheduleOnServer: (scheduleId: string) => Promise<void>;
   syncFromServer: () => Promise<void>;
@@ -71,13 +71,15 @@ function convertServerScheduleToLocal(
     const currentDate = new Date(startDate);
     currentDate.setDate(startDate.getDate() + i);
     const dateStr = currentDate.toISOString().split('T')[0];
-    const scheduleKey = `${schedule.maleId}-${dateStr}`;
+    // 猫削除後（maleId=null）はサーバーIDをキーに使い、削除済み同士の衝突を防ぐ
+    const scheduleKey = `${schedule.maleId ?? `deleted-${schedule.id}`}-${dateStr}`;
     
     result[scheduleKey] = {
-      maleId: schedule.maleId,
-      maleName: schedule.male?.name ?? '',
-      femaleId: schedule.femaleId,
-      femaleName: schedule.female?.name ?? '',
+      maleId: schedule.maleId ?? '',
+      // 猫が削除済みの場合はスナップショット名（テキスト）で表示する
+      maleName: schedule.male?.name ?? schedule.maleName ?? '',
+      femaleId: schedule.femaleId ?? '',
+      femaleName: schedule.female?.name ?? schedule.femaleName ?? '',
       date: dateStr,
       duration: schedule.duration,
       dayIndex: i,
@@ -104,7 +106,7 @@ function convertServerChecksToLocal(
     
     for (const check of schedule.checks) {
       const checkDate = new Date(check.checkDate).toISOString().split('T')[0];
-      const key = `${schedule.maleId}-${schedule.femaleId}-${checkDate}`;
+      const key = `${schedule.maleId ?? ''}-${schedule.femaleId ?? ''}-${checkDate}`;
       result[key] = (result[key] || 0) + check.count;
     }
   }
@@ -299,13 +301,14 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
   }, []);
 
   // サーバーにスケジュールを作成
-  const createScheduleOnServer = useCallback(async (entry: BreedingScheduleEntry) => {
+  const createScheduleOnServer = useCallback(async (entry: BreedingScheduleEntry, options?: { force?: boolean }) => {
     const payload: CreateBreedingScheduleRequest = {
       maleId: entry.maleId,
       femaleId: entry.femaleId,
       startDate: entry.date,
       duration: entry.duration,
       status: 'SCHEDULED',
+      ...(options?.force ? { force: true } : {}),
     };
     
     try {

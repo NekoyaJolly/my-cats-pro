@@ -26,16 +26,16 @@ class CareScheduleReminderDto {
   @ApiProperty({ enum: ReminderTimingType, example: ReminderTimingType.ABSOLUTE })
   timingType!: ReminderTimingType;
 
-  @ApiPropertyOptional({ example: "2025-08-01T09:00:00.000Z" })
+  @ApiPropertyOptional({ type: String, nullable: true, example: "2025-08-01T09:00:00.000Z" })
   remindAt!: string | null;
 
-  @ApiPropertyOptional({ example: 2 })
+  @ApiPropertyOptional({ type: Number, nullable: true, example: 2 })
   offsetValue!: number | null;
 
-  @ApiPropertyOptional({ enum: ReminderOffsetUnit, example: ReminderOffsetUnit.DAY })
+  @ApiPropertyOptional({ enum: ReminderOffsetUnit, nullable: true, example: ReminderOffsetUnit.DAY })
   offsetUnit!: ReminderOffsetUnit | null;
 
-  @ApiPropertyOptional({ enum: ReminderRelativeTo, example: ReminderRelativeTo.START_DATE })
+  @ApiPropertyOptional({ enum: ReminderRelativeTo, nullable: true, example: ReminderRelativeTo.START_DATE })
   relativeTo!: ReminderRelativeTo | null;
 
   @ApiProperty({ enum: ReminderChannel, example: ReminderChannel.IN_APP })
@@ -44,19 +44,20 @@ class CareScheduleReminderDto {
   @ApiPropertyOptional({
     enum: ReminderRepeatFrequency,
     example: ReminderRepeatFrequency.NONE,
+    nullable: true,
   })
   repeatFrequency!: ReminderRepeatFrequency | null;
 
-  @ApiPropertyOptional({ example: 1 })
+  @ApiPropertyOptional({ type: Number, nullable: true, example: 1 })
   repeatInterval!: number | null;
 
-  @ApiPropertyOptional({ example: 5 })
+  @ApiPropertyOptional({ type: Number, nullable: true, example: 5 })
   repeatCount!: number | null;
 
-  @ApiPropertyOptional({ example: "2025-12-31T00:00:00.000Z" })
+  @ApiPropertyOptional({ type: String, nullable: true, example: "2025-12-31T00:00:00.000Z" })
   repeatUntil!: string | null;
 
-  @ApiPropertyOptional({ example: "前日9時に通知" })
+  @ApiPropertyOptional({ type: String, nullable: true, example: "前日9時に通知" })
   notes!: string | null;
 
   @ApiProperty({ example: true })
@@ -76,7 +77,7 @@ class CareScheduleTagDto {
   @ApiProperty({ example: 1 })
   level!: number;
 
-  @ApiPropertyOptional({ example: "parent-tag-id" })
+  @ApiPropertyOptional({ type: String, nullable: true, example: "parent-tag-id" })
   parentId!: string | null;
 }
 
@@ -90,16 +91,17 @@ export class CareScheduleItemDto {
   @ApiProperty({ example: "年次健康診断" })
   title!: string;
 
-  @ApiProperty({ example: "毎年の定期健診" })
+  // union 型 (string | null) は Swagger が型推論できず {} になるため type を明示する
+  @ApiProperty({ type: String, nullable: true, example: "毎年の定期健診" })
   description!: string | null;
 
   @ApiProperty({ example: "2025-09-01T00:00:00.000Z" })
   scheduleDate!: string;
 
-  @ApiPropertyOptional({ example: "2025-09-01T01:00:00.000Z" })
+  @ApiPropertyOptional({ type: String, nullable: true, example: "2025-09-01T01:00:00.000Z" })
   endDate!: string | null;
 
-  @ApiPropertyOptional({ example: "Asia/Tokyo" })
+  @ApiPropertyOptional({ type: String, nullable: true, example: "Asia/Tokyo" })
   timezone!: string | null;
 
   @ApiProperty({ enum: ScheduleType, example: ScheduleType.CARE })
@@ -114,7 +116,7 @@ export class CareScheduleItemDto {
   @ApiProperty({ enum: Priority, example: Priority.MEDIUM })
   priority!: Priority;
 
-  @ApiPropertyOptional({ example: "FREQ=YEARLY;INTERVAL=1" })
+  @ApiPropertyOptional({ type: String, nullable: true, example: "FREQ=YEARLY;INTERVAL=1" })
   recurrenceRule!: string | null;
 
   @ApiProperty({ example: "f3a2c1d7-1234-5678-90ab-cdef12345678" })

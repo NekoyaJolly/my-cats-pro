@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import {
   CareType,
   MedicalRecordStatus,
@@ -10,6 +11,7 @@ import {
 } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
+import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";
 
 
 import {
@@ -18,6 +20,7 @@ import {
   CreateCareScheduleDto,
   CreateMedicalRecordDto,
   MedicalRecordQueryDto,
+  UpdateMedicalRecordDto,
 } from "./dto";
 import type {
   CareScheduleListResponse,
@@ -54,6 +57,7 @@ const scheduleListInclude = {
 
 const scheduleMinimalInclude = {
   cat: { select: { id: true, name: true } },
+  scheduleCats: { select: { catId: true } },
   tags: { select: { careTagId: true } },
 } as const;
 
@@ -130,7 +134,10 @@ const toIsoString = (value?: Date | null): string | null =>
 
 @Injectable()
 export class CareService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async findSchedules(query: CareQueryDto): Promise<CareScheduleListResponse> {
     const { page = 1, limit = 20, catId, careType, dateFrom, dateTo } = query;
@@ -292,6 +299,25 @@ export class CareService {
       return { updated, careRecord, medicalRecordId };
     });
 
+    // PAGE_ACTION（care.complete）タイプのタグ自動化ルール向けイベントを対象猫ごとに発火
+    const completedCatIds = new Set<string>();
+    if (existing.catId) {
+      completedCatIds.add(existing.catId);
+    }
+    for (const scheduleCat of existing.scheduleCats) {
+      completedCatIds.add(scheduleCat.catId);
+    }
+    completedCatIds.forEach((catId) => {
+      this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.PAGE_ACTION, {
+        eventType: "PAGE_ACTION" as const,
+        timestamp: new Date(),
+        page: "care",
+        action: "complete",
+        targetId: catId,
+        targetType: "cat",
+      });
+    });
+
     return {
       success: true,
       data: {
@@ -420,6 +446,31 @@ export class CareService {
     };
   }
 
+  /**
+   * ケアスケジュールのステータスのみを変更する（有効/無効スイッチ用）
+   */
+  async updateScheduleStatus(
+    id: string,
+    status: ScheduleStatus,
+  ): Promise<CareScheduleResponse> {
+    const existing = await this.prisma.schedule.findUnique({ where: { id } });
+
+    if (!existing) {
+      throw new NotFoundException("スケジュールが見つかりません");
+    }
+
+    const schedule = await this.prisma.schedule.update({
+      where: { id },
+      data: { status },
+      include: scheduleListInclude,
+    });
+
+    return {
+      success: true,
+      data: this.mapScheduleToResponse(schedule as ScheduleWithRelations),
+    };
+  }
+
   async deleteSchedule(id: string): Promise<{ success: true; message: string }> {
     const existing = await this.prisma.schedule.findUnique({
       where: { id },
@@ -449,6 +500,120 @@ export class CareService {
     return {
       success: true,
       data: this.mapMedicalRecordToResponse(record),
+    };
+  }
+
+  async findMedicalRecordById(id: string): Promise<MedicalRecordResponse> {
+    const record = await this.prisma.medicalRecord.findUnique({
+      where: { id },
+      include: medicalRecordInclude,
+    });
+
+    if (!record) {
+      throw new NotFoundException("医療記録が見つかりません");
+    }
+
+    return {
+      success: true,
+      data: this.mapMedicalRecordToResponse(record),
+    };
+  }
+
+  async updateMedicalRecord(
+    id: string,
+    dto: UpdateMedicalRecordDto,
+  ): Promise<MedicalRecordResponse> {
+    const existing = await this.prisma.medicalRecord.findUnique({ where: { id } });
+
+    if (!existing) {
+      throw new NotFoundException("医療記録が見つかりません");
+    }
+
+    const data: Prisma.MedicalRecordUpdateInput = {};
+
+    if (dto.catId !== undefined) {
+      data.cat = { connect: { id: dto.catId } };
+    }
+    if (dto.scheduleId !== undefined) {
+      data.schedule = dto.scheduleId ? { connect: { id: dto.scheduleId } } : { disconnect: true };
+    }
+    if (dto.visitDate !== undefined) {
+      data.visitDate = new Date(dto.visitDate);
+    }
+    if (dto.visitTypeId !== undefined) {
+      data.visitType = dto.visitTypeId ? { connect: { id: dto.visitTypeId } } : { disconnect: true };
+    }
+    if (dto.hospitalName !== undefined) {
+      data.hospitalName = this.normalizeOptionalText(dto.hospitalName) ?? null;
+    }
+    if (dto.symptom !== undefined) {
+      data.symptom = dto.symptom;
+    }
+    if (dto.symptomDetails !== undefined) {
+      data.symptomDetails = serializeSymptomDetails(mapDtoToSymptomDetails(dto.symptomDetails));
+    }
+    if (dto.diagnosis !== undefined) {
+      data.diagnosis = dto.diagnosis;
+    }
+    if (dto.treatmentPlan !== undefined) {
+      data.treatmentPlan = dto.treatmentPlan;
+    }
+    if (dto.medications !== undefined) {
+      data.medications = serializeMedications(mapDtoToMedications(dto.medications));
+    }
+    if (dto.followUpDate !== undefined) {
+      data.followUpDate = dto.followUpDate ? new Date(dto.followUpDate) : null;
+    }
+    if (dto.status !== undefined) {
+      data.status = dto.status;
+    }
+    if (dto.notes !== undefined) {
+      data.notes = dto.notes;
+    }
+    if (dto.tagIds !== undefined) {
+      data.tags = {
+        deleteMany: {},
+        create: dto.tagIds.map((tagId) => ({ tagId })),
+      };
+    }
+    if (dto.attachments !== undefined) {
+      data.attachments = {
+        deleteMany: {},
+        create: dto.attachments.map((attachment: MedicalRecordAttachmentInput) => ({
+          url: attachment.url,
+          description: attachment.description,
+          fileName: attachment.fileName,
+          fileType: attachment.fileType,
+          fileSize: attachment.fileSize,
+          capturedAt: attachment.capturedAt ? new Date(attachment.capturedAt) : undefined,
+        })),
+      };
+    }
+
+    const record = await this.prisma.medicalRecord.update({
+      where: { id },
+      data,
+      include: medicalRecordInclude,
+    });
+
+    return {
+      success: true,
+      data: this.mapMedicalRecordToResponse(record),
+    };
+  }
+
+  async deleteMedicalRecord(id: string): Promise<{ success: true; message: string }> {
+    const existing = await this.prisma.medicalRecord.findUnique({ where: { id } });
+
+    if (!existing) {
+      throw new NotFoundException("医療記録が見つかりません");
+    }
+
+    await this.prisma.medicalRecord.delete({ where: { id } });
+
+    return {
+      success: true,
+      message: "医療記録を削除しました",
     };
   }
 
@@ -610,7 +775,10 @@ export class CareService {
       followUpDate: toIsoString(record.followUpDate),
       status: record.status,
       notes: record.notes ?? null,
-      cat: { id: record.cat.id, name: record.cat.name },
+      // 猫削除後はスナップショット名（catName）で表示する
+      cat: record.cat
+        ? { id: record.cat.id, name: record.cat.name }
+        : { id: null, name: record.catName ?? null },
       schedule: record.schedule
         ? { id: record.schedule.id, name: record.schedule.name }
         : null,
