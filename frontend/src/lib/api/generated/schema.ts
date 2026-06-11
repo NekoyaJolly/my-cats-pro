@@ -243,6 +243,26 @@ export type paths = {
         patch: operations["UsersController_updateUserRole"];
         trace?: never;
     };
+    "/api/v1/users/{id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * ユーザーの権限を変更
+         * @description 付与できるのは自分が保持する権限の範囲内のみ。自分自身の権限は変更できません。
+         */
+        patch: operations["UsersController_updateUserPermissions"];
+        trace?: never;
+    };
     "/api/v1/users/{id}": {
         parameters: {
             query?: never;
@@ -2158,6 +2178,14 @@ export type components = {
              * @enum {string}
              */
             role: "USER" | "ADMIN" | "SUPER_ADMIN" | "TENANT_ADMIN";
+            /**
+             * @description 個別権限（未指定時はロールのプリセットを適用）
+             * @example [
+             *       "cats:write",
+             *       "care:write"
+             *     ]
+             */
+            permissions?: ("cats:write" | "breeding:write" | "care:write" | "medical:write" | "tags:manage" | "pedigree:write" | "gallery:write" | "staff:manage" | "graduation:write" | "data:import_export" | "users:manage" | "tenants:manage" | "settings:manage")[];
         };
         UpdateUserRoleDto: {
             /**
@@ -2166,6 +2194,24 @@ export type components = {
              * @enum {string}
              */
             role: "USER" | "ADMIN" | "SUPER_ADMIN" | "TENANT_ADMIN";
+            /**
+             * @description 個別権限（未指定時はロールのプリセットを適用）
+             * @example [
+             *       "cats:write",
+             *       "care:write"
+             *     ]
+             */
+            permissions?: ("cats:write" | "breeding:write" | "care:write" | "medical:write" | "tags:manage" | "pedigree:write" | "gallery:write" | "staff:manage" | "graduation:write" | "data:import_export" | "users:manage" | "tenants:manage" | "settings:manage")[];
+        };
+        UpdateUserPermissionsDto: {
+            /**
+             * @description 付与する権限の配列（機能ドメイン単位）
+             * @example [
+             *       "cats:write",
+             *       "care:write"
+             *     ]
+             */
+            permissions: ("cats:write" | "breeding:write" | "care:write" | "medical:write" | "tags:manage" | "pedigree:write" | "gallery:write" | "staff:manage" | "graduation:write" | "data:import_export" | "users:manage" | "tenants:manage" | "settings:manage")[];
         };
         CreateTenantDto: {
             /**
@@ -4389,6 +4435,45 @@ export interface operations {
             };
             /** @description 認証が必要です */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ユーザーが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_updateUserPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 対象ユーザーID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserPermissionsDto"];
+            };
+        };
+        responses: {
+            /** @description 権限を更新しました */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 import { apiClient, clearTokens, setTokens } from '../api/client';
+import { hasPermission, type Permission } from './permissions';
 
 export interface AuthUser {
   id: string;
   email: string;
   role: string;
+  /** 機能ドメイン単位の個別権限（lib/auth/permissions.ts の Permission 値） */
+  permissions?: string[];
   firstName?: string | null;
   lastName?: string | null;
   tenantId?: string | null;
@@ -61,6 +64,9 @@ function toAuthUser(value: unknown): AuthUser | null {
     return null;
   }
 
+  const permissions = Array.isArray(value.permissions)
+    ? value.permissions.filter((item): item is string => typeof item === 'string')
+    : [];
   const firstName = 'firstName' in value && typeof value.firstName === 'string' ? value.firstName : null;
   const lastName = 'lastName' in value && typeof value.lastName === 'string' ? value.lastName : null;
   const tenantId = 'tenantId' in value && typeof value.tenantId === 'string' ? value.tenantId : null;
@@ -69,6 +75,7 @@ function toAuthUser(value: unknown): AuthUser | null {
     id: idCandidate,
     email: emailCandidate,
     role: roleCandidate,
+    permissions,
     firstName,
     lastName,
     tenantId,
@@ -235,4 +242,14 @@ export function useAuth() {
     updateUser,
     clearError,
   };
+}
+
+/**
+ * 権限チェック用フック
+ *
+ * 使用例: `const can = useCan(); if (can('users:manage')) { ... }`
+ */
+export function useCan(): (permission: Permission) => boolean {
+  const user = useAuthStore((state) => state.user);
+  return (permission: Permission) => hasPermission(user, permission);
 }
