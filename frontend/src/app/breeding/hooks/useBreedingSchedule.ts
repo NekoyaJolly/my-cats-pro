@@ -74,10 +74,11 @@ function convertServerScheduleToLocal(
     const scheduleKey = `${schedule.maleId}-${dateStr}`;
     
     result[scheduleKey] = {
-      maleId: schedule.maleId,
-      maleName: schedule.male?.name ?? '',
-      femaleId: schedule.femaleId,
-      femaleName: schedule.female?.name ?? '',
+      maleId: schedule.maleId ?? '',
+      // 猫が削除済みの場合はスナップショット名（テキスト）で表示する
+      maleName: schedule.male?.name ?? schedule.maleName ?? '',
+      femaleId: schedule.femaleId ?? '',
+      femaleName: schedule.female?.name ?? schedule.femaleName ?? '',
       date: dateStr,
       duration: schedule.duration,
       dayIndex: i,
@@ -104,7 +105,7 @@ function convertServerChecksToLocal(
     
     for (const check of schedule.checks) {
       const checkDate = new Date(check.checkDate).toISOString().split('T')[0];
-      const key = `${schedule.maleId}-${schedule.femaleId}-${checkDate}`;
+      const key = `${schedule.maleId ?? ''}-${schedule.femaleId ?? ''}-${checkDate}`;
       result[key] = (result[key] || 0) + check.count;
     }
   }

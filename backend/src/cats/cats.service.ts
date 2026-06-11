@@ -417,23 +417,114 @@ export class CatsService {
     });
   }
 
+  /**
+   * 猫の削除
+   *
+   * 削除ポリシー:
+   * - 猫個体に属する記録（ケア履歴・体重・タグ・ギャラリー・単独スケジュール）は削除
+   * - 医療記録・繁殖履歴（交配記録/配種スケジュール/妊娠確認/出産予定/子猫処遇）は
+   *   レコードを残し、リンクを切断して名前をテキスト（スナップショット）で保持
+   * - 子猫の母/父参照も名前スナップショットに置き換える
+   */
   async remove(id: string) {
     const existingCat = await this.prisma.cat.findUnique({
       where: { id },
+      select: { id: true, name: true },
     });
 
     if (!existingCat) {
-      throw new NotFoundException(`Cat with ID ${id} not found`);
+      throw new NotFoundException(`猫が見つかりません（ID: ${id}）`);
     }
 
-    await this.prisma.kittenDisposition.deleteMany({
-      where: { kittenId: id },
-    });
+    const catName = existingCat.name;
 
-    return this.prisma.cat.delete({
-      where: { id },
-      include: catWithRelationsInclude,
-    });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        // 1) 猫個体に属する記録を削除
+        //    （体重・タグ・タグ履歴・スケジュール紐付け・卒業記録はスキーマの Cascade で削除される）
+        await tx.careRecord.deleteMany({ where: { catId: id } });
+        await tx.galleryEntry.deleteMany({ where: { catId: id } });
+        // この猫だけを対象とするケアスケジュールは削除（複数猫スケジュールは残す）
+        await tx.schedule.deleteMany({
+          where: {
+            catId: id,
+            scheduleCats: { none: { catId: { not: id } } },
+          },
+        });
+
+        // 2) 医療記録: 後から参照できるようリンクを切断して名前を保持
+        await tx.medicalRecord.updateMany({
+          where: { catId: id },
+          data: { catId: null, catName },
+        });
+
+        // 3) 繁殖履歴: リンクを切断して名前を保持
+        await tx.breedingRecord.updateMany({
+          where: { maleId: id },
+          data: { maleId: null, maleName: catName },
+        });
+        await tx.breedingRecord.updateMany({
+          where: { femaleId: id },
+          data: { femaleId: null, femaleName: catName },
+        });
+        await tx.breedingSchedule.updateMany({
+          where: { maleId: id },
+          data: { maleId: null, maleName: catName },
+        });
+        await tx.breedingSchedule.updateMany({
+          where: { femaleId: id },
+          data: { femaleId: null, femaleName: catName },
+        });
+        await tx.pregnancyCheck.updateMany({
+          where: { motherId: id },
+          data: { motherId: null, motherName: catName },
+        });
+        await tx.pregnancyCheck.updateMany({
+          where: { fatherId: id },
+          data: { fatherId: null, fatherName: catName },
+        });
+        await tx.birthPlan.updateMany({
+          where: { motherId: id },
+          data: { motherId: null, motherName: catName },
+        });
+        await tx.birthPlan.updateMany({
+          where: { fatherId: id },
+          data: { fatherId: null, fatherName: catName },
+        });
+        // 子猫処遇は KittenDisposition.name に名前を保持済みのためリンク切断のみ
+        await tx.kittenDisposition.updateMany({
+          where: { kittenId: id },
+          data: { kittenId: null },
+        });
+
+        // 4) 子猫の母/父参照を名前スナップショットに置き換え
+        await tx.cat.updateMany({
+          where: { motherId: id },
+          data: { motherId: null, motherName: catName },
+        });
+        await tx.cat.updateMany({
+          where: { fatherId: id },
+          data: { fatherId: null, fatherName: catName },
+        });
+
+        // 5) 本体を削除
+        return tx.cat.delete({
+          where: { id },
+          include: catWithRelationsInclude,
+        });
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2003"
+      ) {
+        // 想定外の参照が残っている場合のフォールバック（500 にしない）
+        throw new ConflictException(
+          "関連データが残っているため削除できません。画面を更新して再度お試しください",
+        );
+      }
+      throw error;
+    }
   }
 
   async getBreedingHistory(id: string) {

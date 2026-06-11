@@ -24,7 +24,7 @@ import {
 } from "./events/tag-automation.events";
 import { TagAutomationService } from "./tag-automation.service";
 
-interface RuleExecutionResult {
+export interface RuleExecutionResult {
   ruleId: string;
   ruleName: string;
   success: boolean;

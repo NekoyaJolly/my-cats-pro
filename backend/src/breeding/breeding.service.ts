@@ -338,7 +338,9 @@ export class BreedingService {
         maleId: result.fatherId ?? undefined,
         confirmedDate: result.checkDate,
       });
-      this.emitPageActionEvent('pregnancy_confirmed', result.motherId);
+      if (result.motherId) {
+        this.emitPageActionEvent('pregnancy_confirmed', result.motherId);
+      }
       if (result.fatherId) {
         this.emitPageActionEvent('pregnancy_confirmed', result.fatherId);
       }
@@ -730,8 +732,12 @@ export class BreedingService {
       femaleId: result.femaleId,
       plannedDate: result.startDate,
     });
-    this.emitPageActionEvent('create', result.maleId);
-    this.emitPageActionEvent('create', result.femaleId);
+    if (result.maleId) {
+      this.emitPageActionEvent('create', result.maleId);
+    }
+    if (result.femaleId) {
+      this.emitPageActionEvent('create', result.femaleId);
+    }
 
     return { success: true, data: result };
   }

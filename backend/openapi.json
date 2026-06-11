@@ -5453,7 +5453,7 @@
     "/api/v1/tags/automation/rules/{id}/execute": {
       "post": {
         "operationId": "TagAutomationController_executeRule",
-        "summary": "ルールを手動実行（テスト用）",
+        "summary": "ルールを手動実行（実データの対象猫に即時適用）",
         "parameters": [
           {
             "name": "id",
@@ -5467,7 +5467,7 @@
         ],
         "responses": {
           "200": {
-            "description": "ルール実行成功"
+            "description": "ルール実行結果"
           }
         },
         "tags": [

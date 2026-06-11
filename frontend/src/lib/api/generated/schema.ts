@@ -1652,7 +1652,7 @@ export type paths = {
         };
         get?: never;
         put?: never;
-        /** ルールを手動実行（テスト用） */
+        /** ルールを手動実行（実データの対象猫に即時適用） */
         post: operations["TagAutomationController_executeRule"];
         delete?: never;
         options?: never;
@@ -7890,7 +7890,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description ルール実行成功 */
+            /** @description ルール実行結果 */
             200: {
                 headers: {
                     [name: string]: unknown;

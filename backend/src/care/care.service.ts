@@ -750,7 +750,10 @@ export class CareService {
       followUpDate: toIsoString(record.followUpDate),
       status: record.status,
       notes: record.notes ?? null,
-      cat: { id: record.cat.id, name: record.cat.name },
+      // 猫削除後はスナップショット名（catName）で表示する
+      cat: record.cat
+        ? { id: record.cat.id, name: record.cat.name }
+        : { id: null, name: record.catName ?? null },
       schedule: record.schedule
         ? { id: record.schedule.id, name: record.schedule.name }
         : null,

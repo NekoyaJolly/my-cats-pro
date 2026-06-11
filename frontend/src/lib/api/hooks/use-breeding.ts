@@ -792,8 +792,8 @@ export interface MatingCheck {
 
 export interface BreedingSchedule {
   id: string;
-  maleId: string;
-  femaleId: string;
+  maleId: string | null;
+  femaleId: string | null;
   startDate: string;
   duration: number;
   status: BreedingScheduleStatus;
@@ -803,6 +803,9 @@ export interface BreedingSchedule {
   updatedAt: string;
   male?: { id: string; name: string | null } | null;
   female?: { id: string; name: string | null } | null;
+  /** 猫削除後に名前をテキストで保持するスナップショット */
+  maleName?: string | null;
+  femaleName?: string | null;
   checks?: MatingCheck[];
 }
 

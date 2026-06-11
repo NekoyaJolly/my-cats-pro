@@ -15,8 +15,11 @@ export interface BreedingWhereInput {
 // Type for the Prisma select operations
 export type BreedingRecordWithRelations = {
   id: string;
-  maleId: string;
-  femaleId: string;
+  maleId: string | null;
+  /** 猫削除後のスナップショット名 */
+  maleName?: string | null;
+  femaleId: string | null;
+  femaleName?: string | null;
   breedingDate: Date;
   expectedDueDate: Date | null;
   actualDueDate: Date | null;
@@ -85,7 +88,10 @@ export interface BreedingNgRuleResponse {
 // Pregnancy Check types
 export type PregnancyCheckWithRelations = {
   id: string;
-  motherId: string;
+  motherId: string | null;
+  /** 猫削除後のスナップショット名 */
+  motherName?: string | null;
+  fatherName?: string | null;
   checkDate: Date;
   status: PregnancyStatus;
   notes: string | null;
@@ -113,7 +119,10 @@ export interface PregnancyCheckResponse {
 // Birth Plan types
 export type BirthPlanWithRelations = {
   id: string;
-  motherId: string;
+  motherId: string | null;
+  /** 猫削除後のスナップショット名 */
+  motherName?: string | null;
+  fatherName?: string | null;
   expectedBirthDate: Date;
   actualBirthDate: Date | null;
   status: BirthStatus;
@@ -146,8 +155,11 @@ export type BreedingScheduleStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' |
 
 export type BreedingScheduleWithRelations = {
   id: string;
-  maleId: string;
-  femaleId: string;
+  maleId: string | null;
+  /** 猫削除後のスナップショット名 */
+  maleName?: string | null;
+  femaleId: string | null;
+  femaleName?: string | null;
   startDate: Date;
   duration: number;
   status: BreedingScheduleStatus;
