@@ -8,6 +8,8 @@ import {
 
 import { PrismaService } from "../prisma/prisma.service";
 
+import { AgeThresholdCheckerService } from "./age-threshold-checker.service";
+
 import {
   TAG_AUTOMATION_EVENTS,
   type TagAutomationEvent,
@@ -16,6 +18,7 @@ import {
   type PregnancyConfirmedEvent,
   type KittenRegisteredEvent,
   type AgeThresholdEvent,
+  type TagAssignedEvent,
   type PageActionEvent,
   type CustomEvent,
 } from "./events/tag-automation.events";
@@ -37,7 +40,114 @@ export class TagAutomationExecutionService {
     private readonly prisma: PrismaService,
     private readonly automationService: TagAutomationService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly ageThresholdChecker: AgeThresholdCheckerService,
   ) { }
+
+  /**
+   * ルールを手動実行する（「今すぐ実行」用）
+   *
+   * イベントタイプごとに実データから対象猫を解決して適用する。
+   * 対象を特定できない場合はその旨を日本語メッセージで返す。
+   */
+  async executeRuleManually(
+    ruleId: string,
+    testPayload?: Record<string, unknown>,
+  ): Promise<{ success: boolean; message: string; results?: RuleExecutionResult[] }> {
+    const ruleResponse = await this.automationService.findRuleById(ruleId);
+    const rule = ruleResponse.data;
+    const config =
+      rule.config && typeof rule.config === 'object'
+        ? (rule.config as Record<string, unknown>)
+        : null;
+
+    switch (rule.eventType) {
+      case 'AGE_THRESHOLD': {
+        // 在舎猫全頭に対して、このルールの閾値判定→イベント発火を行う
+        await this.ageThresholdChecker.manualCheck(rule.id);
+        return {
+          success: true,
+          message: `年齢閾値チェックを実行しました（ルール: ${rule.name}）`,
+        };
+      }
+
+      case 'TAG_ASSIGNED': {
+        const triggerTagId = config?.['triggerTagId'] as string | undefined;
+        if (!triggerTagId) {
+          return {
+            success: false,
+            message: 'トリガータグが設定されていないため実行できません',
+          };
+        }
+
+        const catTags = await this.prisma.catTag.findMany({
+          where: { tagId: triggerTagId },
+          select: { catId: true },
+        });
+
+        if (catTags.length === 0) {
+          return {
+            success: true,
+            message: 'トリガータグが付与されている猫がいないため、適用対象はありませんでした',
+            results: [],
+          };
+        }
+
+        const results: RuleExecutionResult[] = [];
+        for (const { catId } of catTags) {
+          const event: TagAssignedEvent = {
+            eventType: 'TAG_ASSIGNED',
+            timestamp: new Date(),
+            catId,
+            tagId: triggerTagId,
+            action: 'ASSIGNED',
+          };
+          results.push(await this.executeRule(rule.id, event));
+        }
+
+        return {
+          success: true,
+          message: `${catTags.length}匹の猫に対してルールを適用しました`,
+          results,
+        };
+      }
+
+      case 'PAGE_ACTION': {
+        const targetSelection = config?.['targetSelection'] as string | undefined;
+        const targetId = testPayload?.['targetId'] as string | undefined;
+
+        if (!targetId && (!targetSelection || targetSelection === 'event_target')) {
+          return {
+            success: false,
+            message:
+              '対象の猫を特定できないため実行できません。実際のページ操作で自動適用されるのをお待ちいただくか、対象設定を見直してください',
+          };
+        }
+
+        const event: PageActionEvent = {
+          eventType: 'PAGE_ACTION',
+          timestamp: new Date(),
+          page: (config?.['page'] as string) ?? 'cats',
+          action: (config?.['action'] as string) ?? 'create',
+          targetId: targetId ?? '',
+          targetType: targetId ? 'cat' : undefined,
+        };
+
+        const result = await this.executeRule(rule.id, event);
+        return {
+          success: true,
+          message: `ルールを実行しました（タグ適用: ${result.tagsAssigned}件）`,
+          results: [result],
+        };
+      }
+
+      default: {
+        return {
+          success: false,
+          message: `このルール種別（${rule.eventType}）は手動実行に対応していません。実際のイベント発生時に自動適用されます`,
+        };
+      }
+    }
+  }
 
   /**
    * イベントに基づいてルールを実行
@@ -53,7 +163,13 @@ export class TagAutomationExecutionService {
         includeRuns: false,
       });
 
-      const rules = rulesResponse.data;
+      // イベントが特定ルール由来（AGE_THRESHOLD の閾値一致など）の場合、
+      // 他ルールのタグまで適用しないよう該当ルールに限定する
+      const eventRuleId =
+        event.eventType === 'AGE_THRESHOLD' ? (event as AgeThresholdEvent).ruleId : undefined;
+      const rules = eventRuleId
+        ? rulesResponse.data.filter((rule) => rule.id === eventRuleId)
+        : rulesResponse.data;
 
       if (rules.length === 0) {
         this.logger.debug(`No active rules found for event type: ${event.eventType}`);
@@ -251,6 +367,17 @@ export class TagAutomationExecutionService {
           if (pageEvent.targetType === 'cat') {
             catIds.push(pageEvent.targetId);
           }
+        }
+        break;
+      }
+
+      case 'TAG_ASSIGNED': {
+        // トリガータグ（config.triggerTagId）が一致する場合のみ、付与先の猫を対象とする
+        const tagEvent = event as TagAssignedEvent;
+        const config = rule.config as Record<string, unknown> | null;
+        const triggerTagId = config?.['triggerTagId'] as string | undefined;
+        if (!triggerTagId || triggerTagId === tagEvent.tagId) {
+          catIds.push(tagEvent.catId);
         }
         break;
       }
@@ -456,6 +583,15 @@ export class TagAutomationExecutionService {
   @OnEvent(TAG_AUTOMATION_EVENTS.PAGE_ACTION)
   async handlePageAction(event: PageActionEvent) {
     this.logger.log(`Handling PAGE_ACTION event: ${event.page}.${event.action}`);
+    await this.executeRulesForEvent(event);
+  }
+
+  /**
+   * イベントリスナー: タグ付与・剥奪
+   */
+  @OnEvent(TAG_AUTOMATION_EVENTS.TAG_ASSIGNED)
+  async handleTagAssigned(event: TagAssignedEvent) {
+    this.logger.log(`Handling TAG_ASSIGNED event: cat=${event.catId} tag=${event.tagId}`);
     await this.executeRulesForEvent(event);
   }
 

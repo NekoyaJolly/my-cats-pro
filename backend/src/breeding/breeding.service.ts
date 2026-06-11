@@ -1,7 +1,9 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
+import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";
 
 import {
   BreedingQueryDto,
@@ -42,7 +44,24 @@ import {
 
 @Injectable()
 export class BreedingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
+
+  /**
+   * PAGE_ACTION タイプのタグ自動化ルール向けイベントを発火する
+   */
+  private emitPageActionEvent(action: string, catId: string): void {
+    this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.PAGE_ACTION, {
+      eventType: "PAGE_ACTION" as const,
+      timestamp: new Date(),
+      page: "breeding",
+      action,
+      targetId: catId,
+      targetType: "cat",
+    });
+  }
 
   async findAll(query: BreedingQueryDto): Promise<BreedingListResponse> {
     const {
@@ -308,6 +327,22 @@ export class BreedingService {
         mother: { select: { id: true, name: true } },
       },
     });
+
+    // 妊娠確認イベントを発火（タグ自動化: PREGNANCY_CONFIRMED / breeding.pregnancy_confirmed）
+    if (result.status === 'CONFIRMED') {
+      this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.PREGNANCY_CONFIRMED, {
+        eventType: 'PREGNANCY_CONFIRMED' as const,
+        timestamp: new Date(),
+        pregnancyCheckId: result.id,
+        femaleId: result.motherId,
+        maleId: result.fatherId ?? undefined,
+        confirmedDate: result.checkDate,
+      });
+      this.emitPageActionEvent('pregnancy_confirmed', result.motherId);
+      if (result.fatherId) {
+        this.emitPageActionEvent('pregnancy_confirmed', result.fatherId);
+      }
+    }
 
     return { success: true, data: result };
   }
@@ -685,6 +720,18 @@ export class BreedingService {
         checks: true,
       },
     });
+
+    // 交配予定イベントを発火（タグ自動化: BREEDING_PLANNED / breeding.create）
+    this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.BREEDING_PLANNED, {
+      eventType: 'BREEDING_PLANNED' as const,
+      timestamp: new Date(),
+      breedingId: result.id,
+      maleId: result.maleId,
+      femaleId: result.femaleId,
+      plannedDate: result.startDate,
+    });
+    this.emitPageActionEvent('create', result.maleId);
+    this.emitPageActionEvent('create', result.femaleId);
 
     return { success: true, data: result };
   }

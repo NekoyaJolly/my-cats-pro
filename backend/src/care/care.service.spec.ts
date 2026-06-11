@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -64,6 +65,10 @@ describe('CareService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn() },
         },
       ],
     }).compile();
@@ -159,6 +164,7 @@ describe('CareService', () => {
         catId: 'cat-1',
         scheduleType: 'CARE',
         careType: 'HEALTH_CHECK',
+        scheduleCats: [],
       };
 
       const mockCareRecord = {

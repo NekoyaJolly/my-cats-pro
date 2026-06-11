@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import {
   CareType,
   MedicalRecordStatus,
@@ -10,6 +11,7 @@ import {
 } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
+import { TAG_AUTOMATION_EVENTS } from "../tags/events/tag-automation.events";
 
 
 import {
@@ -55,6 +57,7 @@ const scheduleListInclude = {
 
 const scheduleMinimalInclude = {
   cat: { select: { id: true, name: true } },
+  scheduleCats: { select: { catId: true } },
   tags: { select: { careTagId: true } },
 } as const;
 
@@ -131,7 +134,10 @@ const toIsoString = (value?: Date | null): string | null =>
 
 @Injectable()
 export class CareService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async findSchedules(query: CareQueryDto): Promise<CareScheduleListResponse> {
     const { page = 1, limit = 20, catId, careType, dateFrom, dateTo } = query;
@@ -291,6 +297,25 @@ export class CareService {
       }
 
       return { updated, careRecord, medicalRecordId };
+    });
+
+    // PAGE_ACTION（care.complete）タイプのタグ自動化ルール向けイベントを対象猫ごとに発火
+    const completedCatIds = new Set<string>();
+    if (existing.catId) {
+      completedCatIds.add(existing.catId);
+    }
+    for (const scheduleCat of existing.scheduleCats) {
+      completedCatIds.add(scheduleCat.catId);
+    }
+    completedCatIds.forEach((catId) => {
+      this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.PAGE_ACTION, {
+        eventType: "PAGE_ACTION" as const,
+        timestamp: new Date(),
+        page: "care",
+        action: "complete",
+        targetId: catId,
+        targetType: "cat",
+      });
     });
 
     return {

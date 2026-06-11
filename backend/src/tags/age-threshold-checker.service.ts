@@ -24,7 +24,7 @@ export class AgeThresholdCheckerService {
    * 毎日午前0時に年齢閾値をチェック
    */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async checkAgeThresholds() {
+  async checkAgeThresholds(ruleIdFilter?: string) {
     this.logger.log("年齢閾値チェック開始");
 
     try {
@@ -33,6 +33,7 @@ export class AgeThresholdCheckerService {
         where: {
           isActive: true,
           eventType: "AGE_THRESHOLD",
+          ...(ruleIdFilter ? { id: ruleIdFilter } : {}),
         },
       });
 
@@ -114,6 +115,14 @@ export class AgeThresholdCheckerService {
     const config = rule.config as Record<string, unknown> | null;
     if (!config) return false;
 
+    // UI（タグ管理ページ）が保存する形式: { ageType: 'days' | 'months', threshold: number }
+    // 閾値到達後は毎日マッチし続けるが、タグ付与/剥奪は冪等のため問題ない
+    if (typeof config.threshold === 'number') {
+      const ageType = config.ageType === 'months' ? 'months' : 'days';
+      const age = ageType === 'months' ? ageInMonths : ageInDays;
+      return age >= config.threshold;
+    }
+
     // 子猫用の日数チェック（母猫IDがある場合）
     if (motherId && config.kitten) {
       const kittenConfig = config.kitten as Record<string, unknown>;
@@ -142,10 +151,10 @@ export class AgeThresholdCheckerService {
   }
 
   /**
-   * 手動で年齢チェックを実行（テスト用）
+   * 手動で年齢チェックを実行（ルールIDを指定するとそのルールのみ評価）
    */
-  async manualCheck() {
+  async manualCheck(ruleId?: string) {
     this.logger.log("手動年齢閾値チェックを実行");
-    await this.checkAgeThresholds();
+    await this.checkAgeThresholds(ruleId);
   }
 }

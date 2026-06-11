@@ -147,6 +147,15 @@ export class CatsService {
           motherId: motherId || undefined,
           fatherId: fatherId || undefined,
         });
+
+        // PAGE_ACTION（kittens.register）ルール向けイベント
+        this.emitPageActionEvent("kittens", "register", cat.id);
+      }
+
+      if (cat) {
+        // PAGE_ACTION（cats-new.create / create_success）ルール向けイベント
+        this.emitPageActionEvent("cats-new", "create", cat.id);
+        this.emitPageActionEvent("cats-new", "create_success", cat.id);
       }
 
       return cat;
@@ -357,7 +366,7 @@ export class CatsService {
         }
       }
 
-      return await this.prisma.cat.update({
+      const updatedCat = await this.prisma.cat.update({
         where: { id },
         data: {
           ...(name ? { name } : {}),
@@ -374,6 +383,11 @@ export class CatsService {
         },
         include: catWithRelationsInclude,
       });
+
+      // PAGE_ACTION（cats-detail.update）ルール向けイベント
+      this.emitPageActionEvent("cats-detail", "update", updatedCat.id);
+
+      return updatedCat;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -387,6 +401,20 @@ export class CatsService {
       }
       throw error;
     }
+  }
+
+  /**
+   * PAGE_ACTION タイプのタグ自動化ルール向けイベントを発火する
+   */
+  private emitPageActionEvent(page: string, action: string, catId: string): void {
+    this.eventEmitter.emit(TAG_AUTOMATION_EVENTS.PAGE_ACTION, {
+      eventType: "PAGE_ACTION" as const,
+      timestamp: new Date(),
+      page,
+      action,
+      targetId: catId,
+      targetType: "cat",
+    });
   }
 
   async remove(id: string) {
