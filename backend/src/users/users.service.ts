@@ -11,11 +11,18 @@ import {
 import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
+import {
+  PERMISSIONS,
+  ROLE_PRESETS,
+  sanitizePermissions,
+  type Permission,
+} from '../auth/permissions';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { InviteUserDto } from './dto/invite-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 
 /** 招待トークンのバイトサイズ */
@@ -53,6 +60,45 @@ export class UsersService {
    * 
    * @private
    */
+  /**
+   * 権限の天井チェック: 付与できるのは自分自身が保持する権限の範囲内のみ
+   * （SUPER_ADMIN は無制限。tenants:manage は SUPER_ADMIN のみ付与可能）
+   */
+  private assertGrantWithinCeiling(
+    currentUser: RequestUser,
+    granted: Permission[],
+  ): void {
+    if (currentUser.role === UserRole.SUPER_ADMIN) {
+      return;
+    }
+
+    if (granted.includes(PERMISSIONS.TENANTS_MANAGE)) {
+      throw new ForbiddenException('テナント管理権限を付与できるのは SUPER_ADMIN のみです');
+    }
+
+    const ownPermissions = currentUser.permissions ?? [];
+    const exceeded = granted.filter((permission) => !ownPermissions.includes(permission));
+    if (exceeded.length > 0) {
+      throw new ForbiddenException('自分が保持していない権限を付与することはできません');
+    }
+  }
+
+  /**
+   * 付与する権限を解決する（個別指定があれば天井チェックの上で採用、なければロールプリセット）
+   */
+  private resolveGrantedPermissions(
+    currentUser: RequestUser,
+    role: UserRole,
+    requested?: string[],
+  ): Permission[] {
+    if (requested === undefined) {
+      return ROLE_PRESETS[role];
+    }
+    const sanitized = sanitizePermissions(requested);
+    this.assertGrantWithinCeiling(currentUser, sanitized);
+    return sanitized;
+  }
+
   private isPrivilegedRole(role: UserRole): boolean {
     return role === UserRole.SUPER_ADMIN || role === UserRole.TENANT_ADMIN;
   }
@@ -186,7 +232,13 @@ export class UsersService {
     // SUPER_ADMIN の場合
     if (currentUser.role === UserRole.SUPER_ADMIN) {
       // SUPER_ADMIN は任意のテナントに任意のロールを招待可能
-      return this.createInvitation(email, dto.role, dto.tenantId, currentUser);
+      return this.createInvitation(
+        email,
+        dto.role,
+        dto.tenantId,
+        currentUser,
+        this.resolveGrantedPermissions(currentUser, dto.role, dto.permissions),
+      );
     }
 
     // TENANT_ADMIN の場合
@@ -206,7 +258,13 @@ export class UsersService {
         throw new ForbiddenException('SUPER_ADMIN または TENANT_ADMIN を招待する権限がありません');
       }
 
-      return this.createInvitation(email, dto.role, dto.tenantId, currentUser);
+      return this.createInvitation(
+        email,
+        dto.role,
+        dto.tenantId,
+        currentUser,
+        this.resolveGrantedPermissions(currentUser, dto.role, dto.permissions),
+      );
     }
 
     // それ以外のロールの場合はアクセス拒否
@@ -223,6 +281,7 @@ export class UsersService {
     role: UserRole,
     tenantId: string,
     currentUser: RequestUser,
+    permissions: Permission[],
   ): Promise<{
     success: true;
     invitationToken: string;
@@ -257,6 +316,7 @@ export class UsersService {
         email,
         token,
         role,
+        permissions,
         tenantId,
         expiresAt,
       },
@@ -355,10 +415,13 @@ export class UsersService {
         throw new ForbiddenException('SUPER_ADMIN を降格することはできません');
       }
 
-      // ロール更新
+      // ロール更新（権限は個別指定がなければ新ロールのプリセットへ再設定）
       const updatedUser = await this.prisma.user.update({
         where: { id: userId },
-        data: { role: dto.role },
+        data: {
+          role: dto.role,
+          permissions: this.resolveGrantedPermissions(currentUser, dto.role, dto.permissions),
+        },
         select: {
           id: true,
           email: true,
@@ -403,10 +466,13 @@ export class UsersService {
         throw new ForbiddenException('SUPER_ADMIN または TENANT_ADMIN に変更する権限がありません');
       }
 
-      // ロール更新（ADMIN ↔ USER のみ許可）
+      // ロール更新（ADMIN ↔ USER のみ許可。権限は個別指定がなければ新ロールのプリセットへ再設定）
       const updatedUser = await this.prisma.user.update({
         where: { id: userId },
-        data: { role: dto.role },
+        data: {
+          role: dto.role,
+          permissions: this.resolveGrantedPermissions(currentUser, dto.role, dto.permissions),
+        },
         select: {
           id: true,
           email: true,
@@ -563,6 +629,78 @@ export class UsersService {
    * @param userId 対象ユーザー ID
    * @returns 削除結果
    */
+  /**
+   * ユーザーの個別権限を更新する
+   *
+   * 安全ルール:
+   * - 自分自身の権限は変更不可
+   * - 付与は自分が保持する権限の範囲内のみ（tenants:manage は SUPER_ADMIN のみ）
+   * - TENANT_ADMIN は自テナントの非特権ユーザーのみ変更可
+   */
+  async updateUserPermissions(
+    currentUser: RequestUser,
+    userId: string,
+    dto: UpdateUserPermissionsDto,
+  ): Promise<{
+    success: true;
+    data: { id: string; email: string; role: UserRole; permissions: string[] };
+    message: string;
+  }> {
+    if (!currentUser.role) {
+      throw new ForbiddenException('ユーザーロールが設定されていません');
+    }
+
+    if (currentUser.userId === userId) {
+      throw new ForbiddenException('自分自身の権限を変更することはできません');
+    }
+
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, role: true, tenantId: true },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('指定されたユーザーが見つかりません');
+    }
+
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      if (currentUser.role !== UserRole.TENANT_ADMIN) {
+        throw new ForbiddenException('ユーザーの権限を変更する権限がありません');
+      }
+      if (!currentUser.tenantId) {
+        throw new ForbiddenException('テナントに所属していません');
+      }
+      if (targetUser.tenantId !== currentUser.tenantId) {
+        throw new ForbiddenException('他のテナントのユーザーの権限を変更することはできません');
+      }
+      if (this.isPrivilegedRole(targetUser.role)) {
+        throw new ForbiddenException('SUPER_ADMIN または TENANT_ADMIN の権限を変更する権限がありません');
+      }
+    }
+
+    const sanitized = sanitizePermissions(dto.permissions);
+    this.assertGrantWithinCeiling(currentUser, sanitized);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { permissions: sanitized },
+      select: { id: true, email: true, role: true, permissions: true },
+    });
+
+    this.logger.log({
+      message: 'User permissions updated',
+      targetUserId: userId,
+      permissions: sanitized,
+      updatedBy: currentUser.userId,
+    });
+
+    return {
+      success: true,
+      data: updatedUser,
+      message: '権限を更新しました',
+    };
+  }
+
   async deleteUser(
     currentUser: RequestUser,
     userId: string,

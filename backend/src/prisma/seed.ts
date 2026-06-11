@@ -1,6 +1,7 @@
 import { PrismaClient, UserRole } from "@prisma/client";
 import * as argon2 from "argon2";
 
+import { ROLE_PRESETS } from "../auth/permissions";
 import { BREED_MASTER_DATA } from "../breeds/breed-master.data";
 import { GENDER_MASTER } from "../cats/constants/gender";
 import { COAT_COLOR_MASTER_DATA } from "../coat-colors/coat-color-master.data";
@@ -110,6 +111,7 @@ async function main() {
         lastName: "User",
         // 初期管理者はテナント/ユーザー管理を含む全機能を扱える SUPER_ADMIN とする
         role: UserRole.SUPER_ADMIN,
+        permissions: ROLE_PRESETS[UserRole.SUPER_ADMIN],
         isActive: true,
         passwordHash: hash,
       },

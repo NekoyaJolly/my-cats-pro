@@ -6,6 +6,8 @@ export interface JwtPayload {
   email?: string;
   role?: UserRole;
   tenantId?: string; // マルチテナント対応
+  /** 機能ドメイン単位の個別権限（auth/permissions.ts の Permission 値） */
+  permissions?: string[];
   jti?: string;
   iat?: number;
   exp?: number;
@@ -16,6 +18,8 @@ export interface RequestUser {
   email?: string;
   role?: UserRole;
   tenantId?: string; // マルチテナント対応
+  /** 機能ドメイン単位の個別権限（auth/permissions.ts の Permission 値） */
+  permissions?: string[];
   firstName?: string;
   lastName?: string;
 }

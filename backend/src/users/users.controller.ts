@@ -12,16 +12,17 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
 import { GetUser } from '../auth/get-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RoleGuard } from '../auth/role.guard';
-import { Roles } from '../auth/roles.decorator';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { InviteUserDto } from './dto/invite-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UsersService } from './users.service';
 
@@ -42,8 +43,8 @@ export class UsersController {
    * - TENANT_ADMIN: 自テナントのユーザーのみ取得可能
    */
   @Get()
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ 
     summary: 'ユーザー一覧取得',
@@ -115,8 +116,8 @@ export class UsersController {
    * - TENANT_ADMIN: 自テナントにのみ ADMIN / USER を招待可能
    */
   @Post('invite')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ 
@@ -142,8 +143,8 @@ export class UsersController {
    * - TENANT_ADMIN: 自テナントの ADMIN ↔ USER のみ変更可能
    */
   @Patch(':id/role')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ 
     summary: 'ユーザーロール変更',
@@ -168,9 +169,32 @@ export class UsersController {
    * - SUPER_ADMIN: 任意のユーザーを削除可能（自分自身と他の SUPER_ADMIN は削除不可）
    * - TENANT_ADMIN: 自テナントの ADMIN / USER のみ削除可能
    */
+  /**
+   * ユーザーの個別権限を変更
+   */
+  @Patch(':id/permissions')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'ユーザーの権限を変更',
+    description: '付与できるのは自分が保持する権限の範囲内のみ。自分自身の権限は変更できません。',
+  })
+  @ApiParam({ name: 'id', description: '対象ユーザーID' })
+  @ApiResponse({ status: 200, description: '権限を更新しました' })
+  @ApiResponse({ status: 403, description: '権限がありません' })
+  @ApiResponse({ status: 404, description: 'ユーザーが見つかりません' })
+  async updateUserPermissions(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserPermissionsDto,
+    @GetUser() user: RequestUser,
+  ) {
+    return this.usersService.updateUserPermissions(user, id, dto);
+  }
+
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ 

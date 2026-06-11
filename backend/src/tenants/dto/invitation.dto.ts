@@ -1,6 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
-import { IsEmail, IsEnum, IsString, IsNotEmpty, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsEnum, IsString, IsNotEmpty, MinLength, MaxLength , IsArray, IsIn, IsOptional } from 'class-validator';
+
+import { ALL_PERMISSIONS } from '../../auth/permissions';
 
 /**
  * SuperAdmin がテナント管理者を招待するための DTO
@@ -45,6 +47,17 @@ export class InviteUserDto {
   })
   @IsEnum(UserRole, { message: '有効なロールを指定してください' })
   role: UserRole;
+
+  @ApiPropertyOptional({
+    description: '個別権限（未指定時はロールのプリセットを適用）',
+    enum: ALL_PERMISSIONS,
+    isArray: true,
+    example: ['cats:write', 'care:write'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsIn(ALL_PERMISSIONS, { each: true })
+  permissions?: string[];
 }
 
 /**

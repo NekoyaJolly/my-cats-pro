@@ -516,6 +516,8 @@ export class AuthService {
       email: user.email,
       role: user.role,
       tenantId: user.tenantId, // マルチテナント対応
+      // 権限はトークンに埋め込む（15分expiryのため権限変更の反映遅延は最大15分）
+      permissions: user.permissions ?? [],
       jti: randomUUID(),
     };
     const access_token = await this.jwt.signAsync(accessPayload, {

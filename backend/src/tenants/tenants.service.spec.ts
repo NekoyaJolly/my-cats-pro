@@ -209,6 +209,7 @@ describe('TenantsService', () => {
         id: 'invitation-1',
         email: 'user@example.com',
         role: UserRole.USER,
+        permissions: [],
         tenantId: 'tenant-1',
         usedAt: null,
         expiresAt: new Date(Date.now() + 86400000), // 24時間後

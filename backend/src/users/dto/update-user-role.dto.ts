@@ -1,6 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
-import { IsEnum } from 'class-validator';
+import { IsArray, IsEnum, IsIn, IsOptional } from 'class-validator';
+
+import { ALL_PERMISSIONS } from '../../auth/permissions';
 
 /**
  * ユーザーロール変更 DTO
@@ -16,4 +18,15 @@ export class UpdateUserRoleDto {
   })
   @IsEnum(UserRole, { message: '有効なロールを指定してください' })
   role: UserRole;
+
+  @ApiPropertyOptional({
+    description: '個別権限（未指定時はロールのプリセットを適用）',
+    enum: ALL_PERMISSIONS,
+    isArray: true,
+    example: ['cats:write', 'care:write'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsIn(ALL_PERMISSIONS, { each: true })
+  permissions?: string[];
 }

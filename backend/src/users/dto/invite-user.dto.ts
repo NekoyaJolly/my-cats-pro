@@ -1,6 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
-import { IsEmail, IsEnum, IsNotEmpty, IsUUID } from 'class-validator';
+import { IsArray, IsEmail, IsEnum, IsIn, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+
+import { ALL_PERMISSIONS } from '../../auth/permissions';
 
 /**
  * ユーザー招待 DTO
@@ -32,4 +34,15 @@ export class InviteUserDto {
   @IsUUID('4', { message: '有効なテナント ID を指定してください' })
   @IsNotEmpty({ message: 'テナント ID は必須です' })
   tenantId: string;
+
+  @ApiPropertyOptional({
+    description: '個別権限（未指定時はロールのプリセットを適用）',
+    enum: ALL_PERMISSIONS,
+    isArray: true,
+    example: ['cats:write', 'care:write'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsIn(ALL_PERMISSIONS, { each: true })
+  permissions?: string[];
 }

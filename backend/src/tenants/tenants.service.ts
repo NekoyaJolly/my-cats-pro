@@ -11,8 +11,10 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
 
+
 import type { RequestUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
+import { ROLE_PRESETS, sanitizePermissions } from '../auth/permissions';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -317,6 +319,10 @@ export class TenantsService {
         email,
         token,
         role: dto.role,
+        // 個別指定がなければロールプリセットを適用（天井: TENANT_ADMIN 招待経路は非特権ロールのみのため preset で安全）
+        permissions: dto.permissions !== undefined
+          ? sanitizePermissions(dto.permissions)
+          : ROLE_PRESETS[dto.role],
         tenantId,
         expiresAt,
       },
@@ -420,6 +426,10 @@ export class TenantsService {
           email: invitation.email,
           passwordHash,
           role: invitation.role,
+          // 招待時の個別権限を反映（旧招待など未設定の場合はロールプリセット）
+          permissions: invitation.permissions.length > 0
+            ? invitation.permissions
+            : ROLE_PRESETS[invitation.role],
           tenantId: invitation.tenantId,
           firstName: dto.firstName,
           lastName: dto.lastName,
