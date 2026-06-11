@@ -9,7 +9,6 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 
 import { AgeThresholdCheckerService } from "./age-threshold-checker.service";
-
 import {
   TAG_AUTOMATION_EVENTS,
   type TagAutomationEvent,
