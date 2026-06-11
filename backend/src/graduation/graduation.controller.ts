@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Delete,
   Param,
   Body,
@@ -21,7 +22,7 @@ import {
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-import { TransferCatDto } from './dto';
+import { TransferCatDto, UpdateGraduationDto } from './dto';
 import { GraduationService } from './graduation.service';
 
 @ApiTags('Graduation')
@@ -72,6 +73,21 @@ export class GraduationController {
   @ApiResponse({ status: 404, description: '卒業記録が見つかりません' })
   async findOneGraduation(@Param('id') id: string) {
     return this.graduationService.findOneGraduation(id);
+  }
+
+  /**
+   * 卒業記録の更新（譲渡日・譲渡先・備考の修正）
+   */
+  @Patch(':id')
+  @ApiOperation({ summary: '卒業記録の更新' })
+  @ApiParam({ name: 'id', description: '卒業ID' })
+  @ApiResponse({ status: 200, description: '更新成功' })
+  @ApiResponse({ status: 404, description: '卒業記録が見つかりません' })
+  async updateGraduation(
+    @Param('id') id: string,
+    @Body() dto: UpdateGraduationDto,
+  ) {
+    return this.graduationService.updateGraduation(id, dto);
   }
 
   /**

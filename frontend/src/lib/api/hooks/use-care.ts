@@ -182,6 +182,7 @@ export interface MedicalRecordResponse {
 
 export type GetMedicalRecordsParams = ApiQueryParams<'/care/medical-records', 'get'>;
 export type CreateMedicalRecordRequest = ApiRequestBody<'/care/medical-records', 'post'>;
+export type UpdateMedicalRecordRequest = ApiRequestBody<'/care/medical-records/{id}', 'patch'>;
 
 const medicalRecordKeys = createDomainQueryKeys<string, GetMedicalRecordsParams>('medical-records');
 
@@ -398,6 +399,71 @@ export function useCreateMedicalRecord() {
     onError: (error: Error) => {
       notifications.show({
         title: '医療記録の登録に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useUpdateMedicalRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UpdateMedicalRecordRequest;
+    }) =>
+      apiClient.patch('/care/medical-records/{id}', {
+        pathParams: { id } as ApiPathParams<'/care/medical-records/{id}', 'patch'>,
+        body: payload,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: medicalRecordKeys.lists(),
+        refetchType: 'all',
+      });
+      notifications.show({
+        title: '医療記録を更新しました',
+        message: '医療記録が正常に更新されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '医療記録の更新に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useDeleteMedicalRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete('/care/medical-records/{id}', {
+        pathParams: { id } as ApiPathParams<'/care/medical-records/{id}', 'delete'>,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: medicalRecordKeys.lists(),
+        refetchType: 'all',
+      });
+      notifications.show({
+        title: '医療記録を削除しました',
+        message: '医療記録が正常に削除されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '医療記録の削除に失敗しました',
         message: error.message ?? '時間をおいて再度お試しください。',
         color: 'red',
       });

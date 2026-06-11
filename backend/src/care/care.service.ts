@@ -18,6 +18,7 @@ import {
   CreateCareScheduleDto,
   CreateMedicalRecordDto,
   MedicalRecordQueryDto,
+  UpdateMedicalRecordDto,
 } from "./dto";
 import type {
   CareScheduleListResponse,
@@ -449,6 +450,120 @@ export class CareService {
     return {
       success: true,
       data: this.mapMedicalRecordToResponse(record),
+    };
+  }
+
+  async findMedicalRecordById(id: string): Promise<MedicalRecordResponse> {
+    const record = await this.prisma.medicalRecord.findUnique({
+      where: { id },
+      include: medicalRecordInclude,
+    });
+
+    if (!record) {
+      throw new NotFoundException("医療記録が見つかりません");
+    }
+
+    return {
+      success: true,
+      data: this.mapMedicalRecordToResponse(record),
+    };
+  }
+
+  async updateMedicalRecord(
+    id: string,
+    dto: UpdateMedicalRecordDto,
+  ): Promise<MedicalRecordResponse> {
+    const existing = await this.prisma.medicalRecord.findUnique({ where: { id } });
+
+    if (!existing) {
+      throw new NotFoundException("医療記録が見つかりません");
+    }
+
+    const data: Prisma.MedicalRecordUpdateInput = {};
+
+    if (dto.catId !== undefined) {
+      data.cat = { connect: { id: dto.catId } };
+    }
+    if (dto.scheduleId !== undefined) {
+      data.schedule = dto.scheduleId ? { connect: { id: dto.scheduleId } } : { disconnect: true };
+    }
+    if (dto.visitDate !== undefined) {
+      data.visitDate = new Date(dto.visitDate);
+    }
+    if (dto.visitTypeId !== undefined) {
+      data.visitType = dto.visitTypeId ? { connect: { id: dto.visitTypeId } } : { disconnect: true };
+    }
+    if (dto.hospitalName !== undefined) {
+      data.hospitalName = this.normalizeOptionalText(dto.hospitalName) ?? null;
+    }
+    if (dto.symptom !== undefined) {
+      data.symptom = dto.symptom;
+    }
+    if (dto.symptomDetails !== undefined) {
+      data.symptomDetails = serializeSymptomDetails(mapDtoToSymptomDetails(dto.symptomDetails));
+    }
+    if (dto.diagnosis !== undefined) {
+      data.diagnosis = dto.diagnosis;
+    }
+    if (dto.treatmentPlan !== undefined) {
+      data.treatmentPlan = dto.treatmentPlan;
+    }
+    if (dto.medications !== undefined) {
+      data.medications = serializeMedications(mapDtoToMedications(dto.medications));
+    }
+    if (dto.followUpDate !== undefined) {
+      data.followUpDate = dto.followUpDate ? new Date(dto.followUpDate) : null;
+    }
+    if (dto.status !== undefined) {
+      data.status = dto.status;
+    }
+    if (dto.notes !== undefined) {
+      data.notes = dto.notes;
+    }
+    if (dto.tagIds !== undefined) {
+      data.tags = {
+        deleteMany: {},
+        create: dto.tagIds.map((tagId) => ({ tagId })),
+      };
+    }
+    if (dto.attachments !== undefined) {
+      data.attachments = {
+        deleteMany: {},
+        create: dto.attachments.map((attachment: MedicalRecordAttachmentInput) => ({
+          url: attachment.url,
+          description: attachment.description,
+          fileName: attachment.fileName,
+          fileType: attachment.fileType,
+          fileSize: attachment.fileSize,
+          capturedAt: attachment.capturedAt ? new Date(attachment.capturedAt) : undefined,
+        })),
+      };
+    }
+
+    const record = await this.prisma.medicalRecord.update({
+      where: { id },
+      data,
+      include: medicalRecordInclude,
+    });
+
+    return {
+      success: true,
+      data: this.mapMedicalRecordToResponse(record),
+    };
+  }
+
+  async deleteMedicalRecord(id: string): Promise<{ success: true; message: string }> {
+    const existing = await this.prisma.medicalRecord.findUnique({ where: { id } });
+
+    if (!existing) {
+      throw new NotFoundException("医療記録が見つかりません");
+    }
+
+    await this.prisma.medicalRecord.delete({ where: { id } });
+
+    return {
+      success: true,
+      message: "医療記録を削除しました",
     };
   }
 

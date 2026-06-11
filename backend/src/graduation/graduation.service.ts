@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { TransferCatDto } from './dto';
+import { TransferCatDto, UpdateGraduationDto } from './dto';
 
 @Injectable()
 export class GraduationService {
@@ -125,6 +125,38 @@ export class GraduationService {
     if (!graduation) {
       throw new NotFoundException(`Graduation with ID ${id} not found`);
     }
+
+    return {
+      success: true,
+      data: graduation,
+    };
+  }
+
+  /**
+   * 卒業記録の更新（譲渡日・譲渡先・備考の修正）
+   */
+  async updateGraduation(id: string, dto: UpdateGraduationDto) {
+    const existing = await this.prisma.graduation.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('卒業記録が見つかりません');
+    }
+
+    const graduation = await this.prisma.graduation.update({
+      where: { id },
+      data: {
+        ...(dto.transferDate !== undefined
+          ? { transferDate: new Date(dto.transferDate) }
+          : {}),
+        ...(dto.destination !== undefined ? { destination: dto.destination } : {}),
+        ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+      },
+      include: {
+        cat: true,
+      },
+    });
 
     return {
       success: true,

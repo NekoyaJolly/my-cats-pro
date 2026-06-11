@@ -159,6 +159,246 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ユーザー一覧取得
+         * @description SUPER_ADMINは全ユーザー、TENANT_ADMINは自テナントのユーザーを取得します。
+         */
+        get: operations["UsersController_listUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 自身のプロフィール取得
+         * @description JWTで認証されたユーザー自身のプロフィール情報を取得します。
+         */
+        get: operations["UsersController_getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 自身のプロフィール更新
+         * @description JWTで認証されたユーザー自身のプロフィール情報を更新します。各フィールドはオプショナルです。
+         */
+        patch: operations["UsersController_updateMe"];
+        trace?: never;
+    };
+    "/api/v1/users/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * ユーザー招待
+         * @description SUPER_ADMINは任意のテナント、TENANT_ADMINは自テナントにユーザーを招待します。
+         */
+        post: operations["UsersController_inviteUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * ユーザーロール変更
+         * @description SUPER_ADMINは任意のユーザー、TENANT_ADMINは自テナントのADMIN/USERのロールを変更します。
+         */
+        patch: operations["UsersController_updateUserRole"];
+        trace?: never;
+    };
+    "/api/v1/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * ユーザー削除
+         * @description SUPER_ADMINは任意のユーザー（自分と他のSUPER_ADMINを除く）、TENANT_ADMINは自テナントのADMIN/USERを削除します。
+         */
+        delete: operations["UsersController_deleteUser"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tenants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * テナント一覧取得
+         * @description SuperAdminのみが実行可能。全テナントの一覧を取得します。
+         */
+        get: operations["TenantsController_listTenants"];
+        put?: never;
+        /**
+         * テナント作成
+         * @description SuperAdminのみが実行可能。新しいテナントを作成します。
+         */
+        post: operations["TenantsController_createTenant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tenants/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * テナント詳細取得
+         * @description SuperAdminまたはテナント管理者（自テナントのみ）が実行可能。指定IDのテナント詳細を取得します。
+         */
+        get: operations["TenantsController_getTenantById"];
+        put?: never;
+        post?: never;
+        /**
+         * テナント削除
+         * @description SuperAdminのみが実行可能。指定IDのテナントを削除します。所属ユーザーがいる場合は削除できません。
+         */
+        delete: operations["TenantsController_deleteTenant"];
+        options?: never;
+        head?: never;
+        /**
+         * テナント更新
+         * @description SuperAdminのみが実行可能。指定IDのテナントを更新します。
+         */
+        patch: operations["TenantsController_updateTenant"];
+        trace?: never;
+    };
+    "/api/v1/tenants/invite-admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * テナント管理者を招待
+         * @description SuperAdminのみが実行可能。新しいテナントを作成し、管理者を招待します。
+         */
+        post: operations["TenantsController_inviteTenantAdmin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tenants/{tenantId}/users/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * ユーザーを招待
+         * @description テナント管理者が自分のテナントにユーザーを招待します。
+         */
+        post: operations["TenantsController_inviteUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tenants/complete-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 招待完了
+         * @description 招待トークンを使用してユーザー登録を完了します。認証不要。
+         */
+        post: operations["TenantsController_completeInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tenant-settings/tag-color-defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * タグカラーデフォルト設定を取得
+         * @description テナントのタグカラーデフォルト設定を取得します。設定が存在しない場合はフロントエンドのデフォルト値を返します。
+         */
+        get: operations["TenantSettingsController_getTagColorDefaults"];
+        /**
+         * タグカラーデフォルト設定を更新
+         * @description テナントのタグカラーデフォルト設定を更新します。部分更新をサポートしています。
+         */
+        put: operations["TenantSettingsController_updateTagColorDefaults"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cats": {
         parameters: {
             query?: never;
@@ -186,6 +426,23 @@ export type paths = {
         };
         /** 猫データの統計情報を取得 */
         get: operations["CatsController_getStatistics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cats/kittens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 子猫一覧を取得（生後6ヶ月未満、母猫ごとにグループ化） */
+        get: operations["CatsController_findKittens"];
         put?: never;
         post?: never;
         delete?: never;
@@ -247,6 +504,23 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cats/{id}/family": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 猫の家族情報を取得（血統タブ用） */
+        get: operations["CatsController_getCatFamily"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cats/genders": {
         parameters: {
             query?: never;
@@ -258,6 +532,60 @@ export type paths = {
         get: operations["CatsController_getGenders"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cats/{id}/weight-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 猫の体重記録一覧を取得 */
+        get: operations["CatsController_getWeightRecords"];
+        put?: never;
+        /** 猫の体重記録を追加 */
+        post: operations["CatsController_createWeightRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cats/weight-records/{recordId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 体重記録を取得 */
+        get: operations["CatsController_getWeightRecord"];
+        put?: never;
+        post?: never;
+        /** 体重記録を削除 */
+        delete: operations["CatsController_deleteWeightRecord"];
+        options?: never;
+        head?: never;
+        /** 体重記録を更新 */
+        patch: operations["CatsController_updateWeightRecord"];
+        trace?: never;
+    };
+    "/api/v1/cats/weight-records/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 複数の猫の体重を一括登録 */
+        post: operations["CatsController_createBulkWeightRecords"];
         delete?: never;
         options?: never;
         head?: never;
@@ -276,6 +604,75 @@ export type paths = {
         put?: never;
         /** 血統書データを作成（管理者のみ） */
         post: operations["PedigreeController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pedigrees/next-id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 次の血統書番号を取得 */
+        get: operations["PedigreeController_getNextId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pedigrees/print-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 印刷設定を取得 */
+        get: operations["PedigreeController_getPrintSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 印刷設定を更新 */
+        patch: operations["PedigreeController_updatePrintSettings"];
+        trace?: never;
+    };
+    "/api/v1/pedigrees/print-settings/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 印刷設定をデフォルトにリセット */
+        post: operations["PedigreeController_resetPrintSettings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pedigrees/pedigree-id/{pedigreeId}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 血統書PDFを生成してダウンロード */
+        get: operations["PedigreeController_generatePdf"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -369,6 +766,102 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/print-templates/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PrintTemplatesController_getCategories"];
+        put?: never;
+        post: operations["PrintTemplatesController_createCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/print-templates/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PrintTemplatesController_getCategory"];
+        put?: never;
+        post?: never;
+        delete: operations["PrintTemplatesController_removeCategory"];
+        options?: never;
+        head?: never;
+        patch: operations["PrintTemplatesController_updateCategory"];
+        trace?: never;
+    };
+    "/api/v1/print-templates/data-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PrintTemplatesController_getDataSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/print-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PrintTemplatesController_findAll"];
+        put?: never;
+        post: operations["PrintTemplatesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/print-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PrintTemplatesController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["PrintTemplatesController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["PrintTemplatesController_update"];
+        trace?: never;
+    };
+    "/api/v1/print-templates/{id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PrintTemplatesController_duplicate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/breeds": {
         parameters: {
             query?: never;
@@ -381,6 +874,23 @@ export type paths = {
         put?: never;
         /** 品種データを作成（管理者のみ） */
         post: operations["BreedsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeds/master-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pedigree連携用の品種マスターデータを取得 */
+        get: operations["BreedsController_getMasterData"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -423,6 +933,24 @@ export type paths = {
         patch: operations["BreedsController_update"];
         trace?: never;
     };
+    "/api/v1/display-preferences/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 自身の表示設定を取得 */
+        get: operations["DisplayPreferencesController_getMine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 自身の表示設定を更新 */
+        patch: operations["DisplayPreferencesController_updateMine"];
+        trace?: never;
+    };
     "/api/v1/coat-colors": {
         parameters: {
             query?: never;
@@ -435,6 +963,23 @@ export type paths = {
         put?: never;
         /** 毛色データを作成（管理者のみ） */
         post: operations["CoatColorsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/coat-colors/master-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pedigree連携用の色柄マスターデータを取得 */
+        get: operations["CoatColorsController_getMasterData"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -529,23 +1074,6 @@ export type paths = {
         head?: never;
         /** NGペアルールの更新 */
         patch: operations["BreedingController_updateNgRule"];
-        trace?: never;
-    };
-    "/api/v1/breeding/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** テスト */
-        get: operations["BreedingController_test"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/v1/breeding/pregnancy-checks": {
@@ -689,6 +1217,96 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/breeding/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 交配スケジュール一覧の取得 */
+        get: operations["BreedingController_findAllBreedingSchedules"];
+        put?: never;
+        /** 交配スケジュールの作成 */
+        post: operations["BreedingController_createBreedingSchedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeding/schedules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 交配スケジュールの削除 */
+        delete: operations["BreedingController_removeBreedingSchedule"];
+        options?: never;
+        head?: never;
+        /** 交配スケジュールの更新 */
+        patch: operations["BreedingController_updateBreedingSchedule"];
+        trace?: never;
+    };
+    "/api/v1/breeding/schedules/{scheduleId}/checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 交配チェック一覧の取得 */
+        get: operations["BreedingController_findMatingChecks"];
+        put?: never;
+        /** 交配チェックの追加 */
+        post: operations["BreedingController_createMatingCheck"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeding/mating-checks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 交配チェックの削除 */
+        delete: operations["BreedingController_removeMatingCheck"];
+        options?: never;
+        head?: never;
+        /** 交配チェックの更新 */
+        patch: operations["BreedingController_updateMatingCheck"];
+        trace?: never;
+    };
+    "/api/v1/breeding/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 交配記録の削除 */
+        delete: operations["BreedingController_remove"];
+        options?: never;
+        head?: never;
+        /** 交配記録の更新 */
+        patch: operations["BreedingController_update"];
+        trace?: never;
+    };
     "/api/v1/care/schedules": {
         parameters: {
             query?: never;
@@ -758,6 +1376,25 @@ export type paths = {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/care/medical-records/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 医療記録の詳細取得 */
+        get: operations["CareController_findMedicalRecordById"];
+        put?: never;
+        post?: never;
+        /** 医療記録の削除 */
+        delete: operations["CareController_deleteMedicalRecord"];
+        options?: never;
+        head?: never;
+        /** 医療記録の更新 */
+        patch: operations["CareController_updateMedicalRecord"];
         trace?: never;
     };
     "/api/v1/tags": {
@@ -1135,6 +1772,292 @@ export type paths = {
         patch: operations["ShiftController_update"];
         trace?: never;
     };
+    "/api/v1/graduations/cats/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 猫を譲渡（卒業）する */
+        post: operations["GraduationController_transferCat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/graduations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 卒業猫一覧取得 */
+        get: operations["GraduationController_findAllGraduations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/graduations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 卒業猫詳細取得 */
+        get: operations["GraduationController_findOneGraduation"];
+        put?: never;
+        post?: never;
+        /** 卒業取り消し（緊急時用） */
+        delete: operations["GraduationController_cancelGraduation"];
+        options?: never;
+        head?: never;
+        /** 卒業記録の更新 */
+        patch: operations["GraduationController_updateGraduation"];
+        trace?: never;
+    };
+    "/api/v1/gallery/upload/signed-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * アップロード用Signed URLを生成
+         * @description クライアントがGCSへ直接アップロードするためのSigned URLを発行します。有効期限は15分です。
+         */
+        post: operations["GalleryUploadController_generateUploadUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gallery/upload/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * アップロード完了を確認
+         * @description クライアントがGCSへアップロード完了後に呼び出し、ファイルの存在を確認します。
+         */
+        post: operations["GalleryUploadController_confirmUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gallery/upload/{fileKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * アップロード済みファイルを削除
+         * @description 指定されたファイルキーのファイルをGCSから削除します。
+         */
+        delete: operations["GalleryUploadController_deleteFile"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gallery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ギャラリーエントリ一覧取得 */
+        get: operations["GalleryController_findAll"];
+        put?: never;
+        /** ギャラリーエントリ作成 */
+        post: operations["GalleryController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gallery/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ギャラリーエントリ詳細取得 */
+        get: operations["GalleryController_findOne"];
+        /** ギャラリーエントリ更新 */
+        put: operations["GalleryController_update"];
+        post?: never;
+        /** ギャラリーエントリ削除 */
+        delete: operations["GalleryController_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gallery/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** メディア追加 */
+        post: operations["GalleryController_addMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gallery/media/{mediaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** メディア削除 */
+        delete: operations["GalleryController_deleteMedia"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gallery/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 一括登録（子育て中タブ用） */
+        post: operations["GalleryController_bulkCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** データをエクスポート */
+        post: operations["ExportController_export"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** インポートファイルのプレビュー */
+        post: operations["ImportController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/cats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 猫データのインポート */
+        post: operations["ImportController_importCats"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/pedigrees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 血統書データのインポート */
+        post: operations["ImportController_importPedigrees"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** タグデータのインポート */
+        post: operations["ImportController_importTags"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 };
 export type webhooks = Record<string, never>;
 export type components = {
@@ -1189,6 +2112,140 @@ export type components = {
              */
             refreshToken?: string;
         };
+        UpdateProfileDto: {
+            /**
+             * @description 名
+             * @example 太郎
+             */
+            firstName?: string;
+            /**
+             * @description 姓
+             * @example 山田
+             */
+            lastName?: string;
+            /**
+             * @description メールアドレス
+             * @example user@example.com
+             */
+            email?: string;
+        };
+        InviteUserDto: {
+            /**
+             * @description 招待するメールアドレス
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description ユーザーロール
+             * @default USER
+             * @enum {string}
+             */
+            role: "USER" | "ADMIN" | "SUPER_ADMIN" | "TENANT_ADMIN";
+        };
+        UpdateUserRoleDto: {
+            /**
+             * @description 新しいロール
+             * @example ADMIN
+             * @enum {string}
+             */
+            role: "USER" | "ADMIN" | "SUPER_ADMIN" | "TENANT_ADMIN";
+        };
+        CreateTenantDto: {
+            /**
+             * @description テナント名
+             * @example サンプルテナント
+             */
+            name: string;
+            /**
+             * @description テナントスラッグ（未入力の場合は自動生成）
+             * @example sample-tenant
+             */
+            slug?: string;
+        };
+        UpdateTenantDto: {
+            /**
+             * @description テナント名
+             * @example 更新後テナント名
+             */
+            name?: string;
+            /**
+             * @description テナントスラッグ
+             * @example updated-tenant
+             */
+            slug?: string;
+            /**
+             * @description 有効/無効フラグ
+             * @example true
+             */
+            isActive?: boolean;
+        };
+        InviteTenantAdminDto: {
+            /**
+             * @description 招待するメールアドレス
+             * @example admin@example.com
+             */
+            email: string;
+            /**
+             * @description テナント名
+             * @example Sample Tenant
+             */
+            tenantName: string;
+            /**
+             * @description テナントスラッグ（URL識別子）
+             * @example sample-tenant
+             */
+            tenantSlug?: string;
+        };
+        CompleteInvitationDto: {
+            /** @description 招待トークン */
+            token: string;
+            /** @description パスワード */
+            password: string;
+            /** @description 名 */
+            firstName?: string;
+            /** @description 姓 */
+            lastName?: string;
+        };
+        ColorSettingDto: {
+            /**
+             * @description 背景カラー（16進数カラーコード）
+             * @example #6366F1
+             */
+            color: string;
+            /**
+             * @description テキストカラー（16進数カラーコード）
+             * @example #111827
+             */
+            textColor: string;
+        };
+        TagColorDefaultsDto: {
+            /** @description カテゴリのデフォルトカラー設定 */
+            category?: components["schemas"]["ColorSettingDto"];
+            /** @description グループのデフォルトカラー設定 */
+            group?: components["schemas"]["ColorSettingDto"];
+            /** @description タグのデフォルトカラー設定 */
+            tag?: components["schemas"]["ColorSettingDto"];
+        };
+        PartialColorSettingDto: {
+            /**
+             * @description 背景カラー（16進数カラーコード）
+             * @example #6366F1
+             */
+            color?: string;
+            /**
+             * @description テキストカラー（16進数カラーコード）
+             * @example #111827
+             */
+            textColor?: string;
+        };
+        UpdateTagColorDefaultsDto: {
+            /** @description カテゴリのデフォルトカラー設定（部分更新可能） */
+            category?: components["schemas"]["PartialColorSettingDto"];
+            /** @description グループのデフォルトカラー設定（部分更新可能） */
+            group?: components["schemas"]["PartialColorSettingDto"];
+            /** @description タグのデフォルトカラー設定（部分更新可能） */
+            tag?: components["schemas"]["PartialColorSettingDto"];
+        };
         CreateCatDto: {
             /**
              * @description 猫の名前
@@ -1226,6 +2283,66 @@ export type components = {
             tagIds?: string[];
         };
         UpdateCatDto: Record<string, never>;
+        CreateWeightRecordDto: {
+            /**
+             * @description 体重（グラム単位）
+             * @example 350
+             */
+            weight: number;
+            /**
+             * @description 記録日時（省略時は現在日時）
+             * @example 2024-01-15T10:00:00.000Z
+             */
+            recordedAt?: string;
+            /**
+             * @description メモ
+             * @example ミルクをよく飲んでいる
+             */
+            notes?: string;
+        };
+        UpdateWeightRecordDto: {
+            /**
+             * @description 体重（グラム単位）
+             * @example 380
+             */
+            weight?: number;
+            /**
+             * @description 記録日時
+             * @example 2024-01-15T10:00:00.000Z
+             */
+            recordedAt?: string;
+            /**
+             * @description メモ
+             * @example 順調に成長中
+             */
+            notes?: string;
+        };
+        BulkWeightRecordItemDto: {
+            /**
+             * @description 猫ID
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            catId: string;
+            /**
+             * @description 体重（グラム単位）
+             * @example 350
+             */
+            weight: number;
+            /**
+             * @description メモ
+             * @example 元気
+             */
+            notes?: string;
+        };
+        CreateBulkWeightRecordsDto: {
+            /**
+             * @description 記録日時（全レコード共通）
+             * @example 2024-01-15T10:00:00.000Z
+             */
+            recordedAt: string;
+            /** @description 体重記録の配列 */
+            records: components["schemas"]["BulkWeightRecordItemDto"][];
+        };
         CreatePedigreeDto: {
             /**
              * @description 血統書番号
@@ -1434,6 +2551,39 @@ export type components = {
             oldCode?: string;
         };
         UpdatePedigreeDto: Record<string, never>;
+        CreatePrintDocCategoryDto: Record<string, never>;
+        UpdatePrintDocCategoryDto: Record<string, never>;
+        CreatePrintTemplateDto: Record<string, never>;
+        DuplicatePrintTemplateDto: Record<string, never>;
+        UpdatePrintTemplateDto: Record<string, never>;
+        MasterDataItemDto: {
+            /**
+             * @description マスターデータのコード
+             * @example 26
+             */
+            code: number;
+            /**
+             * @description CSV 定義のデフォルト名称
+             * @example Maine Coon
+             */
+            name: string;
+            /**
+             * @description 画面に表示される名称。個別設定が無い場合は name と同一。
+             * @example 26 - Maine Coon
+             */
+            displayName?: string;
+            /**
+             * @description このレコードに適用された表示モード
+             * @example CODE_AND_NAME
+             * @enum {string}
+             */
+            displayNameMode?: "CANONICAL" | "CODE_AND_NAME" | "CUSTOM";
+            /**
+             * @description ユーザー上書きが適用された場合に true
+             * @example true
+             */
+            isOverridden?: boolean;
+        };
         CreateBreedDto: {
             /** @description 品種コード */
             code: number;
@@ -1443,6 +2593,34 @@ export type components = {
             description?: string;
         };
         UpdateBreedDto: Record<string, never>;
+        LabelOverrideDto: {
+            /**
+             * @description 対象コード
+             * @example 26
+             */
+            code?: number;
+            /**
+             * @description 表示名の上書き
+             * @example メインクーン
+             */
+            label?: string;
+        };
+        UpdateDisplayPreferenceDto: {
+            /**
+             * @description 品種マスタの表示モード
+             * @enum {string}
+             */
+            breedNameMode?: "CANONICAL" | "CODE_AND_NAME" | "CUSTOM";
+            /**
+             * @description 毛色マスタの表示モード
+             * @enum {string}
+             */
+            coatColorNameMode?: "CANONICAL" | "CODE_AND_NAME" | "CUSTOM";
+            /** @description 品種コードごとの表示名上書き */
+            breedLabelOverrides?: components["schemas"]["LabelOverrideDto"][];
+            /** @description 毛色コードごとの表示名上書き */
+            coatColorLabelOverrides?: components["schemas"]["LabelOverrideDto"][];
+        };
         CreateCoatColorDto: {
             /** @description 毛色コード */
             code: number;
@@ -1643,6 +2821,59 @@ export type components = {
             /** @description メモ */
             notes?: string;
         };
+        CreateBreedingScheduleDto: {
+            /** @description オス猫ID */
+            maleId: string;
+            /** @description メス猫ID */
+            femaleId: string;
+            /** @description 開始日 (ISO8601) */
+            startDate: string;
+            /** @description 期間（日数） */
+            duration: number;
+            /**
+             * @description ステータス
+             * @enum {string}
+             */
+            status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+            /** @description メモ */
+            notes?: string;
+        };
+        UpdateBreedingScheduleDto: {
+            /** @description オス猫ID */
+            maleId?: string;
+            /** @description メス猫ID */
+            femaleId?: string;
+            /** @description 開始日 (ISO8601) */
+            startDate?: string;
+            /** @description 期間（日数） */
+            duration?: number;
+            /**
+             * @description ステータス
+             * @enum {string}
+             */
+            status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+            /** @description メモ */
+            notes?: string;
+        };
+        CreateMatingCheckDto: {
+            /** @description チェック日 (ISO8601) */
+            checkDate: string;
+            /**
+             * @description チェック回数
+             * @default 1
+             */
+            count: number;
+        };
+        UpdateMatingCheckDto: {
+            /** @description チェック日 (ISO8601) */
+            checkDate?: string;
+            /**
+             * @description チェック回数
+             * @default 1
+             */
+            count: number;
+        };
+        UpdateBreedingDto: Record<string, never>;
         CareScheduleCatDto: {
             /** @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60 */
             id: string;
@@ -1658,19 +2889,19 @@ export type components = {
              */
             timingType: "ABSOLUTE" | "RELATIVE";
             /** @example 2025-08-01T09:00:00.000Z */
-            remindAt?: string;
+            remindAt?: string | null;
             /** @example 2 */
-            offsetValue?: number;
+            offsetValue?: number | null;
             /**
              * @example DAY
-             * @enum {string}
+             * @enum {string|null}
              */
-            offsetUnit?: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH";
+            offsetUnit?: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | null;
             /**
              * @example START_DATE
-             * @enum {string}
+             * @enum {string|null}
              */
-            relativeTo?: "START_DATE" | "END_DATE" | "CUSTOM_DATE";
+            relativeTo?: "START_DATE" | "END_DATE" | "CUSTOM_DATE" | null;
             /**
              * @example IN_APP
              * @enum {string}
@@ -1678,17 +2909,17 @@ export type components = {
             channel: "IN_APP" | "EMAIL" | "SMS" | "PUSH";
             /**
              * @example NONE
-             * @enum {string}
+             * @enum {string|null}
              */
-            repeatFrequency?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY" | "CUSTOM";
+            repeatFrequency?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY" | "CUSTOM" | null;
             /** @example 1 */
-            repeatInterval?: number;
+            repeatInterval?: number | null;
             /** @example 5 */
-            repeatCount?: number;
+            repeatCount?: number | null;
             /** @example 2025-12-31T00:00:00.000Z */
-            repeatUntil?: string;
+            repeatUntil?: string | null;
             /** @example 前日9時に通知 */
-            notes?: string;
+            notes?: string | null;
             /** @example true */
             isActive: boolean;
         };
@@ -1702,7 +2933,7 @@ export type components = {
             /** @example 1 */
             level: number;
             /** @example parent-tag-id */
-            parentId?: string;
+            parentId?: string | null;
         };
         CareScheduleItemDto: {
             /** @example a6f7e52f-4a3b-4a76-9870-1234567890ab */
@@ -1712,13 +2943,13 @@ export type components = {
             /** @example 年次健康診断 */
             title: string;
             /** @example 毎年の定期健診 */
-            description: string;
+            description: string | null;
             /** @example 2025-09-01T00:00:00.000Z */
             scheduleDate: string;
             /** @example 2025-09-01T01:00:00.000Z */
-            endDate?: string;
+            endDate?: string | null;
             /** @example Asia/Tokyo */
-            timezone?: string;
+            timezone?: string | null;
             /**
              * @example CARE
              * @enum {string}
@@ -1740,7 +2971,7 @@ export type components = {
              */
             priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
             /** @example FREQ=YEARLY;INTERVAL=1 */
-            recurrenceRule?: string;
+            recurrenceRule?: string | null;
             /** @example f3a2c1d7-1234-5678-90ab-cdef12345678 */
             assignedTo: string;
             cat: components["schemas"]["CareScheduleCatDto"] | null;
@@ -1909,24 +3140,40 @@ export type components = {
         CareCompleteResponseDto: {
             /** @example true */
             success: boolean;
-            /** @example {
+            /**
+             * @example {
              *       "scheduleId": "a6f7e52f-4a3b-4a76-9870-1234567890ab",
              *       "recordId": "bcdef123-4567-890a-bcde-f1234567890a",
              *       "medicalRecordId": "f1234567-89ab-cdef-0123-456789abcdef"
-             *     } */
+             *     }
+             */
             data: Record<string, never>;
+        };
+        MedicalRecordVisitTypeDto: {
+            /** @example c4a52a14-8d93-4b87-9f8c-7a6c2ef81234 */
+            id: string;
+            /** @example CHECKUP */
+            key?: Record<string, never>;
+            /** @example 健康診断 */
+            name: string;
+            /** @example 定期的な健康診断 */
+            description?: Record<string, never>;
+            /** @example 1 */
+            displayOrder: number;
+            /** @example true */
+            isActive: boolean;
         };
         MedicalRecordSymptomDto: {
             /** @example くしゃみ */
             label: string;
             /** @example 1週間継続 */
-            note?: string;
+            note?: Record<string, never>;
         };
         MedicalRecordMedicationDto: {
             /** @example 抗生物質 */
             name: string;
             /** @example 朝晩1錠 */
-            dosage?: string;
+            dosage?: Record<string, never>;
         };
         MedicalRecordCatDto: {
             /** @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60 */
@@ -1943,60 +3190,62 @@ export type components = {
         MedicalRecordTagDto: {
             /** @example tag-123 */
             id: string;
-            /** @example vaccination */
-            slug: string;
             /** @example ワクチン */
-            label: string;
-            /** @example 1 */
-            level: number;
-            /** @example parent-tag */
-            parentId?: string;
+            name: string;
+            /** @example #3B82F6 */
+            color?: Record<string, never>;
+            /** @example #FFFFFF */
+            textColor?: Record<string, never>;
+            /** @example group-123 */
+            groupId: string;
+            /** @example 医療 */
+            groupName?: Record<string, never>;
+            /** @example category-456 */
+            categoryId?: Record<string, never>;
+            /** @example 医療タグ */
+            categoryName?: Record<string, never>;
         };
         MedicalRecordAttachmentDto: {
             /** @example https://cdn.example.com/xray.png */
             url: string;
             /** @example 胸部レントゲン */
-            description?: string;
+            description?: Record<string, never>;
             /** @example xray.png */
-            fileName?: string;
+            fileName?: Record<string, never>;
             /** @example image/png */
-            fileType?: string;
+            fileType?: Record<string, never>;
             /** @example 204800 */
-            fileSize?: number;
+            fileSize?: Record<string, never>;
             /** @example 2025-08-10T09:30:00.000Z */
-            capturedAt?: string;
+            capturedAt?: Record<string, never>;
         };
         MedicalRecordItemDto: {
             /** @example bcdef123-4567-890a-bcde-f1234567890a */
             id: string;
             /** @example 2025-08-10T00:00:00.000Z */
             visitDate: string;
-            /**
-             * @example CHECKUP
-             * @enum {string|null}
-             */
-            visitType: "CHECKUP" | "EMERGENCY" | "SURGERY" | "FOLLOW_UP" | "VACCINATION" | "OTHER" | null;
+            visitType: components["schemas"]["MedicalRecordVisitTypeDto"] | null;
             /** @example ねこクリニック東京 */
-            hospitalName?: string;
+            hospitalName?: Record<string, never>;
             /** @example くしゃみが止まらない */
-            symptom?: string;
+            symptom?: Record<string, never>;
             symptomDetails?: components["schemas"]["MedicalRecordSymptomDto"][];
             /** @example 猫風邪 */
-            diseaseName?: string;
+            diseaseName?: Record<string, never>;
             /** @example 猫風邪の兆候 */
-            diagnosis?: string;
+            diagnosis?: Record<string, never>;
             /** @example 抗生物質を5日間投与 */
-            treatmentPlan?: string;
+            treatmentPlan?: Record<string, never>;
             medications?: components["schemas"]["MedicalRecordMedicationDto"][];
             /** @example 2025-08-13T00:00:00.000Z */
-            followUpDate?: string;
+            followUpDate?: Record<string, never>;
             /**
              * @example TREATING
              * @enum {string}
              */
             status: "TREATING" | "COMPLETED";
             /** @example 食欲は戻ってきた */
-            notes?: string;
+            notes?: Record<string, never>;
             cat: components["schemas"]["MedicalRecordCatDto"];
             schedule?: components["schemas"]["MedicalRecordScheduleDto"] | null;
             tags: components["schemas"]["MedicalRecordTagDto"][];
@@ -2055,10 +3304,10 @@ export type components = {
              */
             visitDate: string;
             /**
-             * @example CHECKUP
-             * @enum {string}
+             * @description 受診種別ID
+             * @example c4a52a14-8d93-4b87-9f8c-7a6c2ef81234
              */
-            visitType?: "CHECKUP" | "EMERGENCY" | "SURGERY" | "FOLLOW_UP" | "VACCINATION" | "OTHER";
+            visitTypeId?: string;
             /** @example ねこクリニック東京 */
             hospitalName?: string;
             /** @example くしゃみが止まらない */
@@ -2081,8 +3330,8 @@ export type components = {
             status: "TREATING" | "COMPLETED";
             /** @example 食欲も戻りつつあり */
             notes?: string;
-            /** @description 関連ケアタグID */
-            careTagIds?: string[];
+            /** @description 関連タグID */
+            tagIds?: string[];
             /** @description 添付ファイル */
             attachments?: components["schemas"]["MedicalRecordAttachmentInputDto"][];
         };
@@ -2090,6 +3339,54 @@ export type components = {
             /** @example true */
             success: boolean;
             data: components["schemas"]["MedicalRecordItemDto"];
+        };
+        UpdateMedicalRecordDto: {
+            /**
+             * @description 猫ID
+             * @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60
+             */
+            catId?: string;
+            /**
+             * @description スケジュールID
+             * @example a6f7e52f-4a3b-4a76-9870-1234567890ab
+             */
+            scheduleId?: string;
+            /**
+             * @description 受診日
+             * @example 2025-08-10
+             */
+            visitDate?: string;
+            /**
+             * @description 受診種別ID
+             * @example c4a52a14-8d93-4b87-9f8c-7a6c2ef81234
+             */
+            visitTypeId?: string;
+            /** @example ねこクリニック東京 */
+            hospitalName?: string;
+            /** @example くしゃみが止まらない */
+            symptom?: string;
+            symptomDetails?: components["schemas"]["MedicalRecordSymptomDto"][];
+            /** @example 猫風邪 */
+            diseaseName?: string;
+            /** @example 猫風邪の兆候 */
+            diagnosis?: string;
+            /** @example 抗生物質を5日間投与 */
+            treatmentPlan?: string;
+            medications?: components["schemas"]["MedicalRecordMedicationDto"][];
+            /** @example 2025-08-13 */
+            followUpDate?: string;
+            /**
+             * @default TREATING
+             * @example TREATING
+             * @enum {string}
+             */
+            status: "TREATING" | "COMPLETED";
+            /** @example 食欲も戻りつつあり */
+            notes?: string;
+            /** @description 関連タグID */
+            tagIds?: string[];
+            /** @description 添付ファイル */
+            attachments?: components["schemas"]["MedicalRecordAttachmentInputDto"][];
         };
         CreateTagDto: {
             /**
@@ -2388,10 +3685,10 @@ export type components = {
         CreateTagAutomationRuleDto: {
             /** @description ルールの一意なキー（自動生成可能） */
             key?: string;
-            /** @description ルール名 */
-            name: string;
+            /** @description ルール名（未入力時は自動生成） */
+            name?: string;
             /** @description ルールの説明 */
-            description?: string;
+            description?: Record<string, never>;
             /**
              * @description トリガータイプ
              * @example EVENT
@@ -2400,15 +3697,15 @@ export type components = {
             triggerType: "EVENT" | "SCHEDULE" | "MANUAL";
             /**
              * @description イベントタイプ
-             * @example BREEDING_PLANNED
+             * @example PAGE_ACTION
              * @enum {string}
              */
-            eventType: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "PAGE_ACTION" | "CUSTOM";
+            eventType?: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "CUSTOM" | "PAGE_ACTION" | "TAG_ASSIGNED";
             /**
              * @description 適用範囲（スコープ）
              * @example breeding
              */
-            scope?: string;
+            scope?: Record<string, never>;
             /**
              * @description ルールが有効かどうか
              * @default true
@@ -2425,7 +3722,8 @@ export type components = {
              *       "tagIds": [
              *         "tag-id-1",
              *         "tag-id-2"
-             *       ]
+             *       ],
+             *       "actionType": "ASSIGN"
              *     }
              */
             config?: Record<string, never>;
@@ -2433,10 +3731,10 @@ export type components = {
         UpdateTagAutomationRuleDto: {
             /** @description ルールの一意なキー（自動生成可能） */
             key?: string;
-            /** @description ルール名 */
+            /** @description ルール名（未入力時は自動生成） */
             name?: string;
             /** @description ルールの説明 */
-            description?: string;
+            description?: Record<string, never>;
             /**
              * @description トリガータイプ
              * @example EVENT
@@ -2445,15 +3743,15 @@ export type components = {
             triggerType?: "EVENT" | "SCHEDULE" | "MANUAL";
             /**
              * @description イベントタイプ
-             * @example BREEDING_PLANNED
+             * @example PAGE_ACTION
              * @enum {string}
              */
-            eventType?: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "PAGE_ACTION" | "CUSTOM";
+            eventType?: "BREEDING_PLANNED" | "BREEDING_CONFIRMED" | "PREGNANCY_CONFIRMED" | "KITTEN_REGISTERED" | "AGE_THRESHOLD" | "CUSTOM" | "PAGE_ACTION" | "TAG_ASSIGNED";
             /**
              * @description 適用範囲（スコープ）
              * @example breeding
              */
-            scope?: string;
+            scope?: Record<string, never>;
             /**
              * @description ルールが有効かどうか
              * @default true
@@ -2470,7 +3768,8 @@ export type components = {
              *       "tagIds": [
              *         "tag-id-1",
              *         "tag-id-2"
-             *       ]
+             *       ],
+             *       "actionType": "ASSIGN"
              *     }
              */
             config?: Record<string, never>;
@@ -2479,6 +3778,193 @@ export type components = {
         UpdateStaffDto: Record<string, never>;
         CreateShiftDto: Record<string, never>;
         UpdateShiftDto: Record<string, never>;
+        TransferCatDto: {
+            /**
+             * @description 譲渡日
+             * @example 2025-11-11
+             */
+            transferDate: string;
+            /**
+             * @description 譲渡先
+             * @example 山田家
+             */
+            destination: string;
+            /**
+             * @description 備考
+             * @example 譲渡先は愛情深い家庭です
+             */
+            notes?: string;
+        };
+        UpdateGraduationDto: {
+            /**
+             * @description 譲渡日
+             * @example 2025-11-11
+             */
+            transferDate?: string;
+            /**
+             * @description 譲渡先
+             * @example 山田家
+             */
+            destination?: string;
+            /**
+             * @description 備考
+             * @example 譲渡先は愛情深い家庭です
+             */
+            notes?: string;
+        };
+        GenerateUploadUrlDto: {
+            /**
+             * @description ファイル名
+             * @example kitten-photo-1.jpg
+             */
+            fileName: string;
+            /**
+             * @description コンテンツタイプ
+             * @example image/jpeg
+             * @enum {string}
+             */
+            contentType: "image/jpeg" | "image/png" | "image/webp";
+            /**
+             * @description ファイルサイズ（バイト）
+             * @example 1024000
+             */
+            fileSize: number;
+        };
+        ConfirmUploadDto: {
+            /**
+             * @description アップロード時に発行されたファイルキー
+             * @example gallery/550e8400-e29b-41d4-a716-446655440000.jpg
+             */
+            fileKey: string;
+            /**
+             * @description 紐付けるギャラリーエントリID（任意）
+             * @example 550e8400-e29b-41d4-a716-446655440001
+             */
+            galleryEntryId?: string;
+        };
+        CreateMediaDto: {
+            /**
+             * @description メディアタイプ
+             * @enum {string}
+             */
+            type: "IMAGE" | "YOUTUBE";
+            /** @description メディアURL */
+            url: string;
+            /** @description サムネイルURL（YouTube用） */
+            thumbnailUrl?: string;
+            /** @description 表示順序 */
+            order?: number;
+        };
+        CreateGalleryEntryDto: {
+            /**
+             * @description カテゴリ
+             * @enum {string}
+             */
+            category: "KITTEN" | "FATHER" | "MOTHER" | "GRADUATION";
+            /** @description 猫の名前 */
+            name: string;
+            /**
+             * @description 性別
+             * @enum {string}
+             */
+            gender: "MALE" | "FEMALE" | "NEUTER" | "SPAY";
+            /** @description 毛色 */
+            coatColor?: string;
+            /** @description 品種 */
+            breed?: string;
+            /** @description 在舎猫ID（参照用） */
+            catId?: string;
+            /** @description 譲渡日（卒業猫用） */
+            transferDate?: string;
+            /** @description 譲渡先（卒業猫用） */
+            destination?: string;
+            /** @description 外部リンク（卒業猫用） */
+            externalLink?: string;
+            /** @description 備考 */
+            notes?: string;
+            /** @description メディア（画像・動画） */
+            media?: components["schemas"]["CreateMediaDto"][];
+        };
+        UpdateGalleryEntryDto: {
+            /**
+             * @description カテゴリ
+             * @enum {string}
+             */
+            category?: "KITTEN" | "FATHER" | "MOTHER" | "GRADUATION";
+            /** @description 猫の名前 */
+            name?: string;
+            /**
+             * @description 性別
+             * @enum {string}
+             */
+            gender?: "MALE" | "FEMALE" | "NEUTER" | "SPAY";
+            /** @description 毛色 */
+            coatColor?: string;
+            /** @description 品種 */
+            breed?: string;
+            /** @description 在舎猫ID（参照用） */
+            catId?: string;
+            /** @description 譲渡日（卒業猫用） */
+            transferDate?: string;
+            /** @description 譲渡先（卒業猫用） */
+            destination?: string;
+            /** @description 外部リンク（卒業猫用） */
+            externalLink?: string;
+            /** @description 備考 */
+            notes?: string;
+            /** @description メディア（画像・動画） */
+            media?: components["schemas"]["CreateMediaDto"][];
+        };
+        AddMediaDto: {
+            /**
+             * @description メディアタイプ
+             * @enum {string}
+             */
+            type: "IMAGE" | "YOUTUBE";
+            /** @description メディアURL */
+            url: string;
+            /** @description サムネイルURL（YouTube用） */
+            thumbnailUrl?: string;
+        };
+        ExportRequestDto: {
+            /**
+             * @description エクスポート対象データ種別
+             * @enum {string}
+             */
+            dataType: "cats" | "pedigrees" | "medical_records" | "care_schedules" | "tags";
+            /**
+             * @description エクスポート形式
+             * @default csv
+             * @enum {string}
+             */
+            format: "csv" | "json";
+            /** @description 開始日（フィルタ用） */
+            startDate?: string;
+            /** @description 終了日（フィルタ用） */
+            endDate?: string;
+            /** @description 対象IDリスト（特定データのみエクスポート） */
+            ids?: string[];
+        };
+        ImportPreviewDto: {
+            /** @description プレビューデータ件数 */
+            previewCount: number;
+            /** @description サンプルデータ（最初の5件） */
+            sampleData: unknown[];
+            /** @description 検出されたカラム */
+            columns: string[];
+            /** @description データ総件数 */
+            totalCount: number;
+        };
+        ImportResultDto: {
+            /** @description インポート成功件数 */
+            successCount: number;
+            /** @description インポート失敗件数 */
+            errorCount: number;
+            /** @description 処理総件数 */
+            totalCount: number;
+            /** @description エラー詳細（最初の10件） */
+            errors?: string[];
+        };
     };
     responses: never;
     parameters: never;
@@ -2679,6 +4165,687 @@ export interface operations {
             };
         };
     };
+    UsersController_listUsers: {
+        parameters: {
+            query?: {
+                /** @description テナント ID でフィルタ（SUPER_ADMIN のみ有効） */
+                tenantId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ユーザー一覧を返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description プロフィール情報を返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ユーザーが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileDto"];
+            };
+        };
+        responses: {
+            /** @description プロフィールが更新されました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 更新するフィールドがありません */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description メールアドレスが既に使用されています */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_inviteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteUserDto"];
+            };
+        };
+        responses: {
+            /** @description 招待が作成されました */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description テナントが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description メールアドレスが既に使用されています */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_updateUserRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 対象ユーザー ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserRoleDto"];
+            };
+        };
+        responses: {
+            /** @description ロールが更新されました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ユーザーが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_deleteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 対象ユーザー ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ユーザーが削除されました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ユーザーが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantsController_listTenants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description テナント一覧を返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantsController_createTenant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTenantDto"];
+            };
+        };
+        responses: {
+            /** @description テナントが作成されました */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 不正なリクエスト */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description スラッグが既に使用されています */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantsController_getTenantById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description テナント詳細を返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description テナントが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantsController_deleteTenant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description テナントが削除されました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description テナントが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 所属ユーザーが存在するため削除できません */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantsController_updateTenant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTenantDto"];
+            };
+        };
+        responses: {
+            /** @description テナントが更新されました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description テナントが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description スラッグが既に使用されています */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantsController_inviteTenantAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteTenantAdminDto"];
+            };
+        };
+        responses: {
+            /** @description 招待が正常に作成されました */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 不正なリクエスト */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description メールアドレスまたはスラッグが既に使用されています */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantsController_inviteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteUserDto"];
+            };
+        };
+        responses: {
+            /** @description 招待が正常に作成されました */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 不正なリクエスト */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description テナントが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description メールアドレスが既に使用されています */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantsController_completeInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteInvitationDto"];
+            };
+        };
+        responses: {
+            /** @description ユーザー登録が完了しました */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 不正なリクエストまたは無効なトークン */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description メールアドレスが既に使用されています */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantSettingsController_getTagColorDefaults: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description タグカラーデフォルト設定を返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagColorDefaultsDto"];
+                };
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description テナントが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantSettingsController_updateTagColorDefaults: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTagColorDefaultsDto"];
+            };
+        };
+        responses: {
+            /** @description タグカラーデフォルト設定が更新されました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagColorDefaultsDto"];
+                };
+            };
+            /** @description 不正なリクエスト */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要です */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 権限がありません */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description テナントが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CatsController_findAll: {
         parameters: {
             query?: {
@@ -2694,6 +4861,8 @@ export interface operations {
                 coatColorId?: string;
                 /** @description 性別 */
                 gender?: "MALE" | "FEMALE" | "NEUTER" | "SPAY" | "1" | "2" | "3" | "4";
+                /** @description 在舎中フィルター */
+                isInHouse?: boolean;
                 /** @description 最小年齢 */
                 ageMin?: number;
                 /** @description 最大年齢 */
@@ -2759,6 +4928,37 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description 統計情報 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CatsController_findKittens: {
+        parameters: {
+            query?: {
+                /** @description 母猫ID（指定時はその母猫の子猫のみ取得） */
+                motherId?: string;
+                /** @description ページ番号 */
+                page?: number;
+                /** @description 1ページあたりの件数 */
+                limit?: number;
+                /** @description 検索キーワード（子猫名） */
+                search?: string;
+                /** @description ソート項目 */
+                sortBy?: string;
+                /** @description ソート順 */
+                sortOrder?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 子猫データの一覧（母猫ごとにグループ化） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2918,6 +5118,34 @@ export interface operations {
             };
         };
     };
+    CatsController_getCatFamily: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 猫データのID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 家族情報（親・兄弟姉妹・子猫） */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 猫データが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CatsController_getGenders: {
         parameters: {
             query?: never;
@@ -2929,6 +5157,208 @@ export interface operations {
         responses: {
             /** @description 性別マスタデータを返却 */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CatsController_getWeightRecords: {
+        parameters: {
+            query?: {
+                /** @description ページ番号 */
+                page?: number;
+                /** @description 1ページあたりの件数 */
+                limit?: number;
+                /** @description 開始日 */
+                startDate?: string;
+                /** @description 終了日 */
+                endDate?: string;
+                /** @description ソート順 */
+                sortOrder?: string;
+            };
+            header?: never;
+            path: {
+                /** @description 猫データのID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 体重記録一覧 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 猫データが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CatsController_createWeightRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 猫データのID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWeightRecordDto"];
+            };
+        };
+        responses: {
+            /** @description 体重記録が正常に作成されました */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 無効なデータです */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 猫データが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CatsController_getWeightRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 体重記録のID */
+                recordId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 体重記録 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 体重記録が見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CatsController_deleteWeightRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 体重記録のID */
+                recordId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 体重記録が正常に削除されました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 体重記録が見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CatsController_updateWeightRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 体重記録のID */
+                recordId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWeightRecordDto"];
+            };
+        };
+        responses: {
+            /** @description 体重記録が正常に更新されました */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 無効なデータです */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 体重記録が見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CatsController_createBulkWeightRecords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBulkWeightRecordsDto"];
+            };
+        };
+        responses: {
+            /** @description 体重記録が正常に一括作成されました */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 無効なデータです */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3004,6 +5434,120 @@ export interface operations {
             };
             /** @description 管理者権限が必要です */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PedigreeController_getNextId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 次の血統書番号 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PedigreeController_getPrintSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 現在の印刷設定 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PedigreeController_updatePrintSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 更新後の印刷設定 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 無効な設定データです */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PedigreeController_resetPrintSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description リセット後の印刷設定 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PedigreeController_generatePdf: {
+        parameters: {
+            query?: {
+                /** @description 出力形式 (pdf|base64) */
+                format?: string;
+                /** @description デバッグモード（背景画像表示） */
+                debug?: string;
+            };
+            header?: never;
+            path: {
+                /** @description 血統書番号 */
+                pedigreeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF生成成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"];
+                };
+            };
+            /** @description 血統書データが見つかりません */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3235,6 +5779,246 @@ export interface operations {
             };
         };
     };
+    PrintTemplatesController_getCategories: {
+        parameters: {
+            query: {
+                tenantId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_createCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePrintDocCategoryDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_getCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_removeCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_updateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePrintDocCategoryDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_getDataSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePrintTemplateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePrintTemplateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PrintTemplatesController_duplicate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicatePrintTemplateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     BreedsController_findAll: {
         parameters: {
             query?: {
@@ -3297,6 +6081,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    BreedsController_getMasterData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV マスターデータを displayName / displayNameMode 付きで返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasterDataItemDto"][];
+                };
             };
         };
     };
@@ -3427,6 +6231,46 @@ export interface operations {
             };
         };
     };
+    DisplayPreferencesController_getMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 表示設定の取得に成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DisplayPreferencesController_updateMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDisplayPreferenceDto"];
+            };
+        };
+        responses: {
+            /** @description 表示設定の更新に成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CoatColorsController_findAll: {
         parameters: {
             query?: {
@@ -3489,6 +6333,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    CoatColorsController_getMasterData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV マスターデータを displayName / displayNameMode 付きで返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasterDataItemDto"][];
+                };
             };
         };
     };
@@ -3741,23 +6605,6 @@ export interface operations {
                 "application/json": components["schemas"]["UpdateBreedingNgRuleDto"];
             };
         };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    BreedingController_test: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             200: {
                 headers: {
@@ -4046,6 +6893,227 @@ export interface operations {
             };
         };
     };
+    BreedingController_findAllBreedingSchedules: {
+        parameters: {
+            query?: {
+                /** @description ページ番号 */
+                page?: number;
+                /** @description 1ページあたりの件数 */
+                limit?: number;
+                /** @description オス猫IDでフィルタ */
+                maleId?: string;
+                /** @description メス猫IDでフィルタ */
+                femaleId?: string;
+                /** @description ステータスでフィルタ */
+                status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+                /** @description 開始日（from） */
+                dateFrom?: string;
+                /** @description 開始日（to） */
+                dateTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_createBreedingSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBreedingScheduleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_removeBreedingSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_updateBreedingSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBreedingScheduleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_findMatingChecks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scheduleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_createMatingCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scheduleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMatingCheckDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_removeMatingCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_updateMatingCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMatingCheckDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBreedingDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CareController_findSchedules: {
         parameters: {
             query?: {
@@ -4180,7 +7248,8 @@ export interface operations {
                 catId?: string;
                 /** @description スケジュールID */
                 scheduleId?: string;
-                visitType?: "CHECKUP" | "EMERGENCY" | "SURGERY" | "FOLLOW_UP" | "VACCINATION" | "OTHER";
+                /** @description 受診種別ID */
+                visitTypeId?: string;
                 status?: "TREATING" | "COMPLETED";
                 /** @description 受診開始日 */
                 dateFrom?: string;
@@ -4217,6 +7286,75 @@ export interface operations {
         };
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicalRecordResponseDto"];
+                };
+            };
+        };
+    };
+    CareController_findMedicalRecordById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 医療記録ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicalRecordResponseDto"];
+                };
+            };
+        };
+    };
+    CareController_deleteMedicalRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 医療記録ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 削除成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CareController_updateMedicalRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 医療記録ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMedicalRecordDto"];
+            };
+        };
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5005,6 +8143,667 @@ export interface operations {
         };
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GraduationController_transferCat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 猫ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferCatDto"];
+            };
+        };
+        responses: {
+            /** @description 譲渡成功 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description すでに卒業済みです */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 猫が見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GraduationController_findAllGraduations: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 卒業猫一覧 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GraduationController_findOneGraduation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 卒業ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 卒業猫詳細 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 卒業記録が見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GraduationController_cancelGraduation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 卒業ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 卒業取り消し成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 卒業記録が見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GraduationController_updateGraduation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 卒業ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGraduationDto"];
+            };
+        };
+        responses: {
+            /** @description 更新成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 卒業記録が見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryUploadController_generateUploadUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateUploadUrlDto"];
+            };
+        };
+        responses: {
+            /** @description Signed URL生成成功 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        success?: boolean;
+                        data?: {
+                            /** @description アップロード用Signed URL */
+                            uploadUrl?: string;
+                            /** @description GCS内のファイルキー */
+                            fileKey?: string;
+                            /** @description アップロード後の公開URL */
+                            publicUrl?: string;
+                        };
+                    };
+                };
+            };
+            /** @description パラメータエラー */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryUploadController_confirmUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmUploadDto"];
+            };
+        };
+        responses: {
+            /** @description 確認成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        success?: boolean;
+                        data?: {
+                            /** @example true */
+                            success?: boolean;
+                            /** @description ファイルの公開URL */
+                            url?: string;
+                            /** @description ファイルサイズ（バイト） */
+                            size?: number;
+                        };
+                    };
+                };
+            };
+            /** @description ファイルが見つからない */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryUploadController_deleteFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 削除するファイルのキー（URLエンコード済み） */
+                fileKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 削除成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryController_findAll: {
+        parameters: {
+            query?: {
+                /** @description カテゴリでフィルタリング */
+                category?: "KITTEN" | "FATHER" | "MOTHER" | "GRADUATION";
+                /** @description ページ番号 */
+                page?: number;
+                /** @description 1ページあたりの件数 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ギャラリー一覧 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGalleryEntryDto"];
+            };
+        };
+        responses: {
+            /** @description 作成成功 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description エントリID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ギャラリー詳細 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description エントリが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description エントリID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGalleryEntryDto"];
+            };
+        };
+        responses: {
+            /** @description 更新成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description エントリが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description エントリID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 削除成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description エントリが見つかりません */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryController_addMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description エントリID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMediaDto"];
+            };
+        };
+        responses: {
+            /** @description メディア追加成功 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryController_deleteMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description メディアID */
+                mediaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description メディア削除成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GalleryController_bulkCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": string[];
+            };
+        };
+        responses: {
+            /** @description 一括登録成功 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExportController_export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequestDto"];
+            };
+        };
+        responses: {
+            /** @description エクスポート成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 無効なリクエスト */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ImportController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description CSVファイル
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description プレビュー取得成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreviewDto"];
+                };
+            };
+            /** @description ファイルが不正な形式 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ImportController_importCats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description CSVファイル（カラム: name, gender, birthDate, breed, color, registrationNumber, microchipNumber, notes）
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description インポート完了 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultDto"];
+                };
+            };
+            /** @description ファイルが不正な形式 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ImportController_importPedigrees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description CSVファイル（カラム: pedigreeId, catName, title, breedCode, genderCode, coatColorCode）
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description インポート完了 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultDto"];
+                };
+            };
+            /** @description ファイルが不正な形式 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ImportController_importTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description CSVファイル（カラム: name, category, group, color, isActive）
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description インポート完了 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultDto"];
+                };
+            };
+            /** @description ファイルが不正な形式 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 認証が必要 */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
