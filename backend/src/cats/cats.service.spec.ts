@@ -18,12 +18,38 @@ describe('CatsService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
       groupBy: jest.fn(),
     },
     kittenDisposition: {
       deleteMany: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    careRecord: {
+      deleteMany: jest.fn(),
+    },
+    galleryEntry: {
+      deleteMany: jest.fn(),
+    },
+    schedule: {
+      deleteMany: jest.fn(),
+    },
+    medicalRecord: {
+      updateMany: jest.fn(),
+    },
+    breedingRecord: {
+      updateMany: jest.fn(),
+    },
+    breedingSchedule: {
+      updateMany: jest.fn(),
+    },
+    pregnancyCheck: {
+      updateMany: jest.fn(),
+    },
+    birthPlan: {
+      updateMany: jest.fn(),
     },
     breed: {
       findUnique: jest.fn(),
@@ -40,6 +66,7 @@ describe('CatsService', () => {
     catTag: {
       count: jest.fn(),
     },
+    $transaction: jest.fn(),
   };
 
   const mockEventEmitter = {
@@ -228,11 +255,17 @@ describe('CatsService', () => {
 
       mockPrismaService.cat.findUnique.mockResolvedValue(mockCat);
       mockPrismaService.cat.delete.mockResolvedValue(mockCat);
+      mockPrismaService.$transaction.mockImplementation(
+        async (callback: (tx: typeof mockPrismaService) => Promise<unknown>) =>
+          callback(mockPrismaService),
+      );
 
       await service.remove('1');
 
-      expect(mockPrismaService.kittenDisposition.deleteMany).toHaveBeenCalledWith({
+      // 子猫処遇は削除せずリンク切断（繁殖履歴をテキストで残す方針）
+      expect(mockPrismaService.kittenDisposition.updateMany).toHaveBeenCalledWith({
         where: { kittenId: '1' },
+        data: { kittenId: null },
       });
       expect(mockPrismaService.cat.delete).toHaveBeenCalledWith({
         where: { id: '1' },
