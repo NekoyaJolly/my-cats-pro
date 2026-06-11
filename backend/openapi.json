@@ -1138,6 +1138,26 @@
         ]
       }
     },
+    "/api/v1/cats/genders": {
+      "get": {
+        "operationId": "CatsController_getGenders",
+        "summary": "性別マスタデータを取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "性別マスタデータを返却"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/cats/{id}": {
       "get": {
         "operationId": "CatsController_findOne",
@@ -1333,26 +1353,6 @@
           },
           "404": {
             "description": "猫データが見つかりません"
-          }
-        },
-        "tags": [
-          "Cats"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/cats/genders": {
-      "get": {
-        "operationId": "CatsController_getGenders",
-        "summary": "性別マスタデータを取得",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "性別マスタデータを返却"
           }
         },
         "tags": [
@@ -4638,6 +4638,11 @@
         },
         "tags": [
           "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "patch": {

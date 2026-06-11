@@ -265,7 +265,7 @@ export default function BreedingPage() {
     const serverIds = new Set<string>();
     Object.keys(breedingSchedule).forEach((key) => {
       const entry = breedingSchedule[key];
-      if (key.includes(maleId) && entry.femaleName === femaleName && !entry.isHistory && entry.serverId) {
+      if (key.startsWith(`${maleId}-`) && entry.femaleName === femaleName && !entry.isHistory && entry.serverId) {
         serverIds.add(entry.serverId);
       }
     });
@@ -302,7 +302,7 @@ export default function BreedingPage() {
           setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
             const newSchedule = { ...prev };
             Object.keys(newSchedule).forEach(key => {
-              if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
+              if (key.startsWith(`${maleId}-`) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
                 newSchedule[key] = {
                   ...newSchedule[key],
                   isHistory: true,
@@ -333,7 +333,7 @@ export default function BreedingPage() {
       setBreedingSchedule((prev: Record<string, BreedingScheduleEntry>) => {
         const newSchedule = { ...prev };
         Object.keys(newSchedule).forEach(key => {
-          if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
+          if (key.startsWith(`${maleId}-`) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
             newSchedule[key] = {
               ...newSchedule[key],
               isHistory: true,

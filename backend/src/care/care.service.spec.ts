@@ -298,4 +298,148 @@ describe('CareService', () => {
       await expect(service.deleteSchedule('invalid')).rejects.toThrow(NotFoundException);
     });
   });
+  describe('findMedicalRecordById', () => {
+    const mockRecord = {
+      id: 'rec-1',
+      catId: 'cat-1',
+      visitDate: new Date(),
+      diagnosis: 'Healthy',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      recordedBy: 'user-1',
+      status: 'COMPLETED',
+      cat: { id: 'cat-1', name: 'Test Cat' },
+      schedule: null,
+      tags: [],
+      attachments: [],
+    };
+
+    it('should return a medical record by id', async () => {
+      mockPrismaService.medicalRecord.findUnique.mockResolvedValue(mockRecord);
+
+      const result = await service.findMedicalRecordById('rec-1');
+
+      expect(result.success).toBe(true);
+      expect(result.data.id).toBe('rec-1');
+      expect(result.data.cat.id).toBe('cat-1');
+    });
+
+    it('should throw NotFoundException for invalid id', async () => {
+      mockPrismaService.medicalRecord.findUnique.mockResolvedValue(null);
+
+      await expect(service.findMedicalRecordById('invalid')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateMedicalRecord', () => {
+    const mockUpdated = {
+      id: 'rec-1',
+      catId: 'cat-1',
+      visitDate: new Date(),
+      diagnosis: '更新済み診断',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      recordedBy: 'user-1',
+      status: 'COMPLETED',
+      cat: { id: 'cat-1', name: 'Test Cat' },
+      schedule: null,
+      tags: [],
+      attachments: [],
+    };
+
+    it('should update diagnosis and replace tags/attachments', async () => {
+      mockPrismaService.medicalRecord.findUnique.mockResolvedValue({ id: 'rec-1' });
+      mockPrismaService.medicalRecord.update.mockResolvedValue(mockUpdated);
+
+      const result = await service.updateMedicalRecord('rec-1', {
+        diagnosis: '更新済み診断',
+        tagIds: ['tag-1'],
+        attachments: [{ url: 'https://example.com/a.png' }],
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data.diagnosis).toBe('更新済み診断');
+      const updateArgs = mockPrismaService.medicalRecord.update.mock.calls[0][0];
+      expect(updateArgs.data.diagnosis).toBe('更新済み診断');
+      // tags / attachments は全置換（deleteMany + create）であること
+      expect(updateArgs.data.tags).toEqual({
+        deleteMany: {},
+        create: [{ tagId: 'tag-1' }],
+      });
+      expect(updateArgs.data.attachments.deleteMany).toEqual({});
+      expect(updateArgs.data.attachments.create).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException for invalid id', async () => {
+      mockPrismaService.medicalRecord.findUnique.mockResolvedValue(null);
+
+      await expect(service.updateMedicalRecord('invalid', {})).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteMedicalRecord', () => {
+    it('should delete a medical record successfully', async () => {
+      mockPrismaService.medicalRecord.findUnique.mockResolvedValue({ id: 'rec-1' });
+      mockPrismaService.medicalRecord.delete.mockResolvedValue({ id: 'rec-1' });
+
+      const result = await service.deleteMedicalRecord('rec-1');
+
+      expect(result.success).toBe(true);
+      expect(mockPrismaService.medicalRecord.delete).toHaveBeenCalledWith({
+        where: { id: 'rec-1' },
+      });
+    });
+
+    it('should throw NotFoundException for invalid id', async () => {
+      mockPrismaService.medicalRecord.findUnique.mockResolvedValue(null);
+
+      await expect(service.deleteMedicalRecord('invalid')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateScheduleStatus', () => {
+    it('should update schedule status', async () => {
+      const mockSchedule = {
+        id: '1',
+        name: 'Vaccine',
+        title: 'Vaccine',
+        description: null,
+        scheduleDate: new Date(),
+        endDate: null,
+        timezone: null,
+        scheduleType: 'CARE',
+        status: 'CANCELLED',
+        careType: 'HEALTH_CHECK',
+        priority: 'MEDIUM',
+        recurrenceRule: null,
+        assignedTo: 'user-1',
+        cat: null,
+        scheduleCats: [],
+        reminders: [],
+        tags: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockPrismaService.schedule.findUnique.mockResolvedValue({ id: '1' });
+      mockPrismaService.schedule.update.mockResolvedValue(mockSchedule);
+
+      const result = await service.updateScheduleStatus('1', 'CANCELLED');
+
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe('CANCELLED');
+      expect(mockPrismaService.schedule.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: '1' }, data: { status: 'CANCELLED' } }),
+      );
+    });
+
+    it('should throw NotFoundException for invalid schedule', async () => {
+      mockPrismaService.schedule.findUnique.mockResolvedValue(null);
+
+      await expect(service.updateScheduleStatus('invalid', 'PENDING')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
 });
+

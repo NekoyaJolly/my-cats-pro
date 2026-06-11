@@ -146,8 +146,13 @@ export class TagsService {
     try {
       await this.prisma.catTag.create({ data: { catId, tagId } });
       created = true;
-    } catch {
-      // Unique constraint (already assigned) -> return success idempotently
+    } catch (error) {
+      // 付与済み（ユニーク制約 P2002）のみ冪等に成功扱いとし、それ以外は再throw
+      const isAlreadyAssigned =
+        error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+      if (!isAlreadyAssigned) {
+        throw error;
+      }
     }
 
     // 手動付与時のみ TAG_ASSIGNED イベントを発火する

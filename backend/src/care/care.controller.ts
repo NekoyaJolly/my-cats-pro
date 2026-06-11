@@ -133,6 +133,8 @@ export class CareController {
     return this.careService.addMedicalRecord(dto, user?.userId);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get("medical-records/:id")
   @ApiOperation({ summary: "医療記録の詳細取得" })
   @ApiParam({ name: "id", description: "医療記録ID" })

@@ -71,7 +71,8 @@ function convertServerScheduleToLocal(
     const currentDate = new Date(startDate);
     currentDate.setDate(startDate.getDate() + i);
     const dateStr = currentDate.toISOString().split('T')[0];
-    const scheduleKey = `${schedule.maleId}-${dateStr}`;
+    // 猫削除後（maleId=null）はサーバーIDをキーに使い、削除済み同士の衝突を防ぐ
+    const scheduleKey = `${schedule.maleId ?? `deleted-${schedule.id}`}-${dateStr}`;
     
     result[scheduleKey] = {
       maleId: schedule.maleId ?? '',

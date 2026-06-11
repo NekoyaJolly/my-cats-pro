@@ -375,7 +375,9 @@ export class TagAutomationExecutionService {
         const tagEvent = event as TagAssignedEvent;
         const config = rule.config as Record<string, unknown> | null;
         const triggerTagId = config?.['triggerTagId'] as string | undefined;
-        if (!triggerTagId || triggerTagId === tagEvent.tagId) {
+        // トリガータグが設定され、かつ一致した場合のみ対象とする
+        // （未設定ルールが全タグ操作で発火するのを防ぐ）
+        if (triggerTagId && triggerTagId === tagEvent.tagId) {
           catIds.push(tagEvent.catId);
         }
         break;

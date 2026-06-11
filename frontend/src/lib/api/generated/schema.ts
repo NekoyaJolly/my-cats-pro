@@ -451,6 +451,23 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cats/genders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 性別マスタデータを取得 */
+        get: operations["CatsController_getGenders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cats/{id}": {
         parameters: {
             query?: never;
@@ -513,23 +530,6 @@ export type paths = {
         };
         /** 猫の家族情報を取得（血統タブ用） */
         get: operations["CatsController_getCatFamily"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cats/genders": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 性別マスタデータを取得 */
-        get: operations["CatsController_getGenders"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5006,6 +5006,24 @@ export interface operations {
             };
         };
     };
+    CatsController_getGenders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 性別マスタデータを返却 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CatsController_findOne: {
         parameters: {
             query?: never;
@@ -5178,24 +5196,6 @@ export interface operations {
             };
             /** @description 猫データが見つかりません */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    CatsController_getGenders: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 性別マスタデータを返却 */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };

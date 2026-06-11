@@ -69,22 +69,34 @@ export class StaffService {
       }
     }
 
-    const staff = await this.prisma.staff.create({
-      data: {
-        name: createStaffDto.name,
-        email: createStaffDto.email || null,
-        role: createStaffDto.role || 'スタッフ',
-        color: createStaffDto.color || '#4dabf7',
-        userId: createStaffDto.userId || null,
-        isActive: createStaffDto.isActive !== undefined ? createStaffDto.isActive : true,
-        workingDays: createStaffDto.workingDays 
-          ? (createStaffDto.workingDays as Prisma.InputJsonValue)
-          : Prisma.JsonNull,
-        workTimeTemplate: createStaffDto.workTimeTemplate 
-          ? (createStaffDto.workTimeTemplate as unknown as Prisma.InputJsonValue)
-          : Prisma.JsonNull,
-      },
-    });
+    let staff: Staff;
+    try {
+      staff = await this.prisma.staff.create({
+        data: {
+          name: createStaffDto.name,
+          email: createStaffDto.email || null,
+          role: createStaffDto.role || 'スタッフ',
+          color: createStaffDto.color || '#4dabf7',
+          userId: createStaffDto.userId || null,
+          isActive: createStaffDto.isActive !== undefined ? createStaffDto.isActive : true,
+          workingDays: createStaffDto.workingDays
+            ? (createStaffDto.workingDays as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
+          workTimeTemplate: createStaffDto.workTimeTemplate
+            ? (createStaffDto.workTimeTemplate as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
+        },
+      });
+    } catch (error) {
+      // 事前チェックをすり抜けた並行リクエスト等のユニーク制約違反も 409 に変換する
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('同じメールアドレスのスタッフが既に登録されています');
+      }
+      throw error;
+    }
 
     return this.toResponseDto(staff);
   }
