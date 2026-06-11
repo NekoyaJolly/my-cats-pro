@@ -108,7 +108,8 @@ async function main() {
         email,
         firstName: "Admin",
         lastName: "User",
-        role: UserRole.ADMIN,
+        // 初期管理者はテナント/ユーザー管理を含む全機能を扱える SUPER_ADMIN とする
+        role: UserRole.SUPER_ADMIN,
         isActive: true,
         passwordHash: hash,
       },
@@ -118,10 +119,8 @@ async function main() {
     // 既存: 原則 passwordHash を変更しない / 役割や有効化のみ調整
     let needsUpdate = false;
     const updateData: Partial<typeof existingAdmin> = {};
-    if (existingAdmin.role !== UserRole.ADMIN) {
-      updateData.role = UserRole.ADMIN;
-      needsUpdate = true;
-    }
+    // 既存ユーザーのロールは変更しない
+    // （以前はデプロイごとに ADMIN へ強制リセットしており、手動でのロール変更が巻き戻されていた）
     if (!existingAdmin.isActive) {
       updateData.isActive = true;
       needsUpdate = true;
