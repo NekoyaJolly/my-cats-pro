@@ -70,6 +70,7 @@ export class AuthController {
       userId: userRaw.id,
       email: userRaw.email,
       role: toUserRole(userRaw.role),
+      permissions: userRaw.permissions ?? [],
       firstName: userRaw.firstName ?? undefined,
       lastName: userRaw.lastName ?? undefined,
     };
@@ -159,6 +160,7 @@ export class AuthController {
       userId: user.id,
       email: user.email,
       role: toUserRole(user.role),
+      permissions: user.permissions ?? [],
       firstName: user.firstName ?? undefined,
       lastName: user.lastName ?? undefined,
     };

@@ -419,6 +419,53 @@
         ]
       }
     },
+    "/api/v1/users/{id}/permissions": {
+      "patch": {
+        "operationId": "UsersController_updateUserPermissions",
+        "summary": "ユーザーの権限を変更",
+        "description": "付与できるのは自分が保持する権限の範囲内のみ。自分自身の権限は変更できません。",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "対象ユーザーID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserPermissionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "権限を更新しました"
+          },
+          "403": {
+            "description": "権限がありません"
+          },
+          "404": {
+            "description": "ユーザーが見つかりません"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/{id}": {
       "delete": {
         "operationId": "UsersController_deleteUser",
@@ -6851,6 +6898,32 @@
               "TENANT_ADMIN"
             ],
             "default": "USER"
+          },
+          "permissions": {
+            "type": "array",
+            "description": "個別権限（未指定時はロールのプリセットを適用）",
+            "example": [
+              "cats:write",
+              "care:write"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "cats:write",
+                "breeding:write",
+                "care:write",
+                "medical:write",
+                "tags:manage",
+                "pedigree:write",
+                "gallery:write",
+                "staff:manage",
+                "graduation:write",
+                "data:import_export",
+                "users:manage",
+                "tenants:manage",
+                "settings:manage"
+              ]
+            }
           }
         },
         "required": [
@@ -6871,10 +6944,70 @@
               "TENANT_ADMIN"
             ],
             "example": "ADMIN"
+          },
+          "permissions": {
+            "type": "array",
+            "description": "個別権限（未指定時はロールのプリセットを適用）",
+            "example": [
+              "cats:write",
+              "care:write"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "cats:write",
+                "breeding:write",
+                "care:write",
+                "medical:write",
+                "tags:manage",
+                "pedigree:write",
+                "gallery:write",
+                "staff:manage",
+                "graduation:write",
+                "data:import_export",
+                "users:manage",
+                "tenants:manage",
+                "settings:manage"
+              ]
+            }
           }
         },
         "required": [
           "role"
+        ]
+      },
+      "UpdateUserPermissionsDto": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "description": "付与する権限の配列（機能ドメイン単位）",
+            "example": [
+              "cats:write",
+              "care:write"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "cats:write",
+                "breeding:write",
+                "care:write",
+                "medical:write",
+                "tags:manage",
+                "pedigree:write",
+                "gallery:write",
+                "staff:manage",
+                "graduation:write",
+                "data:import_export",
+                "users:manage",
+                "tenants:manage",
+                "settings:manage"
+              ]
+            }
+          }
+        },
+        "required": [
+          "permissions"
         ]
       },
       "CreateTenantDto": {

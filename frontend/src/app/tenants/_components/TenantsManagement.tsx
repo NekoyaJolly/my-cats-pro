@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Stack, Tabs, Alert, Loader, Center, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconUserPlus } from '@tabler/icons-react';
-import { useAuth } from '@/lib/auth/store';
+import { useAuth, useCan } from '@/lib/auth/store';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { TenantsList } from './TenantsList';
 import { UsersList } from './UsersList';
@@ -35,11 +35,11 @@ export function TenantsManagement() {
     return () => setPageHeader(null);
   }, [setPageHeader]);
 
-  // 権限チェック
-  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  // 権限チェック（ロール直接判定から権限ベースへ移行。SUPER_ADMIN は can() が常に true）
+  const can = useCan();
   const isTenantAdmin = user?.role === 'TENANT_ADMIN';
-  // ユーザー管理は SUPER_ADMIN と TENANT_ADMIN が可能
-  const hasUserManagementAccess = isSuperAdmin || isTenantAdmin;
+  const canManageTenants = can('tenants:manage');
+  const hasUserManagementAccess = can('users:manage');
 
   // 現在のタブに応じたアクションメニュー項目を生成
   const getActionItems = () => {
@@ -95,7 +95,7 @@ export function TenantsManagement() {
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List grow>
           <Tabs.Tab value="profile">ユーザー設定</Tabs.Tab>
-          {isSuperAdmin && <Tabs.Tab value="tenants">テナント一覧</Tabs.Tab>}
+          {canManageTenants && <Tabs.Tab value="tenants">テナント一覧</Tabs.Tab>}
           {hasUserManagementAccess && <Tabs.Tab value="users">ユーザー一覧</Tabs.Tab>}
         </Tabs.List>
 
@@ -114,7 +114,7 @@ export function TenantsManagement() {
         </Tabs.Panel>
 
         <Tabs.Panel value="tenants" pt="md">
-          {activeTab === 'tenants' && isSuperAdmin && <TenantsList />}
+          {activeTab === 'tenants' && canManageTenants && <TenantsList />}
         </Tabs.Panel>
 
         <Tabs.Panel value="users" pt="md">

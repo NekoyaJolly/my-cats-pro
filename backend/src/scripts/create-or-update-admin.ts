@@ -1,6 +1,8 @@
 import { PrismaClient, UserRole } from "@prisma/client";
 import * as argon2 from "argon2";
 
+import { ROLE_PRESETS } from '../auth/permissions';
+
 /**
  * 再実行安全な管理者ユーザー create/update スクリプト
  * 環境変数:
@@ -30,6 +32,7 @@ async function main() {
         passwordHash: hash,
         // 初期管理者はテナント/ユーザー管理を含む全機能を扱える SUPER_ADMIN とする
         role: UserRole.SUPER_ADMIN,
+        permissions: ROLE_PRESETS[UserRole.SUPER_ADMIN],
         isActive: true,
         clerkId: "local_admin",
         firstName: "Admin",

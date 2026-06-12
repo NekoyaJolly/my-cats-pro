@@ -41,6 +41,8 @@ model InvitationToken {
   email     String
   token     String    @unique
   role      UserRole
+  /// 招待時に指定された個別権限（未指定時はロールプリセットを適用）
+  permissions String[] @default([])
   tenantId  String    @map("tenant_id")
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
@@ -61,6 +63,8 @@ model User {
   firstName            String?            @map("first_name")
   lastName             String?            @map("last_name")
   role                 UserRole           @default(USER)
+  /// 機能ドメイン単位の個別権限（src/auth/permissions.ts の Permission 値の配列）
+  permissions          String[]           @default([])
   isActive             Boolean            @default(true) @map("is_active")
   passwordHash         String?            @map("password_hash")
   refreshToken         String?            @map("refresh_token")

@@ -9,11 +9,14 @@ import { UnifiedModal } from '@/components/common';
 import { apiClient, apiRequest } from '@/lib/api/client';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/lib/auth/store';
+import { ROLE_PRESETS, type Permission } from '@/lib/auth/permissions';
+import { PermissionCheckboxGroup } from './PermissionCheckboxGroup';
 
 interface User {
   id: string;
   email: string;
   role: string;
+  permissions?: string[];
   firstName?: string | null;
   lastName?: string | null;
   tenantId: string;
@@ -42,6 +45,73 @@ export function UsersList() {
   const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // 権限編集モーダルの状態
+  const [permissionModalOpened, { open: openPermissionModal, close: closePermissionModal }] = useDisclosure(false);
+  const [permissionTarget, setPermissionTarget] = useState<User | null>(null);
+  const [editingPermissions, setEditingPermissions] = useState<Permission[]>([]);
+  const [permissionLoading, setPermissionLoading] = useState(false);
+
+  // 権限の天井: 自分が保持する権限のみ付与できる
+  const grantablePermissions: Permission[] | undefined =
+    currentUser?.role === 'SUPER_ADMIN'
+      ? undefined
+      : (((currentUser?.permissions ?? []) as Permission[]).filter(
+          (permission) => permission !== 'tenants:manage',
+        ));
+
+  // 権限を編集できる対象か（自分自身と SUPER_ADMIN は不可。TENANT_ADMIN は自テナントの非特権ユーザーのみ）
+  const canEditPermissions = (targetUser: User): boolean => {
+    if (targetUser.id === currentUser?.id) return false;
+    if (isSuperAdmin) return targetUser.role !== 'SUPER_ADMIN';
+    if (isTenantAdmin) {
+      return (
+        targetUser.tenantId === currentUser?.tenantId &&
+        targetUser.role !== 'SUPER_ADMIN' &&
+        targetUser.role !== 'TENANT_ADMIN'
+      );
+    }
+    return false;
+  };
+
+  const handleOpenPermissionModal = (targetUser: User) => {
+    setPermissionTarget(targetUser);
+    setEditingPermissions(
+      ((targetUser.permissions ?? ROLE_PRESETS[targetUser.role] ?? []) as Permission[]),
+    );
+    openPermissionModal();
+  };
+
+  const handleSavePermissions = async () => {
+    if (!permissionTarget) return;
+    try {
+      setPermissionLoading(true);
+      const response = await apiClient.request(
+        `/users/${permissionTarget.id}/permissions` as never,
+        'patch',
+        { body: { permissions: editingPermissions } as never },
+      );
+      if (!response.success) {
+        throw new Error(response.error || '権限の更新に失敗しました');
+      }
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === permissionTarget.id ? { ...u, permissions: editingPermissions } : u,
+        ),
+      );
+      notifications.show({ title: '成功', message: '権限を更新しました', color: 'green' });
+      closePermissionModal();
+      setPermissionTarget(null);
+    } catch (err) {
+      notifications.show({
+        title: 'エラー',
+        message: err instanceof Error ? err.message : '権限の更新に失敗しました',
+        color: 'red',
+      });
+    } finally {
+      setPermissionLoading(false);
+    }
+  };
 
   // ロール表示名変換
   const getRoleLabel = (role: string): string => {
@@ -333,6 +403,15 @@ export function UsersList() {
                           -
                         </Text>
                       )}
+                      {canEditPermissions(u) && (
+                        <ActionButton
+                          action="edit"
+                          size="xs"
+                          onClick={() => handleOpenPermissionModal(u)}
+                        >
+                          権限
+                        </ActionButton>
+                      )}
                       {canDeleteUser(u) && (
                         <ActionIconButton
                           action="delete"
@@ -373,6 +452,50 @@ export function UsersList() {
           </ActionButton>
           <ActionButton action="delete" onClick={handleDeleteUser} loading={deleteLoading}>
             削除
+          </ActionButton>
+        </Group>
+      </UnifiedModal>
+
+      {/* 権限編集モーダル */}
+      <UnifiedModal
+        opened={permissionModalOpened}
+        onClose={() => {
+          if (!permissionLoading) {
+            closePermissionModal();
+            setPermissionTarget(null);
+          }
+        }}
+        title="権限の編集"
+        size="md"
+      >
+        <Text size="sm" mb="sm">
+          <Text span fw={600}>
+            {permissionTarget
+              ? [permissionTarget.lastName, permissionTarget.firstName].filter(Boolean).join(' ') ||
+                permissionTarget.email
+              : ''}
+          </Text>
+          {' '}に付与する権限を選択してください。
+        </Text>
+        <PermissionCheckboxGroup
+          value={editingPermissions}
+          onChange={setEditingPermissions}
+          disabled={permissionLoading}
+          grantable={grantablePermissions}
+        />
+        <Group justify="flex-end" mt="md">
+          <ActionButton
+            action="cancel"
+            onClick={() => {
+              closePermissionModal();
+              setPermissionTarget(null);
+            }}
+            disabled={permissionLoading}
+          >
+            キャンセル
+          </ActionButton>
+          <ActionButton action="save" onClick={handleSavePermissions} loading={permissionLoading}>
+            保存
           </ActionButton>
         </Group>
       </UnifiedModal>

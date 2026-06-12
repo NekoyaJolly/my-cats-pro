@@ -23,6 +23,7 @@ type ValidatedUser = {
   id: string;
   email: string;
   role: UserRole;
+  permissions: string[];
   firstName: string | null;
   lastName: string | null;
   passwordHash: string | null;
@@ -34,6 +35,7 @@ export interface AuthUserView {
   id: string;
   email: string;
   role: UserRole;
+  permissions: string[];
   firstName: string | null;
   lastName: string | null;
 }
@@ -83,6 +85,7 @@ export class AuthService {
         id: true,
         email: true,
         role: true,
+        permissions: true,
         firstName: true,
         lastName: true,
         passwordHash: true,
@@ -197,6 +200,7 @@ export class AuthService {
           id: user.id,
           email: user.email,
           role: user.role,
+          permissions: user.permissions ?? [],
           firstName: user.firstName,
           lastName: user.lastName,
         },
@@ -290,6 +294,7 @@ export class AuthService {
           id: user.id,
           email: user.email,
           role: user.role,
+          permissions: user.permissions ?? [],
           firstName: user.firstName,
           lastName: user.lastName,
         },
@@ -476,6 +481,7 @@ export class AuthService {
           id: true,
           email: true,
           role: true,
+          permissions: true,
           firstName: true,
           lastName: true,
           refreshToken: true,
@@ -500,6 +506,7 @@ export class AuthService {
           id: user.id,
           email: user.email,
           role: user.role,
+          permissions: user.permissions ?? [],
           firstName: user.firstName,
           lastName: user.lastName,
         },
@@ -516,6 +523,8 @@ export class AuthService {
       email: user.email,
       role: user.role,
       tenantId: user.tenantId, // マルチテナント対応
+      // 権限はトークンに埋め込む（15分expiryのため権限変更の反映遅延は最大15分）
+      permissions: user.permissions ?? [],
       jti: randomUUID(),
     };
     const access_token = await this.jwt.signAsync(accessPayload, {

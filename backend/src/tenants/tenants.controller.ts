@@ -11,13 +11,13 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
 
 import type { RequestUser } from '../auth/auth.types';
 import { GetUser } from '../auth/get-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RoleGuard } from '../auth/role.guard';
-import { Roles } from '../auth/roles.decorator';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { TenantScopedGuard } from '../common/guards/tenant-scoped.guard';
 
@@ -45,8 +45,8 @@ export class TenantsController {
    * SUPER_ADMIN のみがアクセス可能
    */
   @Get()
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.TENANTS_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ 
     summary: 'テナント一覧取得',
@@ -64,8 +64,8 @@ export class TenantsController {
    * SUPER_ADMIN のみがアクセス可能
    */
   @Post()
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.TENANTS_MANAGE)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ 
@@ -85,8 +85,8 @@ export class TenantsController {
    * SUPER_ADMIN または TENANT_ADMIN（自テナントのみ）がアクセス可能
    */
   @Get(':id')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ 
     summary: 'テナント詳細取得',
@@ -108,8 +108,8 @@ export class TenantsController {
    * SUPER_ADMIN のみがアクセス可能
    */
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.TENANTS_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ 
     summary: 'テナント更新',
@@ -132,8 +132,8 @@ export class TenantsController {
    * SuperAdmin がテナント管理者を招待
    */
   @Post('invite-admin')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.TENANTS_MANAGE)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ 
@@ -152,8 +152,8 @@ export class TenantsController {
    * テナント管理者がユーザーを招待
    */
   @Post(':tenantId/users/invite')
-  @UseGuards(JwtAuthGuard, RoleGuard, TenantScopedGuard)
-  @Roles(UserRole.TENANT_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard, TenantScopedGuard)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ 
@@ -168,8 +168,9 @@ export class TenantsController {
   async inviteUser(
     @Param('tenantId') tenantId: string,
     @Body() dto: InviteUserDto,
+    @GetUser() user: RequestUser,
   ) {
-    return this.tenantsService.inviteUser(tenantId, dto);
+    return this.tenantsService.inviteUser(tenantId, dto, user);
   }
 
   /**
@@ -195,8 +196,8 @@ export class TenantsController {
    * 所属ユーザーがいる場合は削除不可
    */
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.TENANTS_MANAGE)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ 

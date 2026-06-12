@@ -1,6 +1,6 @@
 # 権限管理システム設計書（ロール + 個別権限のハイブリッド方式）
 
-**Status:** Draft（レビュー待ち）
+**Status:** 承認済み・Phase 1 実装済み（2026-06-11 オーナーレビュー承認）
 **作成日:** 2026-06-11
 **関連:** 検証レポート H-5（ADMINロールで /tenants・/users が403になるロール設計の矛盾）
 
@@ -140,11 +140,36 @@ createStaff(...) {}
 - ページ内: 権限のない操作ボタンは非表示（disabled ではなく非表示を基本とする）
 - 直接URLアクセスや権限変更直後の403には、日本語の権限不足バナーを表示（現状の無言の403を解消）
 
-## 8. 段階移行計画
+## 8. マルチテナント運用フロー（オーナー確認済み）
+
+テナントごとのマルチユーザー運用は本設計でそのまま実現できる。
+
+```
+SUPER_ADMIN（サービス運営者）
+  └─ テナント作成 + テナント管理者を招待（POST /tenants/invite-admin）
+       └─ TENANT_ADMIN（テナント管理者・users:manage 保持）
+            └─ 自テナントのユーザーを招待（POST /tenants/:tenantId/users/invite）
+                 └─ 招待時・招待後にチェックボックスで権限を個別付与
+```
+
+`permissions` はユーザー単位の属性のため、どのテナントのユーザーにも同じ権限付与 UI・ガードがそのまま機能する。
+
+### 8.1 安全のための必須ルール（Phase 1 のガードに含める）
+
+1. **権限昇格の防止（権限の天井）**
+   - 権限を付与・変更できるのは「自分自身が保持している権限」の範囲内のみ
+   - `tenants:manage` は SUPER_ADMIN のみが付与可能（TENANT_ADMIN は配布不可）
+   - 自分自身の権限は変更不可（例外なし。SUPER_ADMIN はガードで常に全権限扱いのため変更は不要）
+2. **テナント越えの防止**
+   - TENANT_ADMIN の `users:manage` は自テナント所属ユーザーに対してのみ有効
+   - 既存の users.service / tenants.service の tenantId フィルタを権限ベース移行後も必ず維持する
+   - 招待 API はリクエスト者の tenantId と対象テナントの一致を検証する（現行実装を踏襲）
+
+## 9. 段階移行計画
 
 | Phase | 内容 | 規模感 |
 |---|---|---|
-| **Phase 1** | スキーマ追加 + バックフィル / 権限定数・デコレータ・ガード基盤 / JWTへの権限埋め込み / 招待・編集UIのチェックボックス / **users:manage・tenants:manage の適用**（ユーザー設定ページの403解消、テスト管理者の扱い確定） | 中 |
+| **Phase 1 ✅実装済み** | スキーマ追加 + バックフィル / 権限定数・デコレータ・ガード基盤 / JWTへの権限埋め込み / 招待・編集UIのチェックボックス / **users:manage・tenants:manage の適用**（ユーザー設定ページの403解消） | 中 |
 | **Phase 2** | 書き込み系エンドポイントへ `@RequirePermissions` を段階適用（cats → breeding → care/medical → その他）+ フロントの出し分け | 中〜大（機械的） |
 | **Phase 3** | `@Roles` の撤去、`ADMIN` ロール廃止の検討、権限変更の即時失効対応（必要なら） | 小〜中 |
 
@@ -153,14 +178,21 @@ createStaff(...) {}
 - シード / 管理者作成スクリプトが新規作成する管理者を `SUPER_ADMIN` に変更
 - シードが既存ユーザーのロールをデプロイごとに `ADMIN` へ強制リセットするロジックを撤去
 
-## 9. テスト戦略
+## 10. テスト戦略
 
 - PermissionsGuard のユニットテスト（SUPER_ADMINバイパス / 権限一致 / 不足 / メタデータなし）
 - e2e: 権限なしユーザーでの 403（日本語メッセージ）、権限付与後の 200
 - 招待→権限付与→ログイン→操作可否の一連フロー（Playwright）
 
-## 10. 未決事項（実装前に確認）
+## 11. 決定事項（Phase 1 実装時に確定）
 
-1. `USER` プリセットの初期権限の範囲（§4 案で良いか。例えば medical:write を外すか）
-2. 権限チェックボックスのグループ分け・文言（UI モック段階で確認）
-3. TENANT_ADMIN の `users:manage` がテナント越え操作を防ぐ既存ロジックとの整合（users.service 内の tenantId フィルタを権限ベースでも維持）
+1. `USER` プリセットの初期権限は §4 案のとおり（cats/care/medical/breeding の書き込み）。変更したい場合は招待時のチェックボックスで調整する
+2. 権限チェックボックスは「日常記録」「マスタ・設定」「管理」の3グループ・13項目（`PermissionCheckboxGroup` コンポーネント）
+3. TENANT_ADMIN のテナント越え防止は既存の tenantId フィルタを維持して実装済み
+4. **既知の制約（Phase 2 で精緻化）**: `users:manage` 権限の行使（権限変更・招待）は、サービス層の安全チェックにより TENANT_ADMIN / SUPER_ADMIN ロールであることも要求する。一般ロールに users:manage だけを付与しても行使できない（意図的に保守的な挙動）
+
+## 12. Phase 1 実装メモ（2026-06-11）
+
+- 実装ファイル: `backend/src/auth/permissions.ts` / `require-permissions.decorator.ts` / `permissions.guard.ts`、`frontend/src/lib/auth/permissions.ts`、`PermissionCheckboxGroup.tsx`
+- migration: `user_permissions`（バックフィル含む）/ `invitation_permissions`
+- 検証済みシナリオ: ADMIN の users:manage なし403（日本語）/ SUPER_ADMIN 全通 / 権限指定付き招待→完了→指定権限でユーザー作成 / 権限外操作403 / 権限の天井（自己変更403・tenants:manage 配布403）

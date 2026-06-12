@@ -18,6 +18,8 @@ import { UnifiedModal, type ModalSection } from '@/components/common';
 import { ActionButton } from '@/components/ActionButton';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/store';
+import { ROLE_PRESETS, type Permission } from '@/lib/auth/permissions';
+import { PermissionCheckboxGroup } from './PermissionCheckboxGroup';
 import { notifications } from '@mantine/notifications';
 import { getInvitationUrl } from '@/lib/invitation-utils';
 
@@ -43,6 +45,8 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
     email: '',
     role: 'USER',
   });
+  // 権限チェックボックス（ロール選択でプリセットに初期化、個別調整可能）
+  const [permissions, setPermissions] = useState<Permission[]>(ROLE_PRESETS['USER'] ?? []);
   // 招待成功後の情報を保持
   const [invitationResult, setInvitationResult] = useState<{
     email: string;
@@ -53,12 +57,22 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
   // テナントIDを取得（ユーザーオブジェクトから）
   const tenantId = user?.tenantId;
 
+  // 権限の天井: 自分が保持する権限のみ付与できる（SUPER_ADMIN は tenants:manage 以外すべて。
+  // TENANT_ADMIN の招待経路のため tenants:manage は常に対象外）
+  const grantablePermissions: Permission[] =
+    user?.role === 'SUPER_ADMIN'
+      ? (ROLE_PRESETS['TENANT_ADMIN'] ?? [])
+      : (((user?.permissions ?? []) as Permission[]).filter(
+          (permission) => permission !== 'tenants:manage',
+        ));
+
   // フォームリセット
   const resetForm = () => {
     setFormData({
       email: '',
       role: 'USER',
     });
+    setPermissions(ROLE_PRESETS['USER'] ?? []);
     setInvitationResult(null);
   };
 
@@ -104,6 +118,7 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
         body: {
           email: formData.email.trim(),
           role: formData.role,
+          permissions,
         } as never,
       });
 
@@ -228,8 +243,20 @@ export function InviteUserModal({ opened, onClose }: InviteUserModalProps) {
             required
             data={ROLE_OPTIONS}
             value={formData.role}
-            onChange={(value) => setFormData({ ...formData, role: value || 'USER' })}
+            onChange={(value) => {
+              const nextRole = value || 'USER';
+              setFormData({ ...formData, role: nextRole });
+              // ロール変更時は権限チェックをプリセットへ初期化
+              setPermissions(ROLE_PRESETS[nextRole] ?? []);
+            }}
               disabled={loading}
+            />
+
+            <PermissionCheckboxGroup
+              value={permissions}
+              onChange={setPermissions}
+              disabled={loading}
+              grantable={grantablePermissions}
             />
             </>
           ),
