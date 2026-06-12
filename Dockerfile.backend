@@ -1,5 +1,5 @@
 # ---- Base Stage ----
-FROM node:20-alpine3.22 AS base
+FROM mirror.gcr.io/library/node:20-alpine3.22 AS base
 WORKDIR /app
 RUN npm install -g pnpm@10.18.1
 
@@ -49,7 +49,7 @@ RUN pnpm prisma generate
 RUN pnpm build
 
 # ---- Production Stage ----
-FROM node:20-alpine3.22 AS production
+FROM mirror.gcr.io/library/node:20-alpine3.22 AS production
 WORKDIR /app
 
 # Run backend container with restricted privileges and production-friendly defaults
