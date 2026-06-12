@@ -20,12 +20,12 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from "@nestjs/swagger";
-import { UserRole } from "@prisma/client";
 import { Response } from 'express';
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { RoleGuard } from "../auth/role.guard";
-import { Roles } from "../auth/roles.decorator";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
 import { PedigreePdfService } from "./pdf/pedigree-pdf.service";
@@ -35,7 +35,7 @@ import { PedigreeService } from "./pedigree.service";
 
 @ApiTags("Pedigrees")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller("pedigrees")
 export class PedigreeController {
   constructor(
@@ -45,8 +45,7 @@ export class PedigreeController {
   ) {}
 
   @Post()
-  @UseGuards(RoleGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @RequirePermissions(PERMISSIONS.PEDIGREE_WRITE)
   @ApiOperation({ summary: "血統書データを作成（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -120,6 +119,7 @@ export class PedigreeController {
   }
 
   @Patch("print-settings")
+  @RequirePermissions(PERMISSIONS.PEDIGREE_WRITE)
   @ApiOperation({ summary: "印刷設定を更新" })
   @ApiResponse({ status: HttpStatus.OK, description: "更新後の印刷設定" })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "無効な設定データです" })
@@ -132,6 +132,7 @@ export class PedigreeController {
   }
 
   @Post("print-settings/reset")
+  @RequirePermissions(PERMISSIONS.PEDIGREE_WRITE)
   @ApiOperation({ summary: "印刷設定をデフォルトにリセット" })
   @ApiResponse({ status: HttpStatus.OK, description: "リセット後の印刷設定" })
   async resetPrintSettings() {
@@ -248,8 +249,7 @@ export class PedigreeController {
   }
 
   @Patch(":id")
-  @UseGuards(RoleGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @RequirePermissions(PERMISSIONS.PEDIGREE_WRITE)
   @ApiOperation({ summary: "血統書データを更新（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -276,8 +276,7 @@ export class PedigreeController {
   }
 
   @Delete(":id")
-  @UseGuards(RoleGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @RequirePermissions(PERMISSIONS.PEDIGREE_WRITE)
   @ApiOperation({ summary: "血統書データを削除（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,

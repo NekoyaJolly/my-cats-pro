@@ -21,6 +21,9 @@ import {
 } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import {
   CreateGalleryEntryDto,
@@ -37,7 +40,7 @@ import { GalleryService } from './gallery.service';
  */
 @ApiTags('Gallery')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('gallery')
 export class GalleryController {
   constructor(private readonly galleryService: GalleryService) {}
@@ -67,6 +70,7 @@ export class GalleryController {
   }
 
   @Post()
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'ギャラリーエントリ作成' })
   @ApiResponse({ status: 201, description: '作成成功' })
@@ -75,6 +79,7 @@ export class GalleryController {
   }
 
   @Put(':id')
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @ApiOperation({ summary: 'ギャラリーエントリ更新' })
   @ApiParam({ name: 'id', description: 'エントリID' })
   @ApiResponse({ status: 200, description: '更新成功' })
@@ -87,6 +92,7 @@ export class GalleryController {
   }
 
   @Delete(':id')
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'ギャラリーエントリ削除' })
   @ApiParam({ name: 'id', description: 'エントリID' })
@@ -97,6 +103,7 @@ export class GalleryController {
   }
 
   @Post(':id/media')
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'メディア追加' })
   @ApiParam({ name: 'id', description: 'エントリID' })
@@ -106,6 +113,7 @@ export class GalleryController {
   }
 
   @Delete('media/:mediaId')
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'メディア削除' })
   @ApiParam({ name: 'mediaId', description: 'メディアID' })
@@ -115,6 +123,7 @@ export class GalleryController {
   }
 
   @Post('bulk')
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '一括登録（子育て中タブ用）' })
   @ApiResponse({ status: 201, description: '一括登録成功' })

@@ -25,6 +25,9 @@ import {
 import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { CatsService } from "./cats.service";
 import { GENDER_MASTER } from "./constants/gender";
@@ -41,7 +44,7 @@ import {
 
 @ApiTags("Cats")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller("cats")
 export class CatsController {
   private readonly logger = new Logger(CatsController.name);
@@ -49,6 +52,7 @@ export class CatsController {
   constructor(private readonly catsService: CatsService) {}
 
   @Post()
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "猫データを作成" })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -221,6 +225,7 @@ export class CatsController {
   }
 
   @Patch(":id")
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "猫データを更新" })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -249,6 +254,7 @@ export class CatsController {
   }
 
   @Delete(":id")
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "猫データを削除" })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -319,6 +325,7 @@ export class CatsController {
   }
 
   @Post(":id/weight-records")
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "猫の体重記録を追加" })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -362,6 +369,7 @@ export class CatsController {
   }
 
   @Patch("weight-records/:recordId")
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "体重記録を更新" })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -391,6 +399,7 @@ export class CatsController {
   }
 
   @Delete("weight-records/:recordId")
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "体重記録を削除" })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -414,6 +423,7 @@ export class CatsController {
   }
 
   @Post("weight-records/bulk")
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "複数の猫の体重を一括登録" })
   @ApiResponse({
     status: HttpStatus.CREATED,

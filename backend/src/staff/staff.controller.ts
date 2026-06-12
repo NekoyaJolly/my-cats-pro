@@ -13,6 +13,9 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 import { ApiResponse } from '../common/dto/api-response.dto';
 import { StaffResponseDto, StaffListResponseDto } from '../common/types/staff.types';
 
@@ -21,7 +24,7 @@ import { UpdateStaffDto } from './dto/update-staff.dto';
 import { StaffService } from './staff.service';
 
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('staff')
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
@@ -30,6 +33,7 @@ export class StaffController {
    * スタッフを新規作成
    */
   @Post()
+  @RequirePermissions(PERMISSIONS.STAFF_MANAGE)
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createStaffDto: CreateStaffDto): Promise<ApiResponse<StaffResponseDto>> {
     const staff = await this.staffService.create(createStaffDto);
@@ -58,6 +62,7 @@ export class StaffController {
    * スタッフ情報を更新
    */
   @Patch(':id')
+  @RequirePermissions(PERMISSIONS.STAFF_MANAGE)
   async update(
     @Param('id') id: string,
     @Body() updateStaffDto: UpdateStaffDto,
@@ -70,6 +75,7 @@ export class StaffController {
    * スタッフを削除（論理削除）
    */
   @Delete(':id')
+  @RequirePermissions(PERMISSIONS.STAFF_MANAGE)
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string): Promise<ApiResponse<StaffResponseDto>> {
     const staff = await this.staffService.remove(id);
@@ -80,6 +86,7 @@ export class StaffController {
    * 削除したスタッフを復元
    */
   @Patch(':id/restore')
+  @RequirePermissions(PERMISSIONS.STAFF_MANAGE)
   async restore(@Param('id') id: string): Promise<ApiResponse<StaffResponseDto>> {
     const staff = await this.staffService.restore(id);
     return ApiResponse.success(staff);

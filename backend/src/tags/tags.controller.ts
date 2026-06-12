@@ -21,6 +21,9 @@ import {
 } from "@nestjs/swagger";
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { AssignTagDto, CreateTagDto, ReorderTagsDto, UpdateTagDto } from "./dto";
 import { TagsService } from "./tags.service";
@@ -50,8 +53,9 @@ export class TagsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post()
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "タグの作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
   create(@Body() dto: CreateTagDto) {
@@ -59,8 +63,9 @@ export class TagsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("reorder")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "タグの並び替え" })
   @ApiResponse({ status: HttpStatus.OK })
   reorder(@Body() dto: ReorderTagsDto) {
@@ -68,8 +73,9 @@ export class TagsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch(":id")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "タグの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -78,8 +84,9 @@ export class TagsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete(":id")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "タグの削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -88,8 +95,9 @@ export class TagsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("/cats/:id/tags")
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "猫にタグを付与" })
   @ApiResponse({ status: HttpStatus.OK, description: "付与成功（重複時もOK）" })
   @ApiParam({ name: "id" })
@@ -99,8 +107,9 @@ export class TagsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("/cats/:id/tags/:tagId")
+  @RequirePermissions(PERMISSIONS.CATS_WRITE)
   @ApiOperation({ summary: "猫からタグを剥奪" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })

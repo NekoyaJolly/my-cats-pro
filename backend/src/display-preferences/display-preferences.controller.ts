@@ -12,13 +12,16 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagg
 import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { DisplayPreferencesService } from "./display-preferences.service";
 import { UpdateDisplayPreferenceDto } from "./dto/update-display-preference.dto";
 
 @ApiTags("Display Preferences")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller("display-preferences")
 export class DisplayPreferencesController {
   constructor(private readonly displayPreferences: DisplayPreferencesService) {}
@@ -35,6 +38,7 @@ export class DisplayPreferencesController {
   }
 
   @Patch("me")
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   @ApiOperation({ summary: "自身の表示設定を更新" })
   @ApiResponse({ status: HttpStatus.OK, description: "表示設定の更新に成功" })
   async updateMine(

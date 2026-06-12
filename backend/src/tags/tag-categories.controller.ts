@@ -14,6 +14,9 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { CreateTagCategoryDto } from "./dto/create-tag-category.dto";
 import { ReorderTagCategoriesDto } from "./dto/reorder-tag-category.dto";
@@ -48,8 +51,9 @@ export class TagCategoriesController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post()
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "タグカテゴリの作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
   create(@Body() dto: CreateTagCategoryDto) {
@@ -57,8 +61,9 @@ export class TagCategoriesController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("reorder")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "タグカテゴリの並び替え" })
   @ApiResponse({ status: HttpStatus.OK })
   reorder(@Body() dto: ReorderTagCategoriesDto) {
@@ -66,8 +71,9 @@ export class TagCategoriesController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch(":id")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "タグカテゴリの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -76,8 +82,9 @@ export class TagCategoriesController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete(":id")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: "タグカテゴリの削除" })
   @ApiParam({ name: "id" })

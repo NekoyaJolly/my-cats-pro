@@ -14,6 +14,9 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import {
   CreatePrintTemplateDto,
@@ -26,7 +29,7 @@ import {
 import { PrintTemplatesService } from './print-templates.service';
 
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('print-templates')
 export class PrintTemplatesController {
   constructor(private readonly service: PrintTemplatesService) { }
@@ -66,6 +69,7 @@ export class PrintTemplatesController {
    * POST /api/v1/print-templates/categories
    */
   @Post('categories')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   async createCategory(@Body() dto: CreatePrintDocCategoryDto) {
     const category = await this.service.createCategory(dto);
     return {
@@ -79,6 +83,7 @@ export class PrintTemplatesController {
    * PATCH /api/v1/print-templates/categories/:id
    */
   @Patch('categories/:id')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   async updateCategory(
     @Param('id') id: string,
     @Body() dto: UpdatePrintDocCategoryDto,
@@ -95,6 +100,7 @@ export class PrintTemplatesController {
    * DELETE /api/v1/print-templates/categories/:id
    */
   @Delete('categories/:id')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeCategory(@Param('id') id: string) {
     await this.service.removeCategory(id);
@@ -151,6 +157,7 @@ export class PrintTemplatesController {
    * POST /api/v1/print-templates
    */
   @Post()
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   async create(@Body() dto: CreatePrintTemplateDto) {
     const template = await this.service.create(dto, dto.tenantId);
     return {
@@ -164,6 +171,7 @@ export class PrintTemplatesController {
    * POST /api/v1/print-templates/:id/duplicate
    */
   @Post(':id/duplicate')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   async duplicate(
     @Param('id') id: string,
     @Body() dto: DuplicatePrintTemplateDto,
@@ -180,6 +188,7 @@ export class PrintTemplatesController {
    * PATCH /api/v1/print-templates/:id
    */
   @Patch(':id')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdatePrintTemplateDto,
@@ -196,6 +205,7 @@ export class PrintTemplatesController {
    * DELETE /api/v1/print-templates/:id
    */
   @Delete(':id')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.service.remove(id);

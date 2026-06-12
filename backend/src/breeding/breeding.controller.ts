@@ -20,6 +20,9 @@ import {
 import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 
 import { BreedingService } from "./breeding.service";
@@ -49,7 +52,7 @@ export class BreedingController {
   constructor(private readonly breedingService: BreedingService) {}
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get()
   @ApiOperation({ summary: "交配記録一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -58,8 +61,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post()
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配記録の新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
   create(
@@ -75,7 +79,7 @@ export class BreedingController {
   // matching those static paths as an ":id" and returning 404.
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get("ng-rules")
   @ApiOperation({ summary: "NGペアルール一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -84,8 +88,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("ng-rules")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "NGペアルールの作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
   createNgRule(@Body() dto: CreateBreedingNgRuleDto) {
@@ -93,8 +98,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("ng-rules/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "NGペアルールの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -103,8 +109,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("ng-rules/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "NGペアルールの削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -115,7 +122,7 @@ export class BreedingController {
   // Pregnancy Check endpoints
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get("pregnancy-checks")
   @ApiOperation({ summary: "妊娠チェック一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -124,8 +131,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("pregnancy-checks")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "妊娠チェックの新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
   createPregnancyCheck(
@@ -136,8 +144,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("pregnancy-checks/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "妊娠チェックの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -146,8 +155,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("pregnancy-checks/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "妊娠チェックの削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -157,7 +167,7 @@ export class BreedingController {
 
   // Birth Plan endpoints
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get("birth-plans")
   @ApiOperation({ summary: "出産計画一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -166,8 +176,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("birth-plans")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "出産計画の新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
   createBirthPlan(
@@ -178,8 +189,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("birth-plans/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "出産計画の更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -188,8 +200,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("birth-plans/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "出産計画の削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -200,7 +213,7 @@ export class BreedingController {
   // ========== Kitten Disposition Endpoints ==========
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get("kitten-dispositions/:birthRecordId")
   @ApiOperation({ summary: "出産記録の子猫処遇一覧取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -210,8 +223,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("kitten-dispositions")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "子猫処遇の登録" })
   @ApiResponse({ status: HttpStatus.CREATED })
   createKittenDisposition(
@@ -222,8 +236,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("kitten-dispositions/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "子猫処遇の更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -232,8 +247,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("kitten-dispositions/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "子猫処遇の削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -242,8 +258,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("birth-plans/:id/complete")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "出産記録の完了" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -254,7 +271,7 @@ export class BreedingController {
   // ========== Breeding Schedule Endpoints ==========
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get("schedules")
   @ApiOperation({ summary: "交配スケジュール一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -263,8 +280,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("schedules")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配スケジュールの作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
   createBreedingSchedule(
@@ -275,8 +293,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("schedules/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配スケジュールの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -285,8 +304,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("schedules/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配スケジュールの削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -297,7 +317,7 @@ export class BreedingController {
   // ========== Mating Check Endpoints ==========
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get("schedules/:scheduleId/checks")
   @ApiOperation({ summary: "交配チェック一覧の取得" })
   @ApiResponse({ status: HttpStatus.OK })
@@ -307,8 +327,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("schedules/:scheduleId/checks")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配チェックの追加" })
   @ApiResponse({ status: HttpStatus.CREATED })
   @ApiParam({ name: "scheduleId" })
@@ -320,8 +341,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("mating-checks/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配チェックの更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -330,8 +352,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("mating-checks/:id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配チェックの削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -342,8 +365,9 @@ export class BreedingController {
   // パラメータ化ルートは静的サブパス（pregnancy-checks, birth-plans 等）の
   // 後に配置し、Express が ":id" として誤マッチするのを防ぐ
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch(":id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配記録の更新" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
@@ -352,8 +376,9 @@ export class BreedingController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete(":id")
+  @RequirePermissions(PERMISSIONS.BREEDING_WRITE)
   @ApiOperation({ summary: "交配記録の削除" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
