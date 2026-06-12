@@ -51,6 +51,8 @@ export class CatsService {
       isInHouse,
       fatherId,
       motherId,
+      fatherName,
+      motherName,
       tagIds,
     } = createCatDto;
 
@@ -113,8 +115,17 @@ export class CatsService {
           isInHouse: isInHouse ?? true,
           ...(breedIdToConnect ? { breed: { connect: { id: breedIdToConnect } } } : {}),
           ...(coatColorIdToConnect ? { coatColor: { connect: { id: coatColorIdToConnect } } } : {}),
-          ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
-          ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
+          // 親はリレーション優先。ID 未指定かつ名前のみの場合はテキストとして記録（システム未登録の親）
+          ...(fatherId
+            ? { father: { connect: { id: fatherId } } }
+            : fatherName
+              ? { fatherName }
+              : {}),
+          ...(motherId
+            ? { mother: { connect: { id: motherId } } }
+            : motherName
+              ? { motherName }
+              : {}),
         },
         include: catWithRelationsInclude,
       });
@@ -169,6 +180,12 @@ export class CatsService {
           throw new ConflictException("Cat with the same microchip number already exists");
         }
         throw new ConflictException("Cat with the same registration number already exists");
+      }
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        throw new BadRequestException("指定された親猫が見つかりません");
       }
       throw error;
     }
@@ -297,8 +314,15 @@ export class CatsService {
       isInHouse,
       fatherId,
       motherId,
+      fatherName,
+      motherName,
       tagIds,
     } = updateCatDto;
+
+    // 自分自身を親に設定することはできない
+    if (fatherId === id || motherId === id) {
+      throw new BadRequestException("自分自身を親に設定することはできません");
+    }
 
     // Validate breed if provided
     let breedIdToConnect: string | undefined;
@@ -378,8 +402,21 @@ export class CatsService {
           ...(isInHouse !== undefined ? { isInHouse } : {}),
           ...(breedIdToConnect ? { breed: { connect: { id: breedIdToConnect } } } : {}),
           ...(coatColorIdToConnect ? { coatColor: { connect: { id: coatColorIdToConnect } } } : {}),
-          ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
-          ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
+          // 親情報: ID 指定で接続（名前はクリア）、null で解除、ID 未変更時は名前のみ更新可
+          ...(fatherId
+            ? { father: { connect: { id: fatherId } }, fatherName: null }
+            : fatherId === null
+              ? { father: { disconnect: true }, fatherName: fatherName ?? null }
+              : fatherName !== undefined
+                ? { fatherName }
+                : {}),
+          ...(motherId
+            ? { mother: { connect: { id: motherId } }, motherName: null }
+            : motherId === null
+              ? { mother: { disconnect: true }, motherName: motherName ?? null }
+              : motherName !== undefined
+                ? { motherName }
+                : {}),
         },
         include: catWithRelationsInclude,
       });
@@ -398,6 +435,12 @@ export class CatsService {
           throw new ConflictException("Cat with the same microchip number already exists");
         }
         throw new ConflictException("Cat with the same registration number already exists");
+      }
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        throw new BadRequestException("指定された親猫が見つかりません");
       }
       throw error;
     }
