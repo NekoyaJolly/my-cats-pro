@@ -8,6 +8,9 @@ FROM base AS development
 # 開発モード: Next.js Fast Refresh 対応
 # ソースコードはボリュームマウントされるため、COPY は最小限にとどめる
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# root devDependencies が file:vendor/*.tgz を参照しているため、
+# これが無いと pnpm install --frozen-lockfile が ENOENT で失敗する
+COPY vendor ./vendor
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 
@@ -23,6 +26,9 @@ CMD ["pnpm", "--filter", "frontend", "run", "dev"]
 # ---- Build Stage ----
 FROM base AS build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# root devDependencies が file:vendor/*.tgz を参照しているため、
+# これが無いと pnpm install --frozen-lockfile が ENOENT で失敗する
+COPY vendor ./vendor
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 

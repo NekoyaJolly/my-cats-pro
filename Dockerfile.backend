@@ -8,6 +8,9 @@ FROM base AS development
 # 開発モード: ホットリロード対応
 # ソースコードはボリュームマウントされるため、COPY は最小限にとどめる
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# root devDependencies が file:vendor/*.tgz を参照しているため、
+# これが無いと pnpm install --frozen-lockfile が ENOENT で失敗する
+COPY vendor ./vendor
 COPY backend/package.json ./backend/
 # pnpm workspace の依存関係解決に必要（frontend への参照がある場合に備える）
 COPY frontend/package.json ./frontend/
@@ -35,6 +38,9 @@ CMD ["pnpm", "--filter", "backend", "run", "start:dev"]
 # ---- Build Stage ----
 FROM base AS build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# root devDependencies が file:vendor/*.tgz を参照しているため、
+# これが無いと pnpm install --frozen-lockfile が ENOENT で失敗する
+COPY vendor ./vendor
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY backend/prisma ./backend/prisma
@@ -64,6 +70,9 @@ RUN apk add --no-cache openssl libc6-compat && \
 
 # Copy workspace config and package files for production install
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# root devDependencies が file:vendor/*.tgz を参照しているため、
+# これが無いと pnpm install --frozen-lockfile が ENOENT で失敗する
+COPY vendor ./vendor
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY backend/prisma ./backend/prisma
