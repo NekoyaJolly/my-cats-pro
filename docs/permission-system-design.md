@@ -1,6 +1,6 @@
 # 権限管理システム設計書（ロール + 個別権限のハイブリッド方式）
 
-**Status:** 承認済み・Phase 1 実装済み（2026-06-11 オーナーレビュー承認）
+**Status:** 承認済み・Phase 1/2 実装済み（2026-06-11 オーナーレビュー承認）
 **作成日:** 2026-06-11
 **関連:** 検証レポート H-5（ADMINロールで /tenants・/users が403になるロール設計の矛盾）
 
@@ -170,7 +170,7 @@ SUPER_ADMIN（サービス運営者）
 | Phase | 内容 | 規模感 |
 |---|---|---|
 | **Phase 1 ✅実装済み** | スキーマ追加 + バックフィル / 権限定数・デコレータ・ガード基盤 / JWTへの権限埋め込み / 招待・編集UIのチェックボックス / **users:manage・tenants:manage の適用**（ユーザー設定ページの403解消） | 中 |
-| **Phase 2** | 書き込み系エンドポイントへ `@RequirePermissions` を段階適用（cats → breeding → care/medical → その他）+ フロントの出し分け | 中〜大（機械的） |
+| **Phase 2 ✅実装済み** | 全19コントローラ・約98の書き込みエンドポイントへ `@RequirePermissions` を適用 + ナビゲーションの権限出し分け（作成専用ページの非表示）。品種・毛色マスタは settings:manage に分類。ページ内ボタン単位の出し分けは漸進対応 | 中〜大（機械的） |
 | **Phase 3** | `@Roles` の撤去、`ADMIN` ロール廃止の検討、権限変更の即時失効対応（必要なら） | 小〜中 |
 
 ### 実施済み（本設計と同時にコミット）
@@ -196,3 +196,11 @@ SUPER_ADMIN（サービス運営者）
 - 実装ファイル: `backend/src/auth/permissions.ts` / `require-permissions.decorator.ts` / `permissions.guard.ts`、`frontend/src/lib/auth/permissions.ts`、`PermissionCheckboxGroup.tsx`
 - migration: `user_permissions`（バックフィル含む）/ `invitation_permissions`
 - 検証済みシナリオ: ADMIN の users:manage なし403（日本語）/ SUPER_ADMIN 全通 / 権限指定付き招待→完了→指定権限でユーザー作成 / 権限外操作403 / 権限の天井（自己変更403・tenants:manage 配布403）
+
+## 13. Phase 2 実装メモ（2026-06-12）
+
+- 全コントローラの書き込み（POST/PATCH/PUT/DELETE）に権限を適用。閲覧（GET）は全ログインユーザーのまま
+- breeds / coat-colors / pedigree の旧 @Roles(ADMIN, SUPER_ADMIN) + RoleGuard を @RequirePermissions に置換
+- /auth/register の自己登録ユーザーにも USER プリセット権限を付与（招待経路と一貫）
+- ナビゲーション: requiredPermission 付きの項目（新規猫登録= cats:write）を権限がない場合に非表示
+- e2e 全14スイートを権限ベース仕様に追従させ green 化（テスト基盤の修正: prisma.seed フック追加・test:e2e の失敗伝播・テストアプリの helmet/CORS 適用）
