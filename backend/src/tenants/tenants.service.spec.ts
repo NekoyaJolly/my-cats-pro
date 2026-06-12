@@ -144,6 +144,12 @@ describe('TenantsService', () => {
       email: 'user@example.com',
       role: UserRole.USER,
     };
+    const inviter: RequestUser = {
+      userId: 'tenant-admin-1',
+      email: 'tenant-admin@example.com',
+      role: UserRole.TENANT_ADMIN,
+      tenantId,
+    };
 
     it('ユーザー招待トークンを正常に作成', async () => {
       mockPrismaService.tenant.findUnique.mockResolvedValue({
@@ -156,7 +162,7 @@ describe('TenantsService', () => {
         token: 'test-token',
       });
 
-      const result = await service.inviteUser(tenantId, dto);
+      const result = await service.inviteUser(tenantId, dto, inviter);
 
       expect(result.success).toBe(true);
       expect(result.invitationToken).toBeDefined();
@@ -165,8 +171,8 @@ describe('TenantsService', () => {
     it('テナントが存在しない場合エラー', async () => {
       mockPrismaService.tenant.findUnique.mockResolvedValue(null);
 
-      await expect(service.inviteUser(tenantId, dto)).rejects.toThrow(NotFoundException);
-      await expect(service.inviteUser(tenantId, dto)).rejects.toThrow(
+      await expect(service.inviteUser(tenantId, dto, inviter)).rejects.toThrow(NotFoundException);
+      await expect(service.inviteUser(tenantId, dto, inviter)).rejects.toThrow(
         'テナントが見つかりません',
       );
     });
@@ -177,8 +183,8 @@ describe('TenantsService', () => {
         isActive: false,
       });
 
-      await expect(service.inviteUser(tenantId, dto)).rejects.toThrow(BadRequestException);
-      await expect(service.inviteUser(tenantId, dto)).rejects.toThrow(
+      await expect(service.inviteUser(tenantId, dto, inviter)).rejects.toThrow(BadRequestException);
+      await expect(service.inviteUser(tenantId, dto, inviter)).rejects.toThrow(
         'このテナントは無効化されています',
       );
     });
@@ -192,7 +198,7 @@ describe('TenantsService', () => {
 
       const adminDto = { ...dto, role: UserRole.TENANT_ADMIN };
 
-      await expect(service.inviteUser(tenantId, adminDto)).rejects.toThrow(BadRequestException);
+      await expect(service.inviteUser(tenantId, adminDto, inviter)).rejects.toThrow(BadRequestException);
     });
   });
 
