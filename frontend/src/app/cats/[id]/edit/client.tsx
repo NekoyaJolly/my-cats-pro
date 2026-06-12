@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Container, Title, Paper, Group, Button, Stack, TextInput, Textarea, Select, Loader, Center, Alert } from "@mantine/core";
 import { IconArrowLeft, IconDeviceFloppy, IconAlertCircle } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
-import { useGetCat, useUpdateCat, useDeleteCat } from "@/lib/api/hooks/use-cats";
+import { useGetCat, useGetCats, useUpdateCat, useDeleteCat } from "@/lib/api/hooks/use-cats";
 import { useGetBreeds } from "@/lib/api/hooks/use-breeds";
 import { useGetCoatColors } from "@/lib/api/hooks/use-coat-colors";
 import { useBreedMasterData, useCoatColorMasterData } from "@/lib/api/hooks/use-master-data";
@@ -45,6 +45,24 @@ export default function CatEditClient({ catId }: Props) {
   const updateCat = useUpdateCat(catId);
   const deleteCat = useDeleteCat();
 
+  // 親猫の選択肢（登録済みの猫から性別で絞り込み、自分自身は除外）
+  const parentListQuery = useMemo(() => ({ limit: 1000 }), []);
+  const { data: parentCatsData, isLoading: isParentCatsLoading } = useGetCats(parentListQuery);
+  const fatherOptions = useMemo(
+    () =>
+      (parentCatsData?.data ?? [])
+        .filter((c) => c.id !== catId && (c.gender === "MALE" || c.gender === "NEUTER"))
+        .map((c) => ({ value: c.id, label: c.name })),
+    [parentCatsData, catId],
+  );
+  const motherOptions = useMemo(
+    () =>
+      (parentCatsData?.data ?? [])
+        .filter((c) => c.id !== catId && (c.gender === "FEMALE" || c.gender === "SPAY"))
+        .map((c) => ({ value: c.id, label: c.name })),
+    [parentCatsData, catId],
+  );
+
   const [form, setForm] = useState<{
     name: string;
     gender: 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY';
@@ -54,6 +72,10 @@ export default function CatEditClient({ catId }: Props) {
     microchipNumber: string;
     registrationNumber: string;
     description: string;
+    fatherId: string;
+    motherId: string;
+    fatherName: string;
+    motherName: string;
   }>({
     name: "",
     gender: "MALE",
@@ -63,6 +85,10 @@ export default function CatEditClient({ catId }: Props) {
     microchipNumber: "",
     registrationNumber: "",
     description: "",
+    fatherId: "",
+    motherId: "",
+    fatherName: "",
+    motherName: "",
   });
 
   // データ取得後にフォームを初期化
@@ -78,6 +104,10 @@ export default function CatEditClient({ catId }: Props) {
         microchipNumber: catData.microchipNumber || "",
         registrationNumber: catData.registrationNumber || "",
         description: catData.description || "",
+        fatherId: catData.fatherId || "",
+        motherId: catData.motherId || "",
+        fatherName: catData.fatherName || "",
+        motherName: catData.motherName || "",
       });
     }
   }, [cat]);
@@ -102,6 +132,11 @@ export default function CatEditClient({ catId }: Props) {
         microchipNumber: form.microchipNumber || null,
         registrationNumber: form.registrationNumber || null,
         description: form.description || null,
+        // 親情報: ID 指定で接続、空なら解除。名前テキストは未登録の親の記録用
+        fatherId: form.fatherId || null,
+        motherId: form.motherId || null,
+        fatherName: form.fatherId ? null : form.fatherName.trim() || null,
+        motherName: form.motherId ? null : form.motherName.trim() || null,
       });
 
       router.push(`/cats/${catId}`);
@@ -229,6 +264,56 @@ export default function CatEditClient({ catId }: Props) {
               onChange={(e) => handleChange("registrationNumber", e.target.value)}
               placeholder="血統書登録番号"
             />
+
+            <Group grow>
+              <Select
+                label="父猫（登録済みから選択）"
+                value={form.fatherId || null}
+                onChange={(value) => {
+                  handleChange("fatherId", value || "");
+                  if (value) {
+                    // リレーションを優先するため名前テキストはクリア
+                    handleChange("fatherName", "");
+                  }
+                }}
+                data={fatherOptions}
+                searchable
+                clearable
+                disabled={updateCat.isPending || isParentCatsLoading}
+              />
+              <Select
+                label="母猫（登録済みから選択）"
+                value={form.motherId || null}
+                onChange={(value) => {
+                  handleChange("motherId", value || "");
+                  if (value) {
+                    // リレーションを優先するため名前テキストはクリア
+                    handleChange("motherName", "");
+                  }
+                }}
+                data={motherOptions}
+                searchable
+                clearable
+                disabled={updateCat.isPending || isParentCatsLoading}
+              />
+            </Group>
+
+            <Group grow>
+              <TextInput
+                label="父猫名（未登録の場合に入力）"
+                value={form.fatherName}
+                onChange={(e) => handleChange("fatherName", e.target.value)}
+                disabled={!!form.fatherId}
+                placeholder="システム未登録の父猫の名前"
+              />
+              <TextInput
+                label="母猫名（未登録の場合に入力）"
+                value={form.motherName}
+                onChange={(e) => handleChange("motherName", e.target.value)}
+                disabled={!!form.motherId}
+                placeholder="システム未登録の母猫の名前"
+              />
+            </Group>
 
             <Textarea
               label="詳細説明"

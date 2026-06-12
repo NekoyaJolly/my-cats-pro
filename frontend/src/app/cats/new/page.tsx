@@ -16,7 +16,7 @@ import { TextareaWithFloatingLabel } from '@/components/ui/TextareaWithFloatingL
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus } from '@tabler/icons-react';
-import { useCreateCat, useGetCat, type Cat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
+import { useCreateCat, useGetCat, useGetCats, type Cat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
 import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
 import { useGetCoatColors } from '@/lib/api/hooks/use-coat-colors';
 import { useBreedMasterData, useCoatColorMasterData } from '@/lib/api/hooks/use-master-data';
@@ -54,11 +54,30 @@ export default function CatRegistrationPage() {
     () => buildMasterOptions(coatColorsData?.data, coatDisplayMap),
     [coatColorsData, coatDisplayMap],
   );
+  // 親猫の選択肢（登録済みの猫から性別で絞り込み）
+  const parentListQuery = useMemo(() => ({ limit: 1000 }), []);
+  const { data: parentCatsData, isLoading: isParentCatsLoading } = useGetCats(parentListQuery);
+  const fatherOptions = useMemo(
+    () =>
+      (parentCatsData?.data ?? [])
+        .filter((cat) => cat.gender === 'MALE' || cat.gender === 'NEUTER')
+        .map((cat) => ({ value: cat.id, label: cat.name })),
+    [parentCatsData],
+  );
+  const motherOptions = useMemo(
+    () =>
+      (parentCatsData?.data ?? [])
+        .filter((cat) => cat.gender === 'FEMALE' || cat.gender === 'SPAY')
+        .map((cat) => ({ value: cat.id, label: cat.name })),
+    [parentCatsData],
+  );
   const {
     control,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<CatFormValues>({
     resolver: zodResolver(catFormSchema),
     defaultValues: {
@@ -72,8 +91,16 @@ export default function CatRegistrationPage() {
       description: undefined,
       isInHouse: true,
       tagIds: [],
+      fatherId: undefined,
+      motherId: undefined,
+      fatherName: undefined,
+      motherName: undefined,
     },
   });
+
+  // 親猫が選択されている間は名前テキストを使用しない
+  const selectedFatherId = watch('fatherId');
+  const selectedMotherId = watch('motherId');
 
   const { data: sourceCatData } = useGetCat(copyFromId ?? '', { enabled: !!copyFromId });
   useEffect(() => {
@@ -90,6 +117,10 @@ export default function CatRegistrationPage() {
       description: src.description ?? undefined,
       isInHouse: src.isInHouse ?? true,
       tagIds: src.tags?.map(t => t.tag.id) ?? [],
+      fatherId: src.fatherId ?? undefined,
+      motherId: src.motherId ?? undefined,
+      fatherName: src.fatherName ?? undefined,
+      motherName: src.motherName ?? undefined,
     });
   }, [sourceCatData, reset]);
 
@@ -105,6 +136,11 @@ export default function CatRegistrationPage() {
       description: values.description,
       isInHouse: values.isInHouse ?? true,
       tagIds: (values.tagIds ?? []).length > 0 ? values.tagIds : undefined,
+      fatherId: values.fatherId,
+      motherId: values.motherId,
+      // 登録済みの親を選択した場合は名前テキストを送らない（リレーション優先）
+      fatherName: values.fatherId ? undefined : values.fatherName,
+      motherName: values.motherId ? undefined : values.motherName,
     };
 
     try {
@@ -279,7 +315,87 @@ export default function CatRegistrationPage() {
                   />
                 </Group>
 
-                {/* 4行目: 備考 */}
+                {/* 4行目: 親情報（登録済みの猫から選択、未登録の親は名前を直接入力） */}
+                <Group grow gap={10}>
+                  <Controller
+                    name="fatherId"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectWithFloatingLabel
+                        label="父猫（登録済みから選択）"
+                        data={fatherOptions}
+                        searchable
+                        clearable
+                        disabled={isSubmitting || isParentCatsLoading}
+                        error={errors.fatherId?.message}
+                        value={field.value ?? null}
+                        onChange={(next) => {
+                          field.onChange(next ?? undefined);
+                          if (next) {
+                            // リレーションを優先するため名前テキストはクリア
+                            setValue('fatherName', undefined);
+                          }
+                        }}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="motherId"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectWithFloatingLabel
+                        label="母猫（登録済みから選択）"
+                        data={motherOptions}
+                        searchable
+                        clearable
+                        disabled={isSubmitting || isParentCatsLoading}
+                        error={errors.motherId?.message}
+                        value={field.value ?? null}
+                        onChange={(next) => {
+                          field.onChange(next ?? undefined);
+                          if (next) {
+                            // リレーションを優先するため名前テキストはクリア
+                            setValue('motherName', undefined);
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </Group>
+
+                {/* 5行目: 未登録の親の名前（選択済みの場合は入力不可） */}
+                <Group grow gap={10}>
+                  <Controller
+                    name="fatherName"
+                    control={control}
+                    render={({ field }) => (
+                      <InputWithFloatingLabel
+                        label="父猫名（未登録の場合に入力）"
+                        error={errors.fatherName?.message}
+                        disabled={isSubmitting || !!selectedFatherId}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="motherName"
+                    control={control}
+                    render={({ field }) => (
+                      <InputWithFloatingLabel
+                        label="母猫名（未登録の場合に入力）"
+                        error={errors.motherName?.message}
+                        disabled={isSubmitting || !!selectedMotherId}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    )}
+                  />
+                </Group>
+
+                {/* 6行目: 備考 */}
                 <Controller
                   name="description"
                   control={control}
@@ -295,7 +411,7 @@ export default function CatRegistrationPage() {
                   )}
                 />
 
-                {/* 5行目: タグ */}
+                {/* 7行目: タグ */}
                 <Controller
                   name="tagIds"
                   control={control}
@@ -310,7 +426,7 @@ export default function CatRegistrationPage() {
                   )}
                 />
 
-                {/* 6行目: 在舎スイッチ */}
+                {/* 8行目: 在舎スイッチ */}
                 <Controller
                   name="isInHouse"
                   control={control}

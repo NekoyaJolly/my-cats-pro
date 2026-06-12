@@ -287,6 +287,9 @@ export default function CatDetailClient({ catId }: Props) {
                       >
                         {catData.father.name}
                       </Button>
+                    ) : catData.fatherName ? (
+                      // システム未登録の親（名前のみ記録）
+                      <Text>{catData.fatherName}</Text>
                     ) : (
                       <Text c="dimmed">未登録</Text>
                     )}
@@ -301,6 +304,9 @@ export default function CatDetailClient({ catId }: Props) {
                       >
                         {catData.mother.name}
                       </Button>
+                    ) : catData.motherName ? (
+                      // システム未登録の親（名前のみ記録）
+                      <Text>{catData.motherName}</Text>
                     ) : (
                       <Text c="dimmed">未登録</Text>
                     )}

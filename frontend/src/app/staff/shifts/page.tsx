@@ -193,6 +193,8 @@ export default function StaffShiftsPage() {
   const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
   const [selectStaffOpened, { open: openSelectStaff, close: closeSelectStaff }] = useDisclosure(false);
+  // モバイル用スタッフ管理モーダル（追加・編集・削除の入口）
+  const [manageOpened, { open: openManage, close: closeManage }] = useDisclosure(false);
   const [operationLoading, setOperationLoading] = useState(false);
 
   // テンプレート入力用スタッフ選択
@@ -843,6 +845,87 @@ export default function StaffShiftsPage() {
     <Container size="xl">
       <LoadingOverlay visible={loading} />
 
+      {/* スタッフ管理モーダル（モバイル用の追加・編集・削除の入口）。
+          作成・編集・削除モーダルより先にマウントし、それらが手前に表示されるようにする */}
+      <UnifiedModal
+        opened={manageOpened}
+        onClose={closeManage}
+        title="スタッフ管理"
+        size="md"
+        sections={[
+          {
+            content: (
+              <Stack gap="xs">
+                {staffList.length === 0 ? (
+                  <Text size="sm" c="dimmed">
+                    スタッフが登録されていません。
+                  </Text>
+                ) : (
+                  staffList.map((staff) => {
+                    // 勤務時間テンプレートを表示用に整形
+                    const timeLabel = staff.workTimeTemplate
+                      ? `${staff.workTimeTemplate.startHour}〜${staff.workTimeTemplate.endHour}`
+                      : '';
+
+                    return (
+                      <Group key={staff.id} justify="space-between" wrap="nowrap">
+                        <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
+                          <Box
+                            style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: '50%',
+                              backgroundColor: staff.color,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Text size="sm" fw={500} truncate>
+                            {staff.name}
+                            {timeLabel && (
+                              <Text component="span" size="xs" c="dimmed" ml={6}>
+                                {timeLabel}
+                              </Text>
+                            )}
+                          </Text>
+                        </Group>
+                        <Group gap={4} wrap="nowrap">
+                          <ActionIcon
+                            variant="subtle"
+                            aria-label={`${staff.name}を編集`}
+                            data-testid="staff-manage-edit"
+                            onClick={() => openEditModal(staff)}
+                          >
+                            <IconEdit size={16} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            aria-label={`${staff.name}を削除`}
+                            data-testid="staff-manage-delete"
+                            onClick={() => openDeleteModal(staff)}
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Group>
+                      </Group>
+                    );
+                  })
+                )}
+              </Stack>
+            ),
+          },
+          {
+            content: (
+              <Group justify="flex-end">
+                <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
+                  スタッフ追加
+                </Button>
+              </Group>
+            ),
+          },
+        ]}
+      />
+
       {/* スタッフ作成モーダル */}
       <UnifiedModal
         opened={createOpened}
@@ -1273,14 +1356,27 @@ export default function StaffShiftsPage() {
       >
         {/* 左サイドバー: スタッフ一覧 / モバイルではバッジのみ */}
         {isMobile ? (
-          /* モバイル: バッジ形式スタッフ一覧（全角3文字幅） */
-          <ScrollArea
-            id="staff-list"
+          /* モバイル: バッジ形式スタッフ一覧（全角3文字幅）+ スタッフ管理ボタン */
+          <Stack
+            gap={6}
             style={{
               width: 56, // 全角3文字幅 + padding
               flexShrink: 0,
             }}
           >
+            <Tooltip label="スタッフ管理（追加・編集・削除）" position="right" withArrow>
+              <ActionIcon
+                variant="light"
+                size={48}
+                radius="sm"
+                onClick={openManage}
+                aria-label="スタッフ管理"
+                data-testid="staff-manage-open"
+              >
+                <IconUsers size={24} />
+              </ActionIcon>
+            </Tooltip>
+            <ScrollArea id="staff-list" style={{ flex: 1 }}>
             <Stack gap={6}>
               {staffList.map((staff) => (
                 <Tooltip
@@ -1316,7 +1412,8 @@ export default function StaffShiftsPage() {
                 </Tooltip>
               ))}
             </Stack>
-          </ScrollArea>
+            </ScrollArea>
+          </Stack>
         ) : (
           /* デスクトップ: 1行形式スタッフ一覧（リサイズ可能） */
           <Box style={{ display: 'flex', flexShrink: 0 }}>

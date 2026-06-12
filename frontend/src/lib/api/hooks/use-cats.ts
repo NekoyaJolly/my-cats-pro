@@ -23,6 +23,9 @@ export interface Cat {
   isInHouse: boolean;
   fatherId: string | null;
   motherId: string | null;
+  /** システム未登録の親の名前（親猫削除時のスナップショット含む） */
+  fatherName?: string | null;
+  motherName?: string | null;
   createdAt: string;
   updatedAt: string;
   // リレーション（オプショナル）
@@ -88,6 +91,8 @@ export interface CreateCatRequest {
   isInHouse?: boolean;
   fatherId?: string | null;
   motherId?: string | null;
+  fatherName?: string | null;
+  motherName?: string | null;
   tagIds?: string[];
 }
 

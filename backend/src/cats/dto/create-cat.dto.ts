@@ -71,6 +71,18 @@ export class CreateCatDto {
   @IsString()
   motherId?: string;
 
+  @ApiPropertyOptional({ description: "父猫の名前（システム未登録の親を記録する場合）" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  fatherName?: string;
+
+  @ApiPropertyOptional({ description: "母猫の名前（システム未登録の親を記録する場合）" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  motherName?: string;
+
   @ApiPropertyOptional({ description: "タグID配列" })
   @IsOptional()
   @IsArray()

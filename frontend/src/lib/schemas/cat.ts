@@ -19,6 +19,11 @@ export const catFormSchema = z.object({
   description: optionalTrimmedString,
   isInHouse: z.boolean().optional(),
   tagIds: z.array(z.string()).optional(),
+  // 親情報: 登録済みの猫から選択（ID）または未登録の親の名前テキスト
+  fatherId: optionalTrimmedString,
+  motherId: optionalTrimmedString,
+  fatherName: optionalTrimmedString,
+  motherName: optionalTrimmedString,
 });
 
 export type CatFormSchema = z.infer<typeof catFormSchema>;
