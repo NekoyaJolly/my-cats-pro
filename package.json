@@ -89,7 +89,7 @@
       "@last-mile-context/cli": "file:vendor/last-mile/last-mile-context-cli-0.1.0.tgz",
       "@last-mile-context/mcp-server": "file:vendor/last-mile/last-mile-context-mcp-server-0.1.0.tgz",
       "@last-mile-context/playwright-adapter": "file:vendor/last-mile/last-mile-context-playwright-adapter-0.1.0.tgz",
-      "axios": ">=1.12.0",
+      "axios": ">=1.16.0",
       "baseline-browser-mapping": "2.9.19",
       "brace-expansion": ">=5.0.3 <6.0.0",
       "cookie": ">=1.0.0",
@@ -108,7 +108,9 @@
       "next": ">=16.2.3",
       "qs": ">=6.14.2",
       "tmp": ">=0.2.3",
+      "shell-quote": ">=1.8.4",
       "validator": "13.15.26",
+      "ws": ">=8.21.0",
       "defu": ">=6.1.5",
       "express>path-to-regexp": "0.1.13",
       "effect": ">=3.20.0"
