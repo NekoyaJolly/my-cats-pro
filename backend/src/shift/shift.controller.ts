@@ -14,6 +14,9 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 import { ApiResponse } from '../common/dto/api-response.dto';
 import { ShiftResponseDto, CalendarShiftEvent } from '../common/types/shift.types';
 
@@ -23,7 +26,7 @@ import { UpdateShiftDto } from './dto/update-shift.dto';
 import { ShiftService } from './shift.service';
 
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('shifts')
 export class ShiftController {
   constructor(private readonly shiftService: ShiftService) {}
@@ -32,6 +35,7 @@ export class ShiftController {
    * シフトを新規作成
    */
   @Post()
+  @RequirePermissions(PERMISSIONS.STAFF_MANAGE)
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createShiftDto: CreateShiftDto): Promise<ApiResponse<ShiftResponseDto>> {
     const shift = await this.shiftService.create(createShiftDto);
@@ -71,6 +75,7 @@ export class ShiftController {
    * シフト情報を更新
    */
   @Patch(':id')
+  @RequirePermissions(PERMISSIONS.STAFF_MANAGE)
   async update(
     @Param('id') id: string,
     @Body() updateShiftDto: UpdateShiftDto,
@@ -83,6 +88,7 @@ export class ShiftController {
    * シフトを削除
    */
   @Delete(':id')
+  @RequirePermissions(PERMISSIONS.STAFF_MANAGE)
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string): Promise<ApiResponse<{ id: string }>> {
     await this.shiftService.remove(id);

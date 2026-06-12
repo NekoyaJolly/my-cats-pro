@@ -20,6 +20,9 @@ import {
 import type { RequestUser } from '../auth/auth.types';
 import { GetUser } from '../auth/get-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { ImportResultDto, ImportPreviewDto } from './dto/import-response.dto';
 import { ImportService } from './import.service';
@@ -40,7 +43,7 @@ interface UploadedFile {
  */
 @ApiTags('Import')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('import')
 export class ImportController {
   constructor(private readonly importService: ImportService) {}
@@ -51,6 +54,7 @@ export class ImportController {
    * ファイルをアップロードして、データの内容をプレビューします
    */
   @Post('preview')
+  @RequirePermissions(PERMISSIONS.DATA_IMPORT_EXPORT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'インポートファイルのプレビュー' })
   @ApiConsumes('multipart/form-data')
@@ -98,6 +102,7 @@ export class ImportController {
    * CSV ファイルから猫データを一括登録します
    */
   @Post('cats')
+  @RequirePermissions(PERMISSIONS.DATA_IMPORT_EXPORT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: '猫データのインポート' })
   @ApiConsumes('multipart/form-data')
@@ -152,6 +157,7 @@ export class ImportController {
    * CSV ファイルから血統書データを一括登録します
    */
   @Post('pedigrees')
+  @RequirePermissions(PERMISSIONS.DATA_IMPORT_EXPORT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: '血統書データのインポート' })
   @ApiConsumes('multipart/form-data')
@@ -199,6 +205,7 @@ export class ImportController {
    * CSV ファイルからタグデータを一括登録します
    */
   @Post('tags')
+  @RequirePermissions(PERMISSIONS.DATA_IMPORT_EXPORT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'タグデータのインポート' })
   @ApiConsumes('multipart/form-data')

@@ -11,6 +11,9 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { GenerateUploadUrlDto, ConfirmUploadDto } from './dto';
 import { GalleryUploadService } from './gallery-upload.service';
@@ -21,7 +24,7 @@ import { GalleryUploadService } from './gallery-upload.service';
  */
 @ApiTags('Gallery Upload')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('gallery/upload')
 export class GalleryUploadController {
   constructor(private readonly uploadService: GalleryUploadService) {}
@@ -30,6 +33,7 @@ export class GalleryUploadController {
    * アップロード用 Signed URL を生成
    */
   @Post('signed-url')
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @ApiOperation({
     summary: 'アップロード用Signed URLを生成',
     description: 'クライアントがGCSへ直接アップロードするためのSigned URLを発行します。有効期限は15分です。',
@@ -65,6 +69,7 @@ export class GalleryUploadController {
    * アップロード完了を確認
    */
   @Post('confirm')
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'アップロード完了を確認',
@@ -101,6 +106,7 @@ export class GalleryUploadController {
    * アップロード済みファイルを削除
    */
   @Delete(':fileKey')
+  @RequirePermissions(PERMISSIONS.GALLERY_WRITE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'アップロード済みファイルを削除',

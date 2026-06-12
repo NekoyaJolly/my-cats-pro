@@ -21,13 +21,16 @@ import {
 } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { TransferCatDto, UpdateGraduationDto } from './dto';
 import { GraduationService } from './graduation.service';
 
 @ApiTags('Graduation')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('graduations')
 export class GraduationController {
   constructor(private readonly graduationService: GraduationService) {}
@@ -36,6 +39,7 @@ export class GraduationController {
    * 猫を譲渡（卒業）する
    */
   @Post('cats/:id/transfer')
+  @RequirePermissions(PERMISSIONS.GRADUATION_WRITE)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '猫を譲渡（卒業）する' })
   @ApiParam({ name: 'id', description: '猫ID' })
@@ -79,6 +83,7 @@ export class GraduationController {
    * 卒業記録の更新（譲渡日・譲渡先・備考の修正）
    */
   @Patch(':id')
+  @RequirePermissions(PERMISSIONS.GRADUATION_WRITE)
   @ApiOperation({ summary: '卒業記録の更新' })
   @ApiParam({ name: 'id', description: '卒業ID' })
   @ApiResponse({ status: 200, description: '更新成功' })
@@ -94,6 +99,7 @@ export class GraduationController {
    * 卒業取り消し（緊急時用）
    */
   @Delete(':id')
+  @RequirePermissions(PERMISSIONS.GRADUATION_WRITE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '卒業取り消し（緊急時用）' })
   @ApiParam({ name: 'id', description: '卒業ID' })

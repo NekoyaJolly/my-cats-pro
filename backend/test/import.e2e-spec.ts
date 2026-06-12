@@ -18,13 +18,9 @@ describe('Import API (e2e)', () => {
 
     app = await createTestApp(moduleRef);
 
-    const email = `import_test_${Date.now()}@example.com`;
-    const password = 'ImportTest123!';
-
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({ email, password });
-    expect(res.status).toBe(201);
+    // data:import_export 権限が必要なため、シード管理者（SUPER_ADMIN）でログインする
+    const email = process.env.ADMIN_EMAIL ?? 'admin@example.com';
+    const password = process.env.ADMIN_PASSWORD ?? 'Passw0rd!';
 
     const loginRes = await request(app.getHttpServer())
       .post('/api/v1/auth/login')

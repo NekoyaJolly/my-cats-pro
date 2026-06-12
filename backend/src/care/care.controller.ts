@@ -21,6 +21,9 @@ import {
 import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { CareService } from "./care.service";
 import {
@@ -51,8 +54,9 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("schedules")
+  @RequirePermissions(PERMISSIONS.CARE_WRITE)
   @ApiOperation({ summary: "ケアスケジュールの追加" })
   @ApiResponse({ status: HttpStatus.CREATED, type: CareScheduleResponseDto })
   addSchedule(
@@ -63,9 +67,10 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("schedules/:id/complete")
   @Put("schedules/:id/complete")
+  @RequirePermissions(PERMISSIONS.CARE_WRITE)
   @ApiOperation({ summary: "ケア完了処理（PATCH/PUT対応）" })
   @ApiResponse({ status: HttpStatus.OK, type: CareCompleteResponseDto })
   @ApiParam({ name: "id" })
@@ -78,8 +83,9 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("schedules/:id")
+  @RequirePermissions(PERMISSIONS.CARE_WRITE)
   @ApiOperation({ summary: "ケアスケジュールの更新" })
   @ApiResponse({ status: HttpStatus.OK, type: CareScheduleResponseDto })
   @ApiParam({ name: "id", description: "スケジュールID" })
@@ -92,8 +98,9 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("schedules/:id")
+  @RequirePermissions(PERMISSIONS.CARE_WRITE)
   @ApiOperation({ summary: "ケアスケジュールの削除" })
   @ApiResponse({ status: HttpStatus.OK, description: "削除成功" })
   @ApiParam({ name: "id", description: "スケジュールID" })
@@ -102,8 +109,9 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("schedules/:id/status")
+  @RequirePermissions(PERMISSIONS.CARE_WRITE)
   @ApiOperation({ summary: "ケアスケジュールのステータス変更（有効/無効）" })
   @ApiParam({ name: "id", description: "スケジュールID" })
   @ApiResponse({ status: HttpStatus.OK, type: CareScheduleResponseDto })
@@ -122,8 +130,9 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post("medical-records")
+  @RequirePermissions(PERMISSIONS.MEDICAL_WRITE)
   @ApiOperation({ summary: "医療記録の追加" })
   @ApiResponse({ status: HttpStatus.CREATED, type: MedicalRecordResponseDto })
   addMedicalRecord(
@@ -134,7 +143,7 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get("medical-records/:id")
   @ApiOperation({ summary: "医療記録の詳細取得" })
   @ApiParam({ name: "id", description: "医療記録ID" })
@@ -144,8 +153,9 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Patch("medical-records/:id")
+  @RequirePermissions(PERMISSIONS.MEDICAL_WRITE)
   @ApiOperation({ summary: "医療記録の更新" })
   @ApiParam({ name: "id", description: "医療記録ID" })
   @ApiResponse({ status: HttpStatus.OK, type: MedicalRecordResponseDto })
@@ -157,8 +167,9 @@ export class CareController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete("medical-records/:id")
+  @RequirePermissions(PERMISSIONS.MEDICAL_WRITE)
   @ApiOperation({ summary: "医療記録の削除" })
   @ApiParam({ name: "id", description: "医療記録ID" })
   @ApiResponse({ status: HttpStatus.OK, description: "削除成功" })

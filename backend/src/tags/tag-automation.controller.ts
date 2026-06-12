@@ -22,6 +22,9 @@ import {
 import { TagAutomationEventType, TagAutomationRunStatus, TagAutomationTriggerType } from "@prisma/client";
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
 import { CreateTagAutomationRuleDto, UpdateTagAutomationRuleDto } from "./dto";
 import { TagAutomationExecutionService } from "./tag-automation-execution.service";
@@ -29,7 +32,7 @@ import { TagAutomationService } from "./tag-automation.service";
 
 @ApiTags("Tag Automation")
 @Controller("tags/automation")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class TagAutomationController {
   constructor(
@@ -112,6 +115,7 @@ export class TagAutomationController {
   }
 
   @Post("rules")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "自動化ルールの作成" })
   @ApiResponse({ status: HttpStatus.CREATED, description: "ルールを作成しました" })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "入力エラー" })
@@ -120,6 +124,7 @@ export class TagAutomationController {
   }
 
   @Patch("rules/:id")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @ApiOperation({ summary: "自動化ルールの更新" })
   @ApiResponse({ status: HttpStatus.OK, description: "ルールを更新しました" })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "ルールが見つかりません" })
@@ -129,6 +134,7 @@ export class TagAutomationController {
   }
 
   @Delete("rules/:id")
+  @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: "自動化ルールの削除" })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: "ルールを削除しました" })
@@ -175,6 +181,7 @@ export class TagAutomationController {
   }
 
     @Post("rules/:id/execute")
+    @RequirePermissions(PERMISSIONS.TAGS_MANAGE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "ルールを手動実行（実データの対象猫に即時適用）" })
   @ApiParam({ name: "id", description: "ルールID" })

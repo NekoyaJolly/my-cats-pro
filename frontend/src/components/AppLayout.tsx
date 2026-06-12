@@ -39,7 +39,7 @@ import {
   IconPhoto,
   IconUsers,
 } from '@tabler/icons-react';
-import { useAuth } from '@/lib/auth/store';
+import { useAuth, useCan } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
 import { notifications } from '@mantine/notifications';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
@@ -48,11 +48,23 @@ import { apiClient, type ApiQueryParams } from '@/lib/api/client';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import { useBottomNavSettings } from '@/lib/hooks/use-bottom-nav-settings';
 
-const navigationItems = [
+import type { Permission } from '@/lib/auth/permissions';
+
+interface NavigationItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number | string; stroke?: number | string }>;
+  /** 指定時、この権限を持たないユーザーにはナビゲーションに表示しない */
+  requiredPermission?: Permission;
+}
+
+const navigationItems: NavigationItem[] = [
   {
     label: '新規猫登録',
     href: '/cats/new',
     icon: IconPaw,
+    // 作成専用ページのため cats:write がないユーザーには表示しない
+    requiredPermission: 'cats:write',
   },
   {
     label: '在舎猫一覧',
@@ -146,6 +158,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure(false);
   const [desktopOpened, { toggle: toggleDesktop, close: closeDesktop }] = useDisclosure(false);
   const { user, isAuthenticated, initialized, isLoading, logout } = useAuth();
+  const can = useCan();
   const [logoutLoading, setLogoutLoading] = useState(false);
 
   const isAuthPage = isAuthRoute(pathname);
@@ -486,7 +499,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
             <AppShell.Section grow component={ScrollArea}>
               <Stack gap={4}>
-                {navigationItems.map((item) => {
+                {navigationItems
+                  .filter((item) => !item.requiredPermission || can(item.requiredPermission))
+                  .map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
 

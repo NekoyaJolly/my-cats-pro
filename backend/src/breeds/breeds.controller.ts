@@ -20,13 +20,13 @@ import {
   ApiOkResponse,
   ApiExtraModels,
 } from "@nestjs/swagger";
-import { UserRole } from "@prisma/client";
 
 import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { RoleGuard } from "../auth/role.guard";
-import { Roles } from "../auth/roles.decorator";
+import { PERMISSIONS } from '../auth/permissions';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 import { DisplayPreferencesService } from "../display-preferences/display-preferences.service";
 import { MasterDataItemDto } from "../display-preferences/dto/master-data-item.dto";
 
@@ -37,7 +37,7 @@ import { CreateBreedDto, UpdateBreedDto, BreedQueryDto } from "./dto";
 @ApiExtraModels(MasterDataItemDto)
 @ApiTags("Breeds")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller("breeds")
 export class BreedsController {
   constructor(
@@ -46,8 +46,7 @@ export class BreedsController {
   ) {}
 
   @Post()
-  @UseGuards(RoleGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   @ApiOperation({ summary: "品種データを作成（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -142,8 +141,7 @@ export class BreedsController {
   }
 
   @Patch(":id")
-  @UseGuards(RoleGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   @ApiOperation({ summary: "品種データを更新（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -167,8 +165,7 @@ export class BreedsController {
   }
 
   @Delete(":id")
-  @UseGuards(RoleGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   @ApiOperation({ summary: "品種データを削除（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,

@@ -12,6 +12,7 @@ import { createTestApp } from './utils/create-test-app';
 const httpStatus = {
   ok: 200,
   created: 201,
+  unauthorized: 401,
   forbidden: 403,
   notFound: 404,
 };
@@ -20,6 +21,7 @@ describe('Pedigree module (integration)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let pedigreeService: PedigreeService;
+  let authToken: string;
   const createdPedigreeIds: string[] = [];
   const createdBreedIds: string[] = [];
   const createdCoatColorIds: string[] = [];
@@ -56,6 +58,17 @@ describe('Pedigree module (integration)', () => {
     app = await createTestApp(moduleRef);
     prisma = app.get(PrismaService);
     pedigreeService = app.get(PedigreeService);
+
+    // 血統書APIは認証必須のため、シード管理者（SUPER_ADMIN）でログインする
+    const loginRes = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+        .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        email: process.env.ADMIN_EMAIL ?? 'admin@example.com',
+        password: process.env.ADMIN_PASSWORD ?? 'Passw0rd!',
+      });
+    expect(loginRes.status).toBe(201);
+    authToken = loginRes.body.data.access_token;
   });
 
   afterAll(async () => {
@@ -86,6 +99,7 @@ describe('Pedigree module (integration)', () => {
 
       const listRes = await request(app.getHttpServer())
         .get('/api/v1/pedigrees')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ search: 'Integration' })
         .expect(httpStatus.ok);
 
@@ -101,6 +115,7 @@ describe('Pedigree module (integration)', () => {
 
       const byIdRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${created.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.ok);
 
       expect(byIdRes.body.success).toBe(true);
@@ -109,6 +124,7 @@ describe('Pedigree module (integration)', () => {
 
       const byPedigreeIdRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/pedigree-id/${created.pedigreeId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.ok);
 
       expect(byPedigreeIdRes.body.success).toBe(true);
@@ -120,6 +136,7 @@ describe('Pedigree module (integration)', () => {
 
       const familyTreeRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${created.id}/family-tree`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.ok);
 
       expect(familyTreeRes.body.success).toBe(true);
@@ -127,6 +144,7 @@ describe('Pedigree module (integration)', () => {
 
       const familyRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${created.id}/family`)
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ generations: 2 })
         .expect(httpStatus.ok);
 
@@ -146,6 +164,7 @@ describe('Pedigree module (integration)', () => {
 
       const verifyRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${created.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.ok);
 
       expect(verifyRes.body.data.notes).toBe('Updated note for coverage');
@@ -160,6 +179,7 @@ describe('Pedigree module (integration)', () => {
 
       const notFoundRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${created.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.notFound);
 
       expect(notFoundRes.body.success).toBe(false);
@@ -174,14 +194,35 @@ describe('Pedigree module (integration)', () => {
   });
 
   describe('authorization and error handling', () => {
-    it('rejects pedigree creation via HTTP without admin role', async () => {
-      const payload = buildCreateDto({ title: 'Forbidden attempt' });
+    it('rejects pedigree creation via HTTP without authentication', async () => {
+      const payload = buildCreateDto({ title: 'Unauthorized attempt' });
 
       const res = await request(app.getHttpServer())
         .post('/api/v1/pedigrees')
         .send(payload);
-      expect(res.status).toBe(httpStatus.forbidden);
+      expect(res.status).toBe(httpStatus.unauthorized);
+      expect(res.body.success).toBe(false);
+    });
 
+    it('rejects pedigree creation for users without pedigree:write permission', async () => {
+      // 自己登録ユーザー（USERプリセット: pedigree:write なし）で 403 になること
+      const email = `pedigree_user_${Date.now()}@example.com`;
+      const password = 'PedigreeUser123!';
+      await request(app.getHttpServer())
+        .post('/api/v1/auth/register')
+        .send({ email, password })
+        .expect(201);
+      const loginRes = await request(app.getHttpServer())
+        .post('/api/v1/auth/login')
+        .send({ email, password });
+      const userToken = loginRes.body.data.access_token as string;
+
+      const payload = buildCreateDto({ title: 'Forbidden attempt' });
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/pedigrees')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(payload);
+      expect(res.status).toBe(httpStatus.forbidden);
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('FORBIDDEN');
     });
@@ -192,6 +233,7 @@ describe('Pedigree module (integration)', () => {
 
       const byIdRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${missingId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.notFound);
 
       expect(byIdRes.body.success).toBe(false);
@@ -199,6 +241,7 @@ describe('Pedigree module (integration)', () => {
 
       const byPedigreeIdRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/pedigree-id/${missingPedigreeId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.notFound);
 
       expect(byPedigreeIdRes.body.success).toBe(false);
@@ -220,18 +263,21 @@ describe('Pedigree module (integration)', () => {
 
       const familyTreeRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${missingId}/family-tree`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.notFound);
 
       expect(familyTreeRes.body.success).toBe(false);
 
       const familyRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${missingId}/family`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.notFound);
 
       expect(familyRes.body.success).toBe(false);
 
       const descendantsRes = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${missingId}/descendants`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.notFound);
 
       expect(descendantsRes.body.success).toBe(false);
@@ -296,6 +342,7 @@ describe('Pedigree module (integration)', () => {
 
       const listRes = await request(app.getHttpServer())
         .get('/api/v1/pedigrees')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({
           breedId: String(breed.code),
           coatColorId: String(color.code),
@@ -328,6 +375,7 @@ describe('Pedigree module (integration)', () => {
 
       const res = await request(app.getHttpServer())
         .get(`/api/v1/pedigrees/${parent.id}/descendants`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(httpStatus.ok);
 
       expect(res.body.success).toBe(true);
