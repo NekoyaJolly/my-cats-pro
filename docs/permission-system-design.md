@@ -159,7 +159,7 @@ SUPER_ADMIN（サービス運営者）
 1. **権限昇格の防止（権限の天井）**
    - 権限を付与・変更できるのは「自分自身が保持している権限」の範囲内のみ
    - `tenants:manage` は SUPER_ADMIN のみが付与可能（TENANT_ADMIN は配布不可）
-   - 自分自身の権限は変更不可（SUPER_ADMIN を除く）
+   - 自分自身の権限は変更不可（例外なし。SUPER_ADMIN はガードで常に全権限扱いのため変更は不要）
 2. **テナント越えの防止**
    - TENANT_ADMIN の `users:manage` は自テナント所属ユーザーに対してのみ有効
    - 既存の users.service / tenants.service の tenantId フィルタを権限ベース移行後も必ず維持する

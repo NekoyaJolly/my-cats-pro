@@ -168,8 +168,9 @@ export class TenantsController {
   async inviteUser(
     @Param('tenantId') tenantId: string,
     @Body() dto: InviteUserDto,
+    @GetUser() user: RequestUser,
   ) {
-    return this.tenantsService.inviteUser(tenantId, dto);
+    return this.tenantsService.inviteUser(tenantId, dto, user);
   }
 
   /**

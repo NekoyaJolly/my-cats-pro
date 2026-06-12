@@ -15,5 +15,5 @@ export class UpdateUserPermissionsDto {
   })
   @IsArray()
   @IsIn(ALL_PERMISSIONS, { each: true })
-  permissions!: Permission[];
+  permissions: Permission[];
 }

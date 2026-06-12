@@ -135,8 +135,12 @@ export class TenantsService {
    * @throws ForbiddenException アクセス権がない場合
    */
   async getTenantById(tenantId: string, currentUser: RequestUser) {
-    // TENANT_ADMIN の場合、自テナントのみアクセス可能
-    if (currentUser.role === UserRole.TENANT_ADMIN) {
+    // SUPER_ADMIN または TENANT_ADMIN（自テナントのみ）に限定する
+    // （users:manage 権限だけを持つ一般ロールが他テナント情報を参照できないようにする）
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      if (currentUser.role !== UserRole.TENANT_ADMIN) {
+        throw new ForbiddenException('テナント情報を参照する権限がありません');
+      }
       if (!currentUser.tenantId) {
         throw new ForbiddenException('テナントに所属していません');
       }
@@ -275,11 +279,21 @@ export class TenantsService {
   async inviteUser(
     tenantId: string,
     dto: InviteUserDto,
+    currentUser: RequestUser,
   ): Promise<{
     success: true;
     invitationToken: string;
     message: string;
   }> {
+    // 招待は TENANT_ADMIN / SUPER_ADMIN ロールに限定する
+    // （users:manage 権限だけを持つ一般ロールにユーザー作成経路を開かない保守的挙動）
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      currentUser.role !== UserRole.TENANT_ADMIN
+    ) {
+      throw new ForbiddenException('ユーザーを招待する権限がありません');
+    }
+
     const email = dto.email.trim().toLowerCase();
 
     // テナントの存在確認

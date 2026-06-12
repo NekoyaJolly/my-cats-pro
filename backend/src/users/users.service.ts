@@ -56,11 +56,6 @@ export class UsersService {
   ) {}
 
   /**
-   * 指定されたロールが高権限ロール（SUPER_ADMIN, TENANT_ADMIN）かどうかをチェック
-   * 
-   * @private
-   */
-  /**
    * 権限の天井チェック: 付与できるのは自分自身が保持する権限の範囲内のみ
    * （SUPER_ADMIN は無制限。tenants:manage は SUPER_ADMIN のみ付与可能）
    */
@@ -99,6 +94,9 @@ export class UsersService {
     return sanitized;
   }
 
+  /**
+   * 指定されたロールが高権限ロール（SUPER_ADMIN, TENANT_ADMIN）かどうかをチェック
+   */
   private isPrivilegedRole(role: UserRole): boolean {
     return role === UserRole.SUPER_ADMIN || role === UserRole.TENANT_ADMIN;
   }
@@ -129,6 +127,7 @@ export class UsersService {
           firstName: true,
           lastName: true,
           role: true,
+          permissions: true,
           isActive: true,
           tenantId: true,
           createdAt: true,
@@ -174,6 +173,7 @@ export class UsersService {
           firstName: true,
           lastName: true,
           role: true,
+          permissions: true,
           isActive: true,
           tenantId: true,
           createdAt: true,
