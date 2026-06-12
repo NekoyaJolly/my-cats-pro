@@ -4,6 +4,7 @@ import {
   Body,
   UseGuards,
   Res,
+  HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -28,6 +29,8 @@ export class ExportController {
 
   @Post()
   @RequirePermissions(PERMISSIONS.DATA_IMPORT_EXPORT)
+  // ファイル生成のため作成(201)ではなく 200 を返す
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'データをエクスポート' })
   @ApiResponse({ status: HttpStatus.OK, description: 'エクスポート成功' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '無効なリクエスト' })

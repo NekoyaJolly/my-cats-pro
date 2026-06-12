@@ -18,6 +18,7 @@ import { PrismaService } from "../prisma/prisma.service";
 
 import { LoginAttemptService, LoginAttemptData } from "./login-attempt.service";
 import { PasswordService } from "./password.service";
+import { ROLE_PRESETS } from "./permissions";
 
 type ValidatedUser = {
   id: string;
@@ -263,6 +264,8 @@ export class AuthService {
       data: {
         email,
         role: UserRole.USER,
+        // 自己登録ユーザーにも招待ユーザーと同じロールプリセット権限を付与する
+        permissions: ROLE_PRESETS[UserRole.USER],
         isActive: true,
         // clerkId は nullable、必要時のみ設定
         clerkId: `local_${randomUUID()}`,

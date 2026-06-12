@@ -8,6 +8,8 @@ import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './utils/create-test-app';
 
+import { ROLE_PRESETS } from '../src/auth/permissions';
+
 const httpStatus = {
   ok: 200,
   created: 201,
@@ -68,7 +70,8 @@ describe('Breeds & Coat Colors API (e2e)', () => {
 
     await prisma.user.update({
       where: { email },
-      data: { role: UserRole.ADMIN },
+      // 権限ベース移行に伴い、ロールと併せてプリセット権限（settings:manage 含む）を付与する
+      data: { role: UserRole.ADMIN, permissions: ROLE_PRESETS[UserRole.ADMIN] },
     });
 
     const loginRes = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email, password });

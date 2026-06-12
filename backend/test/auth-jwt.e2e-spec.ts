@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { JwtService } from '@nestjs/jwt';
+import helmet from 'helmet';
 
 describe('Auth JWT & Rate Limiting (e2e)', () => {
   let app: INestApplication;
@@ -15,6 +16,9 @@ describe('Auth JWT & Rate Limiting (e2e)', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    // 本番（main.ts）と同じセキュリティミドルウェア構成に揃える
+    app.use(helmet());
+    app.enableCors({ origin: true, credentials: true });
     app.setGlobalPrefix('api/v1');
     await app.init();
 

@@ -32,6 +32,14 @@ describe("Care & Tags flows (e2e)", () => {
     expect(login.status).toBe(201);
     const token = login.body.data.access_token as string;
 
+    // タグ定義の管理には tags:manage 権限が必要なため、シード管理者でログインする
+    const adminLogin = await request(app.getHttpServer()).post("/api/v1/auth/login").send({
+      email: process.env.ADMIN_EMAIL ?? "admin@example.com",
+      password: process.env.ADMIN_PASSWORD ?? "Passw0rd!",
+    });
+    expect(adminLogin.status).toBe(201);
+    const adminToken = adminLogin.body.data.access_token as string;
+
     // create a cat (owned by the registered user)
     const catRes = await request(app.getHttpServer())
       .post("/api/v1/cats")
@@ -53,7 +61,7 @@ describe("Care & Tags flows (e2e)", () => {
     // create a tag category first
     const categoryRes = await request(app.getHttpServer())
       .post("/api/v1/tags/categories")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Authorization", `Bearer ${adminToken}`)
       .send({ name: "Test Category", key: `test_category_${Date.now()}` });
     expect(categoryRes.status).toBe(201);
     const categoryId = categoryRes.body.data.id as string;
@@ -61,7 +69,7 @@ describe("Care & Tags flows (e2e)", () => {
     // create a tag group
     const groupRes = await request(app.getHttpServer())
       .post("/api/v1/tags/groups")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Authorization", `Bearer ${adminToken}`)
       .send({ categoryId, name: "Test Group" });
     expect(groupRes.status).toBe(201);
     const groupId = groupRes.body.data.id as string;
@@ -69,7 +77,7 @@ describe("Care & Tags flows (e2e)", () => {
     // create a tag (auth required)
     const tagRes = await request(app.getHttpServer())
       .post("/api/v1/tags")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Authorization", `Bearer ${adminToken}`)
       .send({ name: `indoor-${Date.now()}`, groupId, color: "#00AA88" });
     expect(tagRes.status).toBe(201);
     const tagId = tagRes.body.data.id as string;

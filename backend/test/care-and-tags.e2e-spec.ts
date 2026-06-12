@@ -79,13 +79,11 @@ describe("Care & Tags flows (e2e)", () => {
   });
 
   it("tags: create -> assign -> unassign", async () => {
-    const email = `e2e_${Date.now()}@example.com`;
-    const password = "Secret123!";
-
-    // register & login
-    const registerRes = await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email, password });
-    expect(registerRes.status).toBe(201);
-    const login = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email, password });
+    // タグ定義の管理には tags:manage 権限が必要なため、シード管理者（SUPER_ADMIN）でログインする
+    const login = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      email: process.env.ADMIN_EMAIL ?? 'admin@example.com',
+      password: process.env.ADMIN_PASSWORD ?? 'Passw0rd!',
+    });
     expect(login.status).toBe(201);
     const token = login.body.data.access_token as string;
 

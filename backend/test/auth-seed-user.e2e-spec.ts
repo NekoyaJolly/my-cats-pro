@@ -1,7 +1,9 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+
+import { createTestApp } from './utils/create-test-app';
 
 /**
  * シードユーザーでのログイン確認E2Eテスト
@@ -25,10 +27,8 @@ describe('Auth with Seed User (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleRef.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-    app.setGlobalPrefix('api/v1');
-    await app.init();
+    // 本番と同じインターセプタ/フィルタ構成（success ラップ等）を適用する
+    app = await createTestApp(moduleRef);
   });
 
   afterAll(async () => {
