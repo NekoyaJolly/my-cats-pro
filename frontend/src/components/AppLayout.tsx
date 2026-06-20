@@ -14,6 +14,8 @@ import {
   Box,
   Stack,
   Button,
+  ActionIcon,
+  Tooltip,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -38,6 +40,7 @@ import {
   IconHeartHandshake,
   IconPhoto,
   IconUsers,
+  IconHelp,
 } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth/store';
 import { isAuthRoute, isProtectedRoute } from '@/lib/auth/routes';
@@ -47,6 +50,9 @@ import { ContextMenuManager } from '@/components/context-menu';
 import { apiClient, type ApiQueryParams } from '@/lib/api/client';
 import type { Cat } from '@/lib/api/hooks/use-cats';
 import { useBottomNavSettings } from '@/lib/hooks/use-bottom-nav-settings';
+import { useOnboardingStore } from '@/lib/store/onboarding-store';
+import { findPageGuide } from '@/lib/onboarding/page-guides';
+import { PageOnboardingHost } from '@/components/onboarding/PageOnboardingHost';
 
 const navigationItems = [
   {
@@ -147,6 +153,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [desktopOpened, { toggle: toggleDesktop, close: closeDesktop }] = useDisclosure(false);
   const { user, isAuthenticated, initialized, isLoading, logout } = useAuth();
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const requestGuideOpen = useOnboardingStore((state) => state.requestOpen);
+  const pageGuide = findPageGuide(pathname);
 
   const isAuthPage = isAuthRoute(pathname);
   const requiresAuth = isProtectedRoute(pathname);
@@ -436,6 +444,21 @@ export function AppLayout({ children }: AppLayoutProps) {
                 >
                   🎓 {catStats.graduated}
                 </Badge>
+                {pageGuide && (
+                  <Tooltip label="このページの使い方" withArrow>
+                    <ActionIcon
+                      variant="subtle"
+                      size="lg"
+                      radius="md"
+                      aria-label="このページの使い方を表示"
+                      onClick={requestGuideOpen}
+                      data-testid="page-onboarding-help"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <IconHelp size={20} stroke={1.8} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
 
               {pageActions && <div className="page-actions-container">{pageActions}</div>}
@@ -538,6 +561,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </AppShell.Main>
         </AppShell>
       </ContextMenuManager>
+      <PageOnboardingHost />
     </div>
   );
 }
