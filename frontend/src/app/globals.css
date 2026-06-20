@@ -255,23 +255,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .mantine-Drawer-content {
-  background-color: #ffffff !important;
-  color: #212529 !important;
+  background-color: var(--bg-surface, #ffffff) !important;
+  color: var(--text-primary, #212529) !important;
 }
 
 .mantine-Drawer-header {
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #e9ecef !important;
-  color: #212529 !important;
+  background-color: var(--bg-surface, #ffffff) !important;
+  border-bottom: 1px solid var(--border-subtle, #e9ecef) !important;
+  color: var(--text-primary, #212529) !important;
 }
 
 .mantine-Drawer-body {
-  background-color: #ffffff !important;
-  color: #212529 !important;
+  background-color: var(--bg-surface, #ffffff) !important;
+  color: var(--text-primary, #212529) !important;
 }
 
 .mantine-Drawer-title {
-  color: #212529 !important;
+  color: var(--text-primary, #212529) !important;
   font-weight: 600 !important;
 }
 
@@ -282,18 +282,18 @@ h1, h2, h3, h4, h5, h6 {
  * 左端のカラーアクセント（color prop によるアイコン/ボーダー）はそのまま残る。
  */
 .mantine-Notification-root {
-  background-color: #ffffff !important;
-  border: 1px solid #dee2e6 !important;
+  background-color: var(--bg-surface, #ffffff) !important;
+  border: 1px solid var(--border-primary, #dee2e6) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
-  color: #212529 !important;
+  color: var(--text-primary, #212529) !important;
 }
 
 .mantine-Notification-title {
-  color: #212529 !important;
+  color: var(--text-primary, #212529) !important;
 }
 
 .mantine-Notification-description {
-  color: #495057 !important;
+  color: var(--text-secondary, #495057) !important;
 }
 
 @media (min-width: 768px) {
