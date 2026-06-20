@@ -150,17 +150,8 @@ export function useBreedingSchedule(allCats: Cat[] = []): UseBreedingScheduleRet
           setDefaultDuration(parsed);
         }
 
-        const storedYear = localStorage.getItem(STORAGE_KEYS.SELECTED_YEAR);
-        if (storedYear) {
-          const parsed = parseInt(storedYear, 10);
-          setSelectedYear(parsed);
-        }
-
-        const storedMonth = localStorage.getItem(STORAGE_KEYS.SELECTED_MONTH);
-        if (storedMonth) {
-          const parsed = parseInt(storedMonth, 10);
-          setSelectedMonth(parsed);
-        }
+        // 年月は localStorage から復元しない。
+        // 交配管理ページを開くたびに、常に現在の年月（useState の初期値）を表示する。
 
         // スケジュールと交配チェックは API から取得するが、
         // オフライン時のフォールバックとして localStorage からも読み込む
@@ -234,8 +225,7 @@ export function useBreedingSchedule(allCats: Cat[] = []): UseBreedingScheduleRet
       try {
         localStorage.setItem(STORAGE_KEYS.ACTIVE_MALES, JSON.stringify(localActiveMales));
         localStorage.setItem(STORAGE_KEYS.DEFAULT_DURATION, defaultDuration.toString());
-        localStorage.setItem(STORAGE_KEYS.SELECTED_YEAR, selectedYear.toString());
-        localStorage.setItem(STORAGE_KEYS.SELECTED_MONTH, selectedMonth.toString());
+        // 年月は永続化しない（開くたび現在の年月を表示するため）
         if (Object.keys(breedingSchedule).length > 0) {
           localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, JSON.stringify(breedingSchedule));
         }
@@ -246,7 +236,8 @@ export function useBreedingSchedule(allCats: Cat[] = []): UseBreedingScheduleRet
     };
 
     saveToStorage();
-  }, [localActiveMales, defaultDuration, selectedYear, selectedMonth, breedingSchedule, matingChecks]);
+    // selectedYear/selectedMonth は永続化しないため依存に含めない（年月切替時の不要な書き込みを防ぐ）
+  }, [localActiveMales, defaultDuration, breedingSchedule, matingChecks]);
 
   // 表示用 activeMales を導出する。
   // サーバーのスケジュールに登場するオスを createdAt 昇順（= ペア成立の瞬間、全デバイスで同一順序）に並べ、

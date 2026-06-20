@@ -568,6 +568,12 @@ export default function StaffShiftsPage() {
       try {
         await apiClient.deleteShift(shiftId);
         info.event.remove();
+        // 楽観的更新: 先に React state(shifts) からも除去する。
+        // これが無いと state に残り、再描画・再読込でシフトが復活してしまう（削除できない原因）。
+        // refreshShifts() は失敗を握りつぶすため、再取得が失敗しても整合性を保てるよう先に反映する。
+        setShifts((prev) => prev.filter((s) => s.extendedProps.shiftId !== shiftId));
+        // サーバーから再取得して最新化する（成功時は楽観更新と一致）。
+        await refreshShifts();
 
         notifications.show({
           title: 'シフト削除成功',
