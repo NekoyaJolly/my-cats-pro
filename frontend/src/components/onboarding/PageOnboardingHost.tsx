@@ -68,6 +68,8 @@ export function PageOnboardingHost() {
           '画面下のバーやメニューから各ページへ移動できます。ガイドのあるページでは右上の「?」からいつでも詳しい使い方を確認できます。',
         color: 'blue',
         autoClose: 8000,
+        // ヘッダー（高さ60px）と重ならないよう、この歓迎トーストだけ下げて表示する
+        style: { marginTop: 'calc(60px + var(--mantine-spacing-xs))' },
       });
     }
   }, [hydrated, initialized, isAuthenticated, userId, pathname, seen, markSeen]);
