@@ -20,6 +20,7 @@ import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { DisplayPreferencesModule } from "./display-preferences/display-preferences.module";
 import { EmailModule } from "./email/email.module";
 import { ExportModule } from "./export/export.module";
+import { FeedbackModule } from "./feedback/feedback.module";
 import { GalleryModule } from "./gallery/gallery.module";
 import { GalleryUploadModule } from "./gallery-upload/gallery-upload.module";
 import { GraduationModule } from "./graduation/graduation.module";
@@ -127,6 +128,7 @@ const sanitizeLevel = (value: unknown): LogLevel => {
     GalleryModule,
     EmailModule,
     ExportModule,
+    FeedbackModule,
     ImportModule,
   ],
   controllers: [MasterDataController],
