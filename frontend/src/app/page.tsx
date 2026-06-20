@@ -368,7 +368,7 @@ export default function Home() {
       {/* カードグリッド */}
       <SimpleGrid
           cols={{ base: 1, xs: 2, md: 3 }}
-          spacing="lg"
+          spacing={{ base: 'sm', xs: 'lg' }}
         >
           {visibleCards.map((card) => (
             <Card
@@ -393,11 +393,13 @@ export default function Home() {
               }}
               onClick={() => router.push(card.href)}
             >
+              {/* バッジはタブレット/PC のみ（モバイルは stats をインライン表示するため非表示） */}
               {card.badge !== undefined && (
                 <Badge
                   variant="filled"
                   color={card.color}
                   size="lg"
+                  visibleFrom="xs"
                   style={{
                     position: 'absolute',
                     top: 12,
@@ -409,7 +411,46 @@ export default function Home() {
                 </Badge>
               )}
 
-              <Stack gap="md" style={{ height: '100%' }}>
+              {/* モバイル(<576px): アイコン横にタイトル/説明を2行、詳細を見るを説明と水平配置 */}
+              <Group hiddenFrom="xs" wrap="nowrap" align="center" gap="sm" style={{ height: '100%' }}>
+                <ThemeIcon
+                  size={48}
+                  radius="md"
+                  variant="light"
+                  color={card.color}
+                  style={{ flexShrink: 0 }}
+                >
+                  {card.icon}
+                </ThemeIcon>
+
+                <Box style={{ flex: 1, minWidth: 0 }}>
+                  <Group justify="space-between" wrap="nowrap" gap="xs" align="center">
+                    <Text fw={700} size="sm" lineClamp={1}>
+                      {card.title}
+                    </Text>
+                    {card.stats && (
+                      <Text size="xs" fw={600} c={card.color} style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+                        {card.stats}
+                      </Text>
+                    )}
+                  </Group>
+
+                  <Group justify="space-between" wrap="nowrap" gap="xs" align="center" mt={4}>
+                    <Text size="xs" c="dimmed" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                      {card.description}
+                    </Text>
+                    <Group gap={2} wrap="nowrap" style={{ flexShrink: 0 }}>
+                      <Text size="xs" fw={500} c={card.color}>
+                        詳細を見る
+                      </Text>
+                      <IconChevronRight size={14} color={`var(--mantine-color-${card.color}-6)`} />
+                    </Group>
+                  </Group>
+                </Box>
+              </Group>
+
+              {/* タブレット/PC(≥576px): 従来の縦レイアウト */}
+              <Stack visibleFrom="xs" gap="md" style={{ height: '100%' }}>
                 <ThemeIcon
                   size={64}
                   radius="md"
