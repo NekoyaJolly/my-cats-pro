@@ -39,14 +39,13 @@ export interface UseBreedingScheduleReturn {
   // アクション
   setBreedingSchedule: React.Dispatch<React.SetStateAction<Record<string, BreedingScheduleEntry>>>;
   setMatingChecks: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  setActiveMales: React.Dispatch<React.SetStateAction<Cat[]>>;
   setSelectedYear: React.Dispatch<React.SetStateAction<number>>;
   setSelectedMonth: React.Dispatch<React.SetStateAction<number>>;
   setDefaultDuration: React.Dispatch<React.SetStateAction<number>>;
   
   // ヘルパー関数
   addMale: (male: Cat) => void;
-  removeMale: (maleId: string) => void;
+  removeMale: (maleId: string) => Promise<void>;
   getMatingCheckCount: (maleId: string, femaleId: string, date: string) => number;
   addMatingCheck: (maleId: string, femaleId: string, date: string) => void;
   clearScheduleData: () => void;
@@ -114,7 +113,7 @@ function convertServerChecksToLocal(
   return result;
 }
 
-export function useBreedingSchedule(): UseBreedingScheduleReturn {
+export function useBreedingSchedule(allCats: Cat[] = []): UseBreedingScheduleReturn {
   // hydration guard: 初回マウント時に localStorage から読み込むまで保存を抑制
   const hydratedRef = useRef(false);
   const mountCountRef = useRef(0);
@@ -122,7 +121,8 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [breedingSchedule, setBreedingSchedule] = useState<Record<string, BreedingScheduleEntry>>({});
-  const [activeMales, setActiveMales] = useState<Cat[]>([]);
+  // ローカルで追加したオス（まだサーバーにペアが無い単独オスの作業用リスト）
+  const [localActiveMales, setLocalActiveMales] = useState<Cat[]>([]);
   const [defaultDuration, setDefaultDuration] = useState<number>(1);
   const [matingChecks, setMatingChecks] = useState<Record<string, number>>({});
   const [isSyncing, setIsSyncing] = useState(false);
@@ -141,7 +141,7 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
         const storedActiveMales = localStorage.getItem(STORAGE_KEYS.ACTIVE_MALES);
         if (storedActiveMales) {
           const parsed = JSON.parse(storedActiveMales) as Cat[];
-          setActiveMales(parsed);
+          setLocalActiveMales(parsed);
         }
 
         const storedDefaultDuration = localStorage.getItem(STORAGE_KEYS.DEFAULT_DURATION);
@@ -232,7 +232,7 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
       if (!hydratedRef.current) return;
 
       try {
-        localStorage.setItem(STORAGE_KEYS.ACTIVE_MALES, JSON.stringify(activeMales));
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_MALES, JSON.stringify(localActiveMales));
         localStorage.setItem(STORAGE_KEYS.DEFAULT_DURATION, defaultDuration.toString());
         localStorage.setItem(STORAGE_KEYS.SELECTED_YEAR, selectedYear.toString());
         localStorage.setItem(STORAGE_KEYS.SELECTED_MONTH, selectedMonth.toString());
@@ -246,17 +246,70 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
     };
 
     saveToStorage();
-  }, [activeMales, defaultDuration, selectedYear, selectedMonth, breedingSchedule, matingChecks]);
+  }, [localActiveMales, defaultDuration, selectedYear, selectedMonth, breedingSchedule, matingChecks]);
 
-  // オス猫追加
+  // 表示用 activeMales を導出する。
+  // サーバーのスケジュールに登場するオスを createdAt 昇順（= ペア成立の瞬間、全デバイスで同一順序）に並べ、
+  // まだサーバーに無いローカル追加分（メス未投入の単独オス）を末尾に付ける。
+  const activeMales = useMemo<Cat[]>(() => {
+    const ordered: Cat[] = [];
+    const seen = new Set<string>();
+    // 猫数が多い（limit:1000）ケースでも O(1) で解決できるよう Map 化する
+    const catById = new Map(allCats.map((c) => [c.id, c] as const));
+
+    const serverSchedules = schedulesQuery.data?.data ?? [];
+    const sorted = [...serverSchedules].sort((a, b) => {
+      const byCreatedAt = (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
+      return byCreatedAt !== 0 ? byCreatedAt : a.id.localeCompare(b.id);
+    });
+    for (const schedule of sorted) {
+      const maleId = schedule.maleId;
+      if (!maleId || seen.has(maleId)) continue;
+      const cat = catById.get(maleId);
+      if (cat) {
+        seen.add(maleId);
+        ordered.push(cat);
+      }
+    }
+
+    for (const male of localActiveMales) {
+      if (!seen.has(male.id)) {
+        seen.add(male.id);
+        ordered.push(male);
+      }
+    }
+
+    return ordered;
+  }, [schedulesQuery.data, allCats, localActiveMales]);
+
+  // オス猫追加（ローカル作業リストに追加。メスを入れた時点でサーバー保存→全デバイス同期）
   const addMale = useCallback((male: Cat) => {
-    setActiveMales((prev) => [...prev, male]);
+    setLocalActiveMales((prev) => (prev.some((m) => m.id === male.id) ? prev : [...prev, male]));
   }, []);
 
-  // オス猫削除
-  const removeMale = useCallback((maleId: string) => {
-    setActiveMales((prev) => prev.filter((m) => m.id !== maleId));
-  }, []);
+  // オス猫削除（ローカル＋ひも付くサーバーのスケジュールも削除して全デバイスから消す）
+  const removeMale = useCallback(async (maleId: string) => {
+    // ひも付くサーバーのスケジュールを先に削除する。
+    // 失敗は握りつぶさず呼び出し側へ伝播させ、その場合ローカル状態は更新しない（同期不整合を防ぐ）。
+    const serverIds = (schedulesQuery.data?.data ?? [])
+      .filter((s) => s.maleId === maleId)
+      .map((s) => s.id);
+    await Promise.all(serverIds.map((id) => deleteScheduleMutation.mutateAsync(id)));
+
+    // サーバー削除が成功した後にローカル状態を更新する
+    setLocalActiveMales((prev) => prev.filter((m) => m.id !== maleId));
+
+    // ローカルのカレンダーエントリ（当該オス分）も除去
+    setBreedingSchedule((prev) => {
+      const next: Record<string, BreedingScheduleEntry> = {};
+      for (const [key, entry] of Object.entries(prev)) {
+        if (entry.maleId !== maleId) {
+          next[key] = entry;
+        }
+      }
+      return next;
+    });
+  }, [schedulesQuery.data, deleteScheduleMutation]);
 
   // 交配チェック回数を取得
   const getMatingCheckCount = useCallback((maleId: string, femaleId: string, date: string): number => {
@@ -374,7 +427,6 @@ export function useBreedingSchedule(): UseBreedingScheduleReturn {
     isSyncing,
     setBreedingSchedule,
     setMatingChecks,
-    setActiveMales,
     setSelectedYear,
     setSelectedMonth,
     setDefaultDuration,
