@@ -236,7 +236,8 @@ export function useBreedingSchedule(allCats: Cat[] = []): UseBreedingScheduleRet
     };
 
     saveToStorage();
-  }, [localActiveMales, defaultDuration, selectedYear, selectedMonth, breedingSchedule, matingChecks]);
+    // selectedYear/selectedMonth は永続化しないため依存に含めない（年月切替時の不要な書き込みを防ぐ）
+  }, [localActiveMales, defaultDuration, breedingSchedule, matingChecks]);
 
   // 表示用 activeMales を導出する。
   // サーバーのスケジュールに登場するオスを createdAt 昇順（= ペア成立の瞬間、全デバイスで同一順序）に並べ、
