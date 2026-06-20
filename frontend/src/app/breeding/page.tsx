@@ -70,7 +70,11 @@ import { calculateAgeInMonths } from './utils';
 
 export default function BreedingPage() {
   const { setPageHeader } = usePageHeader();
-  
+
+  // 全猫リスト（交配表のオス列をサーバーのスケジュールから復元・解決するのに使用）
+  const catsQuery = useGetCats({ limit: 1000 }, { enabled: true });
+  const { data: catsResponse } = catsQuery;
+
   // カスタムフックから状態を取得
   const {
     breedingSchedule,
@@ -90,7 +94,7 @@ export default function BreedingPage() {
     createScheduleOnServer,
     updateScheduleOnServer,
     deleteScheduleOnServer,
-  } = useBreedingSchedule();
+  } = useBreedingSchedule(catsResponse?.data ?? []);
 
   const [activeTab, setActiveTab] = useState('schedule');
   const [isFullscreen] = useState(false);
@@ -154,8 +158,6 @@ export default function BreedingPage() {
   });
 
   // API hooks
-  const catsQuery = useGetCats({ limit: 1000 }, { enabled: true });
-  const { data: catsResponse } = catsQuery;
   const tagCategoriesQuery = useGetTagCategories();
   const ngRulesQuery = useGetBreedingNgRules();
   const { data: ngRulesResponse, isLoading: isNgRulesLoading, isFetching: isNgRulesFetching, error: ngRulesError } = ngRulesQuery;
@@ -234,7 +236,19 @@ export default function BreedingPage() {
 
   // オス猫削除
   const handleRemoveMale = (maleId: string) => {
-    removeMale(maleId);
+    // サーバー保存済み（ペアあり）のオスは、ひも付く交配スケジュールも消えるため確認する
+    const hasServerData = Object.values(breedingSchedule).some(
+      (entry) => entry.maleId === maleId && entry.serverId,
+    );
+    if (
+      hasServerData &&
+      !window.confirm('このオスと、ひも付く交配スケジュールをすべて削除します。よろしいですか？')
+    ) {
+      return;
+    }
+    removeMale(maleId).catch(() => {
+      notifications.show({ title: 'エラー', message: 'オスの削除に失敗しました', color: 'red' });
+    });
     setSelectedMaleForEdit(null);
   };
 
