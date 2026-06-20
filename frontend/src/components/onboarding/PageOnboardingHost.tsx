@@ -53,6 +53,18 @@ export function PageOnboardingHost() {
   const welcomeHandledRef = useRef(false);
   const suppressPathRef = useRef<string | null>(null);
 
+  // ユーザーが切り替わったら歓迎・抑制・表示状態をリセットする。
+  // 同一セッションで「ログアウト→別ユーザーでログイン」した場合に、
+  // 新しいユーザーの歓迎処理が再評価されるようにする（この effect を最初に走らせる）。
+  const prevUserIdRef = useRef(userId);
+  useEffect(() => {
+    if (prevUserIdRef.current === userId) return;
+    prevUserIdRef.current = userId;
+    welcomeHandledRef.current = false;
+    suppressPathRef.current = null;
+    setOpened(false);
+  }, [userId]);
+
   useEffect(() => {
     if (welcomeHandledRef.current) return;
     if (!hydrated || !initialized || !isAuthenticated || !userId) return;
