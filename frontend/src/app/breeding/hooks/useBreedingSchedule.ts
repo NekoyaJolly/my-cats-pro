@@ -254,6 +254,8 @@ export function useBreedingSchedule(allCats: Cat[] = []): UseBreedingScheduleRet
   const activeMales = useMemo<Cat[]>(() => {
     const ordered: Cat[] = [];
     const seen = new Set<string>();
+    // 猫数が多い（limit:1000）ケースでも O(1) で解決できるよう Map 化する
+    const catById = new Map(allCats.map((c) => [c.id, c] as const));
 
     const serverSchedules = schedulesQuery.data?.data ?? [];
     const sorted = [...serverSchedules].sort((a, b) => {
@@ -263,7 +265,7 @@ export function useBreedingSchedule(allCats: Cat[] = []): UseBreedingScheduleRet
     for (const schedule of sorted) {
       const maleId = schedule.maleId;
       if (!maleId || seen.has(maleId)) continue;
-      const cat = allCats.find((c) => c.id === maleId);
+      const cat = catById.get(maleId);
       if (cat) {
         seen.add(maleId);
         ordered.push(cat);
@@ -287,14 +289,15 @@ export function useBreedingSchedule(allCats: Cat[] = []): UseBreedingScheduleRet
 
   // オス猫削除（ローカル＋ひも付くサーバーのスケジュールも削除して全デバイスから消す）
   const removeMale = useCallback(async (maleId: string) => {
-    setLocalActiveMales((prev) => prev.filter((m) => m.id !== maleId));
-
+    // ひも付くサーバーのスケジュールを先に削除する。
+    // 失敗は握りつぶさず呼び出し側へ伝播させ、その場合ローカル状態は更新しない（同期不整合を防ぐ）。
     const serverIds = (schedulesQuery.data?.data ?? [])
       .filter((s) => s.maleId === maleId)
       .map((s) => s.id);
-    await Promise.all(
-      serverIds.map((id) => deleteScheduleMutation.mutateAsync(id).catch(() => undefined)),
-    );
+    await Promise.all(serverIds.map((id) => deleteScheduleMutation.mutateAsync(id)));
+
+    // サーバー削除が成功した後にローカル状態を更新する
+    setLocalActiveMales((prev) => prev.filter((m) => m.id !== maleId));
 
     // ローカルのカレンダーエントリ（当該オス分）も除去
     setBreedingSchedule((prev) => {
