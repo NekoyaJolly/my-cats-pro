@@ -37,8 +37,9 @@ import {
 } from '@tabler/icons-react';
 import { usePageHeader } from '@/lib/contexts/page-header-context';
 import { notifications } from '@mantine/notifications';
-import { apiClient, type ApiQueryParams } from '@/lib/api/client';
+import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/store';
+import { useGetCatStatistics } from '@/lib/api/hooks/use-cats';
 import {
   DashboardCardSettings,
   DashboardCardConfig,
@@ -48,20 +49,6 @@ import {
   saveDashboardSettings,
   applyDashboardSettings,
 } from '@/lib/storage/dashboard-settings';
-
-// 猫のデータ型
-interface Cat {
-  id: string;
-  name: string;
-  breed: string;
-  gender: 'オス' | 'メス';
-  color: string;
-  birthDate: string;
-  bodyType: string;
-  pedigreeId: string;
-  tags: string[];
-  status: string;
-}
 
 // ケアスケジュール型(簡易版)
 interface CareScheduleSummary {
@@ -86,7 +73,6 @@ type BreedingSchedule = {
 };
 
 export default function Home() {
-  const [cats, setCats] = useState<Cat[]>([]);
   const [careSummary, setCareSummary] = useState<CareScheduleSummary>({ total: 0, completed: 0, pending: 0 });
   const [breedingSummary, setBreedingSummary] = useState<BreedingSummary>({ total: 0, today: 0 });
   const [loading, setLoading] = useState(true);
@@ -96,6 +82,15 @@ export default function Home() {
   const router = useRouter();
   const { setPageTitle } = usePageHeader();
   const { isAuthenticated, initialized, accessToken } = useAuth();
+
+  // 在舎猫の頭数はサーバー集計(/cats/statistics)を使用する。
+  // 旧実装は /cats?limit=50 の生件数で、limit 頭打ち・isInHouse 未フィルタのため不正確だった。
+  // tabCounts.total は在舎の成猫数（/cats ページの「Cats」タブと一致）。
+  const { data: catStatistics } = useGetCatStatistics({
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const inHouseCatCount = catStatistics?.tabCounts.total ?? 0;
 
   // ページタイトルを設定
   useEffect(() => {
@@ -122,20 +117,10 @@ export default function Home() {
       setError(null);
 
       try {
-        const catListQuery: ApiQueryParams<'/cats', 'get'> = { limit: 50 };
-
-        const [catsResponse, careResponse, breedingResponse] = await Promise.all([
-          apiClient.get('/cats', { query: catListQuery }),
+        const [careResponse, breedingResponse] = await Promise.all([
           apiClient.get('/care/schedules').catch(() => null),
           apiClient.get('/breeding').catch(() => null),
         ]);
-
-        if (!catsResponse.success) {
-          throw new Error(catsResponse.error || '猫データの取得に失敗しました');
-        }
-
-        const fetchedCats = Array.isArray(catsResponse.data) ? catsResponse.data : [];
-        setCats(fetchedCats as Cat[]);
 
         if (careResponse?.success && Array.isArray(careResponse.data)) {
           const schedules = careResponse.data as CareSchedule[];
@@ -192,8 +177,8 @@ export default function Home() {
         icon: <IconList size={32} />,
         color: 'blue',
         href: '/cats',
-        badge: cats.length,
-        stats: `全${cats.length}頭`,
+        badge: inHouseCatCount,
+        stats: `全${inHouseCatCount}頭`,
       },
       {
         id: 'breeding',
@@ -292,7 +277,7 @@ export default function Home() {
     const appliedCards = applyDashboardSettings(cardsWithDefaults, settings);
     setDashboardCards(appliedCards);
 
-  }, [cats.length, careSummary.pending, breedingSummary.today, breedingSummary.total]);
+  }, [inHouseCatCount, careSummary.pending, breedingSummary.today, breedingSummary.total]);
 
   // カード設定保存ハンドラー
   const handleSaveCardSettings = (cards: DashboardCardConfig[]) => {
@@ -368,7 +353,7 @@ export default function Home() {
       {/* カードグリッド */}
       <SimpleGrid
           cols={{ base: 1, xs: 2, md: 3 }}
-          spacing="lg"
+          spacing={{ base: 'sm', xs: 'lg' }}
         >
           {visibleCards.map((card) => (
             <Card
@@ -393,11 +378,13 @@ export default function Home() {
               }}
               onClick={() => router.push(card.href)}
             >
+              {/* バッジはタブレット/PC のみ（モバイルは stats をインライン表示するため非表示） */}
               {card.badge !== undefined && (
                 <Badge
                   variant="filled"
                   color={card.color}
                   size="lg"
+                  visibleFrom="xs"
                   style={{
                     position: 'absolute',
                     top: 12,
@@ -409,7 +396,46 @@ export default function Home() {
                 </Badge>
               )}
 
-              <Stack gap="md" style={{ height: '100%' }}>
+              {/* モバイル(<576px): アイコン横にタイトル/説明を2行、詳細を見るを説明と水平配置 */}
+              <Group hiddenFrom="xs" wrap="nowrap" align="center" gap="sm" style={{ height: '100%' }}>
+                <ThemeIcon
+                  size={48}
+                  radius="md"
+                  variant="light"
+                  color={card.color}
+                  style={{ flexShrink: 0 }}
+                >
+                  {card.icon}
+                </ThemeIcon>
+
+                <Box style={{ flex: 1, minWidth: 0 }}>
+                  <Group justify="space-between" wrap="nowrap" gap="xs" align="center">
+                    <Text fw={700} size="sm" lineClamp={1}>
+                      {card.title}
+                    </Text>
+                    {card.stats && (
+                      <Text size="xs" fw={600} c={card.color} style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+                        {card.stats}
+                      </Text>
+                    )}
+                  </Group>
+
+                  <Group justify="space-between" wrap="nowrap" gap="xs" align="center" mt={4}>
+                    <Text size="xs" c="dimmed" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                      {card.description}
+                    </Text>
+                    <Group gap={2} wrap="nowrap" style={{ flexShrink: 0 }}>
+                      <Text size="xs" fw={500} c={card.color}>
+                        詳細を見る
+                      </Text>
+                      <IconChevronRight size={14} color={`var(--mantine-color-${card.color}-6)`} />
+                    </Group>
+                  </Group>
+                </Box>
+              </Group>
+
+              {/* タブレット/PC(≥576px): 従来の縦レイアウト */}
+              <Stack visibleFrom="xs" gap="md" style={{ height: '100%' }}>
                 <ThemeIcon
                   size={64}
                   radius="md"
