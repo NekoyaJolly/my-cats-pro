@@ -244,6 +244,58 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #f8f9fa !important;
 }
 
+/*
+ * Drawer Styling - Modal と同様に不透明背景を保証する。
+ * Drawer はポータルで .theme-default の外にレンダリングされ CSS 変数が解決されないため、
+ * 背景が透過してテキストが読みにくくなる。固定色でハードコードして可読性を担保する。
+ */
+.mantine-Drawer-overlay {
+  background-color: rgba(0, 0, 0, 0.55) !important;
+  opacity: 1 !important;
+}
+
+.mantine-Drawer-content {
+  background-color: var(--bg-surface, #ffffff) !important;
+  color: var(--text-primary, #212529) !important;
+}
+
+.mantine-Drawer-header {
+  background-color: var(--bg-surface, #ffffff) !important;
+  border-bottom: 1px solid var(--border-subtle, #e9ecef) !important;
+  color: var(--text-primary, #212529) !important;
+}
+
+.mantine-Drawer-body {
+  background-color: var(--bg-surface, #ffffff) !important;
+  color: var(--text-primary, #212529) !important;
+}
+
+.mantine-Drawer-title {
+  color: var(--text-primary, #212529) !important;
+  font-weight: 600 !important;
+}
+
+/*
+ * Notification (トースト) Styling - 成功/失敗メッセージの背景透過を修正する。
+ * テーマ override が var(--bg-surface) を使うが、Notifications もポータル先で
+ * 変数が解決されず透明になるため、固定色でハードコードして可読性を担保する。
+ * 左端のカラーアクセント（color prop によるアイコン/ボーダー）はそのまま残る。
+ */
+.mantine-Notification-root {
+  background-color: var(--bg-surface, #ffffff) !important;
+  border: 1px solid var(--border-primary, #dee2e6) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  color: var(--text-primary, #212529) !important;
+}
+
+.mantine-Notification-title {
+  color: var(--text-primary, #212529) !important;
+}
+
+.mantine-Notification-description {
+  color: var(--text-secondary, #495057) !important;
+}
+
 @media (min-width: 768px) {
   :root {
     --layout-px: 24px;
