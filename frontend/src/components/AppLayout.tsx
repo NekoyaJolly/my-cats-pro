@@ -53,6 +53,7 @@ import { useBottomNavSettings } from '@/lib/hooks/use-bottom-nav-settings';
 import { useOnboardingStore } from '@/lib/store/onboarding-store';
 import { findPageGuide } from '@/lib/onboarding/page-guides';
 import { PageOnboardingHost } from '@/components/onboarding/PageOnboardingHost';
+import { FeedbackWidget } from '@/components/feedback/FeedbackWidget';
 
 import type { Permission } from '@/lib/auth/permissions';
 
@@ -577,6 +578,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </AppShell>
       </ContextMenuManager>
       <PageOnboardingHost />
+      <FeedbackWidget />
     </div>
   );
 }
