@@ -44,7 +44,7 @@ overrides:
   postcss: '>=8.5.10'
   qs: '>=6.15.2'
   tmp: '>=0.2.6'
-  uuid: '>=11.1.1'
+  uuid: ^11.1.1
   shell-quote: '>=1.8.4'
   validator: 13.15.26
   webpack: '>=5.104.1'
@@ -238,8 +238,8 @@ importers:
         specifier: ^7.8.2
         version: 7.8.2
       uuid:
-        specifier: '>=11.1.1'
-        version: 14.0.1
+        specifier: ^11.1.1
+        version: 11.1.1
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -7180,8 +7180,8 @@ packages:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
 
-  uuid@14.0.1:
-    resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
+  uuid@11.1.1:
+    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -7952,7 +7952,7 @@ snapshots:
       p-limit: 3.1.0
       retry-request: 7.0.2
       teeny-request: 9.0.0
-      uuid: 14.0.1
+      uuid: 11.1.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -9712,7 +9712,7 @@ snapshots:
   '@sentry/webpack-plugin@5.1.1(webpack@5.107.2)':
     dependencies:
       '@sentry/bundler-plugin-core': 5.1.1
-      uuid: 14.0.1
+      uuid: 11.1.1
       webpack: 5.107.2
     transitivePeerDependencies:
       - encoding
@@ -10207,7 +10207,7 @@ snapshots:
 
   '@types/uuid@11.0.0':
     dependencies:
-      uuid: 14.0.1
+      uuid: 11.1.1
 
   '@types/validator@13.15.10': {}
 
@@ -12216,7 +12216,7 @@ snapshots:
       https-proxy-agent: 7.0.6(supports-color@10.2.2)
       is-stream: 2.0.1
       node-fetch: 2.7.0
-      uuid: 14.0.1
+      uuid: 11.1.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -14668,7 +14668,7 @@ snapshots:
   svix@1.86.0:
     dependencies:
       standardwebhooks: 1.0.0
-      uuid: 14.0.1
+      uuid: 11.1.1
 
   swagger-ui-dist@5.17.14: {}
 
@@ -14690,7 +14690,7 @@ snapshots:
       https-proxy-agent: 5.0.1
       node-fetch: 2.7.0
       stream-events: 1.0.5
-      uuid: 14.0.1
+      uuid: 11.1.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -15046,7 +15046,7 @@ snapshots:
 
   utils-merge@1.0.1: {}
 
-  uuid@14.0.1: {}
+  uuid@11.1.1: {}
 
   v8-compile-cache-lib@3.0.1: {}
 
