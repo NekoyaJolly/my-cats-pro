@@ -177,6 +177,7 @@ jobs:
           SUBSTITUTIONS="${SUBSTITUTIONS},_RESEND_API_KEY_SECRET_VERSION=latest"
           SUBSTITUTIONS="${SUBSTITUTIONS},_EMAIL_FROM=noreply@nekoya.co.jp"
           SUBSTITUTIONS="${SUBSTITUTIONS},_EMAIL_FROM_NAME=MyCats Pro"
+          SUBSTITUTIONS="${SUBSTITUTIONS},_ADMIN_EMAIL=nekonokawase@gmail.com"
           
           echo "📋 Substitutions being passed to Cloud Build:"
           echo "${SUBSTITUTIONS}" | tr ',' '\n' | sed 's/^/  /'
@@ -374,6 +375,7 @@ jobs:
           SUBSTITUTIONS="${SUBSTITUTIONS},_RESEND_API_KEY_SECRET_VERSION=latest"
           SUBSTITUTIONS="${SUBSTITUTIONS},_EMAIL_FROM=noreply@nekoya.co.jp"
           SUBSTITUTIONS="${SUBSTITUTIONS},_EMAIL_FROM_NAME=MyCats Pro"
+          SUBSTITUTIONS="${SUBSTITUTIONS},_ADMIN_EMAIL=nekonokawase@gmail.com"
           
           echo "📋 Substitutions being passed to Cloud Build:"
           echo "${SUBSTITUTIONS}" | tr ',' '\n' | sed 's/^/  /'

@@ -99,6 +99,7 @@ steps:
           NODE_ENV: ${_ENVIRONMENT}
           EMAIL_FROM: ${_EMAIL_FROM}
           EMAIL_FROM_NAME: ${_EMAIL_FROM_NAME}
+          ADMIN_EMAIL: ${_ADMIN_EMAIL}
           CORS_ORIGIN: "${cors_origin_final}"
           EOF
 
@@ -220,6 +221,7 @@ substitutions:
   # Email settings
   _EMAIL_FROM: 'noreply@nekoya.co.jp'
   _EMAIL_FROM_NAME: 'MyCats Pro'
+  _ADMIN_EMAIL: 'nekonokawase@gmail.com'
   
   # Additional deploy flags (optional)
   _BACKEND_DEPLOY_FLAGS: ''
