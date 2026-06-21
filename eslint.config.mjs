@@ -71,6 +71,7 @@ export default [
       '*.md',
       '.git/**',
       '.github/**',
+      '.claude/**',
       
       // データベース関連
       'database/**',
