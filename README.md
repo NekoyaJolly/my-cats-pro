@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **MyCats Pro は 2026-09-24 をもって日常運用から退役し、再現可能アーカイブとして保存する方針です。**  
+> 最終機能コードは `archive/mycats-pro-final-2026-09-24` に固定しています。復元方法と保存状態は [docs/archive/RESTORE_GUIDE.md](./docs/archive/RESTORE_GUIDE.md) と [docs/archive/ARCHIVE_MANIFEST_2026-09-24.md](./docs/archive/ARCHIVE_MANIFEST_2026-09-24.md) を参照してください。
+
 # � MyCats
 
 [![CI](https://github.com/NekoyaJolly/mycats/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/NekoyaJolly/mycats/actions/workflows/ci.yml)
